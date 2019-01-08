@@ -254,8 +254,8 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 
 bool MulticopterLandDetector::_get_landed_state()
 {
-	// When not armed, consider to be landed
-	if (!_arming.armed) {
+	// if already landed and that the drone has low thrust, it has to be on the ground
+	if (_state == LandDetectionState::LANDED && _has_low_thrust()) {
 		return true;
 	}
 
