@@ -137,6 +137,8 @@ protected:
 	 */
 	virtual float _get_max_altitude() = 0;
 
+	virtual bool _get_ground_effect_state() {return false;}
+
 	/**
 	 * Convenience function for polling uORB subscriptions.
 	 *
@@ -156,6 +158,7 @@ protected:
 	systemlib::Hysteresis _landed_hysteresis{true};
 	systemlib::Hysteresis _maybe_landed_hysteresis{true};
 	systemlib::Hysteresis _ground_contact_hysteresis{true};
+	systemlib::Hysteresis _ground_effect_hysteresis{false};
 
 	struct actuator_armed_s	_arming {};
 
