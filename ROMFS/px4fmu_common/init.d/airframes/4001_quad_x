@@ -25,3 +25,4 @@ sh /etc/init.d/rc.mc_defaults
 set MIXER quad_x
 
 set PWM_OUT 1234
+set PWM_AUX_OUT 123456
