@@ -1381,7 +1381,7 @@ void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
 
 			uint32_t voltage = *(uint32_t *)&msg_p->cm_data[0];
 			voltage = (voltage >> 4) & 0xFFF;
-			esc_stat.esc[id_idx].esc_voltage = (float)voltage / 0.064f;
+			esc_stat.esc[id_idx].esc_voltage = ((float)voltage / 0.064f) / 1000.0f;
 
 			esc_stat.esc[id_idx].esc_state = msg_p->cm_data[2];
 
@@ -1390,12 +1390,12 @@ void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
 
 			// upper unsigned int
 			// bits 0 to 15 = rpm
-			// bits 16 to 31 = current (Amps) * 0.01 + 32768
+			// bits 16 to 31 = current (Amps) - 32768 * 0.1
 
 			esc_stat.esc[id_idx].esc_rpm = *(uint16_t *)&msg_p->cm_data[4];
 
 			float cur = *(uint16_t *)&msg_p->cm_data[6];
-			esc_stat.esc[id_idx].esc_current = (cur - 32768.0f) / 0.01f;
+			esc_stat.esc[id_idx].esc_current = (cur - 32768.0f) * 0.1f;
 
 			_telemRX_1_Rate++;
 			break;
