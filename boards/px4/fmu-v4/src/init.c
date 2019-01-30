@@ -334,7 +334,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	spi4 = stm32_spibus_initialize(4);
 
 	if (!spi4) {
-		message("[boot] FAILED to initialize SPI port 4\n");
+		syslog(LOG_ERR, "[boot] FAILED to initialize SPI port 4\n");
 		led_on(LED_RED);
 		return -ENODEV;
 	}
