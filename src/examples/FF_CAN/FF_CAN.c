@@ -630,7 +630,7 @@ void FF_CAN_MsgGen_ReProg(uint8_t boomID)
 int FF_CAN_Send_Arm(uint8_t boomID)
 {
 	// Open CAN with read/write (blocking)
-	int canFD = open("/dev/can0", O_RDWR);
+	int canFD = open("/dev/can0", O_RDWR | O_NONBLOCK);
 
 	// Check if open is successful.
 	if(canFD<0){
@@ -670,7 +670,7 @@ int FF_CAN_Send_Arm(uint8_t boomID)
 void FF_CAN_Send_Disarm(uint8_t boomID)
 {
 	// Open CAN with read/write (blocking)
-	int canFD = open("/dev/can0", O_RDWR);
+	int canFD = open("/dev/can0", O_RDWR | O_NONBLOCK);
 
 	// Check if open is successful.
 	if(canFD<0){
