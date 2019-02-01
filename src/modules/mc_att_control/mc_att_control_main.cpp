@@ -117,6 +117,7 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 	_rates_int.zero();
 	_thrust_sp = 0.0f;
 	_att_control.zero();
+	_yaw_rate_sp_prev = 0.0f;
 
 	/* initialize thermal corrections as we might not immediately get a topic update (only non-zero values) */
 	for (unsigned i = 0; i < 3; i++) {
@@ -648,6 +649,19 @@ MulticopterAttitudeControl::pid_attenuations(float tpa_breakpoint, float tpa_rat
 void
 MulticopterAttitudeControl::control_attitude_rates(float dt)
 {
+
+	// add slew rate to yaw_rate setpoint
+	float yaw_accel_max = math::radians(_yaw_accel_max.get());
+	if (fabsf(_yaw_rate_sp_prev - _rates_sp(2)) / dt > yaw_accel_max) {
+		if (_rates_sp(2) > _yaw_rate_sp_prev) {
+			_rates_sp(2) = _yaw_rate_sp_prev + yaw_accel_max * dt;
+		} else {
+			_rates_sp(2) = _yaw_rate_sp_prev - yaw_accel_max * dt;
+		}
+	}
+
+	_yaw_rate_sp_prev = _rates_sp(2);
+
 	/* reset integral if disarmed */
 	if (!_v_control_mode.flag_armed || !_vehicle_status.is_rotary_wing) {
 		_rates_int.zero();
