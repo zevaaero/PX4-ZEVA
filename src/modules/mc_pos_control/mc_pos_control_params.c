@@ -736,4 +736,4 @@ PARAM_DEFINE_INT32(MPC_YAW_MODE, 0);
  * @min 1
  * @group Multicopter Position Control.
  */
-PARAM_DEFINE_FLOAT(MPC_THR_RATE_MAX, 3);
+PARAM_DEFINE_FLOAT(MPC_THR_RATE_MAX, 2);
