@@ -1050,7 +1050,7 @@ void FF_CAN_WriteTask(void)
 	const hrt_abstime task_start = hrt_absolute_time();
 	hrt_abstime lastRun = task_start;
 	uint16_t logCounter = 0;
-	uint16_t telemCounter = 0;
+	uint16_t telemCounter = 1;
 
 	// Subscriptions - uOrb
 	int actuatorOutputsMinPeriod = 1;	// in [ms]
@@ -1187,7 +1187,7 @@ void FF_CAN_WriteTask(void)
 			}
 
 			// reset telemtry request ID if all have been requested (IDs are 1 to 8)
-			if (telemCounter >= MTR_CNT) telemCounter = 1;
+			if (telemCounter > MTR_CNT) telemCounter = 1;
 			
 			// One second check - log to console at a slower rate
 			hrt_abstime now = hrt_absolute_time();
