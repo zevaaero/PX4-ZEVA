@@ -15,6 +15,7 @@ then
 		fmu i2c 2 100000
 	fi
 
+	ms5611 start -I
 	# External SPI
 	ms5611 -S start
 
