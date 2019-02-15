@@ -199,6 +199,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		return true;
 	}
 
+
 	return false;
 }
 
