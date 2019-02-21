@@ -80,14 +80,14 @@ then
 	param set MAV_0_FORWARD 1
 	param set MAV_0_MODE 3
 	param set MAV_0_RATE 1200
-	param set MAV_1_CONFIG 102
+	#param set MAV_1_CONFIG 102
 	param set MAV_1_FORWARD 0
 	param set MAV_1_MODE 3
 	param set MAV_1_RATE 140000
 	param set MAV_2_CONFIG 0
 	param set SER_GPS1_BAUD 0
 	param set SER_TEL1_BAUD 57600
-	param set SER_TEL2_BAUD 1500000
+	# param set SER_TEL2_BAUD 1500000
 
 	# Attitude PID parameters
 	param set MC_DTERM_CUTOFF 20.000
@@ -178,3 +178,6 @@ then
 	param set UAVCAN_ESC_IDLT 1
 	param set UAVCAN_NODE_ID 1
 fi
+
+	param set MAV_1_CONFIG 102
+	param set SER_TEL2_BAUD 1500000
