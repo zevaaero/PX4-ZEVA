@@ -56,10 +56,9 @@ PARAM_DEFINE_INT32(SYS_AUTOSTART, 0);
  * Platform-specific values are used if available.
  * RC* parameters are preserved.
  *
- * @min 0
- * @max 1
  * @value 0 Keep parameters
  * @value 1 Reset parameters
+ * @value 2 Reload airframe parameters
  * @group System
  */
 PARAM_DEFINE_INT32(SYS_AUTOCONFIG, 0);
