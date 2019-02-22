@@ -138,6 +138,7 @@ int BootloaderJump(void);		// Makes the Alta Motor Driver jump to the driver cod
 void FF_CAN_Request_IDs(void);
 int FF_CAN_Send_Arm(uint8_t boomID);
 void FF_CAN_Send_Disarm(uint8_t boomID);
+int FF_CAN_Send_Lights(uint8_t boomID);
 
 //-------------------------------------------------------------------------------------
 // Private function prototypes
@@ -243,12 +244,12 @@ void FF_CAN(void)
 	// Set module started flag so we don't restart this on accident
 	_moduleStarted = true;
 
-	// Turn on the NART (No Automatic ReTries bit).
+	// Turn on the NART (No Automatic ReTries bit). -- Jeremy // This isn't working, arms won't jump
 	// This ensures old data is not retransmitted if there is a timing error, which can cause the motors to lock up
-	uint32_t regval;
-	regval = getreg32(STM32_CAN_MCR_OFFSET);
-  	regval |= CAN_MCR_NART;
-  	putreg32(regval, STM32_CAN_MCR_OFFSET);
+	//uint32_t regval;
+	//regval = getreg32(STM32_CAN_MCR_OFFSET);
+  	//regval |= CAN_MCR_NART;
+  	//putreg32(regval, STM32_CAN_MCR_OFFSET);
 
 	// advertise the esc_status uORB message
 	_esc_pub = orb_advertise(ORB_ID(esc_status), &esc_stat);
@@ -735,6 +736,106 @@ void FF_CAN_Send_Disarm(uint8_t boomID)
 }
 
 //-----------------------------------------------------------------------------------------------
+// Send lights message to ESC
+// returns error status (0 = success)
+int FF_CAN_Send_Lights(uint8_t boomID)
+{
+	
+	// Get lights values
+	int32_t brightness = 0;
+	int32_t color = BOOM_COLOR_RED;	
+	uint32_t R = 128;
+	uint32_t G = 128;
+	uint32_t B = 128;
+	
+
+	param_get(param_find("BOOM_BRT"),&brightness);
+	if( brightness <0 )
+		brightness = 0;
+	if( brightness > 15 )
+		brightness = 15;
+
+	// Get boom configured color
+	switch( boomID )
+	{
+		case 1: param_get(param_find("BOOM1_COLOR"),&color); break;
+		case 2: param_get(param_find("BOOM2_COLOR"),&color); break;
+		case 3: param_get(param_find("BOOM3_COLOR"),&color); break;
+		case 4: param_get(param_find("BOOM4_COLOR"),&color); break;
+		case 5: param_get(param_find("BOOM5_COLOR"),&color); break;
+		case 6: param_get(param_find("BOOM6_COLOR"),&color); break;
+		case 7: param_get(param_find("BOOM7_COLOR"),&color); break;
+		case 8: param_get(param_find("BOOM8_COLOR"),&color); break;
+			
+	}
+
+	// color issues
+	//white is too pink
+	//yellow is too orange
+	//purple is a little reddish
+
+	switch(color) 
+	{
+		case BOOM_COLOR_OFF:
+			R = 0; G = 0; B = 0; break;
+		case BOOM_COLOR_RED:
+			R = 255; G = 0; B = 0; break;
+		case BOOM_COLOR_ORANGE:
+			R = 255; G = 128; B = 0; break;
+		case BOOM_COLOR_YELLOW:
+			R = 255; G = 255; B = 0; break;
+		case BOOM_COLOR_GREEN:
+			R = 0; G = 255; B = 0; break;
+		case BOOM_COLOR_CYAN:
+			R = 0; G = 255; B = 255; break;
+		case BOOM_COLOR_BLUE:
+			R = 0; G = 0; B = 255; break;
+		case BOOM_COLOR_PURPLE:
+			R = 255; G = 0; B = 255; break;
+		case BOOM_COLOR_WHITE:
+			R = 220; G = 255; B = 255; break;
+		default:
+			R = 100; G = 100; B = 100; break;
+	}
+
+	// Adjust brightness
+	R = R*brightness/20; G = G*brightness/20; B = B*brightness/20; // range is 15, divide by 20 caps max brightness to 200, which is Synapse upper brightness limit
+
+
+	// Open CAN with read/write (blocking)
+	int canFD = open("/dev/can0", O_RDWR);
+
+	// Check if open is successful.
+	if(canFD<0){
+		PX4_INFO("Send Arm Cmd-> Failed to open CAN device.");
+		_writeThreadRunning = false;
+		return false;
+	}
+
+	// Setup message
+	struct can_msg_s msg;
+	msg.cm_hdr.ch_id = 0x38;	// Message 38 for color
+	msg.cm_hdr.ch_rtr = 0;
+	msg.cm_hdr.ch_dlc = 4;		// looks like 4 bytes
+
+	// set msg payload to command
+	msg.cm_data[0] = boomID;
+	msg.cm_data[1] = (uint8_t)R;		// R
+	msg.cm_data[2] = (uint8_t)G;		// G
+	msg.cm_data[3] = (uint8_t)B;		// B
+
+
+	// send the message and wait until Tx complete
+	FF_CAN_MSG_Send(&msg, canFD);
+
+	// Make sure to close the local file descriptor before exiting
+	close(canFD);
+
+	// If the message doesn't get rxd or doesn't pass the checks, fail and disarm
+	return 0;
+}
+
+//-----------------------------------------------------------------------------------------------
 // BootloaderJump
 // Inputs:
 // 			xx
@@ -894,7 +995,16 @@ int FF_CAN_Arm_Motors(void)
 			return 1;	// Error!
 		}
 	}
+	
+
+	// Send lights command since we armed successfully
+	for (int i=0; i<MTR_CNT; i++) 
+	{
+		FF_CAN_Send_Lights(i+1);
+	}
+
 	return 0;
+
 }
 
 //-----------------------------------------------------------------------------------------------

@@ -464,3 +464,192 @@ PARAM_DEFINE_FLOAT(OSD_MAX_VELOCITY, 20.0f);
 */
 PARAM_DEFINE_FLOAT(OSD_MAX_CLIMB, 3.5f);
 
+/**
+* Boom LED brightness
+*
+* Overall brightness of all boom LEDs when armed
+* 0-15, with 0 being dim and 15 being brightest
+*
+* @min 0
+
+* @reboot_required false
+* @group OSD Display
+*/
+PARAM_DEFINE_INT32(BOOM_BRT,10);
+
+/**
+* Boom 1 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM1_COLOR,1);
+
+/**
+* Boom 2 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM2_COLOR,0);
+
+/**
+* Boom 3 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM3_COLOR,0);
+
+/**
+* Boom 4 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM4_COLOR,4);
+
+/**
+* Boom 5 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM5_COLOR,4);
+
+/**
+* Boom 6 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM6_COLOR,0);
+
+/**
+* Boom 7 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM7_COLOR,0);
+
+/**
+* Boom 8 LED Color
+*
+* Color when disarmed
+* 0 = OFF
+* 1 = RED
+* 2 = ORANGE
+* 3 = YELLOW
+* 4 = GREEN
+* 5 = CYAN
+* 6 = BLUE
+* 7 = PURPLE
+* 8 = WHITE
+*
+* @min 0
+* @max 6
+* @reboot_required false
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(BOOM8_COLOR,1);
+	BOOM_COLOR_OFF = 0,
+	BOOM_COLOR_RED,
+	BOOM_COLOR_ORANGE,
+	BOOM_COLOR_YELLOW,
+	BOOM_COLOR_GREEN,
+	BOOM_COLOR_CYAN,
+	BOOM_COLOR_BLUE,
+	BOOM_COLOR_PURPLE,
+	BOOM_COLOR_WHITE
