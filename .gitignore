@@ -71,3 +71,5 @@ posix-configs/SITL/init/test/*_generated
 /modules
 
 *.gcov
+
+px4\.bin

@@ -2940,8 +2940,13 @@ protected:
 
 			mavlink_msg_rc_channels_send_struct(_mavlink->get_channel(), &msg);
 
+
+			// Don't send rc_channels_override. Don't need to in our case
+			// https://github.com/PX4/Firmware/issues/11238
+
 			/* send override message - harmless if connected to GCS, allows to connect a board to a Linux system */
 			/* http://mavlink.org/messages/common#RC_CHANNELS_OVERRIDE */
+			/*
 			mavlink_rc_channels_override_t over;
 			over.target_system = mavlink_system.sysid;
 			over.target_component = 0;
@@ -2954,8 +2959,10 @@ protected:
 			over.chan7_raw = msg.chan7_raw;
 			over.chan8_raw = msg.chan8_raw;
 
-			mavlink_msg_rc_channels_override_send_struct(_mavlink->get_channel(), &over);
 
+			mavlink_msg_rc_channels_override_send_struct(_mavlink->get_channel(), &over);
+			*/
+			
 			return true;
 		}
 
