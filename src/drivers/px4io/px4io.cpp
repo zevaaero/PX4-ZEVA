@@ -102,7 +102,12 @@
 
 #define UPDATE_INTERVAL_MIN		2			// 2 ms	-> 500 Hz
 #define ORB_CHECK_INTERVAL		200000		// 200 ms -> 5 Hz
+
+// Poll Interval Speed Checks. Selim.
 #define IO_POLL_INTERVAL		20000		// 20 ms -> 50 Hz
+//#define IO_POLL_INTERVAL 		10000 		// 10 ms -> 100 Hz  
+//#define IO_POLL_INTERVAL 		5000 		//  5 ms -> 200 Hz
+//#define IO_POLL_INTERVAL 		1000  		// 	1 ms -> 1 	kHz
 
 /**
  * The PX4IO class.
@@ -966,6 +971,7 @@ PX4IO::task_main()
 			io_publish_raw_rc();
 
 			/* fetch PWM outputs from IO */
+			// Commented out and moved it inside io_set_control_groups. Selim.
 			io_publish_pwm_outputs();
 
 			/* check updates on uORB topics and handle it */
@@ -1268,6 +1274,14 @@ PX4IO::io_set_control_state(unsigned group)
 			orb_check(_t_actuator_controls_0, &changed);
 
 			if (changed) {
+
+				// If actuator_controls_0 is updated that means sensors and controller are updated. Which *should*
+				// be running at 250 Hz. So I would expect this loop to trigger a PWM output request from PX4IO and 
+				// publish result on the uORB topic at 250 Hz too. Selim.
+
+				// Works as expected but sys console throws a px4io low on stack warning. SAD.
+				//io_publish_pwm_outputs();
+
 				orb_copy(ORB_ID(actuator_controls_0), _t_actuator_controls_0, &controls);
 				perf_set_elapsed(_perf_sample_latency, hrt_elapsed_time(&controls.timestamp_sample));
 			}
