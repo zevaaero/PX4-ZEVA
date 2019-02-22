@@ -257,11 +257,11 @@ void FF_CAN(void)
 	// init ESC status uORB message
 	memset(&esc_stat, 0, sizeof(esc_stat));
 	esc_stat.esc_count = MTR_CNT;
-	esc_stat.esc_connectiontype = ESC_CONNECTION_TYPE_CAN;
+	esc_stat.esc_connectiontype = ESC_STATUS_ESC_CONNECTION_TYPE_CAN;
 	
 	for (int i=0; i<MTR_CNT ;i++)
 	{
-		esc_stat.esc[i].esc_vendor = ESC_VENDOR_GENERIC;
+		esc_stat.esc[i].esc_vendor = ESC_STATUS_ESC_VENDOR_GENERIC;
 		esc_stat.esc[i].esc_address = i + 1;
 	}
 
