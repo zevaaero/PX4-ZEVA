@@ -1108,8 +1108,15 @@ MulticopterPositionControl::set_manual_acceleration_xy(matrix::Vector2f &stick_x
 		}
 
 		/* reset slew rate */
-		_vel_sp_prev(0) = _vel(0);
-		_vel_sp_prev(1) = _vel(1);
+
+		// This function is the trigger into the brake state. We should ONLY reset the velocity setpoint
+		matrix::Vector2f ff_vel_xy(_vel(0), _vel(1));
+		matrix::Vector2f ff_vel_sp_xy(_vel_sp(0), _vel_sp(1));
+
+		if( ff_vel_sp_xy.length() > ff_vel_xy.length() ) {
+			_vel_sp_prev(0) = _vel(0);
+			_vel_sp_prev(1) = _vel(1);
+		}
 
 	}
 
