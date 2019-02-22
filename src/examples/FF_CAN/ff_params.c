@@ -1,5 +1,5 @@
 /**
-* Enable OSD display
+* Enable ALTA
 *
 * Set to display OSD overlay on video.
 *
@@ -7,7 +7,7 @@
 * @value 1 Enabled
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_ENABLE, 1);
 
@@ -20,7 +20,7 @@ PARAM_DEFINE_INT32(OSD_ENABLE, 1);
 * @value 1 NTSC
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_PAL_NTSC, 1);
 
@@ -32,7 +32,7 @@ PARAM_DEFINE_INT32(OSD_PAL_NTSC, 1);
 * @min 0
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_HOR_OS, 32);
 
@@ -44,7 +44,7 @@ PARAM_DEFINE_INT32(OSD_HOR_OS, 32);
 * @min 0
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_VER_OS, 16);
 
@@ -56,20 +56,20 @@ PARAM_DEFINE_INT32(OSD_VER_OS, 16);
 * @min 0
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_LEFT_OS, 1);
 
 
 /**
 * OSD right margin
-right
-* changes left display margin
+*
+* changes right display margin
 *
 * @min 0
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_RIGHT_OS, 1);
 
@@ -81,7 +81,7 @@ PARAM_DEFINE_INT32(OSD_RIGHT_OS, 1);
 * @min 0
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_UPPER_OS, 1);
 
@@ -93,7 +93,7 @@ PARAM_DEFINE_INT32(OSD_UPPER_OS, 1);
 * @min 0
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_LOWER_OS, 1);
 
@@ -106,7 +106,7 @@ PARAM_DEFINE_INT32(OSD_LOWER_OS, 1);
 * @value 1 IMPERIAL
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_UNITS, 0);
 
@@ -121,7 +121,7 @@ PARAM_DEFINE_INT32(OSD_UNITS, 0);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_HEIGHT, 1);
 
@@ -136,7 +136,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_HEIGHT, 1);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_VARIO, 1);
 
@@ -150,7 +150,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_VARIO, 1);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_HEADING, 2);
 
@@ -164,7 +164,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_HEADING, 2);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_DISTANCE, 2);
 
@@ -178,10 +178,9 @@ PARAM_DEFINE_INT32(OSD_DISTANCE, 2);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_GROUNDSPEED, 1);
-d
 
 /**
 * Show battery voltage
@@ -193,7 +192,7 @@ d
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_BATTERY, 2);
 
@@ -207,7 +206,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_BATTERY, 2);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_TIME, 2);
 
@@ -221,7 +220,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_TIME, 2);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_GPS, 2);
 
@@ -234,7 +233,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_GPS, 2);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_GPSHACC, 1);
 
@@ -247,7 +246,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_GPSHACC, 1);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_VARIOGFX, 1);
 
@@ -260,7 +259,7 @@ PARAM_DEFINE_INT32(OSD_VARIOGFX, 1);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SPEEDGFX, 1);
 
@@ -273,7 +272,7 @@ PARAM_DEFINE_INT32(OSD_SPEEDGFX, 1);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SIDESLIPGFX, 1);
 
@@ -287,7 +286,7 @@ PARAM_DEFINE_INT32(OSD_SIDESLIPGFX, 1);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_ATT, 2);
 
@@ -300,7 +299,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_ATT, 2);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_HEADINGARROW, 1);
 
@@ -313,7 +312,7 @@ PARAM_DEFINE_INT32(OSD_HEADINGARROW, 1);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_HOMEARROW, 1);
 
@@ -326,7 +325,7 @@ PARAM_DEFINE_INT32(OSD_HOMEARROW, 1);
 * @value 1 ON
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SHOW_LATLON, 1);
 
@@ -339,7 +338,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_LATLON, 1);
 * @min 1
 * @max 200
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_PITCH_SCALE, 20);
 
@@ -351,7 +350,7 @@ PARAM_DEFINE_INT32(OSD_PITCH_SCALE, 20);
 * @min 1
 * @max 180
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_PITCH_IN, 10);
 
@@ -366,7 +365,7 @@ PARAM_DEFINE_INT32(OSD_PITCH_IN, 10);
 * @value 2 LARGE
 *
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_ROLL_MARKER, 0);
 
@@ -379,7 +378,7 @@ PARAM_DEFINE_INT32(OSD_ROLL_MARKER, 0);
 * @min 1
 * @max 200
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_ROLL_SCALING, 20);
 
@@ -392,7 +391,7 @@ PARAM_DEFINE_INT32(OSD_ROLL_SCALING, 20);
 * @min 0
 * @max 16
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_SKY_BRIGHT, 1);
 
@@ -404,7 +403,7 @@ PARAM_DEFINE_INT32(OSD_SKY_BRIGHT, 1);
 * @min 0
 * @max 16
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_INT32(OSD_GND_BRIGHT, 1);
 
@@ -416,7 +415,7 @@ PARAM_DEFINE_INT32(OSD_GND_BRIGHT, 1);
 * @min 3.0
 * @max 4.2
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_FLOAT(OSD_BAT_ALARM, 3.583f);
 
@@ -427,7 +426,7 @@ PARAM_DEFINE_FLOAT(OSD_BAT_ALARM, 3.583f);
 *
 * @min 1.0
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_FLOAT(OSD_MAX_RANGE, 1000.0f);
 
@@ -438,7 +437,7 @@ PARAM_DEFINE_FLOAT(OSD_MAX_RANGE, 1000.0f);
 *
 * @min 1.0
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_FLOAT(OSD_MAX_ALTITUDE, 121.9f);
 
@@ -449,7 +448,7 @@ PARAM_DEFINE_FLOAT(OSD_MAX_ALTITUDE, 121.9f);
 *
 * @min 1.0
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_FLOAT(OSD_MAX_VELOCITY, 20.0f);
 
@@ -460,7 +459,7 @@ PARAM_DEFINE_FLOAT(OSD_MAX_VELOCITY, 20.0f);
 *
 * @min 0.0
 * @reboot_required true
-* @group OSD Display
+* @group ALTA
 */
 PARAM_DEFINE_FLOAT(OSD_MAX_CLIMB, 3.5f);
 
@@ -471,17 +470,17 @@ PARAM_DEFINE_FLOAT(OSD_MAX_CLIMB, 3.5f);
 * 0-15, with 0 being dim and 15 being brightest
 *
 * @min 0
-
+* @max 15
 * @reboot_required false
-* @group OSD Display
+* @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM_BRT,10);
+PARAM_DEFINE_INT32(BOOM_BRT,15);
 
 /**
 * Boom 1 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -491,18 +490,26 @@ PARAM_DEFINE_INT32(BOOM_BRT,10);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM1_COLOR,1);
+PARAM_DEFINE_INT32(BOOM1_COLOR,4);
 
 /**
 * Boom 2 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -512,8 +519,16 @@ PARAM_DEFINE_INT32(BOOM1_COLOR,1);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
@@ -523,7 +538,7 @@ PARAM_DEFINE_INT32(BOOM2_COLOR,0);
 * Boom 3 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -533,8 +548,16 @@ PARAM_DEFINE_INT32(BOOM2_COLOR,0);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
@@ -544,7 +567,7 @@ PARAM_DEFINE_INT32(BOOM3_COLOR,0);
 * Boom 4 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -554,18 +577,26 @@ PARAM_DEFINE_INT32(BOOM3_COLOR,0);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM4_COLOR,4);
+PARAM_DEFINE_INT32(BOOM4_COLOR,1);
 
 /**
 * Boom 5 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -575,18 +606,26 @@ PARAM_DEFINE_INT32(BOOM4_COLOR,4);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM5_COLOR,4);
+PARAM_DEFINE_INT32(BOOM5_COLOR,1);
 
 /**
 * Boom 6 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -596,8 +635,16 @@ PARAM_DEFINE_INT32(BOOM5_COLOR,4);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
@@ -607,7 +654,7 @@ PARAM_DEFINE_INT32(BOOM6_COLOR,0);
 * Boom 7 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -617,8 +664,16 @@ PARAM_DEFINE_INT32(BOOM6_COLOR,0);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
@@ -628,7 +683,7 @@ PARAM_DEFINE_INT32(BOOM7_COLOR,0);
 * Boom 8 LED Color
 *
 * Color when disarmed
-* 0 = OFF
+* 0 = Off
 * 1 = RED
 * 2 = ORANGE
 * 3 = YELLOW
@@ -638,18 +693,17 @@ PARAM_DEFINE_INT32(BOOM7_COLOR,0);
 * 7 = PURPLE
 * 8 = WHITE
 *
-* @min 0
-* @max 6
+* @value 0 Off
+* @value 1 Red
+* @value 2 Orange
+* @value 3 Yellow
+* @value 4 Green
+* @value 5 Cyan
+* @value 6 Blue
+* @value 7 Purple
+* @value 8 White
+*
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM8_COLOR,1);
-	BOOM_COLOR_OFF = 0,
-	BOOM_COLOR_RED,
-	BOOM_COLOR_ORANGE,
-	BOOM_COLOR_YELLOW,
-	BOOM_COLOR_GREEN,
-	BOOM_COLOR_CYAN,
-	BOOM_COLOR_BLUE,
-	BOOM_COLOR_PURPLE,
-	BOOM_COLOR_WHITE
+PARAM_DEFINE_INT32(BOOM8_COLOR,4);
