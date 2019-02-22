@@ -1046,5 +1046,5 @@ unset TUNE_ERR
 mavlink boot_complete
 
 # must call exit on Alta so that nsh doesn't hoover up the serial data sent to it.
-exit
+#exit
 
