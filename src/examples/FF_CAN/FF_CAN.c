@@ -1163,11 +1163,11 @@ void FF_CAN_WriteTask(void)
 			msg.cm_data[0] = localPWMList[0] & 0xFF;
 			msg.cm_data[1] = (localPWMList[0] >> 8) & 0xFF;
 
-			msg.cm_data[2] = localPWMList[2] & 0xFF;
-			msg.cm_data[3] = (localPWMList[2] >> 8) & 0xFF;
+			msg.cm_data[2] = localPWMList[1] & 0xFF;
+			msg.cm_data[3] = (localPWMList[1] >> 8) & 0xFF;
 
-			msg.cm_data[4] = localPWMList[7] & 0xFF;
-			msg.cm_data[5] = (localPWMList[7] >> 8) & 0xFF;
+			msg.cm_data[4] = localPWMList[2] & 0xFF;
+			msg.cm_data[5] = (localPWMList[2] >> 8) & 0xFF;
 
 			msg.cm_data[6] = localPWMList[3] & 0xFF;
 			msg.cm_data[7] = (localPWMList[3] >> 8) & 0xFF;
@@ -1184,8 +1184,8 @@ void FF_CAN_WriteTask(void)
 			// set msg payload to command
 			if (MTR_CNT >= 6)
 			{
-				msg.cm_data[0] = localPWMList[1] & 0xFF;
-				msg.cm_data[1] = (localPWMList[1] >> 8) & 0xFF;
+				msg.cm_data[0] = localPWMList[4] & 0xFF;
+				msg.cm_data[1] = (localPWMList[4] >> 8) & 0xFF;
 
 				msg.cm_data[2] = localPWMList[5] & 0xFF;
 				msg.cm_data[3] = (localPWMList[5] >> 8) & 0xFF;
@@ -1195,8 +1195,8 @@ void FF_CAN_WriteTask(void)
 				msg.cm_data[4] = localPWMList[6] & 0xFF;
 				msg.cm_data[5] = (localPWMList[6] >> 8) & 0xFF;
 
-				msg.cm_data[6] = localPWMList[4] & 0xFF;
-				msg.cm_data[7] = (localPWMList[4] >> 8) & 0xFF;
+				msg.cm_data[6] = localPWMList[7] & 0xFF;
+				msg.cm_data[7] = (localPWMList[7] >> 8) & 0xFF;
 			}
 
 			// send the message and wait until Tx complete
