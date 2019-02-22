@@ -166,7 +166,7 @@ bool FF_CAN_Spy(void);
 
 // Temporary function for dev
 int FF_CAN_Bootloader_Jump(void);
-int FF_CAN_BootloaderJumpId(uint32_t id);
+int FF_CAN_BootloaderJumpId(uint8_t id, uint8_t type, uint32_t address);
 void FF_CAN_SetBoomID(int id);
 void FF_CAN_MsgGen_ReProg(uint8_t boomID);
 
@@ -366,8 +366,7 @@ void FF_CAN(void)
 		}
 	}
 
-	// NOTE: The following bootloader jump code is temporary... This will be handled by the system loader eventually
-	// It's making each one of the motor drivers bootloader jump to the driver program start.
+	// Command each one of the motor drivers bootloader jump to the driver program start.
 	// We should do this after the reader task has been started (we need it to read ack responses) but before the general writing starts
 	if (FF_CAN_Bootloader_Jump())
 	{
@@ -439,53 +438,21 @@ int FF_CAN_Bootloader_Jump(void)
 {
 	PX4_INFO("--------------------------");
 	PX4_INFO("Bootloader jumper started.");
+	int ret = 0;
 
-	// clear out the bootloader ID list
-	for (int i=0; i<MTR_CNT; i++) _bootLoaderIDs[i] = 0;
-
-	bool list_complete = true;
-	int retries = 3;
-	while (retries-- > 0)
-	{
-		PX4_INFO("Sending request for motor UIDs...");
-
-		// Send the request for IDs
-		FF_CAN_Request_IDs();
-
-		int ID_Rx_retries = 100;
-		while(ID_Rx_retries-- > 0)
-		{
-			// wait a short amount of time to rx more messages
-			usleep(10000);
-
-			// check the list to see if it is full
-			list_complete = true;
-			for (int i=0; i<MTR_CNT; i++){
-				if (_bootLoaderIDs[i] == 0) list_complete = false;
-			}
-
-			// break out if our list is complete
-			if (list_complete) break;
-		}
-
-		if (list_complete) break;	// break out of while()
+	ret = FF_CAN_BootloaderJumpId(9, 0x4, 0x08008000);	// jump each motor
+	if (ret != 0){
+		PX4_ERR("OSD MCU jump to application failed! - aborting bootloader jump!");
+		return 1;	// stop and return if there is an error!
 	}
 
-	if (list_complete)
+	for (int i=1; i<MTR_CNT + 1; i++)
 	{
-		PX4_INFO("All motor IDs rxd - starting jump to application");
-
-		for (int i=0; i<MTR_CNT; i++)
-		{
-			int ret = FF_CAN_BootloaderJumpId(_bootLoaderIDs[i]);	// jump each motor
-			if (ret != 0){
-				PX4_ERR("Motor jump to application failed! - aborting bootloader jump!");
-				return 1;	// stop and return if there is an error!
-			}
+		ret = FF_CAN_BootloaderJumpId(i, 0x6, 0x08008000);	// jump each motor
+		if (ret != 0){
+			PX4_ERR("Motor jump to application failed! - aborting bootloader jump!");
+			return 1;	// stop and return if there is an error!
 		}
-	} else {
-		PX4_ERR("Didn't Rx all motor IDs - aborting bootloader jump!");
-		return 1;
 	}
 
 	PX4_INFO("Bootloader jumper finished.");
@@ -841,13 +808,13 @@ int FF_CAN_Send_Lights(uint8_t boomID)
 // 			xx
 // Outputs:
 // 			return negative if bootloader didn't jump and zero if it did.
-int FF_CAN_BootloaderJumpId(uint32_t id)
+int FF_CAN_BootloaderJumpId(uint8_t id, uint8_t type, uint32_t address)
 {
 	struct can_msg_s msg;
 	int msg_ret = 0;
 
 	PX4_INFO("----------------------------");
-	PX4_INFO("BootloaderJump-> sending jump command to UID: %08x.", id);
+	PX4_INFO("BootloaderJump-> sending jump command to CAN ID: %08x.", id);
 
 	//--------------------------
 	// STEP 0 - Open CAN peripheral as a virtual file for read and write
@@ -865,27 +832,22 @@ int FF_CAN_BootloaderJumpId(uint32_t id)
 	PX4_INFO("BootloaderJump-> CAN opened for write (blocking).");
 
 	//--------------------------
-	// STEP 1 - Send CAN to set FLASH address for ESCs to jump to (ID=0x42=66)
+	// STEP 1 - send CANbus jump command
 
 	// Setup message
 	memset((void *)&msg, 0, sizeof(struct can_msg_s));	// clear msg to start
-	msg.cm_hdr.ch_id = 0x42;
+	msg.cm_hdr.ch_id = 0x10;	// 0x10 is jump to address
 	msg.cm_hdr.ch_rtr = 0;
-	msg.cm_hdr.ch_dlc = 8;
+	msg.cm_hdr.ch_dlc = 5;
 
-	// set msg payload
-	// first 4 bytes = UID of ESC
-	msg.cm_data[0] = (id >> 0) & 0xFF;
-	msg.cm_data[1] = (id >> 8) & 0xFF;
-	msg.cm_data[2] = (id >> 16) & 0xFF;
-	msg.cm_data[3] = (id >> 24) & 0xFF;
+	// combine type code (0x7 for ESC) and id
+	msg.cm_data[0] = ((id << 3) & 0xF8) | ((type << 0) & 0x07);
 
-	// last 4 bytes = ESC address to jump to (little endian)
-	// example: 0x08008000
-	msg.cm_data[4] = 0x00;
-	msg.cm_data[5] = 0x80;
-	msg.cm_data[6] = 0x00;
-	msg.cm_data[7] = 0x08;
+	// 4 byte jump address = ESC address to jump to (little endian)
+	msg.cm_data[1] = (address >> 0) & 0xFF;
+	msg.cm_data[2] = (address >> 8) & 0xFF;
+	msg.cm_data[3] = (address >> 16) & 0xFF;
+	msg.cm_data[4] = (address >> 24) & 0xFF;
 
 	// clear the response UID
 	_esc_jump_address_set_ack_uid = 0;
@@ -900,58 +862,58 @@ int FF_CAN_BootloaderJumpId(uint32_t id)
 		return -1;	// ERROR!
 	}
 
-	//--------------------------
-	// STEP 2 - sleep for a little bit to wait for the response
-	usleep(5000);
+	// //--------------------------
+	// // STEP 2 - sleep for a little bit to wait for the response
+	// usleep(5000);
 
-	//--------------------------
-	// STEP 3 - wait for a confirmation response message
+	// //--------------------------
+	// // STEP 3 - wait for a confirmation response message
 
-	// check for ack flag
-	if(_esc_jump_address_set_ack_uid != id){
-		close(canFD_write);
-		return -1;
-	}
+	// // check for ack flag
+	// if(_esc_jump_address_set_ack_uid != id){
+	// 	close(canFD_write);
+	// 	return -1;
+	// }
 
-	//--------------------------
-	// STEP 4 - Execute ESC jump to previously set address (id=0x4E=78)
-	memset((void *)&msg, 0, sizeof(struct can_msg_s));	// clear msg to start
-	msg.cm_hdr.ch_id = 0x4E;	// Set channel id as 0x4E.	
-	msg.cm_hdr.ch_rtr = 0;		// Do not turn on Remote Transmission Request.
-	msg.cm_hdr.ch_dlc = 4; 		// Data Length Code: = 4 Byte.
+	// //--------------------------
+	// // STEP 4 - Execute ESC jump to previously set address (id=0x4E=78)
+	// memset((void *)&msg, 0, sizeof(struct can_msg_s));	// clear msg to start
+	// msg.cm_hdr.ch_id = 0x4E;	// Set channel id as 0x4E.	
+	// msg.cm_hdr.ch_rtr = 0;		// Do not turn on Remote Transmission Request.
+	// msg.cm_hdr.ch_dlc = 4; 		// Data Length Code: = 4 Byte.
 
-	msg.cm_data[0] = (id >> 0) & 0xFF;
-	msg.cm_data[1] = (id >> 8) & 0xFF;
-	msg.cm_data[2] = (id >> 16) & 0xFF;
-	msg.cm_data[3] = (id >> 24) & 0xFF;
+	// msg.cm_data[0] = (id >> 0) & 0xFF;
+	// msg.cm_data[1] = (id >> 8) & 0xFF;
+	// msg.cm_data[2] = (id >> 16) & 0xFF;
+	// msg.cm_data[3] = (id >> 24) & 0xFF;
 
-	// clear the response UID
-	_esc_jump_execute_ack_uid = 0;
+	// // clear the response UID
+	// _esc_jump_execute_ack_uid = 0;
 
-	// send the message and wait until Tx complete
-	PX4_INFO("BootloaderJump-> Sending jump execute command.");
-	msg_ret = FF_CAN_MSG_Send(&msg, canFD_write);
+	// // send the message and wait until Tx complete
+	// PX4_INFO("BootloaderJump-> Sending jump execute command.");
+	// msg_ret = FF_CAN_MSG_Send(&msg, canFD_write);
 
-	// check if write was successful
-	if (msg_ret < 0){
-		close(canFD_write);
-		return -1;	// ERROR!
-	}
+	// // check if write was successful
+	// if (msg_ret < 0){
+	// 	close(canFD_write);
+	// 	return -1;	// ERROR!
+	// }
 
-	//--------------------------
-	// STEP 4.5 - sleep for a little bit to wait for the response
-	usleep(5000);
+	// //--------------------------
+	// // STEP 4.5 - sleep for a little bit to wait for the response
+	// usleep(5000);
 
-	//--------------------------
-	// STEP 5 - wait for a confirmation response message
+	// //--------------------------
+	// // STEP 5 - wait for a confirmation response message
 
-	// check for ack flag
-	if(_esc_jump_execute_ack_uid != id){
-		close(canFD_write);
-		return -1;
-	}
+	// // check for ack flag
+	// if(_esc_jump_execute_ack_uid != id){
+	// 	close(canFD_write);
+	// 	return -1;
+	// }
 
-	PX4_INFO("BootloaderJump-> Completed successfully!");
+	// PX4_INFO("BootloaderJump-> Completed successfully!");
 
 	close(canFD_write);
 	return 0;
