@@ -853,8 +853,8 @@ fi
 		fi
 
 		# Load mixer and configure outputs
-		sh /etc/init.d/rc.interface
-
+		sh /etc/init.d/rc.interface_altapro8
+		
 		# Start standard multicopter apps
 		sh /etc/init.d/rc.mc_apps
 	fi
