@@ -25,9 +25,9 @@ then
 fi
 
 # Required
-unset MIXER_AUX octo_x
-unset PWM_AUX_RATE 400
-unset PWM_AUX_OUT 1234
+unset MIXER_AUX
+unset PWM_AUX_RATE
+unset PWM_AUX_OUT
 
 # override mixer
 set MIXER octo_x
