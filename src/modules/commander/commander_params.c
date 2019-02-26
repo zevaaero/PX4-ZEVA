@@ -811,3 +811,38 @@ PARAM_DEFINE_INT32(NAV_DLL_ACT, 0);
  * @group Mission
  */
 PARAM_DEFINE_INT32(NAV_RCL_ACT, 2);
+
+/**
+ * Flag to enable obstacle avoidance
+ * Temporary Parameter to enable interface testing
+ *
+ * @boolean
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(COM_OBS_AVOID, 0);
+
+/**
+ * Time-out to wait when onboard connection is lost before triggering onboard lost action.
+ * TODO: Define parameters to specify proper action to trigger.
+ *
+ * @group Commander
+ * @unit s
+ * @min 0
+ * @max 60
+ * @increment 1
+ */
+PARAM_DEFINE_INT32(COM_ONB_LOSS_T, 5);
+
+/**
+ * Onboard link regain time threshold
+ *
+ * After a onboard link loss: Amount of time between two heartbeats to consider connection healthy again.
+ *
+ * @group Commander
+ * @unit s
+ * @min 0
+ * @max 3
+ * @decimal 1
+ * @increment 0.5
+ */
+PARAM_DEFINE_INT32(COM_ONB_REG_T, 1);
