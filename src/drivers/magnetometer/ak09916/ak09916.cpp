@@ -542,6 +542,9 @@ AK09916::ioctl(struct file *filp, int cmd, unsigned long arg)
 		memcpy((struct mag_scale *) arg, &_mag_scale, sizeof(_mag_scale));
 		return OK;
 
+	case MAGIOCSELFTEST:
+		return OK;
+		
 	default:
 		return (int)I2C::ioctl(filp, cmd, arg);
 	}
