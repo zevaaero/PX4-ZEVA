@@ -934,18 +934,6 @@ bool prearm_check(orb_advert_t *mavlink_log_pub, const vehicle_status_flags_s &s
 	bool reportFailures = true;
 	bool prearm_ok = true;
 
-	//=============================================================================================================================
-	// FREEFLY CUSTOM - ARM MOTORS AND VERIFY
-	if (FF_CAN_Arm_Motors())
-	{
-		prearm_ok = false;
-		
-		if (reportFailures) {
-			mavlink_log_critical(mavlink_log_pub, "ARMING DENIED: Freefly custom - motors did not start");
-		}
-	}
-	//=============================================================================================================================
-
 	// USB not connected
 	if (!status_flags.circuit_breaker_engaged_usb_check && status_flags.usb_connected) {
 		if (reportFailures) {
@@ -1018,6 +1006,18 @@ bool prearm_check(orb_advert_t *mavlink_log_pub, const vehicle_status_flags_s &s
 
 		prearm_ok = false;
 	}
+
+	//=============================================================================================================================
+	// FREEFLY CUSTOM - ARM MOTORS AND VERIFY
+	if (FF_CAN_Arm_Motors())
+	{
+		prearm_ok = false;
+		
+		if (reportFailures) {
+			mavlink_log_critical(mavlink_log_pub, "ARMING DENIED: FF_CAN - motors did not start");
+		}
+	}
+	//=============================================================================================================================
 
 	// Arm Requirements: authorization
 	// check last, and only if everything else has passed
