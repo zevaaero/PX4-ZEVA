@@ -244,6 +244,9 @@ void FF_CAN(void)
 	// Set module started flag so we don't restart this on accident
 	_moduleStarted = true;
 
+	/// Param finds 
+	param_find("FF_OSD_TELEM");
+
 	// Turn on the NART (No Automatic ReTries bit). -- Jeremy // This isn't working, arms won't jump
 	// This ensures old data is not retransmitted if there is a timing error, which can cause the motors to lock up
 	//uint32_t regval;
@@ -722,7 +725,6 @@ int FF_CAN_Send_Lights(uint8_t boomID)
 	uint32_t G = 128;
 	uint32_t B = 128;
 	
-
 	param_get(param_find("BOOM_BRT"),&brightness);
 	if( brightness <0 )
 		brightness = 0;

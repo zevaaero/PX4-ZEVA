@@ -45,6 +45,12 @@
 #include "mavlink_simple_analyzer.h"
 #include "mavlink_high_latency2.h"
 
+#include "examples/FF_CAN/mavlink_msg_esc_telemetry_1.h"
+#include "examples/FF_CAN/mavlink_msg_esc_telemetry_2.h"
+
+#include <uORB/topics/esc_status.h>
+
+
 #include <commander/px4_custom_mode.h>
 #include <drivers/drv_pwm_output.h>
 #include <drivers/drv_rc_input.h>
@@ -4129,6 +4135,75 @@ protected:
 	}
 };
 
+class MavlinkStreamESCTelem : public MavlinkStream
+{
+public:
+    const char *get_name() const
+    {
+        return MavlinkStreamESCTelem::get_name_static();
+    }
+    static const char *get_name_static()
+    {
+        return "ESC_TELEMETRY_1";
+    }
+    static uint16_t get_id_static()
+    {
+        return MAVLINK_MSG_ID_ESC_TELEMETRY_1;
+    }
+    uint16_t get_id()
+    {
+        return get_id_static();
+    }
+    static MavlinkStream *new_instance(Mavlink *mavlink)
+    {
+        return new MavlinkStreamESCTelem(mavlink);
+    }
+    unsigned get_size()
+    {
+        return MAVLINK_MSG_ID_ESC_TELEMETRY_1_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+    }
+
+private:
+    MavlinkOrbSubscription *_sub;
+    uint64_t _esc_report_time;
+
+    /* do not allow top copying this class */
+    MavlinkStreamESCTelem(MavlinkStreamESCTelem &);
+    MavlinkStreamESCTelem &operator = (const MavlinkStreamESCTelem &);
+
+protected:
+    explicit MavlinkStreamESCTelem(Mavlink *mavlink) : MavlinkStream(mavlink),
+        _sub(_mavlink->add_orb_subscription(ORB_ID(esc_report))),  // make sure you enter the name of your uORB topic here
+        _esc_report_time(0)
+    {}
+
+    bool send(const hrt_abstime t)
+    {
+        struct esc_status_s _esc_status;    //make sure _esc_status is the definition of your uORB topic
+
+        if (_sub->update(&_esc_report_time, &_esc_status)) {
+            mavlink_esc_telemetry_1_t _msg_esc_telemetry1;  //make sure mavlink_ca_trajectory_t is the definition of your custom MAVLink message
+
+
+			for( int esc_idx=0; esc_idx<_esc_status.esc_count; esc_idx++) 
+			{
+				_msg_esc_telemetry1.Voltage[esc_idx] = (uint16_t)(_esc_status.esc[esc_idx].esc_voltage*100.0f);
+				_msg_esc_telemetry1.RPM[esc_idx] = (int16_t)(_esc_status.esc[esc_idx].esc_rpm);
+				_msg_esc_telemetry1.Current[esc_idx] = (int16_t)(_esc_status.esc[esc_idx].esc_current*100.0f);
+				_msg_esc_telemetry1.Temperature[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_temperature+100.0f);
+				_msg_esc_telemetry1.errorCount[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_errorcount);
+				_msg_esc_telemetry1.errorState[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_state & 0xFF);
+				
+			}
+
+            mavlink_msg_esc_telemetry_1_send_struct(_mavlink->get_channel(), &_msg_esc_telemetry1);
+        }
+
+        return true;
+    }
+};
+
+   
 static const StreamListItem streams_list[] = {
 	StreamListItem(&MavlinkStreamHeartbeat::new_instance, &MavlinkStreamHeartbeat::get_name_static, &MavlinkStreamHeartbeat::get_id_static),
 	StreamListItem(&MavlinkStreamStatustext::new_instance, &MavlinkStreamStatustext::get_name_static, &MavlinkStreamStatustext::get_id_static),
@@ -4180,7 +4255,8 @@ static const StreamListItem streams_list[] = {
 	StreamListItem(&MavlinkStreamMountOrientation::new_instance, &MavlinkStreamMountOrientation::get_name_static, &MavlinkStreamMountOrientation::get_id_static),
 	StreamListItem(&MavlinkStreamHighLatency2::new_instance, &MavlinkStreamHighLatency2::get_name_static, &MavlinkStreamHighLatency2::get_id_static),
 	StreamListItem(&MavlinkStreamGroundTruth::new_instance, &MavlinkStreamGroundTruth::get_name_static, &MavlinkStreamGroundTruth::get_id_static),
-	StreamListItem(&MavlinkStreamPing::new_instance, &MavlinkStreamPing::get_name_static, &MavlinkStreamPing::get_id_static)
+	StreamListItem(&MavlinkStreamPing::new_instance, &MavlinkStreamPing::get_name_static, &MavlinkStreamPing::get_id_static),
+	StreamListItem(&MavlinkStreamESCTelem::new_instance, &MavlinkStreamESCTelem::get_name_static, &MavlinkStreamESCTelem::get_id_static)
 };
 
 const char *get_stream_name(const uint16_t msg_id)
