@@ -707,3 +707,15 @@ PARAM_DEFINE_INT32(BOOM7_COLOR,0);
 * @group ALTA
 */
 PARAM_DEFINE_INT32(BOOM8_COLOR,4);
+
+/**
+* FF telem rates
+*
+* Telem rates for MAVLINK output terminal to OSD processor
+* 0 = "normal" OSD rates
+* 1 = "Burn in" settings (high ESC telem rate, low attitude rate)
+*
+* @reboot_required true
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(FF_OSD_TELEM, 0);
