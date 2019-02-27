@@ -601,9 +601,9 @@ bool Logger::try_to_subscribe_topic(LoggerSubscription &sub, int multi_instance)
 void Logger::add_default_topics()
 {
 	// Note: try to avoid setting the interval where possible, as it increases RAM usage
-	add_topic("actuator_controls_0", 100);
+	add_topic("actuator_controls_0", 40);
 	add_topic("actuator_controls_1", 100);
-	add_topic("actuator_outputs", 100);
+	add_topic("actuator_outputs", 40);
 	add_topic("airspeed", 200);
 	add_topic("att_pos_mocap", 50);
 	add_topic("battery_status", 500);
@@ -612,10 +612,10 @@ void Logger::add_default_topics()
 	add_topic("cpuload");
 	add_topic("distance_sensor", 100);
 	add_topic("ekf2_innovations", 200);
-	add_topic("esc_status", 250);
+	add_topic("esc_status", 40);
 	add_topic("estimator_status", 200);
 	add_topic("home_position");
-	add_topic("input_rc", 200);
+	add_topic("input_rc", 40);
 	add_topic("iridiumsbd_status");
 	add_topic("landing_target_pose");
 	add_topic("manual_control_setpoint", 200);
@@ -626,12 +626,12 @@ void Logger::add_default_topics()
 	add_topic("position_setpoint_triplet", 200);
 	add_topic("rate_ctrl_status", 30);
 	add_topic("safety");
-	add_topic("sensor_combined", 100);
+	add_topic("sensor_combined", 40);
 	add_topic("sensor_preflight", 200);
 	add_topic("system_power", 500);
 	add_topic("tecs_status", 200);
 	add_topic("telemetry_status");
-	add_topic("vehicle_attitude", 30);
+	add_topic("vehicle_attitude", 40);
 	add_topic("vehicle_attitude_setpoint", 100);
 	add_topic("vehicle_command");
 	add_topic("vehicle_global_position", 200);
@@ -639,7 +639,7 @@ void Logger::add_default_topics()
 	add_topic("vehicle_land_detected");
 	add_topic("vehicle_local_position", 100);
 	add_topic("vehicle_local_position_setpoint", 100);
-	add_topic("vehicle_rates_setpoint", 30);
+	add_topic("vehicle_rates_setpoint", 40);
 	add_topic("vehicle_status", 200);
 	add_topic("vehicle_status_flags");
 	add_topic("vehicle_vision_attitude");

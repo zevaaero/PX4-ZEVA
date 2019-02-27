@@ -25,7 +25,7 @@ set +e
 # USART2		/dev/ttyS1		TELEM1 (flow control)
 # USART3		/dev/ttyS2		TELEM2 (flow control)
 # UART4
-# UART7							CONSOLE
+# UART7			/dev/ttyS5				SERIAL5
 # UART8							SERIAL4
 #
 #
@@ -319,6 +319,11 @@ then
 	fi
 	unset AUTOCNF
 
+	###########################################################
+	# FREEFLY CUSTOM: DISABLE SAFETY SWITCH
+	#param set CBRK_IO_SAFETY 22027   # not decided to do this yet, and we should do it from a parameter
+	###########################################################
+
 	set IO_PRESENT no
 
 	#
@@ -557,6 +562,14 @@ then
 		fi
 	fi
 
+	################################################################
+	# FREEFLY CUSTOM: START FMU module
+	# -t starts this on it's own thread
+	#
+	#fmu mode_pwm -t -status
+	################################################################
+
+
 	if [ $MAVLINK_F == default ]
 	then
 		# Normal mode, use baudrate 57600 (default) and data rate 1000 bytes/s
@@ -604,6 +617,7 @@ fi
 		mavlink start ${MAVLINK_F}
 	fi
 	unset MAVLINK_F
+
 
 	#
 	# MAVLink onboard / TELEM2
@@ -708,6 +722,16 @@ fi
 	fi
 
 	unset MAVLINK_COMPANION_DEVICE
+
+	########################################################################################
+	# FREEFLY CUSTOM
+	# CAN Module. Selim.
+	# Adding it right before UAVCAN since two modules are similar to each other.
+	# Note: Don't use UAVCAN and CAN at the same time. This code does not check if both
+	# interfaces are used or not so if you enable CAN and UAVCAN at the same time for certain
+	# it's going to break things.
+	FF_CAN start
+	########################################################################################
 
 	#
 	# Starting stuff according to UAVCAN_ENABLE value
@@ -992,9 +1016,35 @@ fi
 # End of autostart
 fi
 
+
+# FF start, customize output rates for all packets
+mavlink start -d /dev/ttyS5 -b 57600 -m osd -r 5000
+
+mavlink stream -d /dev/ttyS5 -r 2 -s HEARTBEAT
+mavlink stream -d /dev/ttyS5 -r 2 -s SYS_STATUS
+mavlink stream -d /dev/ttyS5 -r 0.5 -s SYSTEM_TIME
+mavlink stream -d /dev/ttyS5 -r 1 -s GPS_RAW_INT
+mavlink stream -d /dev/ttyS5 -r 1 -s GLOBAL_POSITION_INT
+mavlink stream -d /dev/ttyS5 -r 25 -s ATTITUDE
+mavlink stream -d /dev/ttyS5 -r 10 -s VFR_HUD
+mavlink stream -d /dev/ttyS5 -r 2 -s ALTITUDE
+mavlink stream -d /dev/ttyS5 -r 1 -s BATTERY_STATUS
+mavlink stream -d /dev/ttyS5 -r 0 -s ESTIMATOR_STATUS
+mavlink stream -d /dev/ttyS5 -r 0 -s WIND_COV
+mavlink stream -d /dev/ttyS5 -r 0 -s VIBRATION
+mavlink stream -d /dev/ttyS5 -r 0 -s SERVO_OUTPUT_RAW
+mavlink stream -d /dev/ttyS5 -r 2 -s EXTENDED_SYS_STATE
+mavlink stream -d /dev/ttyS5 -r 5 -s LOCAL_POSITION_NED
+mavlink stream -d /dev/ttyS5 -r 5 -s POSITION_TARGET_LOCAL_NED
+
+
 # There is no further script processing, so we can free some RAM
 # XXX potentially unset all script variables.
 unset TUNE_ERR
 
 # Boot is complete, inform MAVLink app(s) that the system is now fully up and running
 mavlink boot_complete
+
+# must call exit on Alta so that nsh doesn't hoover up the serial data sent to it.
+#exit
+

@@ -572,12 +572,16 @@ Syslink::handle_raw(syslink_message_t *sys)
 		rc.values[3] = cmd->thrust * 1000 / USHRT_MAX + 1000;
 		rc.values[4] = 1000; // Dummy channel as px4 needs at least 5
 
+		// Prevent any publishing of input_rc. This may not even be compiled on our platform, but don't take any chances.
+		PX4_INFO("Got SYSLINK_MESSAGE message from %d:%d",msg->sysid,msg->compid);
+		/*
 		if (_rc_pub == nullptr) {
 			_rc_pub = orb_advertise(ORB_ID(input_rc), &rc);
 
 		} else {
 			orb_publish(ORB_ID(input_rc), _rc_pub, &rc);
 		}
+		*/
 
 	} else if (c->port == CRTP_PORT_MAVLINK) {
 		_count_in++;

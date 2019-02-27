@@ -106,6 +106,9 @@ enum PortMode {
 	PORT_MODE_UNSET = 0,
 	PORT_FULL_GPIO,
 	PORT_FULL_PWM,
+	PORT_PWM4_CALC_ONLY,
+	PORT_PWM6_CALC_ONLY,
+	PORT_PWM8_CALC_ONLY,
 	PORT_RC_IN,
 	PORT_PWM6,
 	PORT_PWM4,
@@ -134,6 +137,9 @@ public:
 		MODE_4PWM,
 		MODE_6PWM,
 		MODE_8PWM,
+		MODE_4PWM_CALC_ONLY,
+		MODE_6PWM_CALC_ONLY,
+		MODE_8PWM_CALC_ONLY,
 		MODE_14PWM,
 		MODE_4CAP,
 		MODE_5CAP,
@@ -704,6 +710,22 @@ PX4FMU::set_mode(Mode mode)
 
 		break;
 
+	case MODE_4PWM_CALC_ONLY:
+		DEVICE_DEBUG("MODE_4PWM_CALC_ONLY");
+
+		/* default output rates */
+		_pwm_default_rate = 50;
+		_pwm_alt_rate = 50;
+		_pwm_alt_rate_channels = 0;
+		_pwm_mask = 0x00;
+		_pwm_initialized = false;
+		_num_outputs = 4;
+
+		/* disable servo outputs - no need to set rates */
+		up_pwm_servo_deinit();
+
+		break;
+
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >= 6
 
 	case MODE_6PWM:
@@ -720,6 +742,25 @@ PX4FMU::set_mode(Mode mode)
 		break;
 #endif
 
+#if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >= 6
+
+	case MODE_6PWM_CALC_ONLY:
+		DEVICE_DEBUG("MODE_6PWM_CALC_ONLY");
+
+		/* default output rates */
+		_pwm_default_rate = 50;
+		_pwm_alt_rate = 50;
+		_pwm_alt_rate_channels = 0;
+		_pwm_mask = 0x00;
+		_pwm_initialized = false;
+		_num_outputs = 8;
+
+		/* disable servo outputs - no need to set rates */
+		up_pwm_servo_deinit();
+
+		break;
+#endif
+
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >= 8
 
 	case MODE_8PWM: // AeroCore PWMs as 8 PWM outs
@@ -731,6 +772,24 @@ PX4FMU::set_mode(Mode mode)
 		_pwm_mask = 0xff;
 		_pwm_initialized = false;
 		_num_outputs = 8;
+
+		break;
+#endif
+
+#if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >= 8
+
+	case MODE_8PWM_CALC_ONLY: // FREEFLY CUSTOM
+		DEVICE_DEBUG("MODE_8PWM_CALC_ONLY");
+		/* default output rates */
+		_pwm_default_rate = 50;
+		_pwm_alt_rate = 50;
+		_pwm_alt_rate_channels = 0;
+		_pwm_mask = 0x00;
+		_pwm_initialized = false;
+		_num_outputs = 8;
+
+		/* disable servo outputs - no need to set rates */
+		up_pwm_servo_deinit();
 
 		break;
 #endif
@@ -1912,6 +1971,9 @@ PX4FMU::ioctl(file *filp, int cmd, unsigned long arg)
 
 	/* if we are in valid PWM mode, try it as a PWM ioctl as well */
 	switch (_mode) {
+	case MODE_4PWM_CALC_ONLY:
+	case MODE_6PWM_CALC_ONLY:
+	case MODE_8PWM_CALC_ONLY:
 	case MODE_1PWM:
 	case MODE_2PWM:
 	case MODE_3PWM:
@@ -2382,6 +2444,7 @@ PX4FMU::pwm_ioctl(file *filp, int cmd, unsigned long arg)
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >= 8
 
 		case MODE_8PWM:
+		case MODE_8PWM_CALC_ONLY:
 			*(unsigned *)arg = 8;
 			break;
 #endif
@@ -2389,11 +2452,13 @@ PX4FMU::pwm_ioctl(file *filp, int cmd, unsigned long arg)
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >= 6
 
 		case MODE_6PWM:
+		case MODE_6PWM_CALC_ONLY:
 			*(unsigned *)arg = 6;
 			break;
 #endif
 
 		case MODE_4PWM:
+		case MODE_4PWM_CALC_ONLY:
 			*(unsigned *)arg = 4;
 			break;
 
@@ -2442,20 +2507,32 @@ PX4FMU::pwm_ioctl(file *filp, int cmd, unsigned long arg)
 				break;
 
 			case 4:
-				set_mode(MODE_4PWM);
+				if (_mode == MODE_4PWM_CALC_ONLY){
+					set_mode(MODE_4PWM_CALC_ONLY);
+				} else {
+					set_mode(MODE_4PWM);
+				}
 				break;
 
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >=6
 
 			case 6:
-				set_mode(MODE_6PWM);
+				if (_mode == MODE_6PWM_CALC_ONLY){
+					set_mode(MODE_6PWM_CALC_ONLY);
+				} else {
+					set_mode(MODE_6PWM);
+				}
 				break;
 #endif
 
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM >=8
 
 			case 8:
-				set_mode(MODE_8PWM);
+				if (_mode == MODE_8PWM_CALC_ONLY){
+					set_mode(MODE_8PWM_CALC_ONLY);
+				} else {
+					set_mode(MODE_8PWM);
+				}
 				break;
 #endif
 
@@ -3000,6 +3077,16 @@ PX4FMU::fmu_new_mode(PortMode new_mode)
 	case PORT_MODE_UNSET:
 		break;
 
+	case PORT_PWM4_CALC_ONLY:
+		servo_mode = PX4FMU::MODE_4PWM_CALC_ONLY;
+		break;
+	case PORT_PWM6_CALC_ONLY:
+		servo_mode = PX4FMU::MODE_6PWM_CALC_ONLY;
+		break;
+	case PORT_PWM8_CALC_ONLY:
+		servo_mode = PX4FMU::MODE_8PWM_CALC_ONLY;
+		break;
+
 	case PORT_FULL_PWM:
 
 #if defined(BOARD_HAS_PWM) && BOARD_HAS_PWM == 4
@@ -3427,6 +3514,15 @@ int PX4FMU::custom_command(int argc, char *argv[])
 	} else if (!strcmp(verb, "mode_pwm")) {
 		new_mode = PORT_FULL_PWM;
 
+	} else if (!strcmp(verb, "mode_pwm4_calc_only")) {
+		new_mode = PORT_PWM4_CALC_ONLY;
+
+	} else if (!strcmp(verb, "mode_pwm6_calc_only")) {
+		new_mode = PORT_PWM6_CALC_ONLY;
+
+	} else if (!strcmp(verb, "mode_pwm8_calc_only")) {
+		new_mode = PORT_PWM8_CALC_ONLY;
+
 		// mode: defines which outputs to drive (others may be used by other tasks such as camera capture)
 #if defined(BOARD_HAS_PWM)
 
@@ -3533,6 +3629,9 @@ mixer files.
 	PRINT_MODULE_USAGE_COMMAND("mode_gpio");
 	PRINT_MODULE_USAGE_COMMAND_DESCR("mode_rcin", "Only do RC input, no PWM outputs");
 	PRINT_MODULE_USAGE_COMMAND_DESCR("mode_pwm", "Select all available pins as PWM");
+	PRINT_MODULE_USAGE_COMMAND_DESCR("mode_pwm4_calc_only", "Only do mixing calculations and publish actuator_ouputs for 4 motors");
+	PRINT_MODULE_USAGE_COMMAND_DESCR("mode_pwm6_calc_only", "Only do mixing calculations and publish actuator_ouputs for 6 motors");
+	PRINT_MODULE_USAGE_COMMAND_DESCR("mode_pwm8_calc_only", "Only do mixing calculations and publish actuator_ouputs for 8 motors");
 #if defined(BOARD_HAS_PWM)
 	PRINT_MODULE_USAGE_COMMAND("mode_pwm1");
 #endif

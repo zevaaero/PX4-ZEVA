@@ -161,12 +161,12 @@ __EXPORT void board_on_reset(int status)
 	UNUSED(status);
 	/* configure the GPIO pins to outputs and keep them low */
 
-	stm32_configgpio(GPIO_GPIO0_OUTPUT);
-	stm32_configgpio(GPIO_GPIO1_OUTPUT);
-	stm32_configgpio(GPIO_GPIO2_OUTPUT);
-	stm32_configgpio(GPIO_GPIO3_OUTPUT);
-	stm32_configgpio(GPIO_GPIO4_OUTPUT);
-	stm32_configgpio(GPIO_GPIO5_OUTPUT);
+	stm32_configgpio(GPIO_GPIO0_INPUT);
+	stm32_configgpio(GPIO_GPIO1_INPUT);
+	stm32_configgpio(GPIO_GPIO2_INPUT);
+	stm32_configgpio(GPIO_GPIO3_INPUT);
+	stm32_configgpio(GPIO_GPIO4_INPUT);
+	stm32_configgpio(GPIO_GPIO5_INPUT);
 
 	/* On resets invoked from system (not boot) insure we establish a low
 	 * output state (discharge the pins) on PWM pins before they become inputs.

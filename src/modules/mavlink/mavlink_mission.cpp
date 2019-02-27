@@ -398,7 +398,7 @@ MavlinkMissionManager::send_mission_item(uint8_t sysid, uint8_t compid, uint16_t
 		send_mission_ack(_transfer_partner_sysid, _transfer_partner_compid, MAV_MISSION_ERROR);
 
 		if (_filesystem_errcount++ < FILESYSTEM_ERRCOUNT_NOTIFY_LIMIT) {
-			_mavlink->send_statustext_critical("Mission storage: Unable to read from microSD");
+			//_mavlink->send_statustext_critical("Mission storage: Unable to read from microSD");
 		}
 
 		PX4_DEBUG("WPM: Send MISSION_ITEM ERROR: could not read seq %u from dataman ID %i", seq, _dataman_id);

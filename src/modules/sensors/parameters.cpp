@@ -161,6 +161,58 @@ void initialize_parameter_handles(ParameterHandles &parameter_handles)
 	parameter_handles.air_tube_length = param_find("CAL_AIR_TUBELEN");
 	parameter_handles.air_tube_diameter_mm = param_find("CAL_AIR_TUBED_MM");
 
+	/* OSD loads */
+
+	(void)param_find("OSD_ENABLE");
+	(void)param_find("OSD_PAL_NTSC");
+	(void)param_find("OSD_HOR_OS");
+	(void)param_find("OSD_VER_OS");
+	(void)param_find("OSD_LEFT_OS");
+	(void)param_find("OSD_RIGHT_OS");
+	(void)param_find("OSD_UPPER_OS");
+	(void)param_find("OSD_LOWER_OS");
+	(void)param_find("OSD_UNITS");
+	(void)param_find("OSD_SHOW_HEIGHT");
+	(void)param_find("OSD_SHOW_VARIO");
+	(void)param_find("OSD_SHOW_HEADING");
+	(void)param_find("OSD_DISTANCE");
+	(void)param_find("OSD_GROUNDSPEED");
+	(void)param_find("OSD_SHOW_BATTERY");
+	(void)param_find("OSD_SHOW_TIME");
+	(void)param_find("OSD_SHOW_GPS");
+	(void)param_find("OSD_SHOW_GPSHACC");
+	(void)param_find("OSD_VARIOGFX");
+	(void)param_find("OSD_SPEEDGFX");
+	(void)param_find("OSD_SIDESLIPGFX");
+	(void)param_find("OSD_SHOW_ATT");
+	(void)param_find("OSD_HEADINGARROW");
+	(void)param_find("OSD_HOMEARROW");
+	(void)param_find("OSD_SHOW_LATLON");
+	(void)param_find("OSD_PITCH_SCALE");
+	(void)param_find("OSD_PITCH_IN");
+	(void)param_find("OSD_ROLL_MARKER");
+	(void)param_find("OSD_ROLL_SCALING");
+	(void)param_find("OSD_SKY_BRIGHT");
+	(void)param_find("OSD_GND_BRIGHT");
+	(void)param_find("OSD_BAT_ALARM");
+	(void)param_find("OSD_MAX_RANGE");
+	(void)param_find("OSD_MAX_ALTITUDE");
+	(void)param_find("OSD_MAX_VELOCITY");
+	(void)param_find("OSD_MAX_CLIMB");
+
+	(void)param_find("BOOM_BRT");
+	(void)param_find("BOOM1_COLOR");
+	(void)param_find("BOOM2_COLOR");
+	(void)param_find("BOOM3_COLOR");
+	(void)param_find("BOOM4_COLOR");
+	(void)param_find("BOOM5_COLOR");
+	(void)param_find("BOOM6_COLOR");
+	(void)param_find("BOOM7_COLOR");
+	(void)param_find("BOOM8_COLOR");
+	
+
+
+
 	// These are parameters for which QGroundControl always expects to be returned in a list request.
 	// We do a param_find here to force them into the list.
 	(void)param_find("RC_CHAN_CNT");

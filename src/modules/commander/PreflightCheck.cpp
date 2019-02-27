@@ -511,14 +511,14 @@ static bool powerCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &status, 
 
 				// avionics rail
 				// Check avionics rail voltages
-				if (avionics_power_rail_voltage < 4.5f) {
+				if (avionics_power_rail_voltage < 4.1f) {
 					success = false;
 
 					if (report_fail) {
 						mavlink_log_critical(mavlink_log_pub, "PREFLIGHT FAIL: Avionics power low: %6.2f Volt", (double)avionics_power_rail_voltage);
 					}
 
-				} else if (avionics_power_rail_voltage < 4.9f) {
+				} else if (avionics_power_rail_voltage < 4.3f) {
 					if (report_fail) {
 						mavlink_log_critical(mavlink_log_pub, "CAUTION: Avionics power low: %6.2f Volt", (double)avionics_power_rail_voltage);
 					}

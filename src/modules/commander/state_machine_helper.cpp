@@ -51,6 +51,7 @@
 #include "PreflightCheck.h"
 #include "arm_auth.h"
 
+#include "examples/FF_CAN/FF_CAN.h"
 static constexpr const char reason_no_rc[] = "no RC";
 static constexpr const char reason_no_offboard[] = "no offboard";
 static constexpr const char reason_no_rc_and_no_offboard[] = "no RC and no offboard";
@@ -200,6 +201,8 @@ transition_result_t arming_state_transition(vehicle_status_s *status, const batt
 				valid_transition = false;
 			}
 		}
+		if(new_arming_state == vehicle_status_s::ARMING_STATE_ARMED)
+		{PX4_INFO("Arming State = %d ", new_arming_state);}
 
 		// Finish up the state transition
 		if (valid_transition) {
@@ -216,6 +219,14 @@ transition_result_t arming_state_transition(vehicle_status_s *status, const batt
 			}
 		}
 	}
+
+	//============================================================================================
+	// FREEFLY CUSTOM: 
+	// Check to see if our new state is not armed, and send a disarm command to the motors if so
+	if (status->arming_state != vehicle_status_s::ARMING_STATE_ARMED ){
+		FF_CAN_Disarm_Motors();
+	}
+	//============================================================================================
 
 	if (ret == TRANSITION_DENIED) {
 		/* print to MAVLink and console if we didn't provide any feedback yet */
@@ -922,6 +933,18 @@ bool prearm_check(orb_advert_t *mavlink_log_pub, const vehicle_status_flags_s &s
 {
 	bool reportFailures = true;
 	bool prearm_ok = true;
+
+	//=============================================================================================================================
+	// FREEFLY CUSTOM - ARM MOTORS AND VERIFY
+	if (FF_CAN_Arm_Motors())
+	{
+		prearm_ok = false;
+		
+		if (reportFailures) {
+			mavlink_log_critical(mavlink_log_pub, "ARMING DENIED: Freefly custom - motors did not start");
+		}
+	}
+	//=============================================================================================================================
 
 	// USB not connected
 	if (!status_flags.circuit_breaker_engaged_usb_check && status_flags.usb_connected) {

@@ -1684,6 +1684,12 @@ MavlinkReceiver::decode_switch_pos_n(uint16_t buttons, unsigned sw)
 void
 MavlinkReceiver::handle_message_rc_channels_override(mavlink_message_t *msg)
 {
+
+	// Don't process these messages. I only want input_rc messages from the px4io board.
+	//https://mavlink.io/en/messages/common.html#RC_CHANNELS_OVERRIDE
+	PX4_INFO("Got RC_CHANNELS_OVERRIDE message from %d:%d",msg->sysid,msg->compid);
+	return;
+
 	mavlink_rc_channels_override_t man;
 	mavlink_msg_rc_channels_override_decode(msg, &man);
 
@@ -1750,8 +1756,12 @@ MavlinkReceiver::handle_message_manual_control(mavlink_message_t *msg)
 		return;
 	}
 
-	if (_mavlink->get_manual_input_mode_generation()) {
-
+	PX4_INFO("Got MANUAL_CONTROL message from %d:%d",msg->sysid,msg->compid);
+	//if (_mavlink->get_manual_input_mode_generation()) {
+	// Make sure this code NEVER runs.
+	// I can't figure out whether get_manual_input_mode_generation is enabled or not because it is set on and off all over. But we don't need it.
+	if (false) {	 
+		
 		struct rc_input_values rc = {};
 		rc.timestamp = hrt_absolute_time();
 		rc.timestamp_last_signal = rc.timestamp;
