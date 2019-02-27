@@ -440,11 +440,18 @@ int FF_CAN_Bootloader_Jump(void)
 	PX4_INFO("Bootloader jumper started.");
 	int ret = 0;
 
-	ret = FF_CAN_BootloaderJumpId(9, 0x4, 0x08008000);	// jump each motor
+	ret = FF_CAN_BootloaderJumpId(9, 0x4, 0x08008000);	// jump osd mcu
 	if (ret != 0){
 		PX4_ERR("OSD MCU jump to application failed! - aborting bootloader jump!");
 		return 1;	// stop and return if there is an error!
 	}
+	
+	ret = FF_CAN_BootloaderJumpId(10, 0x5, 0x08008000);	// jump power module
+	if (ret != 0){
+		PX4_ERR("Power module jump to application failed! - aborting bootloader jump!");
+		return 1;	// stop and return if there is an error!
+	}
+
 
 	for (int i=1; i<MTR_CNT + 1; i++)
 	{
