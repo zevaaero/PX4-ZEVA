@@ -25,6 +25,8 @@
 #include <uORB/topics/actuator_armed.h>
 #include <drivers/drv_hrt.h>
 
+#include <systemlib/mavlink_log.h>
+
 // hardware specific includes
 #include <nuttx/can/can.h>
 #include "stm32.h"
@@ -231,6 +233,8 @@ int  _writeDaemonTask;
 bool _readThreadShouldExit;
 bool _readThreadRunning;
 int  _readDaemonTask;
+
+static orb_advert_t mavlink_log_pub = NULL;
 
 //-----------------------------------------------------------------------------------------------
 // Public Function Defintions
@@ -1405,6 +1409,12 @@ void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
 
 			float cur = *(uint16_t *)&msg_p->cm_data[6];
 			esc_stat.esc[id_idx].esc_current = (cur - 32768.0f) * 0.1f;
+
+			// Test if there is a fault, alert if true
+			if( msg_p->cm_data[2] > 0 )
+			{
+				mavlink_log_critical(&mavlink_log_pub,"MOTOR %d FAULT: %d",id_idx,msg_p->cm_data[2]);
+			}
 
 			_telemRX_1_Rate++;
 			break;
