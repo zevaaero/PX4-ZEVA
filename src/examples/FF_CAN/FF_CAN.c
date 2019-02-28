@@ -1441,6 +1441,7 @@ void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
 				if( (hrt_absolute_time()-last_motorerror_message) > MOTOR_ERROR_TIMEOUT ) 
 				{
 					mavlink_log_critical(&mavlink_log_pub,"MOTOR %d FAULT: %d",id_idx,msg_p->cm_data[2]);
+					last_motorerror_message = hrt_absolute_time();
 				}
 				
 			}
