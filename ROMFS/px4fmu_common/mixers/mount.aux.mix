@@ -1,25 +1,18 @@
 # Mount Mixer (e.g. Gimbal, servo-controlled gimbal, etc...)
 
+
 # pitch
 M: 1
 S: 2 1  10000  10000      0 -10000  10000
+
+# roll
+M: 1
+S: 2 0  10000  10000      0 -10000  10000
 
 # yaw
 M: 1
 S: 2 2  10000  10000      0 -10000  10000
 
-# Gimbal mode (usually is used for roll)
+# Shutter/retract
 M: 1
-S: 2 0  10000  10000      0 -10000  10000
-
-# AUX1 channel (select RC channel with RC_MAP_AUX1 param)
-M: 1
-S: 3 5  10000  10000      0 -10000  10000
-
-# AUX2 channel (select RC channel with RC_MAP_AUX2 param)
-M: 1
-S: 3 6  10000  10000      0 -10000  10000
-
-# AUX3 channel (select RC channel with RC_MAP_AUX3 param)
-M: 1
-S: 3 7  10000  10000      0 -10000  10000
+S: 2 3  10000  10000      0 -10000  10000

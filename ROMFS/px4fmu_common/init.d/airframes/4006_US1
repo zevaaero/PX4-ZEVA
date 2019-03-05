@@ -21,10 +21,10 @@
 
 sh /etc/init.d/rc.mc_defaults
 
-set MIXER quad_x
+set MIXER us1_IO
 set PWM_OUT 1234
 
-set MIXER_AUX mount
+set MIXER_AUX us1_FMU
 set PWM_AUX_OUT 123456
 
 #
