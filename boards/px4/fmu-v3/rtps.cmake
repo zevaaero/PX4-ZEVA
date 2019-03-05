@@ -22,6 +22,7 @@ px4_add_board(
 	DRIVERS
 		barometer # all available barometer drivers
 		batt_smbus
+		camera_capture
 		camera_trigger
 		differential_pressure # all available differential pressure drivers
 		distance_sensor # all available distance sensor drivers
@@ -58,6 +59,7 @@ px4_add_board(
 		tap_esc
 		telemetry # all available telemetry drivers
 		test_ppm
+		tone_alarm
 		uavcan
 
 	MODULES

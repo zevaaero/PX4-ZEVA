@@ -23,6 +23,7 @@ px4_add_board(
 		#barometer # all available barometer drivers
 		barometer/ms5611
 		#batt_smbus
+		#camera_capture
 		#camera_trigger
 		#differential_pressure # all available differential pressure drivers
 		differential_pressure/ms4525
@@ -59,6 +60,7 @@ px4_add_board(
 		#tap_esc
 		#telemetry # all available telemetry drivers
 		#test_ppm
+		tone_alarm
 		#uavcan
 
 	MODULES

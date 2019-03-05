@@ -74,25 +74,19 @@
 #include <px4_tasks.h>
 #include <px4_time.h>
 #include <circuit_breaker/circuit_breaker.h>
-#include <systemlib/err.h>
-#include <systemlib/hysteresis/hysteresis.h>
 #include <systemlib/mavlink_log.h>
-#include <parameters/param.h>
 
 #include <cmath>
 #include <float.h>
 #include <cstring>
 
-#include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/cpuload.h>
 #include <uORB/topics/geofence_result.h>
-#include <uORB/topics/home_position.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/mavlink_log.h>
 #include <uORB/topics/mission.h>
-#include <uORB/topics/mission_result.h>
 #include <uORB/topics/offboard_control_mode.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/power_button_state.h>
@@ -100,14 +94,11 @@
 #include <uORB/topics/subsystem_info.h>
 #include <uORB/topics/system_power.h>
 #include <uORB/topics/telemetry_status.h>
-#include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
-#include <uORB/topics/vehicle_global_position.h>
+#include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_land_detected.h>
-#include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status_flags.h>
 #include <uORB/topics/vtol_vehicle_status.h>
-#include <uORB/uORB.h>
 
 typedef enum VEHICLE_MODE_FLAG {
 	VEHICLE_MODE_FLAG_CUSTOM_MODE_ENABLED = 1, /* 0b00000001 Reserved for future use. | */
@@ -145,8 +136,6 @@ static hrt_abstime commander_boot_timestamp = 0;
 static unsigned int leds_counter;
 /* To remember when last notification was sent */
 static uint64_t last_print_mode_reject_time = 0;
-
-static systemlib::Hysteresis auto_disarm_hysteresis(false);
 
 static float min_stick_change = 0.25f;
 
@@ -567,6 +556,8 @@ Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
 {
+	_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+	_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
 	_battery_sub = orb_subscribe(ORB_ID(battery_status));
 
 	for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
@@ -1694,26 +1685,41 @@ Commander::run()
 			was_falling = land_detector.freefall;
 		}
 
-		// Auto disarm when landed
-		if (!have_taken_off_since_arming) {
-			// pilot has ten seconds time to take off
-			auto_disarm_hysteresis.set_hysteresis_time_from(false, 10_s);
+
+		// Auto disarm when landed or kill switch engaged
+		if (armed.armed) {
+
+			// Check for auto-disarm on landing
+			if (_disarm_when_landed_timeout.get() > 0) {
+
+				if (!have_taken_off_since_arming) {
+					// pilot has ten seconds time to take off
+					_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+
+				} else {
+					_auto_disarm_landed.set_hysteresis_time_from(false, _disarm_when_landed_timeout.get() * 1_s);
+				}
+
+				_auto_disarm_landed.set_state_and_update(land_detector.landed);
+
+				if (_auto_disarm_landed.get_state()) {
+					arm_disarm(false, &mavlink_log_pub, "auto disarm on land");
+				}
+			}
+
+
+			// Auto disarm after 5 seconds if kill switch is engaged
+			_auto_disarm_killed.set_state_and_update(armed.manual_lockdown);
+
+			if (_auto_disarm_killed.get_state()) {
+				arm_disarm(false, &mavlink_log_pub, "kill switch still engaged, disarming");
+			}
 
 		} else {
-			auto_disarm_hysteresis.set_hysteresis_time_from(false, _disarm_when_landed_timeout.get() * 1_s);
+			_auto_disarm_landed.set_state_and_update(false);
+			_auto_disarm_killed.set_state_and_update(false);
 		}
 
-		// Check for auto-disarm
-		if (armed.armed && land_detector.landed && _disarm_when_landed_timeout.get() > FLT_EPSILON) {
-			auto_disarm_hysteresis.set_state_and_update(true);
-
-		} else {
-			auto_disarm_hysteresis.set_state_and_update(false);
-		}
-
-		if (auto_disarm_hysteresis.get_state()) {
-			arm_disarm(false, &mavlink_log_pub, "auto disarm on land");
-		}
 
 		if (!warning_action_on) {
 			// store the last good main_state when not in an navigation
@@ -3881,297 +3887,305 @@ void Commander::data_link_check(bool &status_changed)
 					break;
 				}
 
+				<<< <<< < HEAD
 
 				// handle different remote types
 				switch (telemetry.remote_type) {
 				case (telemetry_status_s::MAV_TYPE_GCS):
 					_datalink_last_heartbeat_gcs = telemetry.heartbeat_time;
 
-					if (status.data_link_lost) {
-						if (hrt_elapsed_time(&_datalink_lost) > (_datalink_regain_threshold.get() * 1_s)) {
-							status.data_link_lost = false;
-							status_changed = true;
-						}
-					}
+					== == == =
 
-					break;
+						// handle different remote types
+					switch (telemetry.remote_type) {
+					case (telemetry_status_s::MAV_TYPE_GCS):
+						_datalink_last_heartbeat_gcs = telemetry.heartbeat_time;
 
-				case (telemetry_status_s::MAV_TYPE_ONBOARD_CONTROLLER):
-					_datalink_last_heartbeat_onboard_controller = telemetry.heartbeat_time;
+						>>> >>> > demo - sbb
 
-					if (_onboard_controller_lost != false) {
-						mavlink_log_info(&mavlink_log_pub, "ONBOARD CONTROLLER REGAINED");
-					}
-
-					_onboard_controller_lost = false;
-
-					if (telemetry.remote_component_id == telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE) {
-						if (telemetry.heartbeat_time != _datalink_last_heartbeat_avoidance_system) {
-							_avoidance_system_status_change = _datalink_last_status_avoidance_system != telemetry.remote_system_status;
+						if (status.data_link_lost) {
+							if (hrt_elapsed_time(&_datalink_lost) > (_datalink_regain_threshold.get() * 1_s)) {
+								status.data_link_lost = false;
+								status_changed = true;
+							}
 						}
 
-						_datalink_last_heartbeat_avoidance_system = telemetry.heartbeat_time;
-						_datalink_last_status_avoidance_system = telemetry.remote_system_status;
+						break;
 
-						if (_avoidance_system_lost != false) {
-							mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM REGAINED");
+					case (telemetry_status_s::MAV_TYPE_ONBOARD_CONTROLLER):
+						_datalink_last_heartbeat_onboard_controller = telemetry.heartbeat_time;
+
+						if (_onboard_controller_lost != false) {
+							mavlink_log_info(&mavlink_log_pub, "ONBOARD CONTROLLER REGAINED");
 						}
 
-						_avoidance_system_lost = false;
-					}
+						_onboard_controller_lost = false;
 
-					break;
+						if (telemetry.remote_component_id == telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE) {
+							if (telemetry.heartbeat_time != _datalink_last_heartbeat_avoidance_system) {
+								_avoidance_system_status_change = _datalink_last_status_avoidance_system != telemetry.remote_system_status;
+							}
+
+							_datalink_last_heartbeat_avoidance_system = telemetry.heartbeat_time;
+							_datalink_last_status_avoidance_system = telemetry.remote_system_status;
+
+							if (_avoidance_system_lost != false) {
+								mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM REGAINED");
+							}
+
+							_avoidance_system_lost = false;
+						}
+
+						break;
+					}
 				}
 			}
 		}
-	}
 
-	// GCS data link loss failsafe
-	if (hrt_elapsed_time(&_datalink_last_heartbeat_gcs) > (_datalink_loss_threshold.get() * 1_s)) {
-		_datalink_lost = hrt_absolute_time();
+		// GCS data link loss failsafe
+		if (hrt_elapsed_time(&_datalink_last_heartbeat_gcs) > (_datalink_loss_threshold.get() * 1_s)) {
+			_datalink_lost = hrt_absolute_time();
 
-		if (!status.data_link_lost) {
-			status.data_link_lost = true;
-			status.data_link_lost_counter++;
-			mavlink_log_critical(&mavlink_log_pub, "DATA LINK LOST");
-			status_changed = true;
-		}
-	}
-
-	// ONBOARD CONTROLLER data link loss failsafe (hard coded 5 seconds)
-	//  only issue a periodic warning for now
-	if ((_datalink_last_heartbeat_onboard_controller > 0)
-	    && (hrt_elapsed_time(&_datalink_last_heartbeat_onboard_controller) > 5_s) &&
-	    (hrt_elapsed_time(&_onboard_controller_lost) > 5_s)) {
-
-		_onboard_controller_lost = hrt_absolute_time();
-		mavlink_log_critical(&mavlink_log_pub, "ONBOARD CONTROLLER LOST");
-	}
-
-	// AVOIDANCE SYSTEM state check (only if it is enabled)
-	if (_obs_avoid.get()) {
-
-		//if avoidance never started
-		if (_datalink_last_heartbeat_avoidance_system == 0 && hrt_elapsed_time(&_avoidance_system_not_started) > 5_s) {
-			_avoidance_system_not_started = hrt_absolute_time();
-			mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM DID NOT START");
+			if (!status.data_link_lost) {
+				status.data_link_lost = true;
+				status.data_link_lost_counter++;
+				mavlink_log_critical(&mavlink_log_pub, "DATA LINK LOST");
+				status_changed = true;
+			}
 		}
 
-		//if heartbeats stop
-		if ((_datalink_last_heartbeat_avoidance_system > 0)
-		    && (hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > 5_s) &&
-		    (hrt_elapsed_time(&_avoidance_system_lost) > 5_s)) {
-			_avoidance_system_lost = hrt_absolute_time();
-			mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM LOST");
+		// ONBOARD CONTROLLER data link loss failsafe (hard coded 5 seconds)
+		//  only issue a periodic warning for now
+		if ((_datalink_last_heartbeat_onboard_controller > 0)
+		    && (hrt_elapsed_time(&_datalink_last_heartbeat_onboard_controller) > 5_s) &&
+		    (hrt_elapsed_time(&_onboard_controller_lost) > 5_s)) {
+
+			_onboard_controller_lost = hrt_absolute_time();
+			mavlink_log_critical(&mavlink_log_pub, "ONBOARD CONTROLLER LOST");
 		}
 
-		//if status changed
-		if (_avoidance_system_status_change) {
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_BOOT) {
-				mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM STARTING");
+		// AVOIDANCE SYSTEM state check (only if it is enabled)
+		if (_obs_avoid.get()) {
+
+			//if avoidance never started
+			if (_datalink_last_heartbeat_avoidance_system == 0 && hrt_elapsed_time(&_avoidance_system_not_started) > 5_s) {
+				_avoidance_system_not_started = hrt_absolute_time();
+				mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM DID NOT START");
 			}
 
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_ACTIVE) {
-				mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM HEALTHY");
+			//if heartbeats stop
+			if ((_datalink_last_heartbeat_avoidance_system > 0)
+			    && (hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > 5_s) &&
+			    (hrt_elapsed_time(&_avoidance_system_lost) > 5_s)) {
+				_avoidance_system_lost = hrt_absolute_time();
+				mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM LOST");
 			}
 
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_CRITICAL) {
-				mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM TIMEOUT");
-			}
+			//if status changed
+			if (_avoidance_system_status_change) {
+				if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_BOOT) {
+					mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM STARTING");
+				}
 
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_FLIGHT_TERMINATION) {
-				mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM ABORT");
-			}
+				if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_ACTIVE) {
+					mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM HEALTHY");
+				}
 
-			_avoidance_system_status_change = false;
+				if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_CRITICAL) {
+					mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM TIMEOUT");
+				}
+
+				if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_FLIGHT_TERMINATION) {
+					mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM ABORT");
+				}
+
+				_avoidance_system_status_change = false;
+			}
+		}
+
+
+		// high latency data link loss failsafe
+		if (hrt_elapsed_time(&_high_latency_datalink_heartbeat) > (_high_latency_datalink_loss_threshold.get() * 1_s)) {
+			_high_latency_datalink_lost = hrt_absolute_time();
+
+			if (!status.high_latency_data_link_lost) {
+				status.high_latency_data_link_lost = true;
+				mavlink_log_critical(&mavlink_log_pub, "HIGH LATENCY DATA LINK LOST");
+				status_changed = true;
+			}
 		}
 	}
 
+	void Commander::battery_status_check() {
+		bool updated = false;
 
-	// high latency data link loss failsafe
-	if (hrt_elapsed_time(&_high_latency_datalink_heartbeat) > (_high_latency_datalink_loss_threshold.get() * 1_s)) {
-		_high_latency_datalink_lost = hrt_absolute_time();
+		/* update battery status */
+		orb_check(_battery_sub, &updated);
 
-		if (!status.high_latency_data_link_lost) {
-			status.high_latency_data_link_lost = true;
-			mavlink_log_critical(&mavlink_log_pub, "HIGH LATENCY DATA LINK LOST");
-			status_changed = true;
+		if (updated) {
+
+			battery_status_s battery = {};
+
+			if (orb_copy(ORB_ID(battery_status), _battery_sub, &battery) == PX4_OK) {
+
+				if ((hrt_elapsed_time(&battery.timestamp) < 5_s)
+				    && battery.connected
+				    && (_battery_warning == battery_status_s::BATTERY_WARNING_NONE)) {
+
+					status_flags.condition_battery_healthy = true;
+
+				} else {
+					status_flags.condition_battery_healthy = false;
+				}
+
+				// execute battery failsafe if the state has gotten worse
+				if (armed.armed) {
+					if (battery.warning > _battery_warning) {
+						battery_failsafe(&mavlink_log_pub, status, status_flags, &internal_state, battery.warning,
+								 (low_battery_action_t)_low_bat_action.get());
+					}
+				}
+
+				// Handle shutdown request from emergency battery action
+				if (!armed.armed && (battery.warning != _battery_warning)) {
+
+					if (battery.warning == battery_status_s::BATTERY_WARNING_EMERGENCY) {
+						mavlink_log_critical(&mavlink_log_pub, "DANGEROUSLY LOW BATTERY, SHUT SYSTEM DOWN");
+						px4_usleep(200000);
+
+						int ret_val = px4_shutdown_request(false, false);
+
+						if (ret_val) {
+							mavlink_log_critical(&mavlink_log_pub, "SYSTEM DOES NOT SUPPORT SHUTDOWN");
+
+						} else {
+							while (1) { px4_usleep(1); }
+						}
+					}
+				}
+
+				// save last value
+				_battery_warning = battery.warning;
+				_battery_current = battery.current_filtered_a;
+			}
 		}
 	}
-}
 
-void Commander::battery_status_check()
-{
-	bool updated = false;
+	void Commander::estimator_check(bool * status_changed) {
+		// Check if quality checking of position accuracy and consistency is to be performed
+		const bool run_quality_checks = !status_flags.circuit_breaker_engaged_posfailure_check;
 
-	/* update battery status */
-	orb_check(_battery_sub, &updated);
+		_local_position_sub.update();
+		_global_position_sub.update();
 
-	if (updated) {
+		const vehicle_local_position_s &lpos = _local_position_sub.get();
+		const vehicle_global_position_s &gpos = _global_position_sub.get();
 
-		battery_status_s battery = {};
+		const bool mag_fault_prev = (_estimator_status_sub.get().control_mode_flags & (1 << estimator_status_s::CS_MAG_FAULT));
 
-		if (orb_copy(ORB_ID(battery_status), _battery_sub, &battery) == PX4_OK) {
+		if (_estimator_status_sub.update()) {
+			const estimator_status_s &estimator_status = _estimator_status_sub.get();
 
-			if ((hrt_elapsed_time(&battery.timestamp) < 5_s)
-			    && battery.connected
-			    && (_battery_warning == battery_status_s::BATTERY_WARNING_NONE)) {
+			// Check for a magnetomer fault and notify the user
+			const bool mag_fault = (estimator_status.control_mode_flags & (1 << estimator_status_s::CS_MAG_FAULT));
 
-				status_flags.condition_battery_healthy = true;
+			if (!mag_fault_prev && mag_fault) {
+				mavlink_log_critical(&mavlink_log_pub, "Stopping compass use, check calibration on landing");
+			}
+
+			// Set the allowable position uncertainty based on combination of flight and estimator state
+			// When we are in a operator demanded position control mode and are solely reliant on optical flow, do not check position error because it will gradually increase throughout flight and the operator will compensate for the drift
+			const bool reliant_on_opt_flow = ((estimator_status.control_mode_flags & (1 << estimator_status_s::CS_OPT_FLOW))
+							  && !(estimator_status.control_mode_flags & (1 << estimator_status_s::CS_GPS))
+							  && !(estimator_status.control_mode_flags & (1 << estimator_status_s::CS_EV_POS)));
+
+			const bool operator_controlled_position = (internal_state.main_state == commander_state_s::MAIN_STATE_POSCTL);
+
+			_skip_pos_accuracy_check = reliant_on_opt_flow && operator_controlled_position;
+
+			if (_skip_pos_accuracy_check) {
+				_eph_threshold_adj = INFINITY;
 
 			} else {
-				status_flags.condition_battery_healthy = false;
+				_eph_threshold_adj = _eph_threshold.get();
 			}
 
-			// execute battery failsafe if the state has gotten worse
-			if (armed.armed) {
-				if (battery.warning > _battery_warning) {
-					battery_failsafe(&mavlink_log_pub, status, status_flags, &internal_state, battery.warning,
-							 (low_battery_action_t)_low_bat_action.get());
-				}
-			}
+			/* Check estimator status for signs of bad yaw induced post takeoff navigation failure
+			 * for a short time interval after takeoff. Fixed wing vehicles can recover using GPS heading,
+			 * but rotary wing vehicles cannot so the position and velocity validity needs to be latched
+			 * to false after failure to prevent flyaway crashes */
+			if (run_quality_checks && status.is_rotary_wing) {
 
-			// Handle shutdown request from emergency battery action
-			if (!armed.armed && (battery.warning != _battery_warning)) {
+				if (status.arming_state == vehicle_status_s::ARMING_STATE_STANDBY) {
+					// reset flags and timer
+					_time_at_takeoff = hrt_absolute_time();
+					_nav_test_failed = false;
+					_nav_test_passed = false;
 
-				if (battery.warning == battery_status_s::BATTERY_WARNING_EMERGENCY) {
-					mavlink_log_critical(&mavlink_log_pub, "DANGEROUSLY LOW BATTERY, SHUT SYSTEM DOWN");
-					px4_usleep(200000);
+				} else if (land_detector.landed) {
+					// record time of takeoff
+					_time_at_takeoff = hrt_absolute_time();
 
-					int ret_val = px4_shutdown_request(false, false);
+				} else {
+					// if nav status is unconfirmed, confirm yaw angle as passed after 30 seconds or achieving 5 m/s of speed
+					const bool sufficient_time = (hrt_elapsed_time(&_time_at_takeoff) > 30_s);
+					const bool sufficient_speed = (lpos.vx * lpos.vx + lpos.vy * lpos.vy > 25.0f);
 
-					if (ret_val) {
-						mavlink_log_critical(&mavlink_log_pub, "SYSTEM DOES NOT SUPPORT SHUTDOWN");
+					bool innovation_pass = estimator_status.vel_test_ratio < 1.0f && estimator_status.pos_test_ratio < 1.0f;
 
-					} else {
-						while (1) { px4_usleep(1); }
+					if (!_nav_test_failed) {
+						if (!_nav_test_passed) {
+							// pass if sufficient time or speed
+							if (sufficient_time || sufficient_speed) {
+								_nav_test_passed = true;
+							}
+
+							// record the last time the innovation check passed
+							if (innovation_pass) {
+								_time_last_innov_pass = hrt_absolute_time();
+							}
+
+							// if the innovation test has failed continuously, declare the nav as failed
+							if (hrt_elapsed_time(&_time_last_innov_pass) > 1_s) {
+								_nav_test_failed = true;
+								mavlink_log_emergency(&mavlink_log_pub, "CRITICAL NAVIGATION FAILURE - CHECK SENSOR CALIBRATION");
+							}
+						}
 					}
 				}
 			}
-
-			// save last value
-			_battery_warning = battery.warning;
-			_battery_current = battery.current_filtered_a;
-		}
-	}
-}
-
-void Commander::estimator_check(bool *status_changed)
-{
-	// Check if quality checking of position accuracy and consistency is to be performed
-	const bool run_quality_checks = !status_flags.circuit_breaker_engaged_posfailure_check;
-
-	_local_position_sub.update();
-	_global_position_sub.update();
-
-	const vehicle_local_position_s &lpos = _local_position_sub.get();
-	const vehicle_global_position_s &gpos = _global_position_sub.get();
-
-	const bool mag_fault_prev = (_estimator_status_sub.get().control_mode_flags & (1 << estimator_status_s::CS_MAG_FAULT));
-
-	if (_estimator_status_sub.update()) {
-		const estimator_status_s &estimator_status = _estimator_status_sub.get();
-
-		// Check for a magnetomer fault and notify the user
-		const bool mag_fault = (estimator_status.control_mode_flags & (1 << estimator_status_s::CS_MAG_FAULT));
-
-		if (!mag_fault_prev && mag_fault) {
-			mavlink_log_critical(&mavlink_log_pub, "Stopping compass use, check calibration on landing");
 		}
 
-		// Set the allowable position uncertainty based on combination of flight and estimator state
-		// When we are in a operator demanded position control mode and are solely reliant on optical flow, do not check position error because it will gradually increase throughout flight and the operator will compensate for the drift
-		const bool reliant_on_opt_flow = ((estimator_status.control_mode_flags & (1 << estimator_status_s::CS_OPT_FLOW))
-						  && !(estimator_status.control_mode_flags & (1 << estimator_status_s::CS_GPS))
-						  && !(estimator_status.control_mode_flags & (1 << estimator_status_s::CS_EV_POS)));
-
-		const bool operator_controlled_position = (internal_state.main_state == commander_state_s::MAIN_STATE_POSCTL);
-
-		_skip_pos_accuracy_check = reliant_on_opt_flow && operator_controlled_position;
-
-		if (_skip_pos_accuracy_check) {
-			_eph_threshold_adj = INFINITY;
-
-		} else {
-			_eph_threshold_adj = _eph_threshold.get();
-		}
-
-		/* Check estimator status for signs of bad yaw induced post takeoff navigation failure
-		 * for a short time interval after takeoff. Fixed wing vehicles can recover using GPS heading,
-		 * but rotary wing vehicles cannot so the position and velocity validity needs to be latched
-		 * to false after failure to prevent flyaway crashes */
-		if (run_quality_checks && status.is_rotary_wing) {
-
-			if (status.arming_state == vehicle_status_s::ARMING_STATE_STANDBY) {
-				// reset flags and timer
-				_time_at_takeoff = hrt_absolute_time();
-				_nav_test_failed = false;
-				_nav_test_passed = false;
-
-			} else if (land_detector.landed) {
-				// record time of takeoff
-				_time_at_takeoff = hrt_absolute_time();
+		/* run global position accuracy checks */
+		// Check if quality checking of position accuracy and consistency is to be performed
+		if (run_quality_checks) {
+			if (_nav_test_failed) {
+				status_flags.condition_global_position_valid = false;
+				status_flags.condition_local_position_valid = false;
+				status_flags.condition_local_velocity_valid = false;
 
 			} else {
-				// if nav status is unconfirmed, confirm yaw angle as passed after 30 seconds or achieving 5 m/s of speed
-				const bool sufficient_time = (hrt_elapsed_time(&_time_at_takeoff) > 30_s);
-				const bool sufficient_speed = (lpos.vx * lpos.vx + lpos.vy * lpos.vy > 25.0f);
-
-				bool innovation_pass = estimator_status.vel_test_ratio < 1.0f && estimator_status.pos_test_ratio < 1.0f;
-
-				if (!_nav_test_failed) {
-					if (!_nav_test_passed) {
-						// pass if sufficient time or speed
-						if (sufficient_time || sufficient_speed) {
-							_nav_test_passed = true;
-						}
-
-						// record the last time the innovation check passed
-						if (innovation_pass) {
-							_time_last_innov_pass = hrt_absolute_time();
-						}
-
-						// if the innovation test has failed continuously, declare the nav as failed
-						if (hrt_elapsed_time(&_time_last_innov_pass) > 1_s) {
-							_nav_test_failed = true;
-							mavlink_log_emergency(&mavlink_log_pub, "CRITICAL NAVIGATION FAILURE - CHECK SENSOR CALIBRATION");
-						}
-					}
+				if (!_skip_pos_accuracy_check) {
+					// use global position message to determine validity
+					check_posvel_validity(true, gpos.eph, _eph_threshold_adj, gpos.timestamp, &_last_gpos_fail_time_us,
+							      &_gpos_probation_time_us, &status_flags.condition_global_position_valid, status_changed);
 				}
+
+				// use local position message to determine validity
+				check_posvel_validity(lpos.xy_valid, lpos.eph, _eph_threshold_adj, lpos.timestamp, &_last_lpos_fail_time_us,
+						      &_lpos_probation_time_us, &status_flags.condition_local_position_valid, status_changed);
+				check_posvel_validity(lpos.v_xy_valid, lpos.evh, _evh_threshold.get(), lpos.timestamp, &_last_lvel_fail_time_us,
+						      &_lvel_probation_time_us, &status_flags.condition_local_velocity_valid, status_changed);
 			}
 		}
-	}
 
-	/* run global position accuracy checks */
-	// Check if quality checking of position accuracy and consistency is to be performed
-	if (run_quality_checks) {
-		if (_nav_test_failed) {
-			status_flags.condition_global_position_valid = false;
-			status_flags.condition_local_position_valid = false;
-			status_flags.condition_local_velocity_valid = false;
-
-		} else {
-			if (!_skip_pos_accuracy_check) {
-				// use global position message to determine validity
-				check_posvel_validity(true, gpos.eph, _eph_threshold_adj, gpos.timestamp, &_last_gpos_fail_time_us,
-						      &_gpos_probation_time_us, &status_flags.condition_global_position_valid, status_changed);
-			}
-
-			// use local position message to determine validity
-			check_posvel_validity(lpos.xy_valid, lpos.eph, _eph_threshold_adj, lpos.timestamp, &_last_lpos_fail_time_us,
-					      &_lpos_probation_time_us, &status_flags.condition_local_position_valid, status_changed);
-			check_posvel_validity(lpos.v_xy_valid, lpos.evh, _evh_threshold.get(), lpos.timestamp, &_last_lvel_fail_time_us,
-					      &_lvel_probation_time_us, &status_flags.condition_local_velocity_valid, status_changed);
+		if ((_last_condition_global_position_valid != status_flags.condition_global_position_valid)
+		    && status_flags.condition_global_position_valid) {
+			// If global position state changed and is now valid, set respective health flags to true. For now also assume GPS is OK if global pos is OK, but not vice versa.
+			set_health_flags_healthy(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, status);
+			set_health_flags_present_healthy(subsystem_info_s::SUBSYSTEM_TYPE_GPS, true, true, status);
 		}
-	}
 
-	if ((_last_condition_global_position_valid != status_flags.condition_global_position_valid)
-	    && status_flags.condition_global_position_valid) {
-		// If global position state changed and is now valid, set respective health flags to true. For now also assume GPS is OK if global pos is OK, but not vice versa.
-		set_health_flags_healthy(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, status);
-		set_health_flags_present_healthy(subsystem_info_s::SUBSYSTEM_TYPE_GPS, true, true, status);
+		check_valid(lpos.timestamp, _failsafe_pos_delay.get() * 1_s, lpos.z_valid,
+			    &(status_flags.condition_local_altitude_valid), status_changed);
 	}
-
-	check_valid(lpos.timestamp, _failsafe_pos_delay.get() * 1_s, lpos.z_valid,
-		    &(status_flags.condition_local_altitude_valid), status_changed);
-}

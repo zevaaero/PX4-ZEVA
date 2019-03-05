@@ -235,7 +235,8 @@ private:
 		(ParamFloat<px4::params::MC_YAWRATE_FF>) _yaw_rate_ff,
 
 		(ParamFloat<px4::params::MC_DTERM_CUTOFF>) _d_term_cutoff_freq,			/**< Cutoff frequency for the D-term filter */
-		(ParamFloat<px4::params::MC_YRERR_CUTOFF>) _yaw_rate_error_cutoff_freq,		/**< Cutoff frequency for the yaw rate error filter */
+		(ParamFloat<px4::params::MC_YRERR_CUTOFF>)
+		_yaw_rate_error_cutoff_freq,		/**< Cutoff frequency for the yaw rate error filter */
 
 		(ParamFloat<px4::params::MC_TPA_BREAK_P>) _tpa_breakpoint_p,			/**< Throttle PID Attenuation breakpoint */
 		(ParamFloat<px4::params::MC_TPA_BREAK_I>) _tpa_breakpoint_i,			/**< Throttle PID Attenuation breakpoint */

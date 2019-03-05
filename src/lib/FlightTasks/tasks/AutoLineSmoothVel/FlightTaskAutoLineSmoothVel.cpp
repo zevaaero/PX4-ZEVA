@@ -183,8 +183,8 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 void FlightTaskAutoLineSmoothVel::_updateTrajConstraints()
 {
 	// Update the constraints of the trajectories
-	_trajectory[0].setMaxAccel(MPC_ACC_HOR_MAX.get()); // TODO : Should be computed using heading
-	_trajectory[1].setMaxAccel(MPC_ACC_HOR_MAX.get());
+	_trajectory[0].setMaxAccel(MPC_ACC_HOR.get()); // TODO : Should be computed using heading
+	_trajectory[1].setMaxAccel(MPC_ACC_HOR.get());
 	_trajectory[0].setMaxVel(_constraints.speed_xy);
 	_trajectory[1].setMaxVel(_constraints.speed_xy);
 	_trajectory[0].setMaxJerk(MPC_JERK_MIN.get()); // TODO : Should be computed using heading
