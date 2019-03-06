@@ -16,21 +16,22 @@ uint8 RC_CHANNELS_FUNCTION_AUX_2=12
 uint8 RC_CHANNELS_FUNCTION_AUX_3=13
 uint8 RC_CHANNELS_FUNCTION_AUX_4=14
 uint8 RC_CHANNELS_FUNCTION_AUX_5=15
-uint8 RC_CHANNELS_FUNCTION_PARAM_1=16
-uint8 RC_CHANNELS_FUNCTION_PARAM_2=17
-uint8 RC_CHANNELS_FUNCTION_PARAM_3_5=18
-uint8 RC_CHANNELS_FUNCTION_RATTITUDE=19
-uint8 RC_CHANNELS_FUNCTION_KILLSWITCH=20
-uint8 RC_CHANNELS_FUNCTION_TRANSITION=21
-uint8 RC_CHANNELS_FUNCTION_GEAR=22
-uint8 RC_CHANNELS_FUNCTION_ARMSWITCH=23
-uint8 RC_CHANNELS_FUNCTION_STAB=24
-uint8 RC_CHANNELS_FUNCTION_MAN=25
+uint8 RC_CHANNELS_FUNCTION_AUX_6=16
+uint8 RC_CHANNELS_FUNCTION_PARAM_1=17
+uint8 RC_CHANNELS_FUNCTION_PARAM_2=18
+uint8 RC_CHANNELS_FUNCTION_PARAM_3_5=19
+uint8 RC_CHANNELS_FUNCTION_RATTITUDE=20
+uint8 RC_CHANNELS_FUNCTION_KILLSWITCH=21
+uint8 RC_CHANNELS_FUNCTION_TRANSITION=22
+uint8 RC_CHANNELS_FUNCTION_GEAR=23
+uint8 RC_CHANNELS_FUNCTION_ARMSWITCH=24
+uint8 RC_CHANNELS_FUNCTION_STAB=25
+uint8 RC_CHANNELS_FUNCTION_MAN=26
 
 uint64 timestamp_last_valid					# Timestamp of last valid RC signal
 float32[18] channels						# Scaled to -1..1 (throttle: 0..1)
 uint8 channel_count						# Number of valid channels
-int8[26] function						# Functions mapping
+int8[27] function						# Functions mapping
 uint8 rssi							# Receive signal strength index
 bool signal_lost						# Control signal lost, should be checked together with topic timeout
 uint32 frame_drop_count						# Number of dropped frames
