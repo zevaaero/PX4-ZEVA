@@ -8,8 +8,9 @@ S: 2 1  10000  10000      0 -10000  10000
 M: 1
 S: 2 2  10000  10000      0 -10000  10000
 
-# Gimbal mode
-Z:
+# Gimbal mode (usually is used for roll)
+M: 1
+S: 2 0  10000  10000      0 -10000  10000
 
 # AUX1 channel (select RC channel with RC_MAP_AUX1 param)
 M: 1
