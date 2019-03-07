@@ -19,11 +19,14 @@
 
 // uOrb subscriptions
 #include <uORB/topics/esc_status.h>
+#include <uORB/topics/estimator_status.h>
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/actuator_armed.h>
 #include <drivers/drv_hrt.h>
+
+#include <systemlib/mavlink_log.h>
 
 // hardware specific includes
 #include <nuttx/can/can.h>
@@ -207,6 +210,13 @@ uint16_t    _telemTXRate;				// Number of telem packages requests sent per secon
 uint16_t 	_telemRX_1_Rate;			// Number of telem response 1 packets received per second
 uint16_t 	_telemRX_2_Rate;			// Number of telem response 2 packets received per second
 
+// Estimator subscription vars
+static int _estimator_status_sub = 0;	// subscription to estimator
+static struct estimator_status_s _est_status;				// hold the estimator_status
+//hrt_abstime last_est_status = 0;					// when did we get last update?
+hrt_abstime last_motorerror_message = 0;			// when did we send last motor update?
+#define MOTOR_ERROR_TIMEOUT 500000
+
 // CAN Rate
 uint16_t 	_CANEventCounter;			// Number of times can0 was changed per second.
 
@@ -231,6 +241,8 @@ int  _writeDaemonTask;
 bool _readThreadShouldExit;
 bool _readThreadRunning;
 int  _readDaemonTask;
+
+static orb_advert_t mavlink_log_pub = NULL;
 
 //-----------------------------------------------------------------------------------------------
 // Public Function Defintions
@@ -267,6 +279,11 @@ void FF_CAN(void)
 		esc_stat.esc[i].esc_vendor = ESC_STATUS_ESC_VENDOR_GENERIC;
 		esc_stat.esc[i].esc_address = i + 1;
 	}
+
+
+	// Subscribe to estimator_status to be able to check control_mode_flags | CS_IN_AIR 
+	_estimator_status_sub = orb_subscribe(ORB_ID(estimator_status));
+	
 
 	// CAN initialization and device registration done below. Selim. 08/08/2018
 
@@ -1265,6 +1282,18 @@ void FF_CAN_ReadTask()
 
 	while(!_readThreadShouldExit)
 	{
+		
+		// Each read loop, check if we are flying, so we can test if we should error about telem values in the ESC data. 
+		// this is done on read since it is we only need this info when a telemetry message comes in. We'll just
+		// update a variable to keep track of flying status, and use that with our error checker.
+
+		bool updated = false;
+		orb_check(_estimator_status_sub, &updated);
+
+		if (updated) {
+			orb_copy(ORB_ID(estimator_status), _estimator_status_sub, &_est_status);
+		}
+		
 		// Similar to writer loop implementation.
 		// Note that loop control is hooked to can0 changes rather than uOrb messages.
 		// Any recieved CAN messages will cause the poll statement to unblock and run
@@ -1405,6 +1434,17 @@ void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
 
 			float cur = *(uint16_t *)&msg_p->cm_data[6];
 			esc_stat.esc[id_idx].esc_current = (cur - 32768.0f) * 0.1f;
+
+			// Test if there is a fault, alert if true
+			if( (msg_p->cm_data[2] & 0xFB) && (_est_status.control_mode_flags & (1<<ESTIMATOR_STATUS_CS_IN_AIR)) )
+			{
+				if( (hrt_absolute_time()-last_motorerror_message) > MOTOR_ERROR_TIMEOUT ) 
+				{
+					mavlink_log_critical(&mavlink_log_pub,"MOTOR %d FAULT: %d",id_idx,msg_p->cm_data[2]);
+					last_motorerror_message = hrt_absolute_time();
+				}
+				
+			}
 
 			_telemRX_1_Rate++;
 			break;
