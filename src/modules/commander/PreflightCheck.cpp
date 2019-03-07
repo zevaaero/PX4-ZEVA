@@ -558,7 +558,8 @@ static bool ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_s
 	// Check if preflight check performed by estimator has failed
 	if (status.pre_flt_fail) {
 		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "PREFLIGHT FAIL: EKF INTERNAL CHECKS");
+			//mavlink_log_critical(mavlink_log_pub, "PREFLIGHT FAIL: EKF INTERNAL CHECKS");
+			PX4_WARN("PREFLIGHT FAIL: EKF INTERNAL CHECKS");
 		}
 
 		success = false;
