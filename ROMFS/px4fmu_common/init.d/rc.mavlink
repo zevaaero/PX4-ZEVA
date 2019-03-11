@@ -8,7 +8,7 @@
 if ! ver hwcmp INTEL_AEROFC_V1
 then
 	# Start MAVLink on the USB port
-	mavlink start -r 800000 -d /dev/ttyACM0 -m config -x
+	#mavlink start -r 800000 -d /dev/ttyACM0 -m config -x
 fi
 
 #
@@ -135,4 +135,3 @@ then
 	param set SER_TEL2_BAUD 1500000
 	param set SYS_COMPANION 0
 fi
-
