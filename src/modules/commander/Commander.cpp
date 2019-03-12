@@ -3770,9 +3770,6 @@ Commander *Commander::instantiate(int argc, char *argv[])
 {
 	Commander *instance = new Commander();
 
-	// XXX remove this once this is a class member
-	status = {};
-
 	if (instance) {
 		if (argc >= 2 && !strcmp(argv[1], "--hil")) {
 			instance->enable_hil();
@@ -3886,7 +3883,10 @@ void Commander::data_link_check(bool &status_changed)
 					if (telemetry.heartbeat_time > _datalink_last_heartbeat_gcs) {
 						status.data_link_lost = false;
 						status_changed = true;
-						mavlink_log_info(&mavlink_log_pub, "Data link regained");
+
+						if (_datalink_last_heartbeat_gcs != 0) {
+							mavlink_log_info(&mavlink_log_pub, "Data link regained");
+						}
 					}
 				}
 
@@ -3900,6 +3900,7 @@ void Commander::data_link_check(bool &status_changed)
 					if (telemetry.heartbeat_time > _datalink_last_heartbeat_onboard_controller) {
 						mavlink_log_info(&mavlink_log_pub, "Onboard controller regained");
 						_onboard_controller_lost = false;
+						status_changed = true;
 					}
 
 				}
@@ -3916,9 +3917,9 @@ void Commander::data_link_check(bool &status_changed)
 
 					if (_avoidance_system_lost) {
 						mavlink_log_info(&mavlink_log_pub, "Avoidance system regained");
+						status_changed = true;
+						_avoidance_system_lost = false;
 					}
-
-					_avoidance_system_lost = false;
 				}
 
 				break;
@@ -3948,6 +3949,7 @@ void Commander::data_link_check(bool &status_changed)
 
 		mavlink_log_critical(&mavlink_log_pub, "Onboard controller lost");
 		_onboard_controller_lost = true;
+		status_changed = true;
 	}
 
 	// AVOIDANCE SYSTEM state check (only if it is enabled)
