@@ -4160,7 +4160,8 @@ public:
     }
     unsigned get_size()
     {
-        return MAVLINK_MSG_ID_ESC_TELEMETRY_1_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+        return (_esc_report_time > 0) ? (MAVLINK_MSG_ID_ESC_TELEMETRY_1_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
+
     }
 
 private:
@@ -4173,30 +4174,30 @@ private:
 
 protected:
     explicit MavlinkStreamESCTelem(Mavlink *mavlink) : MavlinkStream(mavlink),
-        _sub(_mavlink->add_orb_subscription(ORB_ID(esc_report))),  // make sure you enter the name of your uORB topic here
+        _sub(_mavlink->add_orb_subscription(ORB_ID(esc_status))),  // make sure you enter the name of your uORB topic here
         _esc_report_time(0)
     {}
 
     bool send(const hrt_abstime t)
     {
         struct esc_status_s _esc_status;    //make sure _esc_status is the definition of your uORB topic
-
-        if (_sub->update(&_esc_report_time, &_esc_status)) {
-            mavlink_esc_telemetry_1_t _msg_esc_telemetry1;  //make sure mavlink_ca_trajectory_t is the definition of your custom MAVLink message
-
+		
+		if (_sub->update(&_esc_report_time, &_esc_status)) {
+            mavlink_esc_telemetry_1_t msg = {};  //make sure mavlink_ca_trajectory_t is the definition of your custom MAVLink message
 
 			for( int esc_idx=0; esc_idx<_esc_status.esc_count; esc_idx++) 
 			{
-				_msg_esc_telemetry1.Voltage[esc_idx] = (uint16_t)(_esc_status.esc[esc_idx].esc_voltage*100.0f);
-				_msg_esc_telemetry1.RPM[esc_idx] = (int16_t)(_esc_status.esc[esc_idx].esc_rpm);
-				_msg_esc_telemetry1.Current[esc_idx] = (int16_t)(_esc_status.esc[esc_idx].esc_current*100.0f);
-				_msg_esc_telemetry1.Temperature[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_temperature+100.0f);
-				_msg_esc_telemetry1.errorCount[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_errorcount);
-				_msg_esc_telemetry1.errorState[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_state & 0xFF);
+				msg.Voltage[esc_idx] = (uint16_t)(_esc_status.esc[esc_idx].esc_voltage*100.0f);
+				msg.RPM[esc_idx] = (int16_t)(_esc_status.esc[esc_idx].esc_rpm);
+				msg.Current[esc_idx] = (int16_t)(_esc_status.esc[esc_idx].esc_current*100.0f);
+				msg.Temperature[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_temperature+100.0f);
+				msg.errorCount[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_errorcount);
+				msg.errorState[esc_idx] = (uint8_t)(_esc_status.esc[esc_idx].esc_state & 0xFF);
 				
 			}
 
-            mavlink_msg_esc_telemetry_1_send_struct(_mavlink->get_channel(), &_msg_esc_telemetry1);
+
+            mavlink_msg_esc_telemetry_1_send_struct(_mavlink->get_channel(), &msg);
         }
 
         return true;
