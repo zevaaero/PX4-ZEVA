@@ -153,9 +153,6 @@ else
 		param reset
 	fi
 
-	# Set US1 vehicle
-	param set SYS_AUTOSTART 4006
-
 	#
 	# Set AUTOCNF flag to use it in AUTOSTART scripts.
 	#
