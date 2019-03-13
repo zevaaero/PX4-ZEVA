@@ -221,11 +221,11 @@ void PositionControl::_positionController()
 	// Constrain horizontal velocity by prioritizing the velocity component along the
 	// the desired position setpoint over the feed-forward term.
 	const Vector2f vel_sp_xy = ControlMath::constrainXY(Vector2f(vel_sp_position),
-				   Vector2f(_vel_sp - vel_sp_position), _constraints.speed_xy);
+				   Vector2f(_vel_sp - vel_sp_position), MPC_XY_VEL_MAX.get());
 	_vel_sp(0) = vel_sp_xy(0);
 	_vel_sp(1) = vel_sp_xy(1);
 	// Constrain velocity in z-direction.
-	_vel_sp(2) = math::constrain(_vel_sp(2), -_constraints.speed_up, _constraints.speed_down);
+	_vel_sp(2) = math::constrain(_vel_sp(2), -MPC_Z_VEL_MAX_UP.get(), MPC_Z_VEL_MAX_DN.get());
 }
 
 void PositionControl::_velocityController(const float &dt)
@@ -330,18 +330,6 @@ void PositionControl::updateConstraints(const vehicle_constraints_s &constraints
 	if (!PX4_ISFINITE(constraints.tilt)
 	    || !(constraints.tilt < math::max(MPC_TILTMAX_AIR_rad.get(), MPC_MAN_TILT_MAX_rad.get()))) {
 		_constraints.tilt = math::max(MPC_TILTMAX_AIR_rad.get(), MPC_MAN_TILT_MAX_rad.get());
-	}
-
-	if (!PX4_ISFINITE(constraints.speed_up) || !(constraints.speed_up < MPC_Z_VEL_MAX_UP.get())) {
-		_constraints.speed_up = MPC_Z_VEL_MAX_UP.get();
-	}
-
-	if (!PX4_ISFINITE(constraints.speed_down) || !(constraints.speed_down < MPC_Z_VEL_MAX_DN.get())) {
-		_constraints.speed_down = MPC_Z_VEL_MAX_DN.get();
-	}
-
-	if (!PX4_ISFINITE(constraints.speed_xy) || !(constraints.speed_xy < MPC_XY_VEL_MAX.get())) {
-		_constraints.speed_xy = MPC_XY_VEL_MAX.get();
 	}
 }
 

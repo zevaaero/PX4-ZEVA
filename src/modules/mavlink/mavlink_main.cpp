@@ -543,7 +543,7 @@ Mavlink::forward_message(const mavlink_message_t *msg, Mavlink *self)
 			const mavlink_msg_entry_t *meta = mavlink_get_msg_entry(msg->msgid);
 
 			int target_system_id = 0;
-			int target_component_id = 233;
+			int target_component_id = 0;
 
 			// might be nullptr if message is unknown
 			if (meta) {
@@ -557,11 +557,21 @@ Mavlink::forward_message(const mavlink_message_t *msg, Mavlink *self)
 				}
 			}
 
-			// Broadcast or addressing this system and not trying to talk
-			// to the autopilot component -> pass on to other components
-			if ((target_system_id == 0 || target_system_id == self->get_system_id())
-			    && (target_component_id == 0 || target_component_id != self->get_component_id())
-			    && !(!self->forward_heartbeats_enabled() && msg->msgid == MAVLINK_MSG_ID_HEARTBEAT)) {
+			// We forward messages targetted at the same system, or addressed to all systems, or
+			// if not target system is set.
+			const bool target_system_id_ok =
+				(target_system_id == 0 || target_system_id == self->get_system_id());
+
+			// We forward messages that are targetting another component, or are addressed to all
+			// components, or if the target component is not set.
+			const bool target_component_id_ok =
+				(target_component_id == 0 || target_component_id != self->get_component_id());
+
+			// We don't forward heartbeats unless it's specifically enabled.
+			const bool heartbeat_check_ok =
+				(msg->msgid != MAVLINK_MSG_ID_HEARTBEAT || self->forward_heartbeats_enabled());
+
+			if (target_system_id_ok && target_component_id_ok && heartbeat_check_ok) {
 
 				inst->pass_message(msg);
 			}
@@ -1735,8 +1745,8 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("ACTUATOR_CONTROL_TARGET0", 10.0f);
 		configure_stream_local("ADSB_VEHICLE", unlimited_rate);
 		configure_stream_local("ALTITUDE", 10.0f);
-		configure_stream_local("ATTITUDE", 100.0f);
-		configure_stream_local("ATTITUDE_QUATERNION", 50.0f);
+		configure_stream_local("ATTITUDE", 10.0f);		//reduced from 100Hz
+		configure_stream_local("ATTITUDE_QUATERNION", 10.0f);		//reduced from 50Hz
 		configure_stream_local("ATTITUDE_TARGET", 10.0f);
 		configure_stream_local("CAMERA_CAPTURE", 2.0f);
 		configure_stream_local("CAMERA_IMAGE_CAPTURED", unlimited_rate);
@@ -1748,22 +1758,22 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("DISTANCE_SENSOR", 10.0f);
 		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
 		configure_stream_local("EXTENDED_SYS_STATE", 5.0f);
-		configure_stream_local("GLOBAL_POSITION_INT", 50.0f);
+		configure_stream_local("GLOBAL_POSITION_INT", 10.0f);		//reduced from 50Hz
 		configure_stream_local("GPS2_RAW", unlimited_rate);
 		configure_stream_local("GPS_RAW_INT", unlimited_rate);
-		configure_stream_local("HIGHRES_IMU", 50.0f);
+		//configure_stream_local("HIGHRES_IMU", 50.0f);  //reduced from 50Hz
 		configure_stream_local("HOME_POSITION", 0.5f);
 		configure_stream_local("LOCAL_POSITION_NED", 30.0f);
 		configure_stream_local("NAMED_VALUE_FLOAT", 10.0f);
 		configure_stream_local("NAV_CONTROLLER_OUTPUT", 10.0f);
-		configure_stream_local("ODOMETRY", 30.0f);
+		//configure_stream_local("ODOMETRY", 30.0f);		//reduced from 30Hz
 		configure_stream_local("OPTICAL_FLOW_RAD", 10.0f);
 		configure_stream_local("ORBIT_EXECUTION_STATUS", 5.0f);
 		configure_stream_local("PING", 1.0f);
 		configure_stream_local("POSITION_TARGET_GLOBAL_INT", 10.0f);
 		configure_stream_local("POSITION_TARGET_LOCAL_NED", 10.0f);
-		configure_stream_local("RC_CHANNELS", 20.0f);
-		configure_stream_local("SCALED_IMU", 50.0f);
+		configure_stream_local("RC_CHANNELS", 10.0f);			//reduced from 20Hz
+		//configure_stream_local("SCALED_IMU", 50.0f);		//reduced from 50Hz
 		configure_stream_local("SERVO_OUTPUT_RAW_0", 10.0f);
 		configure_stream_local("SYS_STATUS", 5.0f);
 		configure_stream_local("SYSTEM_TIME", 1.0f);
@@ -1772,6 +1782,27 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("UTM_GLOBAL_POSITION", 1.0f);
 		configure_stream_local("VFR_HUD", 10.0f);
 		configure_stream_local("WIND_COV", 10.0f);
+		break;
+
+	case MAVLINK_MODE_EXTVISION:
+		configure_stream_local("ALTITUDE", 10.0f); // for avoidance
+		configure_stream_local("ATTITUDE", 25.0f);
+		configure_stream_local("ATTITUDE_TARGET", 10.0f);
+		configure_stream_local("CAMERA_TRIGGER", unlimited_rate); // for VIO
+		configure_stream_local("DISTANCE_SENSOR", 10.0f);		// for avoidance
+		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
+		configure_stream_local("EXTENDED_SYS_STATE", 1.0f);
+		configure_stream_local("GLOBAL_POSITION_INT", 10.0f);
+		configure_stream_local("GPS_RAW_INT", 1.0f);
+		configure_stream_local("HOME_POSITION", 0.5f);
+		configure_stream_local("HIGHRES_IMU", unlimited_rate);		// for VIO
+		configure_stream_local("LOCAL_POSITION_NED", 30.0f); //for VIO and avoidance
+		configure_stream_local("SYS_STATUS", 5.0f);
+		configure_stream_local("SYSTEM_TIME", 1.0f);
+		configure_stream_local("TIMESYNC", 10.0f);
+		configure_stream_local("TRAJECTORY_REPRESENTATION_WAYPOINTS", 5.0f); // for avoidance
+		configure_stream_local("VFR_HUD", 25.0f);
+		configure_stream_local("WIND_COV", 2.0f);
 		break;
 
 	case MAVLINK_MODE_OSD:
@@ -2057,6 +2088,9 @@ Mavlink::task_main(int argc, char *argv[])
 
 					} else if (strcmp(myoptarg, "minimal") == 0) {
 						_mode = MAVLINK_MODE_MINIMAL;
+
+					} else if (strcmp(myoptarg, "extvision") == 0) {
+						_mode = MAVLINK_MODE_EXTVISION;
 
 					} else {
 						PX4_ERR("invalid mode");
@@ -3041,7 +3075,7 @@ $ mavlink stream -u 14556 -s HIGHRES_IMU -r 50
 	PRINT_MODULE_USAGE_PARAM_STRING('t', "127.0.0.1", nullptr,
 					"Partner IP (broadcasting can be enabled via MAV_BROADCAST param)", true);
 #endif
-	PRINT_MODULE_USAGE_PARAM_STRING('m', "normal", "custom|camera|onboard|osd|magic|config|iridium|minimal",
+	PRINT_MODULE_USAGE_PARAM_STRING('m', "normal", "custom|camera|onboard|osd|magic|config|iridium|minimal|extvsision",
 					"Mode: sets default streams and rates", true);
 	PRINT_MODULE_USAGE_PARAM_STRING('n', nullptr, "<interface_name>", "wifi/ethernet interface name", true);
 #if defined(CONFIG_NET_IGMP) && defined(CONFIG_NET_ROUTE)
@@ -3059,7 +3093,7 @@ $ mavlink stream -u 14556 -s HIGHRES_IMU -r 50
 
 	PRINT_MODULE_USAGE_COMMAND_DESCR("stream", "Configure the sending rate of a stream for a running instance");
 #if defined(CONFIG_NET) || defined(__PX4_POSIX)
-	PRINT_MODULE_USAGE_PARAM_INT('u', 0, 0, 65536, "Select Mavlink instance via local Network Port", true);
+	PRINT_MODULE_USAGE_PARAM_INT('u', -1, 0, 65536, "Select Mavlink instance via local Network Port", true);
 #endif
 	PRINT_MODULE_USAGE_PARAM_STRING('d', nullptr, "<file:dev>", "Select Mavlink instance via Serial Device", true);
 	PRINT_MODULE_USAGE_PARAM_STRING('s', nullptr, nullptr, "Mavlink stream to configure", false);

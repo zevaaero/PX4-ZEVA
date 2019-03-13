@@ -74,25 +74,19 @@
 #include <px4_tasks.h>
 #include <px4_time.h>
 #include <circuit_breaker/circuit_breaker.h>
-#include <systemlib/err.h>
-#include <systemlib/hysteresis/hysteresis.h>
 #include <systemlib/mavlink_log.h>
-#include <parameters/param.h>
 
 #include <cmath>
 #include <float.h>
 #include <cstring>
 
-#include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/cpuload.h>
 #include <uORB/topics/geofence_result.h>
-#include <uORB/topics/home_position.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/mavlink_log.h>
 #include <uORB/topics/mission.h>
-#include <uORB/topics/mission_result.h>
 #include <uORB/topics/offboard_control_mode.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/power_button_state.h>
@@ -100,14 +94,11 @@
 #include <uORB/topics/subsystem_info.h>
 #include <uORB/topics/system_power.h>
 #include <uORB/topics/telemetry_status.h>
-#include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
-#include <uORB/topics/vehicle_global_position.h>
+#include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_land_detected.h>
-#include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status_flags.h>
 #include <uORB/topics/vtol_vehicle_status.h>
-#include <uORB/uORB.h>
 
 typedef enum VEHICLE_MODE_FLAG {
 	VEHICLE_MODE_FLAG_CUSTOM_MODE_ENABLED = 1, /* 0b00000001 Reserved for future use. | */
@@ -145,8 +136,6 @@ static hrt_abstime commander_boot_timestamp = 0;
 static unsigned int leds_counter;
 /* To remember when last notification was sent */
 static uint64_t last_print_mode_reject_time = 0;
-
-static systemlib::Hysteresis auto_disarm_hysteresis(false);
 
 static float min_stick_change = 0.25f;
 
@@ -567,6 +556,8 @@ Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
 {
+	_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+	_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
 	_battery_sub = orb_subscribe(ORB_ID(battery_status));
 
 	for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
@@ -1694,26 +1685,41 @@ Commander::run()
 			was_falling = land_detector.freefall;
 		}
 
-		// Auto disarm when landed
-		if (!have_taken_off_since_arming) {
-			// pilot has ten seconds time to take off
-			auto_disarm_hysteresis.set_hysteresis_time_from(false, 10_s);
+
+		// Auto disarm when landed or kill switch engaged
+		if (armed.armed) {
+
+			// Check for auto-disarm on landing
+			if (_disarm_when_landed_timeout.get() > 0) {
+
+				if (!have_taken_off_since_arming) {
+					// pilot has ten seconds time to take off
+					_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+
+				} else {
+					_auto_disarm_landed.set_hysteresis_time_from(false, _disarm_when_landed_timeout.get() * 1_s);
+				}
+
+				_auto_disarm_landed.set_state_and_update(land_detector.landed);
+
+				if (_auto_disarm_landed.get_state()) {
+					arm_disarm(false, &mavlink_log_pub, "auto disarm on land");
+				}
+			}
+
+
+			// Auto disarm after 5 seconds if kill switch is engaged
+			_auto_disarm_killed.set_state_and_update(armed.manual_lockdown);
+
+			if (_auto_disarm_killed.get_state()) {
+				arm_disarm(false, &mavlink_log_pub, "kill switch still engaged, disarming");
+			}
 
 		} else {
-			auto_disarm_hysteresis.set_hysteresis_time_from(false, _disarm_when_landed_timeout.get() * 1_s);
+			_auto_disarm_landed.set_state_and_update(false);
+			_auto_disarm_killed.set_state_and_update(false);
 		}
 
-		// Check for auto-disarm
-		if (armed.armed && land_detector.landed && _disarm_when_landed_timeout.get() > FLT_EPSILON) {
-			auto_disarm_hysteresis.set_state_and_update(true);
-
-		} else {
-			auto_disarm_hysteresis.set_state_and_update(false);
-		}
-
-		if (auto_disarm_hysteresis.get_state()) {
-			arm_disarm(false, &mavlink_log_pub, "auto disarm on land");
-		}
 
 		if (!warning_action_on) {
 			// store the last good main_state when not in an navigation
@@ -3881,11 +3887,11 @@ void Commander::data_link_check(bool &status_changed)
 					break;
 				}
 
-
 				// handle different remote types
 				switch (telemetry.remote_type) {
 				case (telemetry_status_s::MAV_TYPE_GCS):
 					_datalink_last_heartbeat_gcs = telemetry.heartbeat_time;
+
 
 					if (status.data_link_lost) {
 						if (hrt_elapsed_time(&_datalink_lost) > (_datalink_regain_threshold.get() * 1_s)) {

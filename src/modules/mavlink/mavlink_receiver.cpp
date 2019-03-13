@@ -40,33 +40,18 @@
  * @author Thomas Gubler <thomas@px4.io>
  */
 
-/* XXX trim includes */
-#include <px4_config.h>
-#include <px4_time.h>
-#include <px4_tasks.h>
-#include <px4_defines.h>
-#include <px4_posix.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <stdio.h>
-#include <math.h>
-#include <stdbool.h>
-#include <fcntl.h>
-#include <string.h>
-#include <drivers/drv_hrt.h>
+#include <airspeed/airspeed.h>
+#include <commander/px4_custom_mode.h>
+#include <conversion/rotation.h>
 #include <drivers/drv_accel.h>
-#include <drivers/drv_gyro.h>
-#include <drivers/drv_mag.h>
 #include <drivers/drv_baro.h>
+#include <drivers/drv_gyro.h>
+#include <drivers/drv_hrt.h>
+#include <drivers/drv_mag.h>
 #include <drivers/drv_range_finder.h>
 #include <drivers/drv_rc_input.h>
 #include <drivers/drv_tone_alarm.h>
-#include <time.h>
-#include <float.h>
-#include <unistd.h>
-#ifndef __PX4_POSIX
-#include <termios.h>
-#endif
+#include <ecl/geo/geo.h>
 
 #ifdef CONFIG_NET
 #include <net/if.h>
@@ -74,11 +59,6 @@
 #include <netinet/in.h>
 #endif
 
-#include <errno.h>
-#include <stdlib.h>
-#include <poll.h>
-
-#include <sys/stat.h>
 #ifdef __PX4_DARWIN
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -86,23 +66,13 @@
 #include <sys/statfs.h>
 #endif
 
-#include <airspeed/airspeed.h>
-#include <ecl/geo/geo.h>
-#include <mathlib/mathlib.h>
-#include <conversion/rotation.h>
-#include <parameters/param.h>
-#include <systemlib/mavlink_log.h>
-#include <systemlib/err.h>
+#ifndef __PX4_POSIX
+#include <termios.h>
+#endif
 
-#include <commander/px4_custom_mode.h>
-
-#include <uORB/topics/radio_status.h>
-#include <uORB/topics/vehicle_command_ack.h>
-
-#include "mavlink_bridge_header.h"
-#include "mavlink_receiver.h"
-#include "mavlink_main.h"
 #include "mavlink_command_sender.h"
+#include "mavlink_main.h"
+#include "mavlink_receiver.h"
 
 #ifdef CONFIG_NET
 #define MAVLINK_RECEIVER_NET_ADDED_STACK 1360
@@ -163,10 +133,6 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_telem_status_pub(nullptr),
 	_gps_inject_data_pub(nullptr),
 	_command_ack_pub(nullptr),
-	_control_mode_sub(orb_subscribe(ORB_ID(vehicle_control_mode))),
-	_actuator_armed_sub(orb_subscribe(ORB_ID(actuator_armed))),
-	_vehicle_attitude_sub(orb_subscribe(ORB_ID(vehicle_attitude))),
-	_global_ref_timestamp(0),
 	_hil_frames(0),
 	_old_timestamp(0),
 	_hil_local_proj_inited(0),
@@ -1255,11 +1221,14 @@ MavlinkReceiver::handle_message_odometry(mavlink_message_t *msg)
 	// - add usage on the estimator side
 	odometry.local_frame = odometry.LOCAL_FRAME_NED;
 
-	const size_t POS_URT_SIZE = sizeof(odometry.pose_covariance) / sizeof(odometry.pose_covariance[0]);
-	const size_t VEL_URT_SIZE = sizeof(odometry.velocity_covariance) / sizeof(odometry.velocity_covariance[0]);
+	// pose_covariance
+	static constexpr size_t POS_URT_SIZE = sizeof(odometry.pose_covariance) / sizeof(odometry.pose_covariance[0]);
 	static_assert(POS_URT_SIZE == (sizeof(odom.pose_covariance) / sizeof(odom.pose_covariance[0])),
 		      "Odometry Pose Covariance matrix URT array size mismatch");
-	static_assert(VEL_URT_SIZE == (sizeof(odom.twist_covariance) / sizeof(odom.twist_covariance[0])),
+
+	// velocity_covariance
+	static constexpr size_t VEL_URT_SIZE = sizeof(odometry.velocity_covariance) / sizeof(odometry.velocity_covariance[0]);
+	static_assert(VEL_URT_SIZE == (sizeof(odom.velocity_covariance) / sizeof(odom.velocity_covariance[0])),
 		      "Odometry Velocity Covariance matrix URT array size mismatch");
 
 	// create a method to simplify covariance copy
@@ -1286,7 +1255,7 @@ MavlinkReceiver::handle_message_odometry(mavlink_message_t *msg)
 
 		//TODO: Apply rotation matrix to transform from body-fixed NED to earth-fixed NED frame
 		for (size_t i = 0; i < VEL_URT_SIZE; i++) {
-			odometry.velocity_covariance[i] = odom.twist_covariance[i];
+			odometry.velocity_covariance[i] = odom.velocity_covariance[i];
 		}
 
 	} else if (odom.child_frame_id == MAV_FRAME_BODY_NED) { /* WRT to vehicle body-NED frame */
@@ -1308,13 +1277,14 @@ MavlinkReceiver::handle_message_odometry(mavlink_message_t *msg)
 
 			//TODO: Apply rotation matrix to transform from body-fixed to earth-fixed NED frame
 			for (size_t i = 0; i < VEL_URT_SIZE; i++) {
-				odometry.velocity_covariance[i] = odom.twist_covariance[i];
+				odometry.velocity_covariance[i] = odom.velocity_covariance[i];
 			}
 
 		}
 
 	} else if (odom.child_frame_id == MAV_FRAME_VISION_NED || /* WRT to vehicle local NED frame */
 		   odom.child_frame_id == MAV_FRAME_MOCAP_NED) {
+
 		if (updated) {
 			orb_copy(ORB_ID(vehicle_attitude), _vehicle_attitude_sub, &_att);
 
@@ -1333,7 +1303,7 @@ MavlinkReceiver::handle_message_odometry(mavlink_message_t *msg)
 
 			//TODO: Apply rotation matrix to transform from earth-fixed to body-fixed NED frame
 			for (size_t i = 0; i < VEL_URT_SIZE; i++) {
-				odometry.velocity_covariance[i] = odom.twist_covariance[i];
+				odometry.velocity_covariance[i] = odom.velocity_covariance[i];
 			}
 
 		}
@@ -1697,7 +1667,7 @@ MavlinkReceiver::handle_message_play_tune(mavlink_message_t *msg)
 	     play_tune.target_component == 0)) {
 
 		if (*tune == 'M') {
-			int fd = px4_open(TONEALARM0_DEVICE_PATH, PX4_F_WRONLY);
+			int fd = px4_open(TONE_ALARM0_DEVICE_PATH, PX4_F_WRONLY);
 
 			if (fd >= 0) {
 				px4_write(fd, tune, strlen(tune) + 1);

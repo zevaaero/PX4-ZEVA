@@ -230,7 +230,6 @@ px4fmu_firmware: \
 	sizes
 
 misc_qgc_extra_firmware: \
-	check_gumstix_aerocore2_default \
 	check_intel_aerofc-v1_default \
 	check_auav_x21_default \
 	check_bitcraze_crazyflie_default \
@@ -264,7 +263,7 @@ sizes:
 check: check_px4_sitl_default px4fmu_firmware misc_qgc_extra_firmware alt_firmware tests check_format
 
 # quick_check builds a single nuttx and posix target, runs testing, and checks the style
-quick_check: check_px4_sitl_default check_px4_fmu-v5_default tests check_format
+quick_check: check_px4_sitl_test check_px4_fmu-v5_default tests check_format
 
 check_%:
 	@echo
@@ -341,6 +340,10 @@ rostest: px4_sitl_default
 
 tests_mission: rostest
 	@"$(SRC_DIR)"/test/rostest_px4_run.sh mavros_posix_tests_missions.test
+
+rostest_run: px4_sitl_default
+	@$(MAKE) --no-print-directory px4_sitl_default sitl_gazebo
+	@"$(SRC_DIR)"/test/rostest_px4_run.sh $(TEST_FILE) mission:=$(TEST_MISSION) vehicle:=$(TEST_VEHICLE)
 
 tests_mission_coverage:
 	@$(MAKE) clean

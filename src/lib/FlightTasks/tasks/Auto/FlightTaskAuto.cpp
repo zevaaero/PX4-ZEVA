@@ -227,7 +227,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 		_mission_gear = _sub_triplet_setpoint->get().current.landing_gear;
 	}
 
-	if (COM_OBS_AVOID.get() && _sub_vehicle_status->get().is_rotary_wing) {
+	if (MPC_OBS_AVOID.get() && _sub_vehicle_status->get().is_rotary_wing) {
 		_checkAvoidanceProgress();
 	}
 
@@ -465,23 +465,8 @@ void FlightTaskAuto::_updateInternalWaypoints()
 	// 3. The vehicle is more than cruise speed from track -> go straight to closest point on track
 	switch (_current_state) {
 	case State::target_behind:
-		_target = _triplet_target;
-		_prev_wp = _position;
-		_next_wp = _triplet_next_wp;
-		break;
-
 	case State::previous_infront:
-		_next_wp = _triplet_target;
-		_target = _triplet_prev_wp;
-		_prev_wp = _position;
-		break;
-
 	case State::offtrack:
-		_next_wp = _triplet_target;
-		_target = matrix::Vector3f(_closest_pt(0), _closest_pt(1), _triplet_target(2));
-		_prev_wp = _position;
-		break;
-
 	case State::none:
 		_target = _triplet_target;
 		_prev_wp = _triplet_prev_wp;
