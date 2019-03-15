@@ -250,7 +250,7 @@ private:
 		(ParamFloat<px4::params::MC_YAWRATE_MAX>) _yaw_rate_max,
 		(ParamFloat<px4::params::MC_YAWRAUTO_MAX>) _yaw_auto_max,
 		(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _yaw_rate_scaling,			/**< scaling factor from stick to yaw rate */
-		(ParamFloat<px4::params::MC_YAW_ACC_MAX>) _yaw_accel_max,
+		(ParamFloat<px4::params::MC_YR_SP_CUTOFF>) _yawrate_sp_cutoff_hz,
 
 
 		(ParamFloat<px4::params::MC_ACRO_R_MAX>) _acro_roll_max,

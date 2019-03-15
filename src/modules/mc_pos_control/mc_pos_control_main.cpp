@@ -724,6 +724,10 @@ MulticopterPositionControl::run()
 		// check if any task is active
 		if (_flight_tasks.isAnyTaskActive()) {
 
+			if (_flight_state < FlightState::rampup) {
+				_flight_tasks.reActivate();
+			}
+
 			// setpoints from flighttask
 			vehicle_local_position_setpoint_s setpoint;
 

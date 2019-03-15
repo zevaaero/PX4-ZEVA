@@ -602,11 +602,10 @@ PARAM_DEFINE_FLOAT(MC_YRERR_CUTOFF, 0.f);
 PARAM_DEFINE_INT32(MC_AIRMODE, 0);
 
 /**
- * Maxim yaw acceleration.
+ * Yawrate setpoint first order cutoff frequency.
  *
- * Enabling air-mode for yaw requires the use of an arming switch.
  *
  * @group Multicopter Attitude Control
  */
-PARAM_DEFINE_FLOAT(MC_YAW_ACC_MAX, 500);
+PARAM_DEFINE_FLOAT(MC_YR_SP_CUTOFF, 2);
 

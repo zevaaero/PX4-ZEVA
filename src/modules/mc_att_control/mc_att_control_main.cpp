@@ -650,15 +650,10 @@ void
 MulticopterAttitudeControl::control_attitude_rates(float dt)
 {
 
-	// add slew rate to yaw_rate setpoint
-	float yaw_accel_max = math::radians(_yaw_accel_max.get());
-	if (fabsf(_yaw_rate_sp_prev - _rates_sp(2)) / dt > yaw_accel_max) {
-		if (_rates_sp(2) > _yaw_rate_sp_prev) {
-			_rates_sp(2) = _yaw_rate_sp_prev + yaw_accel_max * dt;
-		} else {
-			_rates_sp(2) = _yaw_rate_sp_prev - yaw_accel_max * dt;
-		}
-	}
+	// appy a first order filter to the desired yawrate setpoint
+	float yawrate_sp_cutoff = _yawrate_sp_cutoff_hz.get() * 2.0f * M_PI_F;
+	float alpha = yawrate_sp_cutoff * dt;
+    _rates_sp(2) = (1.f - alpha) * _yaw_rate_sp_prev + alpha * _rates_sp(2);
 
 	_yaw_rate_sp_prev = _rates_sp(2);
 
