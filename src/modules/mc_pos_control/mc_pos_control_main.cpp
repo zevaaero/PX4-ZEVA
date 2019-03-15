@@ -502,11 +502,8 @@ void MulticopterPositionControl::update_flight_state() {
 			break;
 
 		case FlightState::spoolup:
-			//_spoolup_time_hysteresis.set_state_and_update(true);
 
-			if (!_control_mode.flag_armed) {
-				_flight_state = FlightState::disarmed;
-			} else if (_spoolup_time_hysteresis.get_state()) {
+			if (_spoolup_time_hysteresis.get_state()) {
 				_flight_state = FlightState::ready_for_takeoff;
 			}
 			break;
@@ -524,9 +521,7 @@ void MulticopterPositionControl::update_flight_state() {
 			}
 			break;
 		case FlightState::flight:
-			if (!_control_mode.flag_armed) {
-				_flight_state = FlightState::disarmed;
-			} else if (_vehicle_land_detected.landed) {
+			if (_vehicle_land_detected.landed) {
 				_flight_state = FlightState::ready_for_takeoff;
 			}
 			break;
