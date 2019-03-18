@@ -1134,6 +1134,7 @@ MulticopterPositionControl::start_flight_task()
 
 		switch (MPC_POS_MODE.get()) {
 		case 1:
+		case 3:
 			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitudeSmooth);
 			break;
 
