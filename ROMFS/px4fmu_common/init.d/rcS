@@ -153,6 +153,8 @@ else
 		param reset
 	fi
 
+	param set SYS_AUTOSTART 4006
+
 	#
 	# Set AUTOCNF flag to use it in AUTOSTART scripts.
 	#
