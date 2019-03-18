@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 3
+set PARAM_DEFAULTS_VER 4
 
 if [ $AUTOCNF = yes ]
 then
@@ -70,6 +70,10 @@ then
 	param set EKF2_AID_MASK 33
 	param set EKF2_GPS_POS_X 0.0100
 	param set EKF2_GPS_POS_Y -0.0050
+	param set EKF2_RNG_HMAX 35
+	param set EKF2_RNG_A_VMAX 12
+	param set EKF2_RNG_AID 1
+
 
 	# GPS parameters
 	param set GPS_1_CONFIG 201
@@ -133,16 +137,17 @@ then
 	param set MPC_LAND_ALT2 6.000
 	param set MPC_MANTHR_MIN 0.0000000
 	param set MPC_MAN_Y_MAX 45.0000000
-	param set MPC_POS_MODE 1
+	param set MPC_POS_MODE 3
+	param set MPC_SPOOLUP_TIME 2
 	param set MPC_THR_HOVER 0.40000000
 	param set MPC_THR_MIN 0.0000000
 	param set MPC_TILTMAX_AIR 35.0000000
 	param set MPC_TKO_RAMP_T 0.8000000
-	param set MPC_VEL_MANUAL 5.0000000
+	param set MPC_VEL_MANUAL 12
 	param set MPC_XY_CRUISE 5.0000000
 	param set MPC_XY_TRAJ_P 1.0000000
 	param set MPC_XY_VEL_I 0.0500000
-	param set MPC_XY_VEL_MAX 6.000000
+	param set MPC_XY_VEL_MAX 14
 	param set MPC_XY_VEL_P 0.1300000
 	param set MPC_YAW_MODE 0
 	param set MPC_Z_VEL_D 0.0020000
@@ -175,7 +180,7 @@ then
 
 	# Sensors parameters
 	param set SENS_BOARD_ROT 3
-	param set SENS_EN_LL40LS 2
+	param set SENS_EN_LL40LS 1
 	param set IMU_ACCEL_CUTOFF 20.000
 	param set IMU_GYRO_CUTOFF 20.000
 
