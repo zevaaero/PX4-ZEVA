@@ -69,6 +69,13 @@ void FlightTaskAutoLineSmoothVel::_setDefaultConstraints()
 	_constraints.speed_xy = MPC_XY_VEL_MAX.get(); // TODO : Should be computed using heading
 }
 
+inline float FlightTaskAutoLineSmoothVel::unwrap(float angle) {
+	if (angle < 0.f) {
+		angle += 2.f * M_PI_F;
+	}
+	return angle;
+}
+
 void FlightTaskAutoLineSmoothVel::_generateSetpoints()
 {
 	_prepareSetpoints();
@@ -81,7 +88,14 @@ void FlightTaskAutoLineSmoothVel::_generateSetpoints()
 
 	// Filter yaw setpoint using a simple first order digital filter
 	float alpha = _deltatime;
-	_yaw_setpoint = (1.f - alpha) * _yaw_sp_prev + alpha * _yaw_setpoint;
+	if (fabsf(_yaw_setpoint - _yaw_sp_prev) < M_PI_F) {
+		// Wrap around 0
+		_yaw_setpoint = (1.f - alpha) * _yaw_sp_prev + alpha * _yaw_setpoint;
+
+	} else {
+		// Wrap around PI/-PI
+		_yaw_setpoint = matrix::wrap_pi((1.f - alpha) * unwrap(_yaw_sp_prev) + alpha * unwrap(_yaw_setpoint));
+	}
 
 	_yaw_sp_prev = _yaw_setpoint;
 }
