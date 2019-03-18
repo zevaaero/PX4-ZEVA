@@ -849,10 +849,6 @@ MulticopterPositionControl::run()
 			local_pos_sp.vz = PX4_ISFINITE(_control.getVelSp()(2)) ? _control.getVelSp()(2) : setpoint.vz;
 			_control.getThrustSetpoint().copyTo(local_pos_sp.thrust);
 
-			if (_flight_state < FlightState::rampup) {
-				_att_sp.thrust_body[2] = 0.0f;
-			}
-
 			// Publish local position setpoint
 			// This message will be used by other modules (such as Landdetector) to determine
 			// vehicle intention.
@@ -932,6 +928,10 @@ MulticopterPositionControl::run()
 			_att_sp.fw_control_yaw = false;
 			_att_sp.apply_flaps = false;
 
+			if (_flight_state < FlightState::rampup) {
+				_att_sp.thrust_body[2] = 0.0f;
+			}
+
 			// publish attitude setpoint
 			// Note: this requires review. The reason for not sending
 			// an attitude setpoint is because for non-flighttask modes
@@ -968,6 +968,10 @@ MulticopterPositionControl::run()
 			_att_sp.q_d_valid = true;
 			_att_sp.thrust_body[2] = 0.0f;
 			_no_flight_task_running = true;
+
+			if (_flight_state < FlightState::rampup && _control_mode.flag_control_climb_rate_enabled) {
+				publish_attitude();
+			}
 		}
 	}
 
