@@ -78,6 +78,12 @@ void FlightTaskAutoLineSmoothVel::_generateSetpoints()
 		// no valid heading -> generate heading in this flight task
 		_generateHeading();
 	}
+
+	// Filter yaw setpoint using a simple first order digital filter
+	float alpha = _deltatime;
+	_yaw_setpoint = (1.f - alpha) * _yaw_sp_prev + alpha * _yaw_setpoint;
+
+	_yaw_sp_prev = _yaw_setpoint;
 }
 
 void FlightTaskAutoLineSmoothVel::_generateHeading()
@@ -86,8 +92,6 @@ void FlightTaskAutoLineSmoothVel::_generateHeading()
 	if (!_generateHeadingAlongTraj()) {
 		_yaw_setpoint = _yaw_sp_prev;
 	}
-
-	_yaw_sp_prev = _yaw_setpoint;
 }
 
 bool FlightTaskAutoLineSmoothVel::_generateHeadingAlongTraj()
