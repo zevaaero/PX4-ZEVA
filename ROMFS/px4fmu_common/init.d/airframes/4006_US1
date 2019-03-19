@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 4
+set PARAM_DEFAULTS_VER 5
 
 if [ $AUTOCNF = yes ]
 then
@@ -70,7 +70,7 @@ then
 	param set EKF2_AID_MASK 33
 	param set EKF2_GPS_POS_X 0.0100
 	param set EKF2_GPS_POS_Y -0.0050
-	param set EKF2_RNG_HMAX 35
+	param set EKF2_RNG_A_HMAX 35
 	param set EKF2_RNG_A_VMAX 12
 	param set EKF2_RNG_AID 1
 
@@ -130,7 +130,6 @@ then
 	param set MPC_AUTO_MODE 1
 	param set MPC_DEC_HOR_SLOW 3.0000000
 	param set MPC_HOLD_MAX_XY 0.4000000
-	param set MPC_IDLE_TKO 2.0000000
 	param set MPC_JERK_MAX 60.0000000
 	param set MPC_JERK_MIN 60.0000000
 	param set MPC_LAND_ALT1 12.000
@@ -149,7 +148,7 @@ then
 	param set MPC_XY_VEL_I 0.0500000
 	param set MPC_XY_VEL_MAX 14
 	param set MPC_XY_VEL_P 0.1300000
-	param set MPC_YAW_MODE 0
+	param set MPC_YAW_MODE 3
 	param set MPC_Z_VEL_D 0.0020000
 	param set MPC_Z_VEL_I 0.0500000
 	param set MPC_Z_VEL_P 0.2500000
