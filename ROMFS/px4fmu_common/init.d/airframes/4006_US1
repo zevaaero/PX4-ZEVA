@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 5
+set PARAM_DEFAULTS_VER 6
 
 if [ $AUTOCNF = yes ]
 then
@@ -130,8 +130,8 @@ then
 	param set MPC_AUTO_MODE 1
 	param set MPC_DEC_HOR_SLOW 3.0000000
 	param set MPC_HOLD_MAX_XY 0.4000000
-	param set MPC_JERK_MAX 60.0000000
-	param set MPC_JERK_MIN 60.0000000
+	param set MPC_JERK_MAX 15
+	param set MPC_JERK_MIN 15
 	param set MPC_LAND_ALT1 12.000
 	param set MPC_LAND_ALT2 6.000
 	param set MPC_MANTHR_MIN 0.0000000
@@ -141,7 +141,8 @@ then
 	param set MPC_THR_HOVER 0.40000000
 	param set MPC_THR_MIN 0.0000000
 	param set MPC_TILTMAX_AIR 35.0000000
-	param set MPC_TKO_RAMP_T 0.8000000
+	param set MPC_TKO_RAMP_T 0.4
+	param set MPC_TKO_SPEED 3
 	param set MPC_VEL_MANUAL 12
 	param set MPC_XY_CRUISE 5.0000000
 	param set MPC_XY_TRAJ_P 1.0000000
@@ -179,7 +180,7 @@ then
 
 	# Sensors parameters
 	param set SENS_BOARD_ROT 3
-	param set SENS_EN_LL40LS 1
+	param set SENS_EN_LL40LS 2
 	param set IMU_ACCEL_CUTOFF 20.000
 	param set IMU_GYRO_CUTOFF 20.000
 
