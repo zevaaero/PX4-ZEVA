@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 6
+set PARAM_DEFAULTS_VER 7
 
 if [ $AUTOCNF = yes ]
 then
