@@ -168,6 +168,7 @@ then
 	param set RC_MAP_AUX3 12
 	param set RC_MAP_AUX4 9
 	param set RC_MAP_AUX5 8
+	param set RC_MAP_AUX6 7
 	param set RC_MAP_FAILSAFE 3
 
 	# RTL parameters
