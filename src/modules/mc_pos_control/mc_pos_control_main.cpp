@@ -1000,7 +1000,7 @@ MulticopterPositionControl::start_flight_task()
 
 	if (_flight_state == FlightState::rampup) {
 		should_disable_task = false;
-		_flight_tasks.switchTask(FlightTaskIndex::Takeoff);
+		_flight_tasks.switchTask(FlightTaskIndex::Rampup);
 		return;
 	}
 

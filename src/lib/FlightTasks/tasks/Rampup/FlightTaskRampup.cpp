@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,17 +32,17 @@
  ****************************************************************************/
 
 /**
- * @file FlightTaskTranstion.cpp
+ * @file FlightTaskRampup.cpp
  */
 
-#include "FlightTaskTakeoff.hpp"
+#include "FlightTaskRampup.hpp"
 
-bool FlightTaskTakeoff::updateInitialize()
+bool FlightTaskRampup::updateInitialize()
 {
 	return FlightTask::updateInitialize();
 }
 
-bool FlightTaskTakeoff::activate()
+bool FlightTaskRampup::activate()
 {
 	FlightTask::activate();
 	_thrust_setpoint(0) = _thrust_setpoint(1) = _thrust_setpoint(2) = 0.0f;
@@ -50,7 +50,7 @@ bool FlightTaskTakeoff::activate()
 	return true;
 }
 
-bool FlightTaskTakeoff::update()
+bool FlightTaskRampup::update()
 {
 	_thrust_setpoint(0) = _thrust_setpoint(1) = 0.0f;
 	_thrust_setpoint(2) -= _takeoff_ramp_tc.get() * _deltatime;

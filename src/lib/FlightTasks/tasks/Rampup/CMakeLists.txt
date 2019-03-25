@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2019 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,9 +31,9 @@
 #
 ############################################################################
 
-px4_add_library(FlightTaskTakeoff
-	FlightTaskTakeoff.cpp
+px4_add_library(FlightTaskRampup
+	FlightTaskRampup.cpp
 )
 
-target_link_libraries(FlightTaskTakeoff PUBLIC FlightTask)
-target_include_directories(FlightTaskTakeoff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(FlightTaskRampup PUBLIC FlightTask)
+target_include_directories(FlightTaskRampup PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

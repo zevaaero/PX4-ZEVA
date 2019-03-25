@@ -63,7 +63,7 @@ list(APPEND flight_tasks_all
 	Offboard
 	Failsafe
 	Transition
-	Takeoff
+	Rampup
 	${flight_tasks_to_add}
 )
 

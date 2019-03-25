@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file FlightTaskTakeoff.hpp
+ * @file FlightTaskRampup.hpp
  *
  */
 
@@ -40,12 +40,12 @@
 
 #include "FlightTask.hpp"
 
-class FlightTaskTakeoff : public FlightTask
+class FlightTaskRampup : public FlightTask
 {
 public:
-	FlightTaskTakeoff() = default;
+	FlightTaskRampup() = default;
 
-	virtual ~FlightTaskTakeoff() = default;
+	virtual ~FlightTaskRampup() = default;
 	bool activate() override;
 	bool updateInitialize() override;
 	bool update() override;
