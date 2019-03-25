@@ -271,8 +271,6 @@ __EXPORT void board_spi_reset(int ms)
 
 	/* set the sensor rail off (default) */
 	stm32_configgpio(GPIO_VDD_3V3_SENSORS_EN);
-	/* set the periph rail off (default) */
-	stm32_configgpio(GPIO_PERIPH_3V3_EN);
 
 #ifdef CONFIG_STM32_SPI4
 
@@ -300,8 +298,6 @@ __EXPORT void board_spi_reset(int ms)
 
 	/* switch the sensor rail back on */
 	stm32_gpiowrite(GPIO_VDD_3V3_SENSORS_EN, 1);
-	/* switch the periph rail back on */
-	stm32_gpiowrite(GPIO_PERIPH_3V3_EN, 1);
 
 	/* wait a bit before starting SPI, different times didn't influence results */
 	usleep(100);

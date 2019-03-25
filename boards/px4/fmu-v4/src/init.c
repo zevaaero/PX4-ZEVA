@@ -206,7 +206,6 @@ stm32_boardinitialize(void)
 
 	// Safety - led on in led driver.
 	stm32_configgpio(GPIO_BTN_SAFETY);
-	stm32_configgpio(GPIO_RSSI_IN);
 	stm32_configgpio(GPIO_PPM_IN);
 
 	int spi_init_mask = SPI_BUS_INIT_MASK;
@@ -263,7 +262,6 @@ stm32_boardinitialize(void)
 
 static struct spi_dev_s *spi1;
 static struct spi_dev_s *spi2;
-static struct spi_dev_s *spi4;
 static struct sdio_dev_s *sdio;
 #if defined(CONFIG_STM32_SPI4)
 static struct spi_dev_s *spi4;
