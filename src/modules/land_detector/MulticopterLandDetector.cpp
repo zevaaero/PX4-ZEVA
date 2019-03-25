@@ -194,19 +194,11 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	bool hit_ground = _in_descend && !verticalMovement;
 
 	// TODO: we need an accelerometer based check for vertical movement for flying without GPS
-	bool ground_contact = false;
-
-	if (_maybe_landed_hysteresis.get_state() || _landed_hysteresis.get_state()) {
-		ground_contact = _has_low_thrust() || hit_ground;
-
-	} else {
-		ground_contact = _has_low_thrust() && hit_ground;
-	}
-
-	if (ground_contact && (!_horizontalMovement || !_has_position_lock())
+	if ((_has_low_thrust() || hit_ground) && (!_horizontalMovement || !_has_position_lock())
 	    && (!verticalMovement || !_has_altitude_lock())) {
 		return true;
 	}
+
 
 	return false;
 }
