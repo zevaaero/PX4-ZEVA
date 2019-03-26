@@ -8,10 +8,10 @@
 if ! ver hwcmp INTEL_AEROFC_V1
 then
 	# Impossible aerospace is out of RAM, don't start mavlink usb instance
-	if ! param compare 4006
+	if ! param compare SYS_AUTOSTART 4006
 	then
 		# Start MAVLink on the USB port
-		#mavlink start -r 800000 -d /dev/ttyACM0 -m config -x
+		mavlink start -r 800000 -d /dev/ttyACM0 -m config -x
 	fi
 fi
 
