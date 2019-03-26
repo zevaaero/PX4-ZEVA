@@ -117,6 +117,7 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 	_rates_int.zero();
 	_thrust_sp = 0.0f;
 	_att_control.zero();
+	_yaw_rate_sp_prev = 0.0f;
 
 	/* initialize thermal corrections as we might not immediately get a topic update (only non-zero values) */
 	for (unsigned i = 0; i < 3; i++) {
@@ -648,6 +649,14 @@ MulticopterAttitudeControl::pid_attenuations(float tpa_breakpoint, float tpa_rat
 void
 MulticopterAttitudeControl::control_attitude_rates(float dt)
 {
+
+	// appy a first order filter to the desired yawrate setpoint
+	float yawrate_sp_cutoff = _yawrate_sp_cutoff_hz.get() * 2.0f * M_PI_F;
+	float alpha = yawrate_sp_cutoff * dt;
+    _rates_sp(2) = (1.f - alpha) * _yaw_rate_sp_prev + alpha * _rates_sp(2);
+
+	_yaw_rate_sp_prev = _rates_sp(2);
+
 	/* reset integral if disarmed */
 	if (!_v_control_mode.flag_armed || !_vehicle_status.is_rotary_wing) {
 		_rates_int.zero();

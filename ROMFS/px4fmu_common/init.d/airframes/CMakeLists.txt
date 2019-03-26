@@ -62,6 +62,9 @@ px4_add_romfs_files(
 	4002_quad_x_mount
 	4003_qavr5
 	4004_H4_680mm
+	4005_if750a
+	4006_US1
+	4007_if750a_v2
 	4009_qav250
 	4010_dji_f330
 	4011_dji_f450

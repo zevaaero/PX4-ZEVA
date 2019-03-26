@@ -57,7 +57,7 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_local_position.h>
-
+#include <uORB/topics/telemetry_status.h>
 using math::constrain;
 using uORB::Publication;
 using uORB::Subscription;
@@ -96,7 +96,6 @@ private:
 
 		(ParamInt<px4::params::NAV_DLL_ACT>) _datalink_loss_action,
 		(ParamInt<px4::params::COM_DL_LOSS_T>) _datalink_loss_threshold,
-		(ParamInt<px4::params::COM_DL_REG_T>) _datalink_regain_threshold,
 
 		(ParamInt<px4::params::COM_HLDL_LOSS_T>) _high_latency_datalink_loss_threshold,
 		(ParamInt<px4::params::COM_HLDL_REG_T>) _high_latency_datalink_regain_threshold,
@@ -118,7 +117,7 @@ private:
 		(ParamInt<px4::params::COM_LOW_BAT_ACT>) _low_bat_action,
 		(ParamFloat<px4::params::COM_DISARM_LAND>) _disarm_when_landed_timeout,
 
-		(ParamInt<px4::params::MPC_OBS_AVOID>) _obs_avoid
+		(ParamInt<px4::params::COM_OBS_AVOID>) _obs_avoid
 	)
 
 	const int64_t POSVEL_PROBATION_MIN = 1_s;	/**< minimum probation duration (usec) */
@@ -168,35 +167,37 @@ private:
 
 	void mission_init();
 
+	void estimator_check(bool *status_changed);
+
+	void battery_status_check();
+
 	/**
 	 * Checks the status of all available data links and handles switching between different system telemetry states.
 	 */
 	void		data_link_check(bool &status_changed);
-	int		_telemetry_status_sub[ORB_MULTI_MAX_INSTANCES] {};
 
-	uint64_t	_datalink_last_heartbeat_gcs{0};
-	uint64_t	_datalink_lost{0};
+	int		_telemetry_status_sub{-1};
 
-	uint64_t	_datalink_last_heartbeat_onboard_controller{0};
-	uint64_t	_onboard_controller_lost{0};
+	hrt_abstime	_datalink_last_heartbeat_gcs{0};
 
-	uint64_t	_datalink_last_heartbeat_avoidance_system{0};
-	uint64_t	_avoidance_system_lost{0};
-	uint64_t	_avoidance_system_not_started{0};
-	bool		_avoidance_system_status_change{0};
-	uint64_t	_datalink_last_status_avoidance_system{9};
+	hrt_abstime	_datalink_last_heartbeat_onboard_controller{0};
+	bool 				_onboard_controller_lost{false};
+
+	hrt_abstime	_datalink_last_heartbeat_avoidance_system{0};
+	bool				_avoidance_system_lost{false};
+	hrt_abstime	_avoidance_system_not_started{0};
+
+	bool		_avoidance_system_status_change{false};
+	uint8_t	_datalink_last_status_avoidance_system{telemetry_status_s::MAV_STATE_UNINIT};
 
 	int			_iridiumsbd_status_sub{-1};
-	uint64_t	_high_latency_datalink_heartbeat{0};
-	uint64_t	_high_latency_datalink_lost{0};
 
-	void estimator_check(bool *status_changed);
+	hrt_abstime	_high_latency_datalink_heartbeat{0};
+	hrt_abstime	_high_latency_datalink_lost{0};
 
 	int _battery_sub{-1};
 	uint8_t _battery_warning{battery_status_s::BATTERY_WARNING_NONE};
 	float _battery_current{0.0f};
-
-	void battery_status_check();
 
 	systemlib::Hysteresis	_auto_disarm_landed{false};
 	systemlib::Hysteresis	_auto_disarm_killed{false};

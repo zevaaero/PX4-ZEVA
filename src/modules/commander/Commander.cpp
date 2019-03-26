@@ -560,9 +560,9 @@ Commander::Commander() :
 	_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
 	_battery_sub = orb_subscribe(ORB_ID(battery_status));
 
-	for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
-		_telemetry_status_sub[i] = -1;
-	}
+
+	_telemetry_status_sub = orb_subscribe(ORB_ID(telemetry_status));
+
 
 	// We want to accept RC inputs as default
 	status.rc_input_mode = vehicle_status_s::RC_IN_MODE_DEFAULT;
@@ -585,12 +585,8 @@ Commander::Commander() :
 Commander::~Commander()
 {
 	orb_unsubscribe(_battery_sub);
+	orb_unsubscribe(_telemetry_status_sub);
 
-	for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
-		if (_telemetry_status_sub[i] != -1) {
-			orb_unsubscribe(_telemetry_status_sub[i]);
-		}
-	}
 
 	if (_iridiumsbd_status_sub) {
 		orb_unsubscribe(_iridiumsbd_status_sub);
@@ -1289,7 +1285,7 @@ Commander::run()
 	int system_power_sub = orb_subscribe(ORB_ID(system_power));
 	int vtol_vehicle_status_sub = orb_subscribe(ORB_ID(vtol_vehicle_status));
 
-	struct geofence_result_s geofence_result {};
+	geofence_result_s geofence_result {};
 
 	land_detector.landed = true;
 
@@ -3774,9 +3770,6 @@ Commander *Commander::instantiate(int argc, char *argv[])
 {
 	Commander *instance = new Commander();
 
-	// XXX remove this once this is a class member
-	status = {};
-
 	if (instance) {
 		if (argc >= 2 && !strcmp(argv[1], "--hil")) {
 			instance->enable_hil();
@@ -3832,161 +3825,165 @@ bool Commander::preflight_check(bool report)
 
 void Commander::data_link_check(bool &status_changed)
 {
-	for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+	bool updated = false;
 
-		if (_telemetry_status_sub[i] < 0) {
-			if (orb_exists(ORB_ID(telemetry_status), i) == PX4_OK) {
-				_telemetry_status_sub[i] = orb_subscribe_multi(ORB_ID(telemetry_status), i);
-			}
-		}
+	orb_check(_telemetry_status_sub, &updated);
 
-		bool updated = false;
+	if (updated) {
 
-		orb_check(_telemetry_status_sub[i], &updated);
+		telemetry_status_s telemetry;
 
-		if (updated) {
-			telemetry_status_s telemetry;
+		if (orb_copy(ORB_ID(telemetry_status), _telemetry_status_sub, &telemetry) == PX4_OK) {
 
-			if (orb_copy(ORB_ID(telemetry_status), _telemetry_status_sub[i], &telemetry) == PX4_OK) {
+			// handle different radio types
+			switch (telemetry.type) {
+			case telemetry_status_s::LINK_TYPE_USB:
+				// set (but don't unset) telemetry via USB as active once a MAVLink connection is up
+				status_flags.usb_connected = true;
+				break;
 
-				// handle different radio types
-				switch (telemetry.type) {
-				case (telemetry_status_s::LINK_TYPE_USB):
-					// set (but don't unset) telemetry via USB as active once a MAVLink connection is up
-					status_flags.usb_connected = true;
-					break;
+			case telemetry_status_s::LINK_TYPE_IRIDIUM:
 
-				case (telemetry_status_s::LINK_TYPE_IRIDIUM):
-
-					// lazily subscribe
-					if (orb_exists(ORB_ID(iridiumsbd_status), 0) == PX4_OK) {
-						_iridiumsbd_status_sub = orb_subscribe(ORB_ID(iridiumsbd_status));
-					}
-
-					if (_iridiumsbd_status_sub >= 0) {
-						bool iridiumsbd_updated = false;
-						orb_check(_iridiumsbd_status_sub, &iridiumsbd_updated);
-
-						if (iridiumsbd_updated) {
-							iridiumsbd_status_s iridium_status;
-
-							if (orb_copy(ORB_ID(iridiumsbd_status), _iridiumsbd_status_sub, &iridium_status) == PX4_OK) {
-								_high_latency_datalink_heartbeat = iridium_status.last_heartbeat;
-
-								if (status.high_latency_data_link_lost) {
-									if (hrt_elapsed_time(&_high_latency_datalink_lost) > (_high_latency_datalink_regain_threshold.get() * 1_s)) {
-										status.high_latency_data_link_lost = false;
-										status_changed = true;
-									}
-								}
-
-							}
-						}
-					}
-
-					break;
+				// lazily subscribe
+				if (_iridiumsbd_status_sub == -1 && orb_exists(ORB_ID(iridiumsbd_status), 0) == PX4_OK) {
+					_iridiumsbd_status_sub = orb_subscribe(ORB_ID(iridiumsbd_status));
 				}
 
-				// handle different remote types
-				switch (telemetry.remote_type) {
-				case (telemetry_status_s::MAV_TYPE_GCS):
-					_datalink_last_heartbeat_gcs = telemetry.heartbeat_time;
+				if (_iridiumsbd_status_sub >= 0) {
+					bool iridiumsbd_updated = false;
+					orb_check(_iridiumsbd_status_sub, &iridiumsbd_updated);
 
+					if (iridiumsbd_updated) {
+						iridiumsbd_status_s iridium_status;
 
-					if (status.data_link_lost) {
-						if (hrt_elapsed_time(&_datalink_lost) > (_datalink_regain_threshold.get() * 1_s)) {
-							status.data_link_lost = false;
-							status_changed = true;
+						if (orb_copy(ORB_ID(iridiumsbd_status), _iridiumsbd_status_sub, &iridium_status) == PX4_OK) {
+							_high_latency_datalink_heartbeat = iridium_status.last_heartbeat;
+
+							if (status.high_latency_data_link_lost) {
+								if (hrt_elapsed_time(&_high_latency_datalink_lost) > (_high_latency_datalink_regain_threshold.get() * 1_s)) {
+									status.high_latency_data_link_lost = false;
+									status_changed = true;
+								}
+							}
+
 						}
 					}
+				}
 
-					break;
+				break;
+			}
 
-				case (telemetry_status_s::MAV_TYPE_ONBOARD_CONTROLLER):
-					_datalink_last_heartbeat_onboard_controller = telemetry.heartbeat_time;
 
-					if (_onboard_controller_lost != false) {
-						mavlink_log_info(&mavlink_log_pub, "ONBOARD CONTROLLER REGAINED");
+			// handle different remote types
+			switch (telemetry.remote_type) {
+			case telemetry_status_s::MAV_TYPE_GCS:
+
+				// Recover from data link lost
+				if (status.data_link_lost) {
+					if (telemetry.heartbeat_time > _datalink_last_heartbeat_gcs) {
+						status.data_link_lost = false;
+						status_changed = true;
+
+						if (_datalink_last_heartbeat_gcs != 0) {
+							mavlink_log_info(&mavlink_log_pub, "Data link regained");
+						}
+					}
+				}
+
+				_datalink_last_heartbeat_gcs = telemetry.heartbeat_time;
+
+				break;
+
+			case telemetry_status_s::MAV_TYPE_ONBOARD_CONTROLLER:
+
+				if (_onboard_controller_lost) {
+					if (telemetry.heartbeat_time > _datalink_last_heartbeat_onboard_controller) {
+						mavlink_log_info(&mavlink_log_pub, "Onboard controller regained");
+						_onboard_controller_lost = false;
+						status_changed = true;
 					}
 
-					_onboard_controller_lost = false;
+				}
 
-					if (telemetry.remote_component_id == telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE) {
-						if (telemetry.heartbeat_time != _datalink_last_heartbeat_avoidance_system) {
-							_avoidance_system_status_change = _datalink_last_status_avoidance_system != telemetry.remote_system_status;
-						}
+				_datalink_last_heartbeat_onboard_controller = telemetry.heartbeat_time;
 
-						_datalink_last_heartbeat_avoidance_system = telemetry.heartbeat_time;
-						_datalink_last_status_avoidance_system = telemetry.remote_system_status;
+				if (telemetry.remote_component_id == telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE) {
+					if (telemetry.heartbeat_time != _datalink_last_heartbeat_avoidance_system) {
+						_avoidance_system_status_change = _datalink_last_status_avoidance_system != telemetry.remote_system_status;
+					}
 
-						if (_avoidance_system_lost != false) {
-							mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM REGAINED");
-						}
+					_datalink_last_heartbeat_avoidance_system = telemetry.heartbeat_time;
+					_datalink_last_status_avoidance_system = telemetry.remote_system_status;
 
+					if (_avoidance_system_lost) {
+						mavlink_log_info(&mavlink_log_pub, "Avoidance system regained");
+						status_changed = true;
 						_avoidance_system_lost = false;
 					}
-
-					break;
 				}
+
+				break;
 			}
 		}
 	}
 
-	// GCS data link loss failsafe
-	if (hrt_elapsed_time(&_datalink_last_heartbeat_gcs) > (_datalink_loss_threshold.get() * 1_s)) {
-		_datalink_lost = hrt_absolute_time();
 
-		if (!status.data_link_lost) {
+	// GCS data link loss failsafe
+	if (!status.data_link_lost) {
+		if (_datalink_last_heartbeat_gcs != 0
+		    && hrt_elapsed_time(&_datalink_last_heartbeat_gcs) > (_datalink_loss_threshold.get() * 1_s)) {
+
 			status.data_link_lost = true;
 			status.data_link_lost_counter++;
-			mavlink_log_critical(&mavlink_log_pub, "DATA LINK LOST");
+
+			mavlink_log_critical(&mavlink_log_pub, "Data link lost");
+
 			status_changed = true;
 		}
 	}
 
 	// ONBOARD CONTROLLER data link loss failsafe (hard coded 5 seconds)
-	//  only issue a periodic warning for now
 	if ((_datalink_last_heartbeat_onboard_controller > 0)
-	    && (hrt_elapsed_time(&_datalink_last_heartbeat_onboard_controller) > 5_s) &&
-	    (hrt_elapsed_time(&_onboard_controller_lost) > 5_s)) {
+	    && (hrt_elapsed_time(&_datalink_last_heartbeat_onboard_controller) > 5_s)
+	    && !_onboard_controller_lost) {
 
-		_onboard_controller_lost = hrt_absolute_time();
-		mavlink_log_critical(&mavlink_log_pub, "ONBOARD CONTROLLER LOST");
+		mavlink_log_critical(&mavlink_log_pub, "Onboard controller lost");
+		_onboard_controller_lost = true;
+		status_changed = true;
 	}
 
 	// AVOIDANCE SYSTEM state check (only if it is enabled)
-	if (_obs_avoid.get()) {
+	if (_obs_avoid.get() && !_onboard_controller_lost) {
 
 		//if avoidance never started
 		if (_datalink_last_heartbeat_avoidance_system == 0 && hrt_elapsed_time(&_avoidance_system_not_started) > 5_s) {
 			_avoidance_system_not_started = hrt_absolute_time();
-			mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM DID NOT START");
+			mavlink_log_info(&mavlink_log_pub, "Waiting for avoidance system to start");
 		}
 
 		//if heartbeats stop
-		if ((_datalink_last_heartbeat_avoidance_system > 0)
-		    && (hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > 5_s) &&
-		    (hrt_elapsed_time(&_avoidance_system_lost) > 5_s)) {
-			_avoidance_system_lost = hrt_absolute_time();
-			mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM LOST");
+		if (!_avoidance_system_lost && (_datalink_last_heartbeat_avoidance_system > 0)
+		    && (hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > 5_s)) {
+			_avoidance_system_lost = true;
+			mavlink_log_critical(&mavlink_log_pub, "Avoidance system lost");
 		}
 
 		//if status changed
 		if (_avoidance_system_status_change) {
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_BOOT) {
-				mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM STARTING");
+				mavlink_log_info(&mavlink_log_pub, "Avoidance system starting");
 			}
 
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_ACTIVE) {
-				mavlink_log_info(&mavlink_log_pub, "AVOIDANCE SYSTEM HEALTHY");
+				mavlink_log_info(&mavlink_log_pub, "Avoidance system healthy");
 			}
 
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_CRITICAL) {
-				mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM TIMEOUT");
+				mavlink_log_info(&mavlink_log_pub, "Avoidance system timeout");
 			}
 
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_FLIGHT_TERMINATION) {
-				mavlink_log_critical(&mavlink_log_pub, "AVOIDANCE SYSTEM ABORT");
+				mavlink_log_critical(&mavlink_log_pub, "Avoidance system abort");
 			}
 
 			_avoidance_system_status_change = false;
@@ -3995,12 +3992,13 @@ void Commander::data_link_check(bool &status_changed)
 
 
 	// high latency data link loss failsafe
-	if (hrt_elapsed_time(&_high_latency_datalink_heartbeat) > (_high_latency_datalink_loss_threshold.get() * 1_s)) {
+	if (_high_latency_datalink_heartbeat > 0
+	    && hrt_elapsed_time(&_high_latency_datalink_heartbeat) > (_high_latency_datalink_loss_threshold.get() * 1_s)) {
 		_high_latency_datalink_lost = hrt_absolute_time();
 
 		if (!status.high_latency_data_link_lost) {
 			status.high_latency_data_link_lost = true;
-			mavlink_log_critical(&mavlink_log_pub, "HIGH LATENCY DATA LINK LOST");
+			mavlink_log_critical(&mavlink_log_pub, "High latency data link lost");
 			status_changed = true;
 		}
 	}
@@ -4041,13 +4039,13 @@ void Commander::battery_status_check()
 			if (!armed.armed && (battery.warning != _battery_warning)) {
 
 				if (battery.warning == battery_status_s::BATTERY_WARNING_EMERGENCY) {
-					mavlink_log_critical(&mavlink_log_pub, "DANGEROUSLY LOW BATTERY, SHUT SYSTEM DOWN");
+					mavlink_log_critical(&mavlink_log_pub, "Dangerously low battery, shut system down");
 					px4_usleep(200000);
 
 					int ret_val = px4_shutdown_request(false, false);
 
 					if (ret_val) {
-						mavlink_log_critical(&mavlink_log_pub, "SYSTEM DOES NOT SUPPORT SHUTDOWN");
+						mavlink_log_critical(&mavlink_log_pub, "System does not support shutdown");
 
 					} else {
 						while (1) { px4_usleep(1); }
@@ -4140,7 +4138,7 @@ void Commander::estimator_check(bool *status_changed)
 						// if the innovation test has failed continuously, declare the nav as failed
 						if (hrt_elapsed_time(&_time_last_innov_pass) > 1_s) {
 							_nav_test_failed = true;
-							mavlink_log_emergency(&mavlink_log_pub, "CRITICAL NAVIGATION FAILURE - CHECK SENSOR CALIBRATION");
+							mavlink_log_emergency(&mavlink_log_pub, "Critical navigation failure - check sensor calibration");
 						}
 					}
 				}

@@ -99,7 +99,9 @@ void FlightTaskManualAltitude::_updateConstraints()
 void FlightTaskManualAltitude::_scaleSticks()
 {
 	// Use sticks input with deadzone and exponential curve for vertical velocity and yawspeed
-	_yawspeed_setpoint = _sticks_expo(3) * math::radians(MPC_MAN_Y_MAX.get());
+	// Use sticks input with deadzone and exponential curve for vertical velocity and yawspeed
+	float alpha = 10.f * _deltatime;
+	_yawspeed_setpoint = (1.f - alpha) * _yawspeed_setpoint + alpha * _sticks_expo(3) * math::radians(MPC_MAN_Y_MAX.get());
 
 	const float vel_max_z = (_sticks(2) > 0.0f) ? _constraints.speed_down : _constraints.speed_up;
 	_velocity_setpoint(2) = vel_max_z * _sticks_expo(2);

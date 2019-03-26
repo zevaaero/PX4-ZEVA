@@ -11,7 +11,7 @@ px4_add_board(
 	ROMFSROOT px4fmu_common
 	IO px4_io-v2_default
 	TESTING
-	UAVCAN_INTERFACES 2
+	UAVCAN_INTERFACES 1
 
 	SERIAL_PORTS
 		GPS1:/dev/ttyS3

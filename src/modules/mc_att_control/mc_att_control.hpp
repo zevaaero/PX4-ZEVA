@@ -250,6 +250,8 @@ private:
 		(ParamFloat<px4::params::MC_YAWRATE_MAX>) _yaw_rate_max,
 		(ParamFloat<px4::params::MC_YAWRAUTO_MAX>) _yaw_auto_max,
 		(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _yaw_rate_scaling,			/**< scaling factor from stick to yaw rate */
+		(ParamFloat<px4::params::MC_YR_SP_CUTOFF>) _yawrate_sp_cutoff_hz,
+
 
 		(ParamFloat<px4::params::MC_ACRO_R_MAX>) _acro_roll_max,
 		(ParamFloat<px4::params::MC_ACRO_P_MAX>) _acro_pitch_max,
@@ -290,6 +292,7 @@ private:
 	matrix::Vector3f _auto_rate_max;	/**< attitude rate limits in auto modes */
 	matrix::Vector3f _acro_rate_max;	/**< max attitude rates in acro mode */
 	float _man_tilt_max;			/**< maximum tilt allowed for manual flight [rad] */
+	float _yaw_rate_sp_prev;
 
 };
 

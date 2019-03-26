@@ -32,50 +32,25 @@
  ****************************************************************************/
 
 /**
- * @file FlightTaskAutoLineSmoothVel.hpp
+ * @file FlightTaskRampup.hpp
  *
- * Flight task for autonomous, gps driven mode. The vehicle flies
- * along a straight line in between waypoints.
  */
 
 #pragma once
 
-#include "FlightTaskAutoMapper2.hpp"
-#include "VelocitySmoothing.hpp"
+#include "FlightTask.hpp"
 
-class FlightTaskAutoLineSmoothVel : public FlightTaskAutoMapper2
+class FlightTaskRampup : public FlightTask
 {
 public:
-	FlightTaskAutoLineSmoothVel() = default;
-	virtual ~FlightTaskAutoLineSmoothVel() = default;
+	FlightTaskRampup() = default;
 
+	virtual ~FlightTaskRampup() = default;
 	bool activate() override;
-	void reActivate() override;
+	bool updateInitialize() override;
+	bool update() override;
 
-protected:
-
-	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAutoMapper2,
-					(ParamFloat<px4::params::MIS_YAW_ERR>) MIS_YAW_ERR, // yaw-error threshold
-					(ParamFloat<px4::params::MPC_ACC_HOR>) MPC_ACC_HOR, // acceleration in flight
-					(ParamFloat<px4::params::MPC_ACC_UP_MAX>) MPC_ACC_UP_MAX,
-					(ParamFloat<px4::params::MPC_ACC_DOWN_MAX>) MPC_ACC_DOWN_MAX,
-					(ParamFloat<px4::params::MPC_ACC_HOR_MAX>) MPC_ACC_HOR_MAX,
-					(ParamFloat<px4::params::MPC_JERK_MIN>) MPC_JERK_MIN,
-					(ParamFloat<px4::params::MPC_XY_TRAJ_P>) MPC_XY_TRAJ_P,
-					(ParamFloat<px4::params::MPC_Z_TRAJ_P>) MPC_Z_TRAJ_P
-				       );
-
-	void _generateSetpoints() override; /**< Generate setpoints along line. */
-	void _setDefaultConstraints() override;
-
-	inline float unwrap(float angle);
-	inline float constrain_one_side(float val, float constrain);
-	void _generateHeading();
-	bool _generateHeadingAlongTraj(); /**< Generates heading along trajectory. */
-	void _updateTrajConstraints();
-	void _prepareSetpoints(); /**< Generate velocity target points for the trajectory generator. */
-	void _generateTrajectory();
-	VelocitySmoothing _trajectory[3]; ///< Trajectories in x, y and z directions
-	float _yaw_sp_prev;
-	uint8_t _reset_counter{0}; /**< counter for estimator resets in xy-direction */
+private:
+	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
+					(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _takeoff_ramp_tc)
 };

@@ -728,3 +728,12 @@ PARAM_DEFINE_INT32(MPC_OBS_AVOID, 0);
  */
 PARAM_DEFINE_INT32(MPC_YAW_MODE, 0);
 
+/**
+ * Throttle slew rate
+ *
+ * Maiximum throttle slew rate.
+ *
+ * @min 1
+ * @group Multicopter Position Control.
+ */
+PARAM_DEFINE_FLOAT(MPC_THR_RATE_MAX, 2);

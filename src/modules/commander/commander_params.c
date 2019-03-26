@@ -104,21 +104,6 @@ PARAM_DEFINE_FLOAT(TRIM_YAW, 0.0f);
 PARAM_DEFINE_INT32(COM_DL_LOSS_T, 10);
 
 /**
- * Datalink regain time threshold
- *
- * After a data link loss: after this this amount of seconds with a healthy datalink the 'datalink loss'
- * flag is set back to false
- *
- * @group Commander
- * @unit s
- * @min 0
- * @max 3
- * @decimal 1
- * @increment 0.5
- */
-PARAM_DEFINE_INT32(COM_DL_REG_T, 0);
-
-/**
  * High Latency Datalink loss time threshold
  *
  * After this amount of seconds without datalink the data link lost mode triggers
@@ -811,3 +796,12 @@ PARAM_DEFINE_INT32(NAV_DLL_ACT, 0);
  * @group Mission
  */
 PARAM_DEFINE_INT32(NAV_RCL_ACT, 2);
+
+/**
+ * Flag to enable obstacle avoidance
+ * Temporary Parameter to enable interface testing
+ *
+ * @boolean
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(COM_OBS_AVOID, 0);

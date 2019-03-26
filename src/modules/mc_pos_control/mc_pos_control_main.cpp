@@ -161,7 +161,12 @@ private:
 		(ParamInt<px4::params::MPC_ALT_MODE>) MPC_ALT_MODE,
 		(ParamFloat<px4::params::MPC_SPOOLUP_TIME>) MPC_SPOOLUP_TIME, /**< time to let motors spool up after arming */
 		(ParamInt<px4::params::MPC_OBS_AVOID>) MPC_OBS_AVOID, /**< enable obstacle avoidance */
-		(ParamFloat<px4::params::MPC_TILTMAX_LND>) MPC_TILTMAX_LND /**< maximum tilt for landing and smooth takeoff */
+		(ParamFloat<px4::params::MPC_TILTMAX_LND>) MPC_TILTMAX_LND, /**< maximum tilt for landing and smooth takeoff */
+		(ParamFloat<px4::params::MC_ROLLRATE_MAX>)
+		_rate_max, /**< maximum roll-rate from the rate controllemax_rotation_rater */
+		(ParamFloat<px4::params::MPC_THR_HOVER>) MPC_THR_HOVER,
+		(ParamFloat<px4::params::MPC_THR_RATE_MAX>)
+		_thr_rate_max /**< maximum roll-rate from the rate controllemax_rotation_rater */
 	);
 
 	control::BlockDerivative _vel_x_deriv; /**< velocity derivative in x */
@@ -189,6 +194,21 @@ private:
 	systemlib::Hysteresis _failsafe_land_hysteresis{false}; /**< becomes true if task did not update correctly for LOITER_TIME_BEFORE_DESCEND */
 
 	WeatherVane *_wv_controller{nullptr};
+
+	Vector3f _thrust_prev;
+	bool _no_flight_task_running = true;
+
+	enum class FlightState {
+		disarmed = 0,
+		spoolup,
+		ready_for_takeoff,
+		rampup,
+		flight
+	};
+
+	FlightState _flight_state = FlightState::disarmed;
+
+	void update_flight_state();
 
 	/**
 	 * Update our local parameter cache.
@@ -244,13 +264,6 @@ private:
 	 */
 	void check_for_smooth_takeoff(const float &position_setpoint_z, const float &velocity_setpoint_z,
 				      const float &jerk_sp, const vehicle_constraints_s &constraints);
-
-	/**
-	 * Check if smooth takeoff has ended and updates accordingly.
-	 * @param position_setpoint_z the position setpoint in the z-Direction
-	 * @param velocity setpoint_z the velocity setpoint in the z-Direction
-	 */
-	void update_smooth_takeoff(const float &position_setpoint_z, const float &velocity_setpoint_z);
 
 	/**
 	 * Adjust the setpoint during landing.
@@ -362,6 +375,8 @@ MulticopterPositionControl::MulticopterPositionControl() :
 	parameters_update(true);
 	// set failsafe hysteresis
 	_failsafe_land_hysteresis.set_hysteresis_time_from(false, LOITER_TIME_BEFORE_DESCEND);
+
+	_thrust_prev.zero();
 }
 
 MulticopterPositionControl::~MulticopterPositionControl()
@@ -476,6 +491,55 @@ MulticopterPositionControl::poll_subscriptions()
 	if (updated) {
 		orb_copy(ORB_ID(vehicle_trajectory_waypoint), _traj_wp_avoidance_sub, &_traj_wp_avoidance);
 	}
+}
+
+void MulticopterPositionControl::update_flight_state() {
+	switch(_flight_state) {
+		case FlightState::disarmed:
+			if (_control_mode.flag_armed) {
+				_flight_state = FlightState::spoolup;
+			}
+			break;
+
+		case FlightState::spoolup:
+
+			if (_spoolup_time_hysteresis.get_state()) {
+				_flight_state = FlightState::ready_for_takeoff;
+			}
+			break;
+
+		case FlightState::ready_for_takeoff:
+		{
+			if (_in_smooth_takeoff) {
+				_flight_state = FlightState::rampup;
+			}
+			break;
+		}
+		case FlightState::rampup:
+			if (_control.getThrustSetpoint()(2) < -MPC_THR_HOVER.get()) {
+				_flight_state = FlightState::flight;
+			}
+			break;
+		case FlightState::flight:
+			if (_vehicle_land_detected.landed) {
+				_flight_state = FlightState::ready_for_takeoff;
+			}
+			break;
+		default:
+			break;
+	}
+
+	if (!_control_mode.flag_control_climb_rate_enabled && _control_mode.flag_armed) {
+		_flight_state = FlightState::flight;
+	}
+
+	// need to consider free fall here
+	if (!_control_mode.flag_armed) {
+		_flight_state = FlightState::disarmed;
+	}
+
+
+
 }
 
 void
@@ -645,17 +709,24 @@ MulticopterPositionControl::run()
 		// start takeoff after delay to allow motors to reach idle speed
 		_spoolup_time_hysteresis.set_state_and_update(_control_mode.flag_armed);
 
-		if (_spoolup_time_hysteresis.get_state()) {
+		update_flight_state();
+
+		if (_flight_state > FlightState::spoolup) {
 			// when vehicle is ready switch to the required flighttask
 			start_flight_task();
 
 		} else {
 			// stop flighttask while disarmed
 			_flight_tasks.switchTask(FlightTaskIndex::None);
+			_in_smooth_takeoff = false;
 		}
 
 		// check if any task is active
 		if (_flight_tasks.isAnyTaskActive()) {
+
+			if (_flight_state < FlightState::rampup) {
+				_flight_tasks.reActivate();
+			}
 
 			// setpoints from flighttask
 			vehicle_local_position_setpoint_s setpoint;
@@ -700,14 +771,10 @@ MulticopterPositionControl::run()
 			// check if all local states are valid and map accordingly
 			set_vehicle_states(setpoint.vz);
 
-			// do smooth takeoff after delay if there's a valid vertical velocity or position
-			if (_spoolup_time_hysteresis.get_state() && PX4_ISFINITE(_states.position(2)) && PX4_ISFINITE(_states.velocity(2))) {
-				check_for_smooth_takeoff(setpoint.z, setpoint.vz, setpoint.jerk_z, constraints);
-				update_smooth_takeoff(setpoint.z, setpoint.vz);
-			}
+			check_for_smooth_takeoff(setpoint.z, setpoint.vz, setpoint.jerk_z, constraints);
 
 			// disable horizontal / yaw control during smooth takeoff and limit maximum speed upwards
-			if (_in_smooth_takeoff) {
+			if (_flight_state == FlightState::rampup) {
 
 				// during smooth takeoff, constrain speed to takeoff speed
 				constraints.speed_up = _takeoff_speed;
@@ -729,7 +796,7 @@ MulticopterPositionControl::run()
 				}
 			}
 
-			if (_vehicle_land_detected.landed && !_in_smooth_takeoff && !PX4_ISFINITE(setpoint.thrust[2])) {
+			if (_flight_state < FlightState::rampup) {//(_vehicle_land_detected.landed && !_in_smooth_takeoff && !PX4_ISFINITE(setpoint.thrust[2])) {
 				// Keep throttle low when landed and NOT in smooth takeoff
 				reset_setpoint_to_nan(setpoint);
 				setpoint.thrust[0] = setpoint.thrust[1] = setpoint.thrust[2] = 0.0f;
@@ -751,6 +818,7 @@ MulticopterPositionControl::run()
 			// Update states, setpoints and constraints.
 			_control.updateConstraints(constraints);
 			_control.updateState(_states);
+
 
 			// update position controller setpoints
 			if (!_control.updateSetpoint(setpoint)) {
@@ -797,11 +865,72 @@ MulticopterPositionControl::run()
 				limit_thrust_during_landing(local_pos_sp);
 			}
 
+			// new demaned thrust vector
+			matrix::Vector3f thrust_new(local_pos_sp.thrust[0], local_pos_sp.thrust[1], local_pos_sp.thrust[2]);
+
+			// if this is the first time we run a flight task then reset throttle to the current value
+			// the only case when this is needed is when switching into a flighttask from stabilized or acro mode
+			if (_no_flight_task_running) {
+				_thrust_prev = thrust_new;
+				_no_flight_task_running = false;
+			}
+
+			// get new and previous throttle value
+			float thrust_new_abs = thrust_new.norm();
+			float thrust_old_abs = _thrust_prev.norm();
+
+
+			// add slew rate to throttle
+			if (fabs(thrust_new_abs - thrust_old_abs) / _dt > _thr_rate_max.get()) {
+				if (thrust_new_abs > thrust_old_abs) {
+					thrust_new_abs = thrust_old_abs + _thr_rate_max.get() * _dt;
+				} else {
+					thrust_new_abs = thrust_old_abs - _thr_rate_max.get() * _dt;
+				}
+			}
+
+			// make thrust setpoint comply with maximum allowed rate
+			if (_thrust_prev.length() > FLT_EPSILON && thrust_new.length() > FLT_EPSILON) {
+				float max_rotation_rate = math::radians(_rate_max.get());
+
+				_thrust_prev.normalize();
+				thrust_new.normalize();
+
+
+				float angle = acosf(_thrust_prev.dot(thrust_new));
+
+				Vector3f rot_axis = _thrust_prev.cross(thrust_new);
+
+
+				if (fabsf(angle / _dt) > max_rotation_rate) {
+					rot_axis.normalize();
+					Quatf q_rot;
+					q_rot.from_axis_angle(rot_axis * max_rotation_rate * _dt);
+					thrust_new = q_rot.conjugate(_thrust_prev);
+					thrust_new.normalize();
+					thrust_new *= thrust_new_abs;
+				}
+			}
+
+			if (thrust_new.length() > FLT_EPSILON) {
+				thrust_new.normalize();
+				thrust_new *= thrust_new_abs;
+			} else if (_thrust_prev.length() > FLT_EPSILON) {
+				thrust_new = _thrust_prev.normalized() * thrust_new_abs;
+			}
+
+			_thrust_prev = thrust_new;
+
+
 			// Fill attitude setpoint. Attitude is computed from yaw and thrust setpoint.
-			_att_sp = ControlMath::thrustToAttitude(matrix::Vector3f(local_pos_sp.thrust), local_pos_sp.yaw);
+			_att_sp = ControlMath::thrustToAttitude(thrust_new, local_pos_sp.yaw);
 			_att_sp.yaw_sp_move_rate = _control.getYawspeedSetpoint();
 			_att_sp.fw_control_yaw = false;
 			_att_sp.apply_flaps = false;
+
+			if (_flight_state < FlightState::rampup) {
+				_att_sp.thrust_body[2] = 0.0f;
+			}
 
 			// publish attitude setpoint
 			// Note: this requires review. The reason for not sending
@@ -838,6 +967,11 @@ MulticopterPositionControl::run()
 			q_sp.copyTo(_att_sp.q_d);
 			_att_sp.q_d_valid = true;
 			_att_sp.thrust_body[2] = 0.0f;
+			_no_flight_task_running = true;
+
+			if (_flight_state < FlightState::rampup && _control_mode.flag_control_climb_rate_enabled) {
+				publish_attitude();
+			}
 		}
 	}
 
@@ -861,6 +995,12 @@ MulticopterPositionControl::start_flight_task()
 	// Do not run any flight task for VTOLs in fixed-wing mode
 	if (!_vehicle_status.is_rotary_wing) {
 		_flight_tasks.switchTask(FlightTaskIndex::None);
+		return;
+	}
+
+	if (_flight_state == FlightState::rampup) {
+		should_disable_task = false;
+		_flight_tasks.switchTask(FlightTaskIndex::Rampup);
 		return;
 	}
 
@@ -994,6 +1134,7 @@ MulticopterPositionControl::start_flight_task()
 
 		switch (MPC_POS_MODE.get()) {
 		case 1:
+		case 3:
 			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitudeSmooth);
 			break;
 
@@ -1040,7 +1181,7 @@ MulticopterPositionControl::check_for_smooth_takeoff(const float &z_sp, const fl
 		const float &jerk_sp, const vehicle_constraints_s &constraints)
 {
 	// Check for smooth takeoff
-	if (_vehicle_land_detected.landed && !_in_smooth_takeoff) {
+	if (_flight_state == FlightState::ready_for_takeoff && !_in_smooth_takeoff) {
 		// Vehicle is still landed and no takeoff was initiated yet.
 		// Adjust for different takeoff cases.
 		// The minimum takeoff altitude needs to be at least 20cm above minimum distance or, if valid, above minimum distance
@@ -1061,42 +1202,8 @@ MulticopterPositionControl::check_for_smooth_takeoff(const float &z_sp, const fl
 			_takeoff_reference_z = _states.position(2);
 
 		}
-	}
-}
-
-void
-MulticopterPositionControl::update_smooth_takeoff(const float &z_sp, const float &vz_sp)
-{
-	// If in smooth takeoff, adjust setpoints based on what is valid:
-	// 1. position setpoint is valid -> go with takeoffspeed to specific altitude
-	// 2. position setpoint not valid but velocity setpoint valid: ramp up velocity
-	if (_in_smooth_takeoff) {
-		float desired_tko_speed = -vz_sp;
-
-		// If there is a valid position setpoint, then set the desired speed to the takeoff speed.
-		if (!_smooth_velocity_takeoff) {
-			desired_tko_speed = _tko_speed.get();
-		}
-
-		// Ramp up takeoff speed.
-		if (_takeoff_ramp_time.get() > _dt) {
-			_takeoff_speed += desired_tko_speed * _dt / _takeoff_ramp_time.get();
-
-		} else {
-			// No ramp, directly go to desired takeoff speed
-			_takeoff_speed = desired_tko_speed;
-		}
-
-		_takeoff_speed = math::min(_takeoff_speed, _tko_speed.get());
-
-		// Smooth takeoff is achieved once desired altitude/velocity setpoint is reached.
-		if (!_smooth_velocity_takeoff) {
-			_in_smooth_takeoff = _states.position(2) - 0.2f > math::max(z_sp, _takeoff_reference_z - MPC_LAND_ALT2.get());
-
-		} else {
-			// Make sure to stay in smooth takeoff if takeoff has not been detected yet by the land detector
-			_in_smooth_takeoff = (_takeoff_speed < -vz_sp) || _vehicle_land_detected.landed;
-		}
+	} else {
+		_in_smooth_takeoff = false;
 	}
 }
 

@@ -1,0 +1,200 @@
+#!/bin/sh
+#
+# @name Generic Quadrotor x with mount (e.g. gimbal)
+#
+# @type Quadrotor x
+# @class Copter
+#
+# @output MAIN1 motor 1
+# @output MAIN2 motor 2
+# @output MAIN3 motor 3
+# @output MAIN4 motor 4
+#
+# @output AUX1 Mount pitch
+# @output AUX2 Mount roll
+# @output AUX3 Mount yaw
+# @output AUX4 Mount retract
+#
+# @maintainer Daniele Pettenuzzo <daniele@auterion.com>
+# @maintainer Roman Bapst <roman@auterion.com>
+#
+
+sh /etc/init.d/rc.mc_defaults
+
+set MIXER us1_IO
+set PWM_OUT 1234
+
+set MIXER_AUX us1_FMU
+set PWM_AUX_OUT 123456
+
+#
+# Configuration defaults
+#
+# When the system configuration changes this variable
+# needs to be incremented. This will not reset the
+# calibration but will reset the system tuning and gains
+# to reflect the new defaults
+#
+set PARAM_DEFAULTS_VER 8
+
+if [ $AUTOCNF = yes ]
+then
+	# Battery parameters
+	param set BAT_LOW_THR 0.150
+	param set BAT_N_CELLS 6
+	param set BAT_V_CHARGED 4.200
+	param set BAT_V_DIV 8.000
+	param set BAT_V_EMPTY 2.700
+
+	# Sensors used
+	param set CAL_ACC0_EN 0
+	param set CAL_ACC1_EN 0
+	param set CAL_ACC2_EN 1
+	param set CAL_GYRO0_EN 0
+	param set CAL_GYRO1_EN 0
+	param set CAL_GYRO2_EN 1
+	param set CAL_MAG0_EN 1
+	param set CAL_MAG1_EN 0
+	param set CAL_MAG2_EN 0
+	param set CAL_MAG3_EN 0
+
+	# Circuit Breakers
+	param set CBRK_IO_SAFETY 22027
+	param set CBRK_USB_CHK 197848
+
+	# Commander parameters
+	param set COM_ARM_EKF_AB  0.005
+	param set COM_DISARM_LAND 1.000
+
+	# EKF2 parameters
+	param set EKF2_AID_MASK 33
+	param set EKF2_GPS_POS_X 0.0100
+	param set EKF2_GPS_POS_Y -0.0050
+	param set EKF2_RNG_A_HMAX 35
+	param set EKF2_RNG_A_VMAX 12
+	param set EKF2_RNG_AID 1
+
+
+	# GPS parameters
+	param set GPS_1_CONFIG 201
+	param set GPS_2_CONFIG 0
+
+	# MAVLink parameters
+	param set MAV_0_CONFIG 101
+	param set MAV_0_FORWARD 1
+	param set MAV_0_MODE 3
+	param set MAV_0_RATE 1200
+	#param set MAV_1_CONFIG 102
+	param set MAV_1_FORWARD 0
+	param set MAV_1_MODE 3
+	param set MAV_1_RATE 140000
+	param set MAV_2_CONFIG 0
+	param set SER_GPS1_BAUD 0
+	param set SER_TEL1_BAUD 57600
+	# param set SER_TEL2_BAUD 1500000
+
+	# Attitude PID parameters
+	param set MC_DTERM_CUTOFF 20.000
+	param set MC_PITCHRATE_D 0.007
+	param set MC_PITCHRATE_I 0.150
+	param set MC_PITCHRATE_MAX 70.000
+	param set MC_PITCHRATE_P 0.180
+	param set MC_PITCH_P 5.000
+	param set MC_ROLLRATE_D 0.007
+	param set MC_ROLLRATE_I 0.150
+	param set MC_ROLLRATE_MAX 70.000
+	param set MC_ROLLRATE_P 0.180
+	param set MC_ROLL_P 5.000
+	param set MC_YAWRATE_D 0.000
+	param set MC_YAWRATE_I 0.150
+	param set MC_YAWRATE_MAX 90.000
+	param set MC_YAWRATE_P 0.400
+	param set MC_YAW_P 3.000
+
+	# Mission parameters
+	param set MIS_TAKEOFF_ALT 7.5000
+	param set MIS_YAW_ERR 45.000
+
+	# Mount (Gimbal) parameters
+	param set MNT_MAN_PITCH 4
+	param set MNT_MAN_ROLL 6
+	param set MNT_MAN_YAW 5
+	param set MNT_MODE_IN 1
+	param set MNT_MODE_OUT 0
+
+	# Navigator parameters
+	param set MPC_ACC_DOWN_MAX 3.0000000
+	param set MPC_ACC_HOR 3.0000000
+	param set MPC_ACC_HOR_MAX 4.0000000
+	param set MPC_ACC_UP_MAX 3.0000000
+	param set MPC_AUTO_MODE 1
+	param set MPC_DEC_HOR_SLOW 3.0000000
+	param set MPC_HOLD_MAX_XY 0.4000000
+	param set MPC_JERK_MAX 15
+	param set MPC_JERK_MIN 15
+	param set MPC_LAND_ALT1 12.000
+	param set MPC_LAND_ALT2 6.000
+	param set MPC_MANTHR_MIN 0.0000000
+	param set MPC_MAN_Y_MAX 45.0000000
+	param set MPC_POS_MODE 3
+	param set MPC_SPOOLUP_TIME 2
+	param set MPC_THR_HOVER 0.40000000
+	param set MPC_THR_MIN 0.0000000
+	param set MPC_TILTMAX_AIR 35.0000000
+	param set MPC_TKO_RAMP_T 0.4
+	param set MPC_TKO_SPEED 3
+	param set MPC_VEL_MANUAL 12
+	param set MPC_XY_CRUISE 5.0000000
+	param set MPC_XY_TRAJ_P 1.0000000
+	param set MPC_XY_VEL_I 0.0500000
+	param set MPC_XY_VEL_MAX 14
+	param set MPC_XY_VEL_P 0.1300000
+	param set MPC_YAW_MODE 3
+	param set MPC_Z_VEL_D 0.0020000
+	param set MPC_Z_VEL_I 0.0500000
+	param set MPC_Z_VEL_P 0.2500000
+
+	# Navigator parameters
+	param set NAV_ACC_RAD 4.0000000
+	param set NAV_MC_ALT_RAD 1.2000000
+
+	# PWM parameters
+	param set PWM_AUX_RATE 50
+
+	# RC mapping
+	param set RC_FAILS_THR 970
+	param set RC_MAP_AUX1 10
+	param set RC_MAP_AUX2 11
+	param set RC_MAP_AUX3 12
+	param set RC_MAP_AUX4 9
+	param set RC_MAP_AUX5 8
+	param set RC_MAP_AUX6 7
+	param set RC_MAP_FAILSAFE 3
+
+	# RTL parameters
+	param set RTL_DESCEND_ALT 30.0000000
+	param set RTL_RETURN_ALT 60.0000000
+
+	# Logger parameters
+	param set SDLOG_MODE 0
+	param set SDLOG_PROFILE 3
+
+	# Sensors parameters
+	param set SENS_BOARD_ROT 3
+	param set SENS_EN_LL40LS 2
+	param set IMU_ACCEL_CUTOFF 20.000
+	param set IMU_GYRO_CUTOFF 20.000
+
+	# System parameters
+	param set SYS_FMU_TASK 0
+	param set SYS_USE_IO 1
+
+	# UAVCAN parameters
+	param set UAVCAN_BITRATE 1000000
+	param set UAVCAN_ENABLE 3
+	param set UAVCAN_ESC_IDLT 1
+	param set UAVCAN_NODE_ID 1
+fi
+
+	param set MAV_1_CONFIG 102
+	param set SER_TEL2_BAUD 1500000
