@@ -122,13 +122,13 @@ private:
 		float landSpeed;
 	} _params{};
 
-	int _vehicleLocalPositionSub{-1};
-	int _vehicleLocalPositionSetpointSub{-1};
-	int _actuatorsSub{-1};
-	int _attitudeSub{-1};
-	int _sensor_bias_sub{-1};
-	int _vehicle_control_mode_sub{-1};
-	int _battery_sub{-1};
+	int _vehicleLocalPositionSub{ -1};
+	int _vehicleLocalPositionSetpointSub{ -1};
+	int _actuatorsSub{ -1};
+	int _attitudeSub{ -1};
+	int _sensor_bias_sub{ -1};
+	int _vehicle_control_mode_sub{ -1};
+	int _battery_sub{ -1};
 
 	vehicle_local_position_s				_vehicleLocalPosition {};
 	vehicle_local_position_setpoint_s	_vehicleLocalPositionSetpoint {};
@@ -141,8 +141,8 @@ private:
 	hrt_abstime _min_trust_start{0};		///< timestamp when minimum trust was applied first
 	hrt_abstime _landed_time{0};
 
-	bool _in_descend{false};
-	bool _horizontalMovement{false};
+	bool _in_descend{false};	///< vehicle is desending
+	bool _horizontal_movement{false};	///< vehicle is moving horizontally
 
 	/* get control mode dependent pilot throttle threshold with which we should quit landed state and take off */
 	float _get_takeoff_throttle();
