@@ -21,9 +21,7 @@ then
 	
 	# Commander Parameters
 	param set COM_OBS_AVOID 1
-	param set COM_FLTMODE1 0
-	param set COM_FLTMODE4 2
-	param set COM_FLTMODE6 3
+
 
 	# EKF2 parameters
 	param set EKF2_AID_MASK 3
@@ -88,9 +86,7 @@ then
 	param set PWM_MAX 1950
 	param set PWM_MIN 1050
 	param set RC_FLT_CUTOFF 0
-	param set RC_MAP_ARM_SW 7
-	param set RC_MAP_AUX1 6
-	param set RC_MAP_FLTMODE 8
+
 
 	# RTL Parameters
 	param set RTL_DESCEND_ALT 3
@@ -119,6 +115,5 @@ then
 	param set CBRK_IO_SAFETY 22027
 	param set CBRK_USB_CHK 197848
 
-	param set SYS_AUTOSTART 4008
 	param set THR_MDL_FAC 0.3
 fi
