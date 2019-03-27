@@ -492,7 +492,7 @@ private:
 		(ParamFloat<px4::params::EKF2_PCOEF_YP>)
 		_K_pstatic_coef_yp,	///< static pressure position error coefficient along the positive Y body axis
 		(ParamFloat<px4::params::EKF2_PCOEF_YN>)
-		_K_pstatic_coef_yn,	///< static pressure position error coefficient along the negativeY body axis
+		_K_pstatic_coef_yn,	///< static pressure position error coefficient along the negative Y body axis
 		(ParamFloat<px4::params::EKF2_PCOEF_Z>)
 		_K_pstatic_coef_z,	///< static pressure position error coefficient along the Z body axis
 
@@ -1403,10 +1403,7 @@ void Ekf2::run()
 
 				// update ground effect flag based on land detector state
 				else if (vehicle_land_detected_updated && _gnd_effect_deadzone.get() > 0.0f) {
-					if (vehicle_land_detected.in_ground_effect || (vehicle_land_detected.landed
-							&& vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED)) {
-						_ekf.set_gnd_effect_flag(true);
-					}
+					_ekf.set_gnd_effect_flag(vehicle_land_detected.in_ground_effect);
 				}
 
 				lpos.dist_bottom_rate = -lpos.vz; // Distance to bottom surface (ground) change rate

@@ -69,10 +69,12 @@ void FlightTaskAutoLineSmoothVel::_setDefaultConstraints()
 	_constraints.speed_xy = MPC_XY_VEL_MAX.get(); // TODO : Should be computed using heading
 }
 
-inline float FlightTaskAutoLineSmoothVel::unwrap(float angle) {
+inline float FlightTaskAutoLineSmoothVel::unwrap(float angle)
+{
 	if (angle < 0.f) {
 		angle += 2.f * M_PI_F;
 	}
+
 	return angle;
 }
 
@@ -88,6 +90,7 @@ void FlightTaskAutoLineSmoothVel::_generateSetpoints()
 
 	// Filter yaw setpoint using a simple first order digital filter
 	float alpha = _deltatime;
+
 	if (fabsf(_yaw_setpoint - _yaw_sp_prev) < M_PI_F) {
 		// Wrap around 0
 		_yaw_setpoint = (1.f - alpha) * _yaw_sp_prev + alpha * _yaw_setpoint;
@@ -126,12 +129,38 @@ bool FlightTaskAutoLineSmoothVel::_generateHeadingAlongTraj()
  * Example: 	- if the constrain is -5, the value will be constrained between -5 and 0
  * 		- if the constrain is 5, the value will be constrained between 0 and 5
  */
-inline float FlightTaskAutoLineSmoothVel::constrain_one_side(float val, float constrain)
+inline float FlightTaskAutoLineSmoothVel::_constrainOneSide(float val, float constrain)
 {
 	const float min = (constrain < FLT_EPSILON) ? constrain : 0.f;
 	const float max = (constrain > FLT_EPSILON) ? constrain : 0.f;
 
 	return math::constrain(val, min, max);
+}
+
+void FlightTaskAutoLineSmoothVel::_checkEkfResetCounters()
+{
+	// Check if a reset event has happened.
+	if (_sub_vehicle_local_position->get().xy_reset_counter != _reset_counters.xy) {
+		_trajectory[0].setCurrentPosition(_position(0));
+		_trajectory[1].setCurrentPosition(_position(1));
+		_reset_counters.xy = _sub_vehicle_local_position->get().xy_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().vxy_reset_counter != _reset_counters.vxy) {
+		_trajectory[0].setCurrentVelocity(_velocity(0));
+		_trajectory[1].setCurrentVelocity(_velocity(1));
+		_reset_counters.vxy = _sub_vehicle_local_position->get().vxy_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().z_reset_counter != _reset_counters.z) {
+		_trajectory[2].setCurrentPosition(_position(2));
+		_reset_counters.z = _sub_vehicle_local_position->get().z_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().vz_reset_counter != _reset_counters.vz) {
+		_trajectory[2].setCurrentVelocity(_velocity(2));
+		_reset_counters.vz = _sub_vehicle_local_position->get().vz_reset_counter;
+	}
 }
 
 void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
@@ -140,13 +169,7 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 	// that one is used as a velocity limit.
 	// If the position setpoints are set to NAN, the values in the velocity setpoints are used as velocity targets: nothing to do here.
 
-	// Check if a reset event has happened.
-	if (_sub_vehicle_local_position->get().xy_reset_counter != _reset_counter) {
-		// Reset the XY axes
-		_trajectory[0].setCurrentPosition(_position(0));
-		_trajectory[1].setCurrentPosition(_position(1));
-		_reset_counter = _sub_vehicle_local_position->get().xy_reset_counter;
-	}
+	_checkEkfResetCounters();
 
 	if (PX4_ISFINITE(_position_setpoint(0)) &&
 	    PX4_ISFINITE(_position_setpoint(1))) {
@@ -170,7 +193,7 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 		for (int i = 0; i < 2; i++) {
 			// If available, constrain the velocity using _velocity_setpoint(.)
 			if (PX4_ISFINITE(_velocity_setpoint(i))) {
-				_velocity_setpoint(i) = constrain_one_side(vel_sp_xy(i), _velocity_setpoint(i));
+				_velocity_setpoint(i) = _constrainOneSide(vel_sp_xy(i), _velocity_setpoint(i));
 
 			} else {
 				_velocity_setpoint(i) = vel_sp_xy(i);
@@ -188,7 +211,7 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 
 		// If available, constrain the velocity using _velocity_setpoint(.)
 		if (PX4_ISFINITE(_velocity_setpoint(2))) {
-			_velocity_setpoint(2) = constrain_one_side(vel_sp_z, _velocity_setpoint(2));
+			_velocity_setpoint(2) = _constrainOneSide(vel_sp_z, _velocity_setpoint(2));
 
 		} else {
 			_velocity_setpoint(2) = vel_sp_z;

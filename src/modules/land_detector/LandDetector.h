@@ -137,7 +137,10 @@ protected:
 	 */
 	virtual float _get_max_altitude() = 0;
 
-	virtual bool _get_ground_effect_state() {return false;}
+	/**
+	 *  @return true if vehicle could be in ground effect (close to ground)
+	 */
+	virtual bool _get_ground_effect_state() { return false; }
 
 	/**
 	 * Convenience function for polling uORB subscriptions.

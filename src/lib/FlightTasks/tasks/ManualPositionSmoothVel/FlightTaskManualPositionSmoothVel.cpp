@@ -89,6 +89,32 @@ void FlightTaskManualPositionSmoothVel::reset(Axes axes, bool force_z_zero)
 	_position_setpoint_z_locked = NAN;
 }
 
+void FlightTaskManualPositionSmoothVel::_checkEkfResetCounters()
+{
+	// Check if a reset event has happened.
+	if (_sub_vehicle_local_position->get().xy_reset_counter != _reset_counters.xy) {
+		_smoothing[0].setCurrentPosition(_position(0));
+		_smoothing[1].setCurrentPosition(_position(1));
+		_reset_counters.xy = _sub_vehicle_local_position->get().xy_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().vxy_reset_counter != _reset_counters.vxy) {
+		_smoothing[0].setCurrentVelocity(_velocity(0));
+		_smoothing[1].setCurrentVelocity(_velocity(1));
+		_reset_counters.vxy = _sub_vehicle_local_position->get().vxy_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().z_reset_counter != _reset_counters.z) {
+		_smoothing[2].setCurrentPosition(_position(2));
+		_reset_counters.z = _sub_vehicle_local_position->get().z_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().vz_reset_counter != _reset_counters.vz) {
+		_smoothing[2].setCurrentVelocity(_velocity(2));
+		_reset_counters.vz = _sub_vehicle_local_position->get().vz_reset_counter;
+	}
+}
+
 void FlightTaskManualPositionSmoothVel::_updateSetpoints()
 {
 	/* Get yaw setpont, un-smoothed position setpoints.*/
@@ -110,6 +136,8 @@ void FlightTaskManualPositionSmoothVel::_updateSetpoints()
 	}
 
 	float jerk[3] = {_jerk_max.get(), _jerk_max.get(), _jerk_max.get()};
+
+	_checkEkfResetCounters();
 
 	/* Check for position unlock
 	 * During a position lock -> position unlock transition, we have to make sure that the velocity setpoint
@@ -161,16 +189,6 @@ void FlightTaskManualPositionSmoothVel::_updateSetpoints()
 
 	VelocitySmoothing::timeSynchronization(_smoothing, 2); // Synchronize x and y only
 
-	if (_position_lock_xy_active) {
-		// Check if a reset event has happened.
-		if (_sub_vehicle_local_position->get().xy_reset_counter != _reset_counter) {
-			// Reset the XY axes
-			_smoothing[0].setCurrentPosition(_position(0));
-			_smoothing[1].setCurrentPosition(_position(1));
-			_reset_counter = _sub_vehicle_local_position->get().xy_reset_counter;
-		}
-	}
-
 	if (!_position_lock_xy_active) {
 		_smoothing[0].setCurrentPosition(_position(0));
 		_smoothing[1].setCurrentPosition(_position(1));
@@ -210,7 +228,8 @@ void FlightTaskManualPositionSmoothVel::_updateSetpoints()
 		_position_setpoint_xy_locked(1) = pos_sp_smooth(1);
 
 		// If the velocity setpoint is smaller than 1mm/s and that the acceleration is 0, force the setpoints
-		// to zero.
+		// to zero. This is required because the generated velocity is never exactly zero and if the drone hovers
+		// for a long period of time, thr drift of the position setpoint will be noticeable.
 		for (int i = 0; i < 2; i++) {
 			if (fabsf(_velocity_setpoint(i)) < 1e-3f && fabsf(_acceleration_setpoint(0)) < FLT_EPSILON) {
 				_velocity_setpoint(i) = 0.f;

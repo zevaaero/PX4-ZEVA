@@ -160,7 +160,7 @@ private:
 		(ParamInt<px4::params::MPC_AUTO_MODE>) MPC_AUTO_MODE,
 		(ParamInt<px4::params::MPC_ALT_MODE>) MPC_ALT_MODE,
 		(ParamFloat<px4::params::MPC_SPOOLUP_TIME>) MPC_SPOOLUP_TIME, /**< time to let motors spool up after arming */
-		(ParamInt<px4::params::MPC_OBS_AVOID>) MPC_OBS_AVOID, /**< enable obstacle avoidance */
+		(ParamInt<px4::params::COM_OBS_AVOID>) COM_OBS_AVOID, /**< enable obstacle avoidance */
 		(ParamFloat<px4::params::MPC_TILTMAX_LND>) MPC_TILTMAX_LND, /**< maximum tilt for landing and smooth takeoff */
 		(ParamFloat<px4::params::MC_ROLLRATE_MAX>)
 		_rate_max, /**< maximum roll-rate from the rate controllemax_rotation_rater */
@@ -550,22 +550,13 @@ MulticopterPositionControl::limit_altitude(vehicle_local_position_setpoint_s &se
 		return;
 	}
 
-	float altitude_above_home = -(_states.position(2) - _home_pos.z);
+	// maximum altitude == minimal z-value (NED)
+	const float min_z = _home_pos.z + (-_vehicle_land_detected.alt_max);
 
-	if (altitude_above_home > _vehicle_land_detected.alt_max) {
-		// we are above maximum altitude
-		setpoint.z = -_vehicle_land_detected.alt_max +  _home_pos.z;
-		setpoint.vz = 0.0f;
-
-	} else if (setpoint.vz <= 0.0f) {
-		// we want to fly upwards: check if vehicle does not exceed altitude
-
-		float delta_p = _vehicle_land_detected.alt_max - altitude_above_home;
-
-		if (fabsf(setpoint.vz) * _dt > delta_p) {
-			setpoint.z = -_vehicle_land_detected.alt_max +  _home_pos.z;
-			setpoint.vz = 0.0f;
-		}
+	if (_states.position(2) < min_z) {
+		// above maximum altitude, only allow downwards flight == positive vz-setpoints (NED)
+		setpoint.z = min_z;
+		setpoint.vz = math::max(setpoint.vz, 0.f);
 	}
 }
 
@@ -655,10 +646,12 @@ MulticopterPositionControl::run()
 	_vehicle_land_detected_sub = orb_subscribe(ORB_ID(vehicle_land_detected));
 	_control_mode_sub = orb_subscribe(ORB_ID(vehicle_control_mode));
 	_params_sub = orb_subscribe(ORB_ID(parameter_update));
-	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
 	_att_sub = orb_subscribe(ORB_ID(vehicle_attitude));
 	_home_pos_sub = orb_subscribe(ORB_ID(home_position));
 	_traj_wp_avoidance_sub = orb_subscribe(ORB_ID(vehicle_trajectory_waypoint));
+
+	_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
+	orb_set_interval(_local_pos_sub, 20); // 50 Hz updates
 
 	// get initial values for all parameters and subscribtions
 	parameters_update(true);
@@ -1257,7 +1250,7 @@ void
 MulticopterPositionControl::update_avoidance_waypoint_desired(PositionControlStates &states,
 		vehicle_local_position_setpoint_s &setpoint)
 {
-	if (MPC_OBS_AVOID.get()) {
+	if (COM_OBS_AVOID.get()) {
 		_traj_wp_avoidance_desired = _flight_tasks.getAvoidanceWaypoint();
 		_traj_wp_avoidance_desired.timestamp = hrt_absolute_time();
 		_traj_wp_avoidance_desired.type = vehicle_trajectory_waypoint_s::MAV_TRAJECTORY_REPRESENTATION_WAYPOINTS;
@@ -1309,7 +1302,7 @@ MulticopterPositionControl::reset_setpoint_to_nan(vehicle_local_position_setpoin
 bool
 MulticopterPositionControl::use_obstacle_avoidance()
 {
-	if (MPC_OBS_AVOID.get()) {
+	if (COM_OBS_AVOID.get()) {
 		const bool avoidance_data_timeout = hrt_elapsed_time((hrt_abstime *)&_traj_wp_avoidance.timestamp) > TRAJECTORY_STREAM_TIMEOUT_US;
 		const bool avoidance_point_valid = _traj_wp_avoidance.waypoints[vehicle_trajectory_waypoint_s::POINT_0].point_valid == true;
 		const bool in_mission = _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION;

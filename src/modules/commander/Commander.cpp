@@ -580,6 +580,10 @@ Commander::Commander() :
 
 	status_flags.condition_power_input_valid = true;
 	status_flags.rc_calibration_valid = true;
+
+	status_flags.avoidance_system_valid = false;
+
+
 }
 
 Commander::~Commander()
@@ -588,7 +592,7 @@ Commander::~Commander()
 	orb_unsubscribe(_telemetry_status_sub);
 
 
-	if (_iridiumsbd_status_sub) {
+	if (_iridiumsbd_status_sub >= 0) {
 		orb_unsubscribe(_iridiumsbd_status_sub);
 	}
 }
@@ -1210,6 +1214,8 @@ Commander::run()
 	/* failsafe response to loss of navigation accuracy */
 	param_t _param_posctl_nav_loss_act = param_find("COM_POSCTL_NAVL");
 
+	status_flags.avoidance_system_required = _obs_avoid.get();
+
 	/* pthread for slow low prio thread */
 	pthread_t commander_low_prio_thread;
 
@@ -1241,11 +1247,6 @@ Commander::run()
 
 	/* publish initial state */
 	_status_pub = orb_advertise(ORB_ID(vehicle_status), &status);
-
-	if (_status_pub == nullptr) {
-		PX4_ERR("orb_advertise for topic vehicle_status failed (uorb app running?)");
-		px4_task_exit(PX4_ERROR);
-	}
 
 	/* armed topic */
 	orb_advert_t armed_pub = orb_advertise(ORB_ID(actuator_armed), &armed);
@@ -1482,6 +1483,9 @@ Commander::run()
 
 			param_init_forced = false;
 		}
+
+		/* Update OA parameter */
+		status_flags.avoidance_system_required = _obs_avoid.get();
 
 		/* handle power button state */
 		orb_check(power_button_state_sub, &updated);
@@ -2640,6 +2644,10 @@ control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actu
 	}
 
 	last_overload = overload;
+
+	/* board supports HW armed indicator */
+
+	BOARD_INDICATE_ARMED_STATE(actuator_armed->armed);
 
 #if !defined(CONFIG_ARCH_LEDS) && defined(BOARD_HAS_CONTROL_STATUS_LEDS)
 
@@ -3919,6 +3927,7 @@ void Commander::data_link_check(bool &status_changed)
 						mavlink_log_info(&mavlink_log_pub, "Avoidance system regained");
 						status_changed = true;
 						_avoidance_system_lost = false;
+						status_flags.avoidance_system_valid = true;
 					}
 				}
 
@@ -3953,12 +3962,16 @@ void Commander::data_link_check(bool &status_changed)
 	}
 
 	// AVOIDANCE SYSTEM state check (only if it is enabled)
-	if (_obs_avoid.get() && !_onboard_controller_lost) {
+	if (status_flags.avoidance_system_required && !_onboard_controller_lost) {
 
 		//if avoidance never started
-		if (_datalink_last_heartbeat_avoidance_system == 0 && hrt_elapsed_time(&_avoidance_system_not_started) > 5_s) {
-			_avoidance_system_not_started = hrt_absolute_time();
-			mavlink_log_info(&mavlink_log_pub, "Waiting for avoidance system to start");
+		if (_datalink_last_heartbeat_avoidance_system == 0
+		    && hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > _oa_boot_timeout.get() * 1_s) {
+			if (!_print_avoidance_msg_once) {
+				mavlink_log_critical(&mavlink_log_pub, "Avoidance system not available!");
+				_print_avoidance_msg_once = true;
+
+			}
 		}
 
 		//if heartbeats stop
@@ -3966,6 +3979,8 @@ void Commander::data_link_check(bool &status_changed)
 		    && (hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > 5_s)) {
 			_avoidance_system_lost = true;
 			mavlink_log_critical(&mavlink_log_pub, "Avoidance system lost");
+			status_flags.avoidance_system_valid = false;
+			_print_avoidance_msg_once = false;
 		}
 
 		//if status changed
@@ -3975,7 +3990,8 @@ void Commander::data_link_check(bool &status_changed)
 			}
 
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_ACTIVE) {
-				mavlink_log_info(&mavlink_log_pub, "Avoidance system healthy");
+				mavlink_log_info(&mavlink_log_pub, "Avoidance system connected");
+				status_flags.avoidance_system_valid = true;
 			}
 
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_CRITICAL) {
@@ -3984,6 +4000,8 @@ void Commander::data_link_check(bool &status_changed)
 
 			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_FLIGHT_TERMINATION) {
 				mavlink_log_critical(&mavlink_log_pub, "Avoidance system abort");
+				status_flags.avoidance_system_valid = false;
+				status_changed = true;
 			}
 
 			_avoidance_system_status_change = false;

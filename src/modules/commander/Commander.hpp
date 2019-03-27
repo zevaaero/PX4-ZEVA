@@ -117,7 +117,9 @@ private:
 		(ParamInt<px4::params::COM_LOW_BAT_ACT>) _low_bat_action,
 		(ParamFloat<px4::params::COM_DISARM_LAND>) _disarm_when_landed_timeout,
 
-		(ParamInt<px4::params::COM_OBS_AVOID>) _obs_avoid
+		(ParamInt<px4::params::COM_OBS_AVOID>) _obs_avoid,
+		(ParamInt<px4::params::COM_OA_BOOT_T>) _oa_boot_timeout
+
 	)
 
 	const int64_t POSVEL_PROBATION_MIN = 1_s;	/**< minimum probation duration (usec) */
@@ -185,7 +187,6 @@ private:
 
 	hrt_abstime	_datalink_last_heartbeat_avoidance_system{0};
 	bool				_avoidance_system_lost{false};
-	hrt_abstime	_avoidance_system_not_started{0};
 
 	bool		_avoidance_system_status_change{false};
 	uint8_t	_datalink_last_status_avoidance_system{telemetry_status_s::MAV_STATE_UNINIT};
@@ -201,6 +202,8 @@ private:
 
 	systemlib::Hysteresis	_auto_disarm_landed{false};
 	systemlib::Hysteresis	_auto_disarm_killed{false};
+
+	bool _print_avoidance_msg_once{false};
 
 	// Subscriptions
 	Subscription<estimator_status_s>		_estimator_status_sub{ORB_ID(estimator_status)};
