@@ -5,7 +5,8 @@
 # @type Quadrotor x
 # @class Copter
 # IF750A drone with centered IMU on isolation plate
-# 180 degrees yaw autopilot and 270 degrees yaw GPS
+# 180 degrees yaw autopilot and 270 degrees yaw GPS.
+# This vehicle doesn't enable Trimble GPS by default
 #
 
 sh /etc/init.d/rc.mc_defaults
@@ -57,15 +58,20 @@ then
 	param set MPC_TKO_RAMP_T 0.6000
 
 	# EKF2 parameters
-	param set EKF2_GPS_POS_X 0.0000
-	param set EKF2_GPS_POS_Y 0.1800
-	param set EKF2_GPS_POS_Z -0.1600
-	param set EKF2_HGT_MODE 1
+	param set EKF2_AID_MASK 33
+	param set EKF2_BCOEF_X 45.0000
+	param set EKF2_BCOEF_Y 45.0000
+	param set EKF2_GPS_POS_X 0.1100
+	param set EKF2_GPS_POS_Y 0.0000
+	param set EKF2_GPS_POS_Z -0.1750
+	param set EKF2_HGT_MODE 0
 	param set EKF2_IMU_POS_X 0.0
 	param set EKF2_IMU_POS_Y 0.0
 	param set EKF2_IMU_POS_Z -0.075
 	param set EKF2_OF_POS_X -0.1740
 	param set EKF2_OF_POS_Z 0.0460
+	param set EKF2_PCOEF_YN -0.3000
+	param set EKF2_PCOEF_YP -0.1000
 	param set EKF2_RNG_POS_X -0.1410
 	param set EKF2_RNG_POS_Z 0.0440
 
@@ -95,12 +101,12 @@ then
 	param set MAV_0_FORWARD 1
 	param set MAV_0_MODE 0
 	param set MAV_0_RATE 1200
-	param set MAV_1_CONFIG 102
+	# param set MAV_1_CONFIG 102
 	param set MAV_1_FORWARD 1
 	param set MAV_1_MODE 2
 	param set MAV_1_RATE 100000
 	param set SER_TEL1_BAUD 57600
-	param set SER_TEL2_BAUD 1500000
+	# param set SER_TEL2_BAUD 1500000
 
 	# Mount Parameters
 	#param set MNT_MODE_IN 0
@@ -116,12 +122,7 @@ then
 
 	# GPS Parameters
 	param set GPS_1_CONFIG 201
-	# Normal GPS
 	param set SER_GPS1_BAUD 0
-	# RTK
-	# param set SER_TEL4_BAUD 115200
-	# To recalculate since antennas are not symmetric anymore
-	# param set GPS_YAW_OFFSET 90.0000
 
 	# Power Parametets
 	param set BAT_N_CELLS 6
@@ -138,3 +139,7 @@ then
 	param set COM_DISARM_LAND 1
 
 fi
+
+# Forced parameters
+param set MAV_1_CONFIG 102
+param set SER_TEL2_BAUD 1500000
