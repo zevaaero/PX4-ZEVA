@@ -199,7 +199,6 @@ int LidarLiteI2C::probe()
 		 */
 		if ((read_reg(LL40LS_HW_VERSION, _hw_version) == OK && _hw_version) > 0 &&
 		    (read_reg(LL40LS_SW_VERSION, _sw_version) == OK && _sw_version > 0)) {
-			printf("probe success - hw: %u, sw:%u\n", _hw_version, _sw_version);
 			goto ok;
 		}
 
@@ -210,7 +209,6 @@ int LidarLiteI2C::probe()
 		    read_reg(LL40LS_UNIT_ID_LOW, id_low) == OK && id_low > 0) {
 			_unit_id = (uint16_t)((id_high << 8) | id_low) & 0xFFFF;
 			set_maximum_distance(LL40LS_MAX_DISTANCE_V3HP);
-			printf("probe success - id: %u\n", _unit_id);
 			goto ok;
 		}
 
