@@ -154,7 +154,7 @@ update_mem_usage(void)
 static void
 heartbeat_blink(void)
 {
-	static bool heartbeat = false;
+	// static bool heartbeat = false; 
 	// LED_BLUE(heartbeat = !heartbeat); // Set this to off always because the logic to reach here is fuzzy. Don't want this accidentally on.
 }
 
