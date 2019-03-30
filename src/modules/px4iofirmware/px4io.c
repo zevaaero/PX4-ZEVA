@@ -154,14 +154,18 @@ update_mem_usage(void)
 static void
 heartbeat_blink(void)
 {
-	static bool heartbeat = false;
-	LED_BLUE(heartbeat = !heartbeat);
+	// static bool heartbeat = false; 
+	// LED_BLUE(heartbeat = !heartbeat); // Set this to off always because the logic to reach here is fuzzy. Don't want this accidentally on.
 }
 
 static void
 ring_blink(void)
 {
 #ifdef GPIO_LED4
+
+	// Don't ever turn on the LED ring. Ever. Set to off and exit
+	LED_RING(0);
+	return;
 
 	if (/* IO armed */ (r_status_flags & PX4IO_P_STATUS_FLAGS_SAFETY_OFF)
 			   /* and FMU is armed */ && (r_setup_arming & PX4IO_P_SETUP_ARMING_FMU_ARMED)) {
@@ -366,7 +370,7 @@ user_start(int argc, char *argv[])
 
 			} else {
 				LED_AMBER(false);
-				LED_BLUE(true);
+				LED_BLUE(false);		// disable LED_BLUE, on cube it is the heater, so it shouldn't ever turn this on. Could damage cube during dev.
 			}
 
 			up_udelay(250000);
@@ -439,7 +443,7 @@ user_start(int argc, char *argv[])
 
 		} else {
 			/* switch resistive heater hard on */
-			LED_BLUE(true);
+			LED_BLUE(false);	// Set this to off always because the logic to reach here is fuzzy. Don't want this accidentally on.
 		}
 
 		update_mem_usage();
