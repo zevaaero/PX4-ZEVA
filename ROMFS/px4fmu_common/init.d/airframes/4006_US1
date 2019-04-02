@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 8
+set PARAM_DEFAULTS_VER 9
 
 if [ $AUTOCNF = yes ]
 then
@@ -78,6 +78,9 @@ then
 	# GPS parameters
 	param set GPS_1_CONFIG 201
 	param set GPS_2_CONFIG 0
+
+	# land detector
+	param set LNDMC_LOW_T_THR 0.5
 
 	# MAVLink parameters
 	param set MAV_0_CONFIG 101
@@ -138,7 +141,7 @@ then
 	param set MPC_MAN_Y_MAX 45.0000000
 	param set MPC_POS_MODE 3
 	param set MPC_SPOOLUP_TIME 2
-	param set MPC_THR_HOVER 0.40000000
+	param set MPC_THR_HOVER 0.5
 	param set MPC_THR_MIN 0.0000000
 	param set MPC_TILTMAX_AIR 35.0000000
 	param set MPC_TKO_RAMP_T 0.4
