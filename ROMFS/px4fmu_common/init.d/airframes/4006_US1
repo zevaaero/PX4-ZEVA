@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 9
+set PARAM_DEFAULTS_VER 10
 
 if [ $AUTOCNF = yes ]
 then
@@ -180,7 +180,7 @@ then
 
 	# Logger parameters
 	param set SDLOG_MODE 0
-	param set SDLOG_PROFILE 3
+	param set SDLOG_PROFILE 1
 
 	# Sensors parameters
 	param set SENS_BOARD_ROT 3
