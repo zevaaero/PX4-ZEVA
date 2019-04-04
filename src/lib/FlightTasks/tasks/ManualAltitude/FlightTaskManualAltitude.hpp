@@ -56,7 +56,6 @@ protected:
 	void _updateHeadingSetpoints(); /**< sets yaw or yaw speed */
 	virtual void _updateSetpoints(); /**< updates all setpoints */
 	virtual void _scaleSticks(); /**< scales sticks to velocity in z */
-	void _updateConstraints(); /**< update dynamic constraints */
 
 	/**
 	 * rotates vector into local frame
