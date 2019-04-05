@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 10
+set PARAM_DEFAULTS_VER 11
 
 if [ $AUTOCNF = yes ]
 then
@@ -54,6 +54,7 @@ then
 	param set CAL_GYRO1_EN 0
 	param set CAL_GYRO2_EN 1
 	param set CAL_MAG0_EN 1
+	param set CAL_MAG0_ROT 6
 	param set CAL_MAG1_EN 0
 	param set CAL_MAG2_EN 0
 	param set CAL_MAG3_EN 0
@@ -68,11 +69,16 @@ then
 
 	# EKF2 parameters
 	param set EKF2_AID_MASK 33
-	param set EKF2_GPS_POS_X 0.0100
-	param set EKF2_GPS_POS_Y -0.0050
+	param set EKF2_GPS_POS_X 0.000
+	param set EKF2_GPS_POS_Y 0.046
+	param set EKF2_GPS_POS_Z 0.000
+	param set EKF2_MAG_TYPE 1
 	param set EKF2_RNG_A_HMAX 35
 	param set EKF2_RNG_A_VMAX 12
 	param set EKF2_RNG_AID 1
+	param set EKF2_RNG_POS_X -0.071
+	param set EKF2_RNG_POS_Y -0.071
+	param set EKF2_RNG_POS_Z 0.070
 
 
 	# GPS parameters
