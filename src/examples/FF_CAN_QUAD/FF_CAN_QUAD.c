@@ -124,7 +124,7 @@ typedef enum {
 // Export main function for access by the main PX4 firmware
 // This function must be called <module_name>_main
 // It gets started by the shell using a startup script in the folder: /home/px4dev/cory/firmware/ROMFS/px4fmu_common/init.d/rcS
-__EXPORT int FF_CAN_main(int argc, char *argv[]);
+__EXPORT int FF_CAN_QUAD_main(int argc, char *argv[]);
 
 //-------------------------------------------------------------------------------------
 // Public function prototypes
@@ -180,36 +180,36 @@ bool _isRegistered;
 bool _isSpyModeOn;
 
 // Px4 Arm Flag
-bool 		_isPx4Armed;
-bool 		_areMotorsArming;
-bool 		_areMotorsDisarming;
-uint32_t 	_motorArmAck_BitFlags;
-uint32_t 	_motorDisarmAck_BitFlags;
-uint8_t 	_motorArmAck_Flags[MTR_CNT];
-uint8_t 	_motorDisarmAck_Flags[MTR_CNT];
-uint8_t 	_armCounter;
-uint8_t 	_disarmCounter;
+// bool 		_isPx4Armed;
+// bool 		_areMotorsArming;
+// bool 		_areMotorsDisarming;
+// uint32_t 	_motorArmAck_BitFlags;
+// uint32_t 	_motorDisarmAck_BitFlags;
+// uint8_t 	_motorArmAck_Flags[MTR_CNT];
+// uint8_t 	_motorDisarmAck_Flags[MTR_CNT];
+// uint8_t 	_armCounter;
+// uint8_t 	_disarmCounter;
 
 // Arm/Disarm vars
 int Arm_Delay_Cntr = 0;
 
 // PWM value local storage
-unsigned long _PWM[MTR_CNT];
-uint16_t	  _PWMTXRate;		// Rate of mctrl signals sent to Alta Motor Driver	
+// unsigned long _PWM[MTR_CNT];
+// uint16_t	  _PWMTXRate;		// Rate of mctrl signals sent to Alta Motor Driver	
 
 // Telemetry Variables
-struct esc_status_s esc_stat;			// local storage for esc_status uORB message data
-static orb_advert_t _esc_pub = NULL;	// advertisement for esc_status message
+// struct esc_status_s esc_stat;			// local storage for esc_status uORB message data
+// static orb_advert_t _esc_pub = NULL;	// advertisement for esc_status message
 uint16_t    _telemTXRate;				// Number of telem packages requests sent per second
 uint16_t 	_telemRX_1_Rate;			// Number of telem response 1 packets received per second
 uint16_t 	_telemRX_2_Rate;			// Number of telem response 2 packets received per second
 
 // Estimator subscription vars
-static int _estimator_status_sub = 0;	// subscription to estimator
-static struct estimator_status_s _est_status;				// hold the estimator_status
+// static int _estimator_status_sub = 0;	// subscription to estimator
+// static struct estimator_status_s _est_status;				// hold the estimator_status
 //hrt_abstime last_est_status = 0;					// when did we get last update?
-hrt_abstime last_motorerror_message = 0;			// when did we send last motor update?
-#define MOTOR_ERROR_TIMEOUT 500000
+// hrt_abstime last_motorerror_message = 0;			// when did we send last motor update?
+// #define MOTOR_ERROR_TIMEOUT 500000
 
 // CAN Rate
 uint16_t 	_CANEventCounter;			// Number of times can0 was changed per second.
@@ -218,7 +218,7 @@ uint16_t 	_CANEventCounter;			// Number of times can0 was changed per second.
 uint8_t 	_boomID;					// Saves the ID from the last reprog operation.
 
 // Bootloader ID Holder
-uint32_t	_bootLoaderIDs[MTR_CNT];			// Contains the UIDs of each motor in the system
+// uint32_t	_bootLoaderIDs[MTR_CNT];			// Contains the UIDs of each motor in the system
 uint32_t	_esc_jump_address_set_ack_uid;	// Contains the last recieved UID of a jump to address set CAN command
 uint32_t 	_esc_jump_execute_ack_uid;	// Contains the last recieved UID of a jump to address execute CAN command
 
@@ -236,7 +236,7 @@ bool _readThreadShouldExit;
 bool _readThreadRunning;
 int  _readDaemonTask;
 
-static orb_advert_t mavlink_log_pub = NULL;
+// static orb_advert_t mavlink_log_pub = NULL;
 
 //-----------------------------------------------------------------------------------------------
 // Public Function Defintions
@@ -261,11 +261,11 @@ void FF_CAN(void)
 	_isSpyModeOn = false;
 
 	// Arm flag starts as false.
-	_isPx4Armed = false;
-	_areMotorsArming = false;
-	_areMotorsDisarming = false;
-	_armCounter = 1;
-	_disarmCounter = 1;
+	// _isPx4Armed = false;
+	// _areMotorsArming = false;
+	// _areMotorsDisarming = false;
+	// _armCounter = 1;
+	// _disarmCounter = 1;
 
 	_CANEventCounter = 0;
 
@@ -907,10 +907,10 @@ void FF_CAN_WriteTask(void)
 	PX4_INFO("FF_CAN_Writer-> CAN opened");
 
 	// Clock
-	const hrt_abstime task_start = hrt_absolute_time();
-	hrt_abstime lastRun = task_start;
-	uint16_t logCounter = 0;
-	uint16_t telemCounter = 1;
+	// const hrt_abstime task_start = hrt_absolute_time();
+	// hrt_abstime lastRun = task_start;
+	// uint16_t logCounter = 0;
+	// uint16_t telemCounter = 1;
 
 	// Subscriptions - uOrb
 
@@ -952,7 +952,7 @@ void FF_CAN_WriteTask(void)
 		}
 
 		// Something really bad happened and while loop will get executed fast and it will block everything!
-		To handle that make the microcontroller sleep.
+		// To handle that make the microcontroller sleep.
 		if (myRet < 0) {
 			PX4_ERR("FF_CAN_Writer-> poll error %d, %d", myRet, errno);
 			/* sleep a bit before next try */
@@ -1115,16 +1115,7 @@ void FF_CAN_ReadTask()
 	while(!_readThreadShouldExit)
 	{
 		
-		// Each read loop, check if we are flying, so we can test if we should error about telem values in the ESC data. 
-		// this is done on read since it is we only need this info when a telemetry message comes in. We'll just
-		// update a variable to keep track of flying status, and use that with our error checker.
 
-		bool updated = false;
-		orb_check(_estimator_status_sub, &updated);
-
-		if (updated) {
-			orb_copy(ORB_ID(estimator_status), _estimator_status_sub, &_est_status);
-		}
 		
 		// Similar to writer loop implementation.
 		// Note that loop control is hooked to can0 changes rather than uOrb messages.
@@ -1142,7 +1133,8 @@ void FF_CAN_ReadTask()
 				{
 					if (FF_CAN_MSG_Recv(&rxmsg, readerFD) == 0)
 					{
-						FF_CAN_Message_Rx_Parse(&rxmsg);
+						// Don't do anything if we get a message
+						// FF_CAN_Message_Rx_Parse(&rxmsg);
 
 					} else {
 						// MSG read was not succesful - most likely all messages have been read!
@@ -1161,8 +1153,8 @@ void FF_CAN_ReadTask()
 				printf("FF_CAN_Reader-> Number of times CAN changed per second is %d .\n", _CANEventCounter);
 				printf("FF_CAN_Reader-> Number of telem RES1 packages captured is %d .\n", _telemRX_1_Rate);
 				printf("FF_CAN_Reader-> Number of telem RES2 packages captured is %d .\n\n", _telemRX_2_Rate);
-				printf("FF_CAN_Reader-> Arm Ack Flags: %02x \n", _motorArmAck_BitFlags);
-				printf("FF_CAN_Reader-> Disarm Ack Flags: %02x \n", _motorDisarmAck_BitFlags);
+				// printf("FF_CAN_Reader-> Arm Ack Flags: %02x \n", _motorArmAck_BitFlags);
+				// printf("FF_CAN_Reader-> Disarm Ack Flags: %02x \n", _motorDisarmAck_BitFlags);
 			}
 			_telemRX_1_Rate = 0;
 			_telemRX_2_Rate = 0;
@@ -1178,136 +1170,136 @@ void FF_CAN_ReadTask()
 //-------------------------------------------------------------------------------------
 // Dedicated Rx Parsing function
 // Takes data from CAN messages and parses it to application vars
-void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
-{
-	int id_idx = 0;
-	uint32_t uid = 0; 
+// void FF_CAN_Message_Rx_Parse(struct can_msg_s *msg_p)
+// {
+// 	int id_idx = 0;
+// 	uint32_t uid = 0; 
 
-	switch(msg_p->cm_hdr.ch_id)
-	{
-		case 0x08:	// UID RESPONSE
-			uid = *(uint32_t *)&msg_p->cm_data[0];
-			printf("FF_CAN_Reader-> Recieved UID discovery response from UID: %08x \n", uid);
+// 	switch(msg_p->cm_hdr.ch_id)
+// 	{
+// 		case 0x08:	// UID RESPONSE
+// 			uid = *(uint32_t *)&msg_p->cm_data[0];
+// 			printf("FF_CAN_Reader-> Recieved UID discovery response from UID: %08x \n", uid);
 
-			// check/build the ID list
-			for (int i=0; i<MTR_CNT; i++)
-			{
-				// break out if we have already added it
-				if (_bootLoaderIDs[i] == uid){
-					break;
+// 			// check/build the ID list
+// 			for (int i=0; i<MTR_CNT; i++)
+// 			{
+// 				// break out if we have already added it
+// 				if (_bootLoaderIDs[i] == uid){
+// 					break;
 
-				// add it and break out if we have an empty space in the list
-				} else if (_bootLoaderIDs[i] == 0){
-					_bootLoaderIDs[i] = uid;
-					break;
-				}
-			}
-			break;
+// 				// add it and break out if we have an empty space in the list
+// 				} else if (_bootLoaderIDs[i] == 0){
+// 					_bootLoaderIDs[i] = uid;
+// 					break;
+// 				}
+// 			}
+// 			break;
 
-		case 0x41:	// JUMP ADDRESS SET ACK
-			uid = *(uint32_t *)&msg_p->cm_data[0];
-			_esc_jump_address_set_ack_uid = uid;
-			printf("FF_CAN_Reader-> Jump address set ACK Rxd: %08x \n", uid);
-			break;
+// 		case 0x41:	// JUMP ADDRESS SET ACK
+// 			uid = *(uint32_t *)&msg_p->cm_data[0];
+// 			_esc_jump_address_set_ack_uid = uid;
+// 			printf("FF_CAN_Reader-> Jump address set ACK Rxd: %08x \n", uid);
+// 			break;
 
-		case 0x4D:	// JUMP EXECUTE ACK
-			uid = *(uint32_t *)&msg_p->cm_data[0];
-			_esc_jump_execute_ack_uid = uid;
-			printf("FF_CAN_Reader-> Jump execute ACK Rxd: %08x \n", uid);
-			break;
+// 		case 0x4D:	// JUMP EXECUTE ACK
+// 			uid = *(uint32_t *)&msg_p->cm_data[0];
+// 			_esc_jump_execute_ack_uid = uid;
+// 			printf("FF_CAN_Reader-> Jump execute ACK Rxd: %08x \n", uid);
+// 			break;
 
-		case CAN_ADDR_ARM_ACK:
-			id_idx = msg_p->cm_data[0] - 1;
-			if ((id_idx < MTR_CNT) && (id_idx >= 0))
-			{
-				_motorArmAck_BitFlags |= (0x00000001 << id_idx);
-				_motorArmAck_Flags[id_idx] = 1;
-				printf("FF_CAN_Reader-> Arm ACK Rxd: %d \n", id_idx + 1);
-				printf("FF_CAN_Reader-> Arm ACK Flags: %02x \n", _motorArmAck_BitFlags);
-			}
-			break;
+// 		case CAN_ADDR_ARM_ACK:
+// 			id_idx = msg_p->cm_data[0] - 1;
+// 			if ((id_idx < MTR_CNT) && (id_idx >= 0))
+// 			{
+// 				_motorArmAck_BitFlags |= (0x00000001 << id_idx);
+// 				_motorArmAck_Flags[id_idx] = 1;
+// 				printf("FF_CAN_Reader-> Arm ACK Rxd: %d \n", id_idx + 1);
+// 				printf("FF_CAN_Reader-> Arm ACK Flags: %02x \n", _motorArmAck_BitFlags);
+// 			}
+// 			break;
 
-		case CAN_ADDR_DISARM_ACK:
-			id_idx = msg_p->cm_data[0] - 1;
-			if ((id_idx < MTR_CNT) && (id_idx >= 0))
-			{
-				_motorDisarmAck_BitFlags |= (0x00000001 << id_idx);
-				_motorDisarmAck_Flags[id_idx] = 1;
-				printf("FF_CAN_Reader-> Disarm ACK Rxd: %d \n", id_idx + 1);
-				printf("FF_CAN_Reader-> Disarm ACK Flags: %02x \n", _motorDisarmAck_BitFlags);
-			}
-			break;
+// 		case CAN_ADDR_DISARM_ACK:
+// 			id_idx = msg_p->cm_data[0] - 1;
+// 			if ((id_idx < MTR_CNT) && (id_idx >= 0))
+// 			{
+// 				_motorDisarmAck_BitFlags |= (0x00000001 << id_idx);
+// 				_motorDisarmAck_Flags[id_idx] = 1;
+// 				printf("FF_CAN_Reader-> Disarm ACK Rxd: %d \n", id_idx + 1);
+// 				printf("FF_CAN_Reader-> Disarm ACK Flags: %02x \n", _motorDisarmAck_BitFlags);
+// 			}
+// 			break;
 
-		case CAN_ADDR_TELEMETRY_RESPONSE:
+// 		case CAN_ADDR_TELEMETRY_RESPONSE:
 
-			id_idx = (msg_p->cm_data[0] & 0xF) - 1;
-			if (id_idx < 0 || id_idx > MTR_CNT) break;
+// 			id_idx = (msg_p->cm_data[0] & 0xF) - 1;
+// 			if (id_idx < 0 || id_idx > MTR_CNT) break;
 
-			// lower unsigned int
-			// bits 0 to 3 = boom ID
-			// bits 4 to 15 = voltage * 0.064
-			// bits 16 to 23 = fault state
-			// bits 24 to 31 = temperature + 100
+// 			// lower unsigned int
+// 			// bits 0 to 3 = boom ID
+// 			// bits 4 to 15 = voltage * 0.064
+// 			// bits 16 to 23 = fault state
+// 			// bits 24 to 31 = temperature + 100
 
-			uint32_t voltage = *(uint32_t *)&msg_p->cm_data[0];
-			voltage = (voltage >> 4) & 0xFFF;
-			esc_stat.esc[id_idx].esc_voltage = ((float)voltage / 0.064f) / 1000.0f;
+// 			uint32_t voltage = *(uint32_t *)&msg_p->cm_data[0];
+// 			voltage = (voltage >> 4) & 0xFFF;
+// 			esc_stat.esc[id_idx].esc_voltage = ((float)voltage / 0.064f) / 1000.0f;
 
-			esc_stat.esc[id_idx].esc_state = msg_p->cm_data[2];
+// 			esc_stat.esc[id_idx].esc_state = msg_p->cm_data[2];
 
-			float temp = msg_p->cm_data[3];
-			esc_stat.esc[id_idx].esc_temperature = temp - 100.0f;
+// 			float temp = msg_p->cm_data[3];
+// 			esc_stat.esc[id_idx].esc_temperature = temp - 100.0f;
 
-			// upper unsigned int
-			// bits 0 to 15 = rpm
-			// bits 16 to 31 = current (Amps) - 32768 * 0.1
+// 			// upper unsigned int
+// 			// bits 0 to 15 = rpm
+// 			// bits 16 to 31 = current (Amps) - 32768 * 0.1
 
-			esc_stat.esc[id_idx].esc_rpm = *(uint16_t *)&msg_p->cm_data[4];
+// 			esc_stat.esc[id_idx].esc_rpm = *(uint16_t *)&msg_p->cm_data[4];
 
-			float cur = *(uint16_t *)&msg_p->cm_data[6];
-			esc_stat.esc[id_idx].esc_current = (cur - 32768.0f) * 0.1f;
+// 			float cur = *(uint16_t *)&msg_p->cm_data[6];
+// 			esc_stat.esc[id_idx].esc_current = (cur - 32768.0f) * 0.1f;
 
-			// Test if there is a fault, alert if true
-			if( (msg_p->cm_data[2] & 0xFB) && (_est_status.control_mode_flags & (1<<ESTIMATOR_STATUS_CS_IN_AIR)) )
-			{
-				if( (hrt_absolute_time()-last_motorerror_message) > MOTOR_ERROR_TIMEOUT ) 
-				{
-					mavlink_log_critical(&mavlink_log_pub,"MOTOR %d FAULT: %d",id_idx,msg_p->cm_data[2]);
-					last_motorerror_message = hrt_absolute_time();
-				}
+// 			// Test if there is a fault, alert if true
+// 			if( (msg_p->cm_data[2] & 0xFB) && (_est_status.control_mode_flags & (1<<ESTIMATOR_STATUS_CS_IN_AIR)) )
+// 			{
+// 				if( (hrt_absolute_time()-last_motorerror_message) > MOTOR_ERROR_TIMEOUT ) 
+// 				{
+// 					mavlink_log_critical(&mavlink_log_pub,"MOTOR %d FAULT: %d",id_idx,msg_p->cm_data[2]);
+// 					last_motorerror_message = hrt_absolute_time();
+// 				}
 				
-			}
+// 			}
 
-			_telemRX_1_Rate++;
-			break;
+// 			_telemRX_1_Rate++;
+// 			break;
 
-		case CAN_ADDR_TELEMETRY_RESPONSE_2:
+// 		case CAN_ADDR_TELEMETRY_RESPONSE_2:
 
-			id_idx = (msg_p->cm_data[0] & 0xF) - 1;
-			if (id_idx < 0 || id_idx > MTR_CNT) break;
+// 			id_idx = (msg_p->cm_data[0] & 0xF) - 1;
+// 			if (id_idx < 0 || id_idx > MTR_CNT) break;
 
-			// lower unsigned int
-			// bits 0 to 3 = boom ID
-			// bits 8 to 15 = Accelerometer X
-			// bits 16 to 23 = Accelerometer Y
-			// bits 24 to 31 = Accelerometer Z
+// 			// lower unsigned int
+// 			// bits 0 to 3 = boom ID
+// 			// bits 8 to 15 = Accelerometer X
+// 			// bits 16 to 23 = Accelerometer Y
+// 			// bits 24 to 31 = Accelerometer Z
 
-			_telemRX_2_Rate++;
-			break;
+// 			_telemRX_2_Rate++;
+// 			break;
 
-		default:
-			break;
-	}
+// 		default:
+// 			break;
+// 	}
 
-	// Each time we Rx a telemetry response we should publish the data
-	if (msg_p->cm_hdr.ch_id == CAN_ADDR_TELEMETRY_RESPONSE)
-	{
-		esc_stat.timestamp = hrt_absolute_time();	// note, we should update this directly before publishing
-		esc_stat.counter++;
-		orb_publish(ORB_ID(esc_status), _esc_pub, &esc_stat);
-	}
+// 	// Each time we Rx a telemetry response we should publish the data
+// 	if (msg_p->cm_hdr.ch_id == CAN_ADDR_TELEMETRY_RESPONSE)
+// 	{
+// 		esc_stat.timestamp = hrt_absolute_time();	// note, we should update this directly before publishing
+// 		esc_stat.counter++;
+// 		orb_publish(ORB_ID(esc_status), _esc_pub, &esc_stat);
+// 	}
 
-}
+// }
 
 
 //-------------------------------------------------------------------------------------
@@ -1367,22 +1359,22 @@ int FF_CAN_QUAD_main(int argc, char *argv[])
 
 	// Sets boom ID. Should be done once at factory.
 	// We might want to remove this shell command from release version completely.
-	if (!strcmp(argv[1], "setid"))
-	{
-		if (_moduleStarted)
-		{
-			if(argc < 3)
-			{
-				PX4_INFO("Missing argument: Boom ID");
-			}
-			if(argc == 3)
-			{
-				int myBoomID = atoi(argv[2]);
-				PX4_INFO("Setting boom ID to %d on all PWM high channels.", myBoomID);
-				FF_CAN_SetBoomID(myBoomID);
-			}
-		}
-	}
+	// if (!strcmp(argv[1], "setid"))
+	// {
+	// 	if (_moduleStarted)
+	// 	{
+	// 		if(argc < 3)
+	// 		{
+	// 			PX4_INFO("Missing argument: Boom ID");
+	// 		}
+	// 		if(argc == 3)
+	// 		{
+	// 			int myBoomID = atoi(argv[2]);
+	// 			PX4_INFO("Setting boom ID to %d on all PWM high channels.", myBoomID);
+	// 			FF_CAN_SetBoomID(myBoomID);
+	// 		}
+	// 	}
+	// }
 
 	PX4_INFO("FF CAN Module Exited");
 	return 0;

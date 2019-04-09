@@ -164,6 +164,5 @@ set(config_module_list
 	#examples/hwtest
 
 	# FF CAN Development
-	examples/FF_CAN
 	examples/FF_CAN_QUAD
 )
