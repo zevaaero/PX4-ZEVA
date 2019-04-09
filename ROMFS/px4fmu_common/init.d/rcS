@@ -828,8 +828,20 @@ fi
 			param set MAV_TYPE ${MAV_TYPE}
 		fi
 
-		# Load mixer and configure outputs
-		sh /etc/init.d/rc.interface_altapro8
+		# Load mixer and configure outputs depending on which airframe
+		if param compare SYS_AUTOSTART 8010
+		then
+			sh /etc/init.d/rc.interface_altapro8
+		else
+			# dfault should be fine for Quads with no CAN since fmu default is ok
+			sh /etc/init.d/rc.interface
+		fi 
+		
+		#if param compare SYS_AUTOSTART 4510
+		#then
+		#	sh /etc/init.d/rc.interface_altaproquad
+		#fi 
+		
 
 		# Start standard multicopter apps
 		sh /etc/init.d/rc.mc_apps

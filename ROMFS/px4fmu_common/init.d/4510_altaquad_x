@@ -31,6 +31,6 @@ set PWM_OUT 1234
 set MIXER quad_x
 
 # Start FF_CAN module
-FF_CAN start
+FF_CAN_QUAD start
 
 
