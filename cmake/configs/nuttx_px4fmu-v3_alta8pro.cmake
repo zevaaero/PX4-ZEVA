@@ -1,5 +1,6 @@
 
 # FMUv3 is FMUv2 with access to the full 2MB flash
+# This target is specifically for Alta 8 Pro to control which modules get loaded for this config
 set(BOARD px4fmu-v2 CACHE string "" FORCE)
 set(FW_NAME nuttx_px4fmu-v3_default.elf CACHE string "" FORCE)
 set(FW_PROTOTYPE px4fmu-v3 CACHE string "" FORCE)
@@ -7,7 +8,7 @@ set(LD_SCRIPT ld_full.script CACHE string "" FORCE)
 
 px4_nuttx_configure(HWCLASS m4 CONFIG nsh ROMFS y ROMFSROOT px4fmu_common IO px4io-v2)
 
-set(config_uavcan_num_ifaces 2)
+#set(config_uavcan_num_ifaces 2)
 
 set(config_module_list
 	#
@@ -94,7 +95,7 @@ set(config_module_list
 	modules/load_mon
 	modules/mavlink
 	modules/navigator
-	modules/uavcan
+	#modules/uavcan
 
 	#
 	# Estimation modules
@@ -161,4 +162,8 @@ set(config_module_list
 
 	# Hardware test
 	examples/hwtest
+
+	# FF CAN Development
+	examples/FF_CAN
+
 )
