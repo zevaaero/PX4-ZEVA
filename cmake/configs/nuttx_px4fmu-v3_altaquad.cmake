@@ -165,5 +165,5 @@ set(config_module_list
 
 	# FF CAN Development
 	examples/FF_CAN
-
+	examples/FF_CAN_QUAD
 )
