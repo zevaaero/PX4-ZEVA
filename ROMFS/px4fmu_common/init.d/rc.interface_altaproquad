@@ -8,7 +8,6 @@
 #  variable name is terminated with the right bracket character ('}').
 #  Otherwise, the variable name goes to the end of the argument.
 #
-
 #####################################################################################
 # FREEFLY CUSTOM - START RC.INTERFACE SECTION
 
@@ -24,10 +23,10 @@ unset MIXER_FILE
 pwm rate -c 12345678 -r 400
 
 # Set disarmed, min and max PWM values
-pwm disarmed -c 1234 -p ${PWM_DISARMED}
-pwm min -c 1234 -p 1075
-pwm max -c 1234 -p 1950
-pwm failsafe -c 1234 -p 900 -d ${OUTPUT_DEV}
+pwm disarmed -c 12345678 -p ${PWM_DISARMED}
+pwm min -c 12345678 -p 1075
+pwm max -c 12345678 -p 1950
+pwm failsafe -c 12345678 -p 900 -d ${OUTPUT_DEV}
 
 #-----------------------------------------------------------------------
 # Load aux mixer
@@ -35,7 +34,7 @@ set MIXER_AUX ${MIXER}
 set OUTPUT_AUX_DEV /dev/pwm_output1
 set MIXER_AUX_FILE /etc/mixers/${MIXER}.main.mix
 
-fmu mode_pwm8_calc_only -t
+fmu mode_pwm4 -t
 mixer load /dev/pwm_output1 ${MIXER_AUX_FILE}
 
 # Set PWM_AUX output frequency
@@ -64,5 +63,3 @@ unset FAILSAFE
 unset OUTPUT_DEV
 unset OUTPUT_AUX_DEV
 
-# END FREEFLY CUSTOM
-#####################################################################################
