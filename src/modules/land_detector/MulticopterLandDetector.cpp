@@ -128,7 +128,6 @@ void MulticopterLandDetector::_update_params()
 	param_get(_paramHandle.altitude_max, &_params.altitude_max);
 	param_get(_paramHandle.landSpeed, &_params.landSpeed);
 	param_get(_paramHandle.low_thrust_threshold, &_params.low_thrust_threshold);
-
 }
 
 
