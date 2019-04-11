@@ -834,16 +834,18 @@ fi
 		then
 			echo Alta 8 Pro selected
 			sh /etc/init.d/rc.interface_altapro8
-		fi
+		fi 
 		if param compare SYS_AUTOSTART 4510
 		then
 			echo Alta Quad selected
 			sh /etc/init.d/rc.interface_altaproquad
 		fi
 
-		# default should be fine for Quads with no CAN since fmu default is ok
-		#sh /etc/init.d/rc.interface
-
+		# won't load an interface if not a Freefly id
+		#else
+			# default should be fine for Quads with no CAN since fmu default is ok
+		#	sh /etc/init.d/rc.interface
+		#fi
 
 		# Start standard multicopter apps
 		sh /etc/init.d/rc.mc_apps
