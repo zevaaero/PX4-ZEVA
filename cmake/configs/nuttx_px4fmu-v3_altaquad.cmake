@@ -1,5 +1,6 @@
 
 # FMUv3 is FMUv2 with access to the full 2MB flash
+# This target is specifically for AltaQuad to control which modules get loaded for this config
 set(BOARD px4fmu-v2 CACHE string "" FORCE)
 set(FW_NAME nuttx_px4fmu-v3_default.elf CACHE string "" FORCE)
 set(FW_PROTOTYPE px4fmu-v3 CACHE string "" FORCE)
@@ -7,7 +8,7 @@ set(LD_SCRIPT ld_full.script CACHE string "" FORCE)
 
 px4_nuttx_configure(HWCLASS m4 CONFIG nsh ROMFS y ROMFSROOT px4fmu_common IO px4io-v2)
 
-set(config_uavcan_num_ifaces 2)
+#set(config_uavcan_num_ifaces 2)
 
 set(config_module_list
 	#
@@ -94,7 +95,7 @@ set(config_module_list
 	modules/load_mon
 	modules/mavlink
 	modules/navigator
-	modules/uavcan
+	#modules/uavcan
 
 	#
 	# Estimation modules
@@ -131,17 +132,17 @@ set(config_module_list
 	#
 	# OBC challenge
 	#
-	examples/bottle_drop
+	#examples/bottle_drop
 
 	#
 	# Rover apps
 	#
-	examples/rover_steering_control
+	#examples/rover_steering_control
 
 	#
 	# Segway
 	#
-	examples/segway
+	#examples/segway
 
 	#
 	# Demo apps
@@ -149,16 +150,19 @@ set(config_module_list
 
 	# Tutorial code from
 	# https://px4.io/dev/px4_simple_app
-	examples/px4_simple_app
+	#examples/px4_simple_app
 
 	# Tutorial code from
 	# https://px4.io/dev/debug_values
-	examples/px4_mavlink_debug
+	#examples/px4_mavlink_debug
 
 	# Tutorial code from
 	# https://px4.io/dev/example_fixedwing_control
-	examples/fixedwing_control
+	#examples/fixedwing_control
 
 	# Hardware test
-	examples/hwtest
+	#examples/hwtest
+
+	# FF CAN Development
+	examples/FF_CAN_QUAD
 )
