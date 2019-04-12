@@ -107,10 +107,8 @@ float VelocitySmoothing::computeT1(float T123, float accel_prev, float vel_prev,
 {
 	float a = -max_jerk;
 	float b = max_jerk * T123 - accel_prev;
-	float delta;
-
-	delta = T123 * T123 * max_jerk * max_jerk + 2.f * T123 * accel_prev * max_jerk - accel_prev * accel_prev
-		+ 4.f * max_jerk * (vel_prev - vel_setpoint);
+	float delta = T123 * T123 * max_jerk * max_jerk + 2.f * T123 * accel_prev * max_jerk - accel_prev * accel_prev
+		      + 4.f * max_jerk * (vel_prev - vel_setpoint);
 
 	if (delta < 0.f) {
 		// Solution is not real
@@ -154,7 +152,7 @@ float VelocitySmoothing::computeT2(float T1, float T3, float accel_prev, float v
 		  - max_jerk * T3 * T3 * 0.5f;
 	float T2 = 0.f;
 
-	float den = (accel_prev + max_jerk * T1);
+	float den = accel_prev + max_jerk * T1;
 
 	if (math::abs_t(den) > FLT_EPSILON) {
 		T2 = (vel_setpoint - f) / den;

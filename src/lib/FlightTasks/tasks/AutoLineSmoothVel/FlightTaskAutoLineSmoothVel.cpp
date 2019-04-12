@@ -66,13 +66,15 @@ void FlightTaskAutoLineSmoothVel::_setDefaultConstraints()
 {
 	FlightTaskAuto::_setDefaultConstraints();
 
-	_constraints.speed_xy = MPC_XY_VEL_MAX.get(); // TODO : Should be computed using heading
+	_constraints.speed_xy = _param_mpc_xy_vel_max.get(); // TODO : Should be computed using heading
 }
 
-inline float FlightTaskAutoLineSmoothVel::unwrap(float angle) {
+inline float FlightTaskAutoLineSmoothVel::unwrap(float angle)
+{
 	if (angle < 0.f) {
 		angle += 2.f * M_PI_F;
 	}
+
 	return angle;
 }
 
@@ -81,13 +83,14 @@ void FlightTaskAutoLineSmoothVel::_generateSetpoints()
 	_prepareSetpoints();
 	_generateTrajectory();
 
-	if (!PX4_ISFINITE(_yaw_setpoint)) {
+	if (!PX4_ISFINITE(_yaw_setpoint) && !PX4_ISFINITE(_yawspeed_setpoint)) {
 		// no valid heading -> generate heading in this flight task
 		_generateHeading();
 	}
 
 	// Filter yaw setpoint using a simple first order digital filter
 	float alpha = _deltatime;
+
 	if (fabsf(_yaw_setpoint - _yaw_sp_prev) < M_PI_F) {
 		// Wrap around 0
 		_yaw_setpoint = (1.f - alpha) * _yaw_sp_prev + alpha * _yaw_setpoint;
@@ -126,12 +129,38 @@ bool FlightTaskAutoLineSmoothVel::_generateHeadingAlongTraj()
  * Example: 	- if the constrain is -5, the value will be constrained between -5 and 0
  * 		- if the constrain is 5, the value will be constrained between 0 and 5
  */
-inline float FlightTaskAutoLineSmoothVel::constrain_one_side(float val, float constrain)
+inline float FlightTaskAutoLineSmoothVel::_constrainOneSide(float val, float constrain)
 {
 	const float min = (constrain < FLT_EPSILON) ? constrain : 0.f;
 	const float max = (constrain > FLT_EPSILON) ? constrain : 0.f;
 
 	return math::constrain(val, min, max);
+}
+
+void FlightTaskAutoLineSmoothVel::_checkEkfResetCounters()
+{
+	// Check if a reset event has happened.
+	if (_sub_vehicle_local_position->get().xy_reset_counter != _reset_counters.xy) {
+		_trajectory[0].setCurrentPosition(_position(0));
+		_trajectory[1].setCurrentPosition(_position(1));
+		_reset_counters.xy = _sub_vehicle_local_position->get().xy_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().vxy_reset_counter != _reset_counters.vxy) {
+		_trajectory[0].setCurrentVelocity(_velocity(0));
+		_trajectory[1].setCurrentVelocity(_velocity(1));
+		_reset_counters.vxy = _sub_vehicle_local_position->get().vxy_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().z_reset_counter != _reset_counters.z) {
+		_trajectory[2].setCurrentPosition(_position(2));
+		_reset_counters.z = _sub_vehicle_local_position->get().z_reset_counter;
+	}
+
+	if (_sub_vehicle_local_position->get().vz_reset_counter != _reset_counters.vz) {
+		_trajectory[2].setCurrentVelocity(_velocity(2));
+		_reset_counters.vz = _sub_vehicle_local_position->get().vz_reset_counter;
+	}
 }
 
 void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
@@ -140,13 +169,7 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 	// that one is used as a velocity limit.
 	// If the position setpoints are set to NAN, the values in the velocity setpoints are used as velocity targets: nothing to do here.
 
-	// Check if a reset event has happened.
-	if (_sub_vehicle_local_position->get().xy_reset_counter != _reset_counter) {
-		// Reset the XY axes
-		_trajectory[0].setCurrentPosition(_position(0));
-		_trajectory[1].setCurrentPosition(_position(1));
-		_reset_counter = _sub_vehicle_local_position->get().xy_reset_counter;
-	}
+	_checkEkfResetCounters();
 
 	if (PX4_ISFINITE(_position_setpoint(0)) &&
 	    PX4_ISFINITE(_position_setpoint(1))) {
@@ -163,32 +186,33 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 		Vector2f closest_pt = Vector2f(_prev_wp) + u_prev_to_dest * (prev_to_pos * u_prev_to_dest);
 		Vector2f u_pos_traj_to_dest_xy(Vector2f(pos_traj_to_dest).unit_or_zero());
 
-		float speed_sp_track = Vector2f(pos_traj_to_dest).length() * MPC_XY_TRAJ_P.get();
-		speed_sp_track = math::constrain(speed_sp_track, 0.0f, MPC_XY_CRUISE.get());
+		float speed_sp_track = Vector2f(pos_traj_to_dest).length() * _param_mpc_xy_traj_p.get();
+		speed_sp_track = math::constrain(speed_sp_track, 0.0f, _param_mpc_xy_cruise.get());
+
 		Vector2f vel_sp_xy = u_pos_traj_to_dest_xy * speed_sp_track;
 
 		for (int i = 0; i < 2; i++) {
 			// If available, constrain the velocity using _velocity_setpoint(.)
 			if (PX4_ISFINITE(_velocity_setpoint(i))) {
-				_velocity_setpoint(i) = constrain_one_side(vel_sp_xy(i), _velocity_setpoint(i));
+				_velocity_setpoint(i) = _constrainOneSide(vel_sp_xy(i), _velocity_setpoint(i));
 
 			} else {
 				_velocity_setpoint(i) = vel_sp_xy(i);
 			}
 
 			_velocity_setpoint(i) += (closest_pt(i) - _trajectory[i].getCurrentPosition()) *
-						 MPC_XY_TRAJ_P.get();  // Along-track setpoint + cross-track P controller
+						 _param_mpc_xy_traj_p.get();  // Along-track setpoint + cross-track P controller
 		}
 
 	}
 
 	if (PX4_ISFINITE(_position_setpoint(2))) {
 		const float vel_sp_z = (_position_setpoint(2) - _trajectory[2].getCurrentPosition()) *
-				       MPC_Z_TRAJ_P.get(); // Generate a velocity target for the trajectory using a simple P loop
+				       _param_mpc_z_traj_p.get(); // Generate a velocity target for the trajectory using a simple P loop
 
 		// If available, constrain the velocity using _velocity_setpoint(.)
 		if (PX4_ISFINITE(_velocity_setpoint(2))) {
-			_velocity_setpoint(2) = constrain_one_side(vel_sp_z, _velocity_setpoint(2));
+			_velocity_setpoint(2) = _constrainOneSide(vel_sp_z, _velocity_setpoint(2));
 
 		} else {
 			_velocity_setpoint(2) = vel_sp_z;
@@ -200,21 +224,21 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 void FlightTaskAutoLineSmoothVel::_updateTrajConstraints()
 {
 	// Update the constraints of the trajectories
-	_trajectory[0].setMaxAccel(MPC_ACC_HOR.get()); // TODO : Should be computed using heading
-	_trajectory[1].setMaxAccel(MPC_ACC_HOR.get());
+	_trajectory[0].setMaxAccel(_param_mpc_acc_hor_max.get()); // TODO : Should be computed using heading
+	_trajectory[1].setMaxAccel(_param_mpc_acc_hor_max.get());
 	_trajectory[0].setMaxVel(_constraints.speed_xy);
 	_trajectory[1].setMaxVel(_constraints.speed_xy);
-	_trajectory[0].setMaxJerk(MPC_JERK_MIN.get()); // TODO : Should be computed using heading
-	_trajectory[1].setMaxJerk(MPC_JERK_MIN.get());
-	_trajectory[2].setMaxJerk(MPC_JERK_MIN.get());
+	_trajectory[0].setMaxJerk(_param_mpc_jerk_min.get()); // TODO : Should be computed using heading
+	_trajectory[1].setMaxJerk(_param_mpc_jerk_min.get());
+	_trajectory[2].setMaxJerk(_param_mpc_jerk_min.get());
 
 	if (_velocity_setpoint(2) < 0.f) { // up
-		_trajectory[2].setMaxAccel(MPC_ACC_UP_MAX.get());
-		_trajectory[2].setMaxVel(MPC_Z_VEL_MAX_UP.get());
+		_trajectory[2].setMaxAccel(_param_mpc_acc_up_max.get());
+		_trajectory[2].setMaxVel(_param_mpc_z_vel_max_up.get());
 
 	} else { // down
-		_trajectory[2].setMaxAccel(MPC_ACC_DOWN_MAX.get());
-		_trajectory[2].setMaxVel(MPC_Z_VEL_MAX_DN.get());
+		_trajectory[2].setMaxAccel(_param_mpc_acc_down_max.get());
+		_trajectory[2].setMaxVel(_param_mpc_z_vel_max_dn.get());
 	}
 }
 
@@ -255,7 +279,7 @@ void FlightTaskAutoLineSmoothVel::_generateTrajectory()
 
 	// If the acceleration and velocities are small and that we want to stop, reduce the amplitude of the jerk signal
 	// to help the optimizer to converge towards zero
-	if (Vector2f(_velocity_setpoint).length() < (0.01f * MPC_XY_TRAJ_P.get())
+	if (Vector2f(_velocity_setpoint).length() < (0.01f * _param_mpc_xy_traj_p.get())
 	    && Vector2f(accel_sp_smooth).length() < 0.2f
 	    && Vector2f(vel_sp_smooth).length() < 0.1f) {
 		_trajectory[0].setMaxJerk(1.f);

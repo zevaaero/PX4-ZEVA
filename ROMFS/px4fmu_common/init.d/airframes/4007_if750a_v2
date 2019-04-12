@@ -1,12 +1,13 @@
 #!/bin/sh
 #
+# IF750A drone with centered IMU on isolation plate
+# 180 degrees yaw autopilot and 270 degrees yaw GPS.
+# This vehicle doesn't enable Trimble GPS by default
+#
 # @name IF750A
 #
 # @type Quadrotor x
 # @class Copter
-# IF750A drone with centered IMU on isolation plate
-# 180 degrees yaw autopilot and 270 degrees yaw GPS.
-# This vehicle doesn't enable Trimble GPS by default
 #
 
 sh /etc/init.d/rc.mc_defaults

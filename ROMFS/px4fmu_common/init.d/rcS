@@ -58,6 +58,12 @@ set SDCARD_MIXERS_PATH /fs/microsd/etc/mixers
 set USE_IO no
 set VEHICLE_TYPE none
 
+# Airframe parameter versioning: airframe maintainers can set this in the
+# airframe startup script, and then increase it by one whenever an airframe
+# parameter is updated - it will ensure that these parameters will be updated
+# when the firmware is flashed.
+set PARAM_DEFAULTS_VER 1
+
 #
 # Mount the procfs.
 #
@@ -200,20 +206,13 @@ else
 	#
 	# Start system state indicator.
 	#
-	if ! rgbled start
+	rgbled start
+	rgbled_ncp5623c start
+	rgbled_pwm start
+
+	if blinkm start
 	then
-
-		rgbled_ncp5623c start
-
-		#
-		# FMUv5 may have both PWM I2C RGB LED support.
-		#
-		rgbled_pwm start
-
-		if blinkm start
-		then
-			blinkm systemstate
-		fi
+		blinkm systemstate
 	fi
 
 	#
@@ -457,6 +456,9 @@ else
 	then
 		vmount start
 	fi
+
+	# Check for flow sensor, launched as a background task to scan
+	px4flow start &
 
 	#
 	# Optional board supplied extras: rc.board_extras

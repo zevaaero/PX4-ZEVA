@@ -272,12 +272,12 @@ private:
 	}
 
 	// class methods
-	void initializeSensorData();
+	void initialize_sensor_data();
 
-	int publish_sensor_topics(mavlink_hil_sensor_t *imu);
-	int publish_flow_topic(mavlink_hil_optical_flow_t *flow);
-	int publish_odometry_topic(mavlink_message_t *odom_mavlink);
-	int publish_distance_topic(mavlink_distance_sensor_t *dist);
+	int publish_sensor_topics(const mavlink_hil_sensor_t *imu);
+	int publish_flow_topic(const mavlink_hil_optical_flow_t *flow);
+	int publish_odometry_topic(const mavlink_message_t *odom_mavlink);
+	int publish_distance_topic(const mavlink_distance_sensor_t *dist);
 
 	static Simulator *_instance;
 
@@ -330,17 +330,28 @@ private:
 
 	mavlink_hil_actuator_controls_t actuator_controls_from_outputs(const actuator_outputs_s &actuators);
 
-	void handle_message(mavlink_message_t *msg, bool publish);
+	void handle_message(const mavlink_message_t *msg);
+	void handle_message_distance_sensor(const mavlink_message_t *msg);
+	void handle_message_hil_gps(const mavlink_message_t *msg);
+	void handle_message_hil_sensor(const mavlink_message_t *msg);
+	void handle_message_hil_state_quaternion(const mavlink_message_t *msg);
+	void handle_message_landing_target(const mavlink_message_t *msg);
+	void handle_message_odometry(const mavlink_message_t *msg);
+	void handle_message_optical_flow(const mavlink_message_t *msg);
+	void handle_message_rc_channels(const mavlink_message_t *msg);
+	void handle_message_vision_position_estimate(const mavlink_message_t *msg);
+
 	void parameters_update(bool force);
 	void poll_topics();
-	void pollForMAVLinkMessages(bool publish);
+	void poll_for_MAVLink_messages();
 	void request_hil_state_quaternion();
 	void send();
 	void send_controls();
 	void send_heartbeat();
 	void send_mavlink_message(const mavlink_message_t &aMsg);
-	void update_sensors(mavlink_hil_sensor_t *imu);
-	void update_gps(mavlink_hil_gps_t *gps_sim);
+	void set_publish(const bool publish = true);
+	void update_sensors(const mavlink_hil_sensor_t *imu);
+	void update_gps(const mavlink_hil_gps_t *gps_sim);
 
 	static void *sending_trampoline(void *);
 
@@ -352,14 +363,14 @@ private:
 
 	// uORB subscription handlers
 	int _actuator_outputs_sub{-1};
-	int _manual_sub{-1};
-	int _vehicle_attitude_sub{-1};
 	int _vehicle_status_sub{-1};
 
 	// hil map_ref data
 	struct map_projection_reference_s _hil_local_proj_ref {};
 
 	bool _hil_local_proj_inited{false};
+	bool _publish{false};
+
 	double _hil_ref_lat{0};
 	double _hil_ref_lon{0};
 	float _hil_ref_alt{0.0f};
@@ -372,8 +383,10 @@ private:
 	vehicle_status_s _vehicle_status {};
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::SIM_BAT_DRAIN>) _battery_drain_interval_s, ///< battery drain interval
-		(ParamInt<px4::params::MAV_TYPE>) _param_system_type
+		(ParamFloat<px4::params::SIM_BAT_DRAIN>) _param_sim_bat_drain, ///< battery drain interval
+		(ParamInt<px4::params::MAV_TYPE>) _param_mav_type,
+		(ParamInt<px4::params::MAV_SYS_ID>) _param_mav_sys_id,
+		(ParamInt<px4::params::MAV_COMP_ID>) _param_mav_comp_id
 	)
 
 #endif
