@@ -28,7 +28,7 @@ unset PWM_AUX_OUT
 
 # override mixer
 set PWM_OUT 1234
-set MIXER quad_x
+set MIXER quad_x_ff
 
 # Start FF_CAN module
 FF_CAN_QUAD start
