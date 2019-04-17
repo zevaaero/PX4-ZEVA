@@ -66,5 +66,12 @@ then
 	bmi160 start
 fi
 
+# Auterion Custom for Eiger frame.
+# Starts external ms5611 barometer on I2C bus.
+if param compare SYS_AUTOSTART 4008 
+then
+	ms5611 start -X
+fi
+
 pmw3901 start
 
