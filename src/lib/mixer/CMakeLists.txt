@@ -51,6 +51,7 @@ set(geometry_files
 	quad_x.toml
 	quad_x_pusher.toml
 	quad_y.toml
+	quad_x_ff.toml
 	tri_y.toml
 	twin_engine.toml
 )
