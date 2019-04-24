@@ -157,11 +157,7 @@ private:
 		(ParamInt<px4::params::MPC_ALT_MODE>) _param_mpc_alt_mode,
 		(ParamFloat<px4::params::MPC_SPOOLUP_TIME>) _param_mpc_spoolup_time, /**< time to let motors spool up after arming */
 		(ParamFloat<px4::params::MPC_TILTMAX_LND>) _param_mpc_tiltmax_lnd, /**< maximum tilt for landing and smooth takeoff */
-		(ParamFloat<px4::params::MC_ROLLRATE_MAX>)
-		_param_mc_rollrate_max, /**< maximum roll-rate from the rate controllemax_rotation_rater */
-		(ParamFloat<px4::params::MPC_THR_HOVER>) _param_mpc_thr_hover,
-		(ParamFloat<px4::params::MPC_THR_RATE_MAX>)
-		_param_mpc_thr_rate_max /**< maximum roll-rate from the rate controllemax_rotation_rater */
+		(ParamFloat<px4::params::MPC_THR_HOVER>) _param_mpc_thr_hover
 	);
 
 	control::BlockDerivative _vel_x_deriv; /**< velocity derivative in x */
@@ -189,9 +185,6 @@ private:
 	systemlib::Hysteresis _failsafe_land_hysteresis{false}; /**< becomes true if task did not update correctly for LOITER_TIME_BEFORE_DESCEND */
 
 	WeatherVane *_wv_controller{nullptr};
-
-	Vector3f _thrust_prev;
-	bool _no_flight_task_running = true;
 
 	enum class FlightState {
 		disarmed = 0,
@@ -347,8 +340,6 @@ MulticopterPositionControl::MulticopterPositionControl() :
 	parameters_update(true);
 	// set failsafe hysteresis
 	_failsafe_land_hysteresis.set_hysteresis_time_from(false, LOITER_TIME_BEFORE_DESCEND);
-
-	_thrust_prev.zero();
 }
 
 MulticopterPositionControl::~MulticopterPositionControl()
@@ -813,65 +804,8 @@ MulticopterPositionControl::run()
 				limit_thrust_during_landing(local_pos_sp);
 			}
 
-			// new demaned thrust vector
-			matrix::Vector3f thrust_new(local_pos_sp.thrust[0], local_pos_sp.thrust[1], local_pos_sp.thrust[2]);
-
-			// if this is the first time we run a flight task then reset throttle to the current value
-			// the only case when this is needed is when switching into a flighttask from stabilized or acro mode
-			if (_no_flight_task_running) {
-				_thrust_prev = thrust_new;
-				_no_flight_task_running = false;
-			}
-
-			// get new and previous throttle value
-			float thrust_new_abs = thrust_new.norm();
-			float thrust_old_abs = _thrust_prev.norm();
-
-
-			// add slew rate to throttle
-			if (fabs(thrust_new_abs - thrust_old_abs) / _dt > _param_mpc_thr_rate_max.get()) {
-				if (thrust_new_abs > thrust_old_abs) {
-					thrust_new_abs = thrust_old_abs + _param_mpc_thr_rate_max.get() * _dt;
-				} else {
-					thrust_new_abs = thrust_old_abs - _param_mpc_thr_rate_max.get() * _dt;
-				}
-			}
-
-			// make thrust setpoint comply with maximum allowed rate
-			if (_thrust_prev.length() > FLT_EPSILON && thrust_new.length() > FLT_EPSILON) {
-				float max_rotation_rate = math::radians(_param_mc_rollrate_max.get());
-
-				_thrust_prev.normalize();
-				thrust_new.normalize();
-
-
-				float angle = acosf(_thrust_prev.dot(thrust_new));
-
-				Vector3f rot_axis = _thrust_prev.cross(thrust_new);
-
-
-				if (fabsf(angle / _dt) > max_rotation_rate) {
-					rot_axis.normalize();
-					Quatf q_rot;
-					q_rot.from_axis_angle(rot_axis * max_rotation_rate * _dt);
-					thrust_new = q_rot.conjugate(_thrust_prev);
-					thrust_new.normalize();
-					thrust_new *= thrust_new_abs;
-				}
-			}
-
-			if (thrust_new.length() > FLT_EPSILON) {
-				thrust_new.normalize();
-				thrust_new *= thrust_new_abs;
-			} else if (_thrust_prev.length() > FLT_EPSILON) {
-				thrust_new = _thrust_prev.normalized() * thrust_new_abs;
-			}
-
-			_thrust_prev = thrust_new;
-
-
 			// Fill attitude setpoint. Attitude is computed from yaw and thrust setpoint.
-			_att_sp = ControlMath::thrustToAttitude(thrust_new, local_pos_sp.yaw);
+			_att_sp = ControlMath::thrustToAttitude(matrix::Vector3f(local_pos_sp.thrust), local_pos_sp.yaw);
 			_att_sp.yaw_sp_move_rate = _control.getYawspeedSetpoint();
 			_att_sp.fw_control_yaw = false;
 			_att_sp.apply_flaps = false;
@@ -915,7 +849,6 @@ MulticopterPositionControl::run()
 			q_sp.copyTo(_att_sp.q_d);
 			_att_sp.q_d_valid = true;
 			_att_sp.thrust_body[2] = 0.0f;
-			_no_flight_task_running = true;
 
 			if (_flight_state < FlightState::rampup && _control_mode.flag_control_climb_rate_enabled) {
 				publish_attitude();

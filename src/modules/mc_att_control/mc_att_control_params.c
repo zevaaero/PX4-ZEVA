@@ -600,12 +600,3 @@ PARAM_DEFINE_FLOAT(MC_YRERR_CUTOFF, 0.f);
  * @group Multicopter Attitude Control
  */
 PARAM_DEFINE_INT32(MC_AIRMODE, 0);
-
-/**
- * Yawrate setpoint first order cutoff frequency.
- *
- *
- * @group Multicopter Attitude Control
- */
-PARAM_DEFINE_FLOAT(MC_YR_SP_CUTOFF, 2);
-
