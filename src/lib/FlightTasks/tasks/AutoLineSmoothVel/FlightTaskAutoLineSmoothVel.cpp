@@ -71,26 +71,6 @@ void FlightTaskAutoLineSmoothVel::_generateSetpoints()
 		// no valid heading -> generate heading in this flight task
 		_generateHeading();
 	}
-
-	// Limit the rate of change of the yaw setpoint
-	float dy_max = math::radians(_param_mc_yawrauto_max.get()) * _deltatime;
-
-	if (fabsf(_yaw_setpoint - _yaw_sp_prev) < M_PI_F) {
-		// Wrap around 0
-		_yaw_setpoint = math::constrain(_yaw_setpoint,
-						_yaw_sp_prev - dy_max,
-						_yaw_sp_prev + dy_max);
-
-	} else {
-		// Wrap around PI/-PI
-		_yaw_setpoint = matrix::wrap_pi(
-					math::constrain(matrix::wrap_2pi(_yaw_setpoint),
-							matrix::wrap_2pi(_yaw_sp_prev) - dy_max,
-							matrix::wrap_2pi(_yaw_sp_prev) + dy_max)
-				);
-	}
-
-	_yaw_sp_prev = _yaw_setpoint;
 }
 
 void FlightTaskAutoLineSmoothVel::_generateHeading()
