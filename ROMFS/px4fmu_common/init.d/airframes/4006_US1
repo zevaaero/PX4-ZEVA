@@ -35,7 +35,7 @@ set PWM_AUX_OUT 123456
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 12
+set PARAM_DEFAULTS_VER 13
 
 if [ $AUTOCNF = yes ]
 then
@@ -158,6 +158,7 @@ then
 	param set MPC_XY_VEL_I 0.0500000
 	param set MPC_XY_VEL_MAX 9
 	param set MPC_XY_VEL_P 0.1300000
+	param set MPC_XY_MAN_EXPO 0.65
 	param set MPC_YAW_MODE 3
 	param set MPC_Z_VEL_D 0.0020000
 	param set MPC_Z_VEL_I 0.0500000
