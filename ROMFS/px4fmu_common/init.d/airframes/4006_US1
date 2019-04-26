@@ -81,6 +81,7 @@ then
 	param set EKF2_RNG_POS_X -0.071
 	param set EKF2_RNG_POS_Y -0.071
 	param set EKF2_RNG_POS_Z 0.070
+	param set EKF2_GND_EFF_DZ 5
 
 
 	# GPS parameters
