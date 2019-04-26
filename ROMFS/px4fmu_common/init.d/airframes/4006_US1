@@ -66,6 +66,8 @@ then
 	# Commander parameters
 	param set COM_ARM_EKF_AB  0.005
 	param set COM_DISARM_LAND 1.000
+	param set COM_FLTMODE1 2
+	param set COM_FLTMODE6 1
 
 	# EKF2 parameters
 	param set EKF2_AID_MASK 33
@@ -172,6 +174,8 @@ then
 	param set PWM_AUX_RATE 50
 
 	# RC mapping
+	param set RC_MAP_FLTMODE 6
+	param set RC_MAP_RETURN_SW 5
 	param set RC_FAILS_THR 970
 	param set RC_MAP_AUX1 10
 	param set RC_MAP_AUX2 11
@@ -183,7 +187,7 @@ then
 
 	# RTL parameters
 	param set RTL_DESCEND_ALT 30.0000000
-	param set RTL_RETURN_ALT 60.0000000
+	param set RTL_RETURN_ALT 120
 
 	# Logger parameters
 	param set SDLOG_MODE 0
