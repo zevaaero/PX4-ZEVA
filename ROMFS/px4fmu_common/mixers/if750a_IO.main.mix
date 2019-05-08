@@ -1,13 +1,26 @@
+This file defines a mixer for the IF750A IO ouputs which are connected to:
+- the Gremsy S1 V2 gimbal via SBUS (PWM_SBUS_MODE is enabled)
+- the parachute release servo via PWM (channel 5)
 
-# RC pass-throughs for pitch and yaw for gremsy gimbal
+gremsy gimbal pitch/tilt from vmount
 M: 1
-S: 3 5  10000  10000      0 -10000  10000
+S: 2 1  10000  10000      0 -10000  10000
+
+gremsy gimbal yaw/pan from vmount
 M: 1
-S: 3 6  10000  10000      0 -10000  10000
+S: 2 2  10000  10000      0 -10000  10000
 
-# Channels to set roll and mode for gremsy gimbal
-Z:
+gremsy gimbal mode (only use follow mode configured by PWM_MAIN_DIS3)
 Z:
 
-# Channel for parachute
+gremsy gimbal roll (not yet supported)
+Z:
+
+parachute release servo (acts only in failsafe configured by PWM_MAIN_FAIL5)
+Z:
+
+gremsy gimbal pitch rate/tilt speed (reserved)
+Z:
+
+gremsy gimbal yaw rate/pan speed (reserved)
 Z:

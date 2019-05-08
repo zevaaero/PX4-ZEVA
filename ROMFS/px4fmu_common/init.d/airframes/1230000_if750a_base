@@ -96,8 +96,11 @@ then
 	param set SER_TEL1_BAUD 57600
 
 	# Mount Parameters
-	#param set MNT_MODE_IN 0
-	#param set MNT_MODE_OUT 0
+	param set MNT_MODE_IN 0
+	param set MNT_MODE_OUT 0
+	# unassign RC passthroughs to switch existing configurations to MAVLink input
+	param set RC_MAP_AUX1 10
+	param set RC_MAP_AUX2 11
 
 	# RTL Parameters
 	param set RTL_DESCEND_ALT 10.0000
