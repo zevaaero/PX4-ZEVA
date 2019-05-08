@@ -59,6 +59,16 @@ then
 	param set MPC_XY_MAN_EXPO 0.7000
 
 	# PWM parameters
+	# defaults to reset deprecated configurations
+	param set PWM_MIN 1000
+	param set PWM_MAX 2000
+	param set PWM_RATE 400
+	param set SYS_USE_IO 1
+	# enable SBUS output
+	param set PWM_SBUS_MODE 1
+	# thrust output curve compensation
+	param set THR_MDL_FAC 0.5
+	# PWM default values per channel
 	param set PWM_AUX_DISARMED 900
 	param set PWM_AUX_FAIL1 900
 	param set PWM_AUX_FAIL2 900
@@ -73,12 +83,6 @@ then
 	param set PWM_MAIN_FAIL3 1050
 	param set PWM_MAIN_FAIL4 1500
 	param set PWM_MAIN_FAIL5 2000
-	param set PWM_MAX 1950
-	param set PWM_MIN 1050
-	param set PWM_RATE 400
-	param set PWM_SBUS_MODE 1
-	param set SYS_USE_IO 1
-	param set THR_MDL_FAC 0.5
 
 	# Sensors Parameters
 	param set SENS_EN_LL40LS 2
@@ -98,9 +102,7 @@ then
 	# Mount Parameters
 	param set MNT_MODE_IN 0
 	param set MNT_MODE_OUT 0
-	# unassign RC passthroughs to switch existing configurations to MAVLink input
-	param set RC_MAP_AUX1 10
-	param set RC_MAP_AUX2 11
+	param set MNT_RANGE_PITCH 180
 
 	# RTL Parameters
 	param set RTL_DESCEND_ALT 10.0000

@@ -4,11 +4,11 @@ This file defines a mixer for the IF750A IO ouputs which are connected to:
 
 gremsy gimbal pitch/tilt from vmount
 M: 1
-S: 2 1  10000  10000      0 -10000  10000
+S: 2 1 8000 8000 0 -10000 10000
 
 gremsy gimbal yaw/pan from vmount
 M: 1
-S: 2 2  10000  10000      0 -10000  10000
+S: 2 2 10000 10000 0 -10000 10000
 
 gremsy gimbal mode (only use follow mode configured by PWM_MAIN_DIS3)
 Z:
