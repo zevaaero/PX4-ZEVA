@@ -1,9 +1,4 @@
-
 #!/bin/sh
-#
-# IF750A drone with centered IMU on isolation plate
-# 180 degrees yaw autopilot and 270 degrees yaw GPS.
-# This vehicle doesn't enable Trimble GPS by default
 #
 # @name IF750A Base
 #
@@ -62,20 +57,20 @@ then
 
 	# PWM parameters
 	param set PWM_AUX_DISARMED 900
-  param set PWM_AUX_FAIL1 900
-  param set PWM_AUX_FAIL2 900
-  param set PWM_AUX_FAIL3 900
-  param set PWM_AUX_FAIL4 900
-  param set PWM_AUX_FAIL5 900
+	param set PWM_AUX_FAIL1 900
+	param set PWM_AUX_FAIL2 900
+	param set PWM_AUX_FAIL3 900
+	param set PWM_AUX_FAIL4 900
+	param set PWM_AUX_FAIL5 900
 	param set PWM_AUX_MIN 1050
 	param set PWM_AUX_RATE 400
-  param set PWM_MAIN_DIS1 2000
+	param set PWM_MAIN_DIS1 2000
 	param set PWM_MAIN_DIS3 1050
 	param set PWM_MAIN_DIS4 1500
-  param set PWM_MAIN_DIS5 900
+	param set PWM_MAIN_DIS5 900
 	param set PWM_MAIN_FAIL3 1050
 	param set PWM_MAIN_FAIL4 1500
-  param set PWM_MAIN_FAIL5 900
+	param set PWM_MAIN_FAIL5 900
 	param set PWM_MAX 1950
 	param set PWM_MIN 1050
 	param set PWM_RATE 400
@@ -104,11 +99,11 @@ then
 
 	# RTL Parameters
 	param set RTL_DESCEND_ALT 10.0000
-  param set RTL_LAND_DELAY 0.0000
+	param set RTL_LAND_DELAY 0.0000
 	param set RTL_RETURN_ALT 30.0000
 
 	# Logger Parameters
-  param set SDLOG_MODE 0
+	param set SDLOG_MODE 0
 	param set SDLOG_PROFILE 3
 
 	# Camera Trigger
@@ -121,9 +116,9 @@ then
 	param set BAT_A_PER_V 58
 	param set BAT_V_CHARGED 4.2000
 	param set BAT_V_DIV 11.2700
-  param set BAT_CRIT_THR 0.35
-  param set BAT_EMERGEN_THR 0.10
-  param set BAT_LOW_THR 0.40
+	param set BAT_CRIT_THR 0.35
+	param set BAT_EMERGEN_THR 0.10
+	param set BAT_LOW_THR 0.40
 
 	# Circuit breakers
 	param set CBRK_IO_SAFETY 22027
