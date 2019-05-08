@@ -44,7 +44,6 @@
  *
  * @reboot_required true
  * @min 0
- * @max 99999
  * @group System
  */
 PARAM_DEFINE_INT32(SYS_AUTOSTART, 0);

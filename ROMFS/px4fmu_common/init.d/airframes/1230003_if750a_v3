@@ -2,9 +2,9 @@
 #
 # IF750A drone with centered IMU on isolation plate
 # 180 degrees yaw autopilot and 270 degrees yaw GPS.
-# This vehicle doesn't enable Trimble GPS by default
+# This vehicle enables Trimble GPS by default
 #
-# @name IF750A-V2
+# @name IF750A-V3
 #
 # @type Quadrotor x
 # @class Copter
@@ -28,9 +28,9 @@ then
 	param set EKF2_BCOEF_X 45.0000
 	param set EKF2_BCOEF_Y 45.0000
 	param set EKF2_GND_EFF_DZ 4.0000
-	param set EKF2_GPS_POS_X 0.1100
-	param set EKF2_GPS_POS_Y 0.0000
-	param set EKF2_GPS_POS_Z -0.1750
+	param set EKF2_GPS_POS_X 0.0000
+	param set EKF2_GPS_POS_Y 0.1800
+	param set EKF2_GPS_POS_Z -0.1600
 	param set EKF2_HGT_MODE 0
 	param set EKF2_IMU_POS_X 0.0
 	param set EKF2_IMU_POS_Y 0.0
@@ -49,8 +49,9 @@ then
 	param set CAL_MAG0_ROT 6
 
 	# GPS Parameters
-	param set GPS_1_CONFIG 201
-	param set SER_GPS1_BAUD 0
+	param set GPS_1_CONFIG 104
+	param set SER_GPS1_BAUD 115200
+	param set GPS_YAW_OFFSET 85.0000
 
 fi
 

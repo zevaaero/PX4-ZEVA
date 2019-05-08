@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# @name IF750A
+# @name IF750A-4
 #
 # @type Quadrotor x
 # @class Copter
@@ -16,56 +16,13 @@ set PWM_OUT_AUX 1234
 
 if [ $AUTOCNF = yes ]
 then
-	# Vehicle attitude PID tuning
-	param set MC_AIRMODE 1
-	param set MC_DTERM_CUTOFF 25.0000
-	param set MC_PITCHRATE_D 0.0050
-	param set MC_PITCHRATE_I 0.1500
-	param set MC_PITCHRATE_P 0.1300
-	param set MC_PITCHRATE_MAX 70.0000
-	param set MC_PITCH_P 5.0000
-	param set MC_ROLLRATE_D 0.0050
-	param set MC_ROLLRATE_I 0.1500
-	param set MC_ROLLRATE_P 0.1300
-	param set MC_ROLLRATE_MAX 70.0000
-	param set MC_ROLL_P 5.0000
-	param set MC_YAWRATE_I 0.2000
-	param set MC_YAWRATE_MAX 100.0000
-	param set MC_YAWRATE_P 0.4000
-	param set MC_YAW_P 2.0000
-
-	# Position Control Tuning
-	param set MPC_POS_MODE 3
-	param set MPC_ACC_DOWN_MAX 1.0000
-	param set MPC_ACC_UP_MAX 2.0000
-	param set MPC_ACC_HOR 3.000
-	param set MPC_ACC_HOR_MAX 3.000
-	param set MPC_AUTO_MODE 1
-	param set MPC_CRUISE_90 5.0000
-	param set MPC_JERK_MIN 15.0000
-	param set MPC_JERK_MAX 20.0000
-	param set MPC_MAN_TILT_MAX 25.0000
-	param set MPC_MAN_Y_MAX 60.0000
-	param set MPC_SPOOLUP_TIME 2.0000
-	param set MPC_THR_HOVER 0.5200
-	param set MPC_VEL_MANUAL 6.0
-	param set MPC_XY_P 0.6
-	param set MPC_XY_TRAJ_P 1.0000
-	param set MPC_XY_VEL_MAX 8.0000
-	param set MPC_XY_VEL_D 0.005
-	param set MPC_XY_VEL_P 0.1400
-	param set MPC_XY_CRUISE 3.0000
-	param set MPC_YAW_MODE 3
-	param set MPC_Z_VEL_I 0.3500
-	param set MPC_Z_VEL_P 0.3000
-	param set MPC_LAND_SPEED 0.5000
-	param set MPC_THR_MIN 0.0800
-	param set MPC_TILTMAX_AIR 25.0000
-	param set MPC_TKO_RAMP_T 0.6000
+	# Base Parameters
+	sh /etc/init.d/airframes/1230000_if750a_base
 
 	# EKF2 parameters
+	param set EKF2_AID_MASK 1
 	param set EKF2_GPS_POS_X 0.0000
-	param set EKF2_GPS_POS_Y -0.1800
+	param set EKF2_GPS_POS_Y 0.1800
 	param set EKF2_GPS_POS_Z -0.1600
 	param set EKF2_HGT_MODE 1
 	param set EKF2_IMU_POS_X 0.0700
@@ -75,80 +32,14 @@ then
 	param set EKF2_RNG_POS_X -0.1410
 	param set EKF2_RNG_POS_Z 0.0440
 
-	# PWM parameters
-	param set PWM_AUX_DISARMED 900
-	param set PWM_AUX_MIN 1050
-	param set PWM_AUX_RATE 400
-	param set PWM_MAIN_DIS3 1050
-	param set PWM_MAIN_DIS4 1500
-	param set PWM_MAIN_FAIL3 1050
-	param set PWM_MAIN_FAIL4 1500
-	param set PWM_MAX 1950
-	param set PWM_MIN 1050
-	param set PWM_RATE 400
-	param set PWM_SBUS_MODE 1
-	param set SYS_USE_IO 1
-	param set THR_MDL_FAC 0.5
-
 	# Sensors Parameters
 	param set SENS_BOARD_ROT 0
-	param set SENS_EN_LL40LS 2
-	param set SENS_FLOW_MAXHGT 15.0000
-	param set IMU_GYRO_CUTOFF 40.0000
-
-	# MAVLink Parameters
-	param set MAV_0_CONFIG 101
-	param set MAV_0_FORWARD 1
-	param set MAV_0_MODE 0
-	param set MAV_0_RATE 1200
-	# param set MAV_1_CONFIG 102
-	param set MAV_1_FORWARD 1
-	param set MAV_1_MODE 2
-	param set MAV_1_RATE 100000
-	param set SER_TEL1_BAUD 57600
-	# param set SER_TEL2_BAUD 1500000
-
-	# Mount Parameters
-	#param set MNT_MODE_IN 0
-	#param set MNT_MODE_OUT 0
-
-	# RTL Parameters
-	param set RTL_DESCEND_ALT 10.0000
-	param set RTL_RETURN_ALT 30.0000
-
-	# Logger Parameters
-	param set SDLOG_PROFILE 3
-
-	# Camera Trigger
-	param set TRIG_MODE 1
-	param set TRIG_INTERFACE 3
-	param set TRIG_PINS 56
+	param set CAL_MAG0_ROT 0
 
 	# GPS Parameters
-	param set GPS_1_CONFIG 201
-	# Normal GPS
-	param set SER_GPS1_BAUD 0
-	# RTK
-	# param set SER_TEL4_BAUD 115200
-	# To recalculate since antennas are not symmetric anymore
-	# param set GPS_YAW_OFFSET 85.0000
-
-	# Power Parametets
-	param set BAT_N_CELLS 6
-	param set BAT_A_PER_V 36.3675
-	param set BAT_CNT_V_CURR 0.0008
-	param set BAT_CNT_V_VOLT 0.0008
-	param set BAT_V_CHARGED 4.2000
-	param set BAT_V_DIV 11.2700
-
-	# Circuit breakers
-	param set CBRK_IO_SAFETY 22027
-
-	# Commander Parameters
-	param set COM_DISARM_LAND 1
-
-	# System Parameters
-	param set SYS_FORCE_F7DC 2
+	param set GPS_1_CONFIG 104
+	param set SER_GPS1_BAUD 115200
+	param set GPS_YAW_OFFSET 85.0000
 
 fi
 
