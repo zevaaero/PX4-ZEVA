@@ -21,7 +21,7 @@ set PWM_OUT_AUX 1234
 if [ $AUTOCNF = yes ]
 then
 	# Base Parameters
-	sh /etc/init.d/airframes/123000_if750a_base
+	sh /etc/init.d/airframes/1230000_if750a_base
 
 	# EKF2 parameters
 	param set EKF2_AID_MASK 33

@@ -145,6 +145,6 @@ px4_add_romfs_files(
 	50001_axialracing_ax10
 	50002_traxxas_stampede_2wd
 
-	123000_if750a_base
-	123003_if750a_v3
+	1230000_if750a_base
+	1230003_if750a_v3
 )
