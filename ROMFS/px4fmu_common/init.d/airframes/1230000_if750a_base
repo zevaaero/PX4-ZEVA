@@ -103,6 +103,7 @@ then
 	param set MNT_MODE_IN 0
 	param set MNT_MODE_OUT 0
 	param set MNT_RANGE_PITCH 180
+	param set MNT_RANGE_ROLL 90
 
 	# RTL Parameters
 	param set RTL_DESCEND_ALT 10.0000
