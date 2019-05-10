@@ -33,8 +33,8 @@ pwm failsafe -c 12345678 -p 900 -d ${OUTPUT_DEV}
 set MIXER_AUX ${MIXER}
 set OUTPUT_AUX_DEV /dev/pwm_output1
 set MIXER_AUX_FILE /etc/mixers/${MIXER}.main.mix
-
-fmu mode_pwm4 -t
+    
+fmu mode_pwm4_calc_only -t
 mixer load /dev/pwm_output1 ${MIXER_AUX_FILE}
 
 # Set PWM_AUX output frequency
