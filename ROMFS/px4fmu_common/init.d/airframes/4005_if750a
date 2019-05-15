@@ -38,7 +38,7 @@ then
 
 	# GPS Parameters
 	param set GPS_1_CONFIG 104
-	param set SER_GPS1_BAUD 115200
+	param set SER_TEL4_BAUD 115200
 	param set GPS_YAW_OFFSET 85.0000
 
 fi

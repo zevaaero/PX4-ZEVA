@@ -6,6 +6,16 @@
 # @class Copter
 #
 
+#
+# Configuration defaults
+#
+# When the system configuration changes this variable
+# needs to be incremented. This will not reset the
+# calibration but will reset the system tuning and gains
+# to reflect the new defaults
+#
+set PARAM_DEFAULTS_VER 2
+
 if [ $AUTOCNF = yes ]
 then
 	# Vehicle attitude PID tuning
@@ -54,6 +64,9 @@ then
 	param set MPC_THR_MIN 0.0800
 	param set MPC_TILTMAX_AIR 25.0000
 	param set MPC_TKO_RAMP_T 0.6000
+	param set MPC_YAW_EXPO 0.6000
+	param set MPC_Z_MAN_EXPO 0.6000
+	param set MPC_XY_MAN_EXPO 0.7000
 
 	# PWM parameters
 	param set PWM_AUX_DISARMED 900
