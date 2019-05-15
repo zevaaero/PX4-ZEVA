@@ -54,6 +54,9 @@ then
 	param set MPC_THR_MIN 0.0800
 	param set MPC_TILTMAX_AIR 25.0000
 	param set MPC_TKO_RAMP_T 0.6000
+	param set MPC_YAW_EXPO 0.6000
+	param set MPC_Z_MAN_EXPO 0.6000
+	param set MPC_XY_MAN_EXPO 0.7000
 
 	# PWM parameters
 	param set PWM_AUX_DISARMED 900
@@ -103,6 +106,7 @@ then
 	param set RTL_RETURN_ALT 30.0000
 
 	# Logger Parameters
+	param set SDLOG_DIRS_MAX 20
 	param set SDLOG_MODE 0
 	param set SDLOG_PROFILE 3
 
