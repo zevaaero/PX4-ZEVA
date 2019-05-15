@@ -140,6 +140,7 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 	// If the position setpoints are set to NAN, the values in the velocity setpoints are used as velocity targets: nothing to do here.
 
 	_checkEkfResetCounters();
+	_want_takeoff = false;
 
 	if (PX4_ISFINITE(_position_setpoint(0)) &&
 	    PX4_ISFINITE(_position_setpoint(1))) {
@@ -188,6 +189,7 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 			_velocity_setpoint(2) = vel_sp_z;
 		}
 
+		_want_takeoff = _velocity_setpoint(2) < -0.3f;
 	}
 }
 

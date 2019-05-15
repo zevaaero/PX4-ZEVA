@@ -250,8 +250,7 @@ private:
 	 * @param position_setpoint_z the position setpoint in the z-Direction
 	 * @param velocity setpoint_z the velocity setpoint in the z-Direction
 	 */
-	void check_for_smooth_takeoff(const float &position_setpoint_z, const float &velocity_setpoint_z,
-				      const float &jerk_sp, const vehicle_constraints_s &constraints);
+	void check_for_smooth_takeoff(const bool want_takeoff);
 
 	/**
 	 * Adjust the setpoint during landing.
@@ -715,7 +714,7 @@ MulticopterPositionControl::run()
 			// check if all local states are valid and map accordingly
 			set_vehicle_states(setpoint.vz);
 
-			check_for_smooth_takeoff(setpoint.z, setpoint.vz, setpoint.jerk_z, constraints);
+			check_for_smooth_takeoff(constraints.want_takeoff);
 
 			// disable horizontal / yaw control during smooth takeoff and limit maximum speed upwards
 			if (_flight_state == FlightState::rampup) {
@@ -1061,31 +1060,14 @@ MulticopterPositionControl::start_flight_task()
 }
 
 void
-MulticopterPositionControl::check_for_smooth_takeoff(const float &z_sp, const float &vz_sp,
-		const float &jerk_sp, const vehicle_constraints_s &constraints)
+MulticopterPositionControl::check_for_smooth_takeoff(const bool want_takeoff)
 {
 	// Check for smooth takeoff
-	if (_flight_state == FlightState::ready_for_takeoff && !_in_smooth_takeoff) {
-		// Vehicle is still landed and no takeoff was initiated yet.
-		// Adjust for different takeoff cases.
-		// The minimum takeoff altitude needs to be at least 20cm above minimum distance or, if valid, above minimum distance
-		// above ground.
-		float min_altitude = PX4_ISFINITE(constraints.min_distance_to_ground) ? (constraints.min_distance_to_ground + 0.05f) :
-				     0.2f;
-
-		// takeoff was initiated through velocity setpoint
-		_smooth_velocity_takeoff = PX4_ISFINITE(vz_sp) && vz_sp < -0.1f;
-		bool jerk_triggered_takeoff = PX4_ISFINITE(jerk_sp) && jerk_sp < -FLT_EPSILON;
-		_smooth_velocity_takeoff |= jerk_triggered_takeoff;
-
-		if ((PX4_ISFINITE(z_sp) && z_sp < _states.position(2) - min_altitude) ||  _smooth_velocity_takeoff) {
-			// There is a position setpoint above current position or velocity setpoint larger than
-			// takeoff speed. Enable smooth takeoff.
-			_in_smooth_takeoff = true;
-			_takeoff_speed = 0.f;
-			_takeoff_reference_z = _states.position(2);
-
-		}
+	if (_flight_state == FlightState::ready_for_takeoff && !_in_smooth_takeoff && want_takeoff) {
+		// takeoff was triggered, start ramp
+		_in_smooth_takeoff = true;
+		_takeoff_speed = 0.f;
+		_takeoff_reference_z = _states.position(2);
 	} else {
 		_in_smooth_takeoff = false;
 	}
