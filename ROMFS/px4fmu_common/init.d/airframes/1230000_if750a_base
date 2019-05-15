@@ -6,16 +6,6 @@
 # @class Copter
 #
 
-#
-# Configuration defaults
-#
-# When the system configuration changes this variable
-# needs to be incremented. This will not reset the
-# calibration but will reset the system tuning and gains
-# to reflect the new defaults
-#
-set PARAM_DEFAULTS_VER 2
-
 if [ $AUTOCNF = yes ]
 then
 	# Vehicle attitude PID tuning
