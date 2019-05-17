@@ -26,7 +26,7 @@ set PWM_OUT_AUX 1234
 # calibration but will reset the system tuning and gains
 # to reflect the new defaults
 #
-set PARAM_DEFAULTS_VER 2
+set PARAM_DEFAULTS_VER 3
 
 if [ $AUTOCNF = yes ]
 then
@@ -34,7 +34,7 @@ then
 	sh /etc/init.d/airframes/1230000_if750a_base
 
 	# EKF2 parameters
-	param set EKF2_AID_MASK 35
+	param set EKF2_AID_MASK 163
 	param set EKF2_BCOEF_X 45.0000
 	param set EKF2_BCOEF_Y 45.0000
 	param set EKF2_GND_EFF_DZ 4.0000
@@ -56,7 +56,7 @@ then
 
 	# Sensors Parameters
 	param set SENS_BOARD_ROT 4
-	param set CAL_MAG0_ROT 6
+	param set CAL_MAG0_ROT 0
 
 	# GPS Parameters
 	param set GPS_1_CONFIG 104
