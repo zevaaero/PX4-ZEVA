@@ -1,16 +1,20 @@
 format_version: 4
 
 pipelines:
-  px4_firmware_build:
+  px4_firmware_build_PR:
     group: px4_firmware
     materials:
       firmware_git:
-        git: "git@github.com:Auterion/PX4_firmware_private.git"
+        plugin_configuration:
+          id: "github.pr"
+          version: 1
+        options:
+          url: "git@github.com:Auterion/PX4_firmware_private.git"
     label_template: "${firmware_git[:8]}"
     stages:
       - test:
           jobs:
-            lint:
+            check_format:
               resources:
                 - docker
               tasks:
