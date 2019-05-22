@@ -140,8 +140,9 @@ private:
 
 		(ParamFloat<px4::params::COM_OF_LOSS_T>) _param_com_of_loss_t,
 		(ParamInt<px4::params::COM_OBL_ACT>) _param_com_obl_act,
-		(ParamInt<px4::params::COM_OBL_RC_ACT>) _param_com_obl_rc_act
+		(ParamInt<px4::params::COM_OBL_RC_ACT>) _param_com_obl_rc_act,
 
+		(ParamInt<px4::params::COM_ARM_WO_OBLOG>) _param_com_arm_wo_ob_logger
 	)
 
 	const int64_t POSVEL_PROBATION_MIN = 1_s;	/**< minimum probation duration (usec) */
@@ -230,6 +231,28 @@ private:
 	uORB::Subscription _telemetry_status_sub{ORB_ID(telemetry_status)};
 
 	hrt_abstime	_datalink_last_heartbeat_gcs{0};
+
+	struct OnboardHeartBeatMonitor {
+
+		OnboardHeartBeatMonitor(uint8_t component_id, const char *name) : _component_id(component_id)
+		{
+			strncpy(_name, name, sizeof(_name));
+		}
+
+		char _name[10] {};
+		hrt_abstime	_datalink_last_heartbeat{0};
+		bool				_system_lost{false};
+		bool		_system_status_change{false};
+		uint8_t	_datalink_last_status{telemetry_status_s::MAV_STATE_UNINIT};
+		bool _print_msg_once{true};
+		uint8_t _component_id;
+
+	} _avoidance{telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE, "avoidance"}, _logger{telemetry_status_s::COMPONENT_ID_ONBOARD_LOGGING, "logger"};
+
+	void update_onboard_system_state(OnboardHeartBeatMonitor &monitor, bool &status_flag_system_valid,
+					 bool &status_changed);
+	void process_onboard_system_heartbeat(OnboardHeartBeatMonitor &monitor, bool &status_flag_system_valid,
+					      bool &status_changed, telemetry_status_s &telemetry);
 
 	hrt_abstime	_datalink_last_heartbeat_onboard_controller{0};
 	bool 				_onboard_controller_lost{false};

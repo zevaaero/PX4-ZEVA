@@ -953,3 +953,10 @@ PARAM_DEFINE_INT32(COM_FLT_PROFILE, 0);
  * @boolean
  */
 PARAM_DEFINE_INT32(COM_ARM_CHK_ESCS, 1);
+
+/*
+ * Allow arming without onboard logger being enabled and in ready state
+ *
+ * The default allows the vehicle to arm without the onboard logger reporting as ready via it's heartbeat
+ */
+PARAM_DEFINE_INT32(COM_ARM_WO_OBLOG, 0);
