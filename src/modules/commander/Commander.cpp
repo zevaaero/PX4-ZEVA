@@ -3775,9 +3775,13 @@ void Commander::data_link_check(bool &status_changed)
 
 				} else {
 
+					// AVOIDANCE SYSTEM update heartbeat values if needed
+
 					if (status_flags.avoidance_system_required) {
 						process_onboard_system_heartbeat(_avoidance, status_flags.avoidance_system_valid, status_changed, telemetry);
 					}
+
+					// ONBOARD LOGGING SYSTEM update heartbeat values if needed
 
 					if (status_flags.onboard_logging_system_required) {
 						process_onboard_system_heartbeat(_logger, status_flags.onboard_logging_system_valid, status_changed, telemetry);
@@ -3806,6 +3810,8 @@ void Commander::data_link_check(bool &status_changed)
 			update_onboard_system_state(_avoidance, status_flags.avoidance_system_valid, status_changed);
 		}
 	}
+
+	// ON BOARD LOGGING SYSTEM state check (only if it is enabled)
 
 	if (status_flags.onboard_logging_system_required) {
 		update_onboard_system_state(_logger, status_flags.onboard_logging_system_valid, status_changed);
