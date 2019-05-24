@@ -30,10 +30,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
-px4_add_library(FlightTaskRampup
-	FlightTaskRampup.cpp
-)
-
-target_link_libraries(FlightTaskRampup PUBLIC FlightTask)
-target_include_directories(FlightTaskRampup PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+px4_add_module(
+	MODULE drivers__ina226
+	MAIN ina226
+	COMPILE_FLAGS
+		-Wno-cast-align # TODO: fix and enable
+	SRCS
+		ina226.cpp
+	)
