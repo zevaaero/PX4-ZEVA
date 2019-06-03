@@ -234,12 +234,12 @@ private:
 
 	struct OnboardHeartBeatMonitor {
 
-		OnboardHeartBeatMonitor(uint8_t component_id, const char *name) : hb_component_id(component_id)
-		{
-			strncpy(hb_name, name, sizeof(hb_name) - 1);
-		}
+		OnboardHeartBeatMonitor(uint8_t component_id, const char *name) :
+			hb_name(name),
+			hb_component_id(component_id)
+		{}
 
-		char hb_name[10] {};
+		const char *hb_name;
 		hrt_abstime	datalink_last_heartbeat{0};
 		bool				system_lost{false};
 		bool		system_status_change{false};
