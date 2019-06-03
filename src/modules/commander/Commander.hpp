@@ -234,20 +234,21 @@ private:
 
 	struct OnboardHeartBeatMonitor {
 
-		OnboardHeartBeatMonitor(uint8_t component_id, const char *name) : _component_id(component_id)
+		OnboardHeartBeatMonitor(uint8_t component_id, const char *name) : hb_component_id(component_id)
 		{
-			strncpy(_name, name, sizeof(_name));
+			strncpy(hb_name, name, sizeof(hb_name) - 1);
 		}
 
-		char _name[10] {};
-		hrt_abstime	_datalink_last_heartbeat{0};
-		bool				_system_lost{false};
-		bool		_system_status_change{false};
-		uint8_t	_datalink_last_status{telemetry_status_s::MAV_STATE_UNINIT};
-		bool _print_msg_once{true};
-		uint8_t _component_id;
+		char hb_name[10] {};
+		hrt_abstime	datalink_last_heartbeat{0};
+		bool				system_lost{false};
+		bool		system_status_change{false};
+		uint8_t	datalink_last_status{telemetry_status_s::MAV_STATE_UNINIT};
+		bool print_msg_once{true};
+		uint8_t hb_component_id;
 
-	} _avoidance{telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE, "avoidance"}, _logger{telemetry_status_s::COMPONENT_ID_ONBOARD_LOGGING, "logger"};
+	} _avoidance{telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE, "avoidance"},
+	_logger{telemetry_status_s::COMPONENT_ID_LOG, "logger"};
 
 	void update_onboard_system_state(OnboardHeartBeatMonitor &monitor, bool &status_flag_system_valid,
 					 bool &status_changed);

@@ -3801,9 +3801,9 @@ void Commander::data_link_check(bool &status_changed)
 
 		//if avoidance never started
 		if (_datalink_last_heartbeat_avoidance_system == 0 &&
-		    _avoidance._print_msg_once == false &&
+		    _avoidance.print_msg_once == false &&
 		    hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > _param_com_oa_boot_t.get() * 1_s) {
-			_avoidance._print_msg_once = true;
+			_avoidance.print_msg_once = true;
 			mavlink_log_critical(&mavlink_log_pub, "avoidance system not available");
 
 		} else {
@@ -3857,19 +3857,19 @@ void Commander::data_link_check(bool &status_changed)
 void Commander::process_onboard_system_heartbeat(OnboardHeartBeatMonitor &monitor, bool &status_flag_system_valid,
 		bool &status_changed, telemetry_status_s &telemetry)
 {
-	if (telemetry.remote_component_id == monitor._component_id) {
+	if (telemetry.remote_component_id == monitor.hb_component_id) {
 
-		if (telemetry.heartbeat_time != monitor._datalink_last_heartbeat) {
-			monitor._system_status_change = monitor._datalink_last_status != telemetry.remote_system_status;
+		if (telemetry.heartbeat_time != monitor.datalink_last_heartbeat) {
+			monitor.system_status_change = monitor.datalink_last_status != telemetry.remote_system_status;
 		}
 
-		monitor._datalink_last_heartbeat = telemetry.heartbeat_time;
-		monitor._datalink_last_status = telemetry.remote_system_status;
+		monitor.datalink_last_heartbeat = telemetry.heartbeat_time;
+		monitor.datalink_last_status = telemetry.remote_system_status;
 
-		if (monitor._system_lost) {
-			mavlink_log_critical(&mavlink_log_pub, "%s system regained\n", monitor._name);
+		if (monitor.system_lost) {
+			mavlink_log_warning(&mavlink_log_pub, "%s system regained", monitor.hb_name);
 			status_changed = true;
-			monitor._system_lost = false;
+			monitor.system_lost = false;
 			status_flag_system_valid = true;
 		}
 	}
@@ -3879,46 +3879,52 @@ void Commander::update_onboard_system_state(OnboardHeartBeatMonitor &monitor, bo
 		bool &status_changed)
 {
 
-	//if heartbeats stop
-	if (!monitor._system_lost && (monitor._datalink_last_heartbeat > 0)
-	    && (hrt_elapsed_time(&monitor._datalink_last_heartbeat) > 5_s)) {
-		monitor._system_lost = true;
-		mavlink_log_critical(&mavlink_log_pub, "%s system lost", monitor._name);
+	//if heartbeat stops
+	if (!monitor.system_lost && (monitor.datalink_last_heartbeat > 0)
+	    && (hrt_elapsed_time(&monitor.datalink_last_heartbeat) > 5_s)) {
+		monitor.system_lost = true;
+		mavlink_log_critical(&mavlink_log_pub, "%s system lost", monitor.hb_name);
 		status_flag_system_valid = false;
-		monitor._print_msg_once = false;
+		monitor.print_msg_once = false;
 	}
 
 	//if status changed
-	if (monitor._system_status_change) {
-		switch (monitor._datalink_last_status) {
+	if (monitor.system_status_change) {
+		switch (monitor.datalink_last_status) {
 		case telemetry_status_s::MAV_STATE_UNINIT:
 			break;
 
 		case telemetry_status_s::MAV_STATE_BOOT:
-			mavlink_log_info(&mavlink_log_pub, "%s system starting\n", monitor._name);
+		case telemetry_status_s::MAV_STATE_CALIBRATING:
+			mavlink_log_info(&mavlink_log_pub, "%s system starting", monitor.hb_name);
+			status_flag_system_valid = false;
 			break;
 
-		case telemetry_status_s::MAV_STATE_CALIBRATING:
 		case telemetry_status_s::MAV_STATE_STANDBY:
 		case telemetry_status_s::MAV_STATE_ACTIVE:
-			mavlink_log_info(&mavlink_log_pub, "%s system connected\n", monitor._name);
+			mavlink_log_info(&mavlink_log_pub, "%s system connected", monitor.hb_name);
 			status_flag_system_valid = true;
 			break;
 
 		case telemetry_status_s::MAV_STATE_CRITICAL:
-			mavlink_log_info(&mavlink_log_pub, "%s system failure\n", monitor._name);
+			mavlink_log_critical(&mavlink_log_pub, "%s system failure", monitor.hb_name);
+			status_flag_system_valid = false;
 			break;
 
 		case telemetry_status_s::MAV_STATE_EMERGENCY:
+			mavlink_log_critical(&mavlink_log_pub, "%s system emergency", monitor.hb_name);
+			status_flag_system_valid = false;
+			break;
+
 		case telemetry_status_s::MAV_STATE_POWEROFF:
 		case telemetry_status_s::MAV_STATE_FLIGHT_TERMINATION:
-			mavlink_log_critical(&mavlink_log_pub, "%s system rejected", monitor._name);
+			mavlink_log_info(&mavlink_log_pub, "%s system shutdown", monitor.hb_name);
 			status_flag_system_valid = false;
-			status_changed = true;
 			break;
 		}
 
-		monitor._system_status_change = false;
+		status_changed = true;
+		monitor.system_status_change = false;
 	}
 }
 
