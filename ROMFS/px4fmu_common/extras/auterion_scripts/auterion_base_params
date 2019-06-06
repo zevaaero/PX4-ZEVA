@@ -1,8 +1,13 @@
 #!/bin/sh
 #
-# @name Auterion Base (multirotor)
+# Auterion Base
 #
-# @class Copter
+# This script contains all the defaults for our internal vehicles.
+#
+# The critical parameters are
+# MPC_POS_MODE to enable jerk limited multicopter position control
+# MAV_1_CONFIG and SER_TEL2_BAUD to enable mavlink on companion link (TELEM2)
+# SYS_FORCE_F7DC to enable DCACHE on PH4 to not run out of CPU
 #
 
 	# Position Control Tuning
