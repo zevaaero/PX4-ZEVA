@@ -64,7 +64,6 @@ then
 	param set PWM_AUX_FAIL2 900
 	param set PWM_AUX_FAIL3 900
 	param set PWM_AUX_FAIL4 900
-	param set PWM_AUX_FAIL5 900
 	param set PWM_AUX_MIN 1050
 	param set PWM_AUX_RATE 400
 	param set PWM_MAIN_DIS1 2000
@@ -73,7 +72,7 @@ then
 	param set PWM_MAIN_DIS5 900
 	param set PWM_MAIN_FAIL3 1050
 	param set PWM_MAIN_FAIL4 1500
-	param set PWM_MAIN_FAIL5 900
+	param set PWM_MAIN_FAIL5 2000
 	param set PWM_MAX 1950
 	param set PWM_MIN 1050
 	param set PWM_RATE 400
