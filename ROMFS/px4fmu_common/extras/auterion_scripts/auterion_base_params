@@ -19,7 +19,6 @@
 	param set MPC_AUTO_MODE 1
 	param set MPC_JERK_MIN 15.0000
 	param set MPC_JERK_MAX 20.0000
-	param set MPC_MAN_Y_MAX 60.0000
 	param set MPC_SPOOLUP_TIME 2.0000
 	param set MPC_VEL_MANUAL 6.0
 	param set MPC_XY_P 0.6
