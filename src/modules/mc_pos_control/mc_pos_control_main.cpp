@@ -67,6 +67,7 @@
 #include <lib/WeatherVane/WeatherVane.hpp>
 #include "PositionControl.hpp"
 #include "Utility/ControlMath.hpp"
+#include "Takeoff.hpp"
 
 using namespace time_literals;
 
@@ -102,8 +103,7 @@ public:
 	int print_status() override;
 
 private:
-
-	bool 		_in_smooth_takeoff = false; 		/**< true if takeoff ramp is applied */
+	Takeoff _takeoff; /**< state machine and ramp to bring the vehicle off the ground without jumps */
 
 	orb_advert_t	_att_sp_pub{nullptr};			/**< attitude setpoint publication */
 	orb_advert_t	_traj_sp_pub{nullptr};		/**< trajectory setpoints publication */
@@ -121,11 +121,6 @@ private:
 	int		_home_pos_sub{-1}; 			/**< home position */
 
 	int _task_failure_count{0};         /**< counter for task failures */
-
-	float _takeoff_speed = -1.f; /**< For flighttask interface used only. It can be thrust or velocity setpoints */
-	float _takeoff_reference_z; /**< Z-position when takeoff was initiated */
-	bool _smooth_velocity_takeoff =
-		false; /**< Smooth velocity takeoff can be initiated either through position or velocity setpoint */
 
 	vehicle_status_s 			_vehicle_status{};		/**< vehicle status */
 	/**< vehicle-land-detection: initialze to landed */
@@ -157,7 +152,8 @@ private:
 		(ParamInt<px4::params::MPC_ALT_MODE>) _param_mpc_alt_mode,
 		(ParamFloat<px4::params::MPC_SPOOLUP_TIME>) _param_mpc_spoolup_time, /**< time to let motors spool up after arming */
 		(ParamFloat<px4::params::MPC_TILTMAX_LND>) _param_mpc_tiltmax_lnd, /**< maximum tilt for landing and smooth takeoff */
-		(ParamFloat<px4::params::MPC_THR_HOVER>) _param_mpc_thr_hover
+		(ParamFloat<px4::params::MPC_THR_HOVER>)_param_mpc_thr_hover,
+		(ParamFloat<px4::params::MPC_Z_VEL_P>)_param_mpc_z_vel_p
 	);
 
 	control::BlockDerivative _vel_x_deriv; /**< velocity derivative in x */
@@ -181,22 +177,9 @@ private:
 	/** During smooth-takeoff, below ALTITUDE_THRESHOLD the yaw-control is turned off ant tilt is limited */
 	static constexpr float ALTITUDE_THRESHOLD = 0.3f;
 
-	systemlib::Hysteresis _spoolup_time_hysteresis{false}; /**< becomes true MPC_SPOOLUP_TIME seconds after the vehicle was armed */
 	systemlib::Hysteresis _failsafe_land_hysteresis{false}; /**< becomes true if task did not update correctly for LOITER_TIME_BEFORE_DESCEND */
 
 	WeatherVane *_wv_controller{nullptr};
-
-	enum class FlightState {
-		disarmed = 0,
-		spoolup,
-		ready_for_takeoff,
-		rampup,
-		flight
-	};
-
-	FlightState _flight_state = FlightState::disarmed;
-
-	void update_flight_state();
 
 	/**
 	 * Update our local parameter cache.
@@ -244,13 +227,6 @@ private:
 	 * This is only required for logging.
 	 */
 	void publish_trajectory_sp(const vehicle_local_position_setpoint_s &traj);
-
-	/**
-	 * Checks if smooth takeoff is initiated.
-	 * @param position_setpoint_z the position setpoint in the z-Direction
-	 * @param velocity setpoint_z the velocity setpoint in the z-Direction
-	 */
-	void check_for_smooth_takeoff(const bool want_takeoff);
 
 	/**
 	 * Adjust the setpoint during landing.
@@ -382,7 +358,9 @@ MulticopterPositionControl::parameters_update(bool force)
 		_param_mpc_land_speed.set(math::min(_param_mpc_land_speed.get(), _param_mpc_z_vel_max_dn.get()));
 
 		// set trigger time for takeoff delay
-		_spoolup_time_hysteresis.set_hysteresis_time_from(false, (int)(_param_mpc_spoolup_time.get() * (float)1_s));
+		_takeoff.setSpoolupTime(_param_mpc_spoolup_time.get());
+		_takeoff.setTakeoffRampTime(_param_mpc_tko_ramp_t.get());
+		_takeoff.generateInitialRampValue(_param_mpc_thr_hover.get(), _param_mpc_z_vel_p.get());
 
 		if (_wv_controller != nullptr) {
 			_wv_controller->update_parameters();
@@ -447,55 +425,6 @@ MulticopterPositionControl::poll_subscriptions()
 	if (updated) {
 		orb_copy(ORB_ID(home_position), _home_pos_sub, &_home_pos);
 	}
-
-}
-
-void MulticopterPositionControl::update_flight_state() {
-	switch(_flight_state) {
-		case FlightState::disarmed:
-			if (_control_mode.flag_armed) {
-				_flight_state = FlightState::spoolup;
-			}
-			break;
-
-		case FlightState::spoolup:
-
-			if (_spoolup_time_hysteresis.get_state()) {
-				_flight_state = FlightState::ready_for_takeoff;
-			}
-			break;
-
-		case FlightState::ready_for_takeoff:
-		{
-			if (_in_smooth_takeoff) {
-				_flight_state = FlightState::rampup;
-			}
-			break;
-		}
-		case FlightState::rampup:
-			if (_control.getThrustSetpoint()(2) < -_param_mpc_thr_hover.get()) {
-				_flight_state = FlightState::flight;
-			}
-			break;
-		case FlightState::flight:
-			if (_vehicle_land_detected.landed) {
-				_flight_state = FlightState::ready_for_takeoff;
-			}
-			break;
-		default:
-			break;
-	}
-
-	if (!_control_mode.flag_control_climb_rate_enabled && _control_mode.flag_armed) {
-		_flight_state = FlightState::flight;
-	}
-
-	// need to consider free fall here
-	if (!_control_mode.flag_armed) {
-		_flight_state = FlightState::disarmed;
-	}
-
-
 
 }
 
@@ -655,27 +584,21 @@ MulticopterPositionControl::run()
 			_wv_controller->update(matrix::Quatf(_att_sp.q_d), _states.yaw);
 		}
 
-		// start takeoff after delay to allow motors to reach idle speed
-		_spoolup_time_hysteresis.set_state_and_update(_control_mode.flag_armed);
+		// an update is necessary here because otherwise the takeoff state doesn't get skiped with non-altitude-controlled modes
+		_takeoff.updateTakeoffState(_control_mode.flag_armed, _vehicle_land_detected.landed, false, 10.f, !_control_mode.flag_control_climb_rate_enabled);
 
-		update_flight_state();
-
-		if (_flight_state > FlightState::spoolup) {
+		// takeoff delay for motors to reach idle speed
+		if (_takeoff.getTakeoffState() >= TakeoffState::ready_for_takeoff) {
 			// when vehicle is ready switch to the required flighttask
 			start_flight_task();
 
 		} else {
 			// stop flighttask while disarmed
 			_flight_tasks.switchTask(FlightTaskIndex::None);
-			_in_smooth_takeoff = false;
 		}
 
 		// check if any task is active
 		if (_flight_tasks.isAnyTaskActive()) {
-
-			if (_flight_state < FlightState::rampup) {
-				_flight_tasks.reActivate();
-			}
 
 			// setpoints from flighttask
 			vehicle_local_position_setpoint_s setpoint;
@@ -714,39 +637,29 @@ MulticopterPositionControl::run()
 			// check if all local states are valid and map accordingly
 			set_vehicle_states(setpoint.vz);
 
-			check_for_smooth_takeoff(constraints.want_takeoff);
+			// handle smooth takeoff
+			_takeoff.updateTakeoffState(_control_mode.flag_armed, _vehicle_land_detected.landed, constraints.want_takeoff, constraints.speed_up, !_control_mode.flag_control_climb_rate_enabled);
+			constraints.speed_up = _takeoff.updateRamp(_dt, constraints.speed_up);
 
-			// disable horizontal / yaw control during smooth takeoff and limit maximum speed upwards
-			if (_flight_state == FlightState::rampup) {
-
-				// during smooth takeoff, constrain speed to takeoff speed
-				constraints.speed_up = _takeoff_speed;
-				// altitude above reference takeoff
-				const float alt_above_tko = -(_states.position(2) - _takeoff_reference_z);
-
-				// disable yaw control when close to ground
-				if (alt_above_tko <= ALTITUDE_THRESHOLD) {
-
-					setpoint.yawspeed = NAN;
-
-					// if there is a valid yaw estimate, just set setpoint to yaw
-					if (PX4_ISFINITE(_states.yaw)) {
-						setpoint.yaw = _states.yaw;
-					}
-
-					// limit tilt during smooth takeoff when still close to ground
-					constraints.tilt = math::radians(_param_mpc_tiltmax_lnd.get());
-				}
-			}
-
-			if (_flight_state < FlightState::rampup) {//(_vehicle_land_detected.landed && !_in_smooth_takeoff && !PX4_ISFINITE(setpoint.thrust[2])) {
-				// Keep throttle low when landed and NOT in smooth takeoff
+			if (_takeoff.getTakeoffState() < TakeoffState::rampup && !PX4_ISFINITE(setpoint.thrust[2])) {
+				// we are not flying yet and need to avoid any corrections
 				reset_setpoint_to_nan(setpoint);
 				setpoint.thrust[0] = setpoint.thrust[1] = setpoint.thrust[2] = 0.0f;
+				// set yaw-sp to current yaw
+				// TODO: we need a clean way to disable yaw control
 				setpoint.yaw = _states.yaw;
+				setpoint.yawspeed = 0.f;
+				// prevent any integrator windup
+				_control.resetIntegralXY();
+				_control.resetIntegralZ();
 				// reactivate the task which will reset the setpoint to current state
 				_flight_tasks.reActivate();
 			}
+
+			if (_takeoff.getTakeoffState() < TakeoffState::flight && !PX4_ISFINITE(setpoint.thrust[2])) {
+				constraints.tilt = math::radians(_param_mpc_tiltmax_lnd.get());
+			}
+
 
 			// limit altitude only if local position is valid
 			if (PX4_ISFINITE(_states.position(2))) {
@@ -756,7 +669,6 @@ MulticopterPositionControl::run()
 			// Update states, setpoints and constraints.
 			_control.updateConstraints(constraints);
 			_control.updateState(_states);
-
 
 			// update position controller setpoints
 			if (!_control.updateSetpoint(setpoint)) {
@@ -799,7 +711,7 @@ MulticopterPositionControl::run()
 			// Part of landing logic: if ground-contact/maybe landed was detected, turn off
 			// controller. This message does not have to be logged as part of the vehicle_local_position_setpoint topic.
 			// Note: only adust thrust output if there was not thrust-setpoint demand in D-direction.
-			if (!_in_smooth_takeoff && !PX4_ISFINITE(setpoint.thrust[2])) {
+			if (_takeoff.getTakeoffState() > TakeoffState::rampup && !PX4_ISFINITE(setpoint.thrust[2])) {
 				limit_thrust_during_landing(local_pos_sp);
 			}
 
@@ -808,10 +720,6 @@ MulticopterPositionControl::run()
 			_att_sp.yaw_sp_move_rate = _control.getYawspeedSetpoint();
 			_att_sp.fw_control_yaw = false;
 			_att_sp.apply_flaps = false;
-
-			if (_flight_state < FlightState::rampup) {
-				_att_sp.thrust_body[2] = 0.0f;
-			}
 
 			// publish attitude setpoint
 			// Note: this requires review. The reason for not sending
@@ -848,10 +756,6 @@ MulticopterPositionControl::run()
 			q_sp.copyTo(_att_sp.q_d);
 			_att_sp.q_d_valid = true;
 			_att_sp.thrust_body[2] = 0.0f;
-
-			if (_flight_state < FlightState::rampup && _control_mode.flag_control_climb_rate_enabled) {
-				publish_attitude();
-			}
 		}
 	}
 
@@ -874,12 +778,6 @@ MulticopterPositionControl::start_flight_task()
 	// Do not run any flight task for VTOLs in fixed-wing mode
 	if (!_vehicle_status.is_rotary_wing) {
 		_flight_tasks.switchTask(FlightTaskIndex::None);
-		return;
-	}
-
-	if (_flight_state == FlightState::rampup) {
-		should_disable_task = false;
-		_flight_tasks.switchTask(FlightTaskIndex::Rampup);
 		return;
 	}
 
@@ -1060,20 +958,6 @@ MulticopterPositionControl::start_flight_task()
 }
 
 void
-MulticopterPositionControl::check_for_smooth_takeoff(const bool want_takeoff)
-{
-	// Check for smooth takeoff
-	if (_flight_state == FlightState::ready_for_takeoff && !_in_smooth_takeoff && want_takeoff) {
-		// takeoff was triggered, start ramp
-		_in_smooth_takeoff = true;
-		_takeoff_speed = 0.f;
-		_takeoff_reference_z = _states.position(2);
-	} else {
-		_in_smooth_takeoff = false;
-	}
-}
-
-void
 MulticopterPositionControl::limit_thrust_during_landing(vehicle_local_position_setpoint_s &setpoint)
 {
 	if (_vehicle_land_detected.ground_contact
@@ -1082,6 +966,7 @@ MulticopterPositionControl::limit_thrust_during_landing(vehicle_local_position_s
 		setpoint.thrust[0] = setpoint.thrust[1] = setpoint.thrust[2] = 0.0f;
 		// set yaw-sp to current yaw to avoid any corrections
 		setpoint.yaw = _states.yaw;
+		setpoint.yawspeed = 0.f;
 		// prevent any integrator windup
 		_control.resetIntegralXY();
 		_control.resetIntegralZ();

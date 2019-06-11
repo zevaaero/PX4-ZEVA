@@ -1511,7 +1511,18 @@ Commander::run()
 		orb_check(offboard_control_mode_sub, &updated);
 
 		if (updated) {
+			offboard_control_mode_s old = offboard_control_mode;
 			orb_copy(ORB_ID(offboard_control_mode), offboard_control_mode_sub, &offboard_control_mode);
+
+			if (old.ignore_thrust != offboard_control_mode.ignore_thrust ||
+			    old.ignore_attitude != offboard_control_mode.ignore_attitude ||
+			    old.ignore_bodyrate != offboard_control_mode.ignore_bodyrate ||
+			    old.ignore_position != offboard_control_mode.ignore_position ||
+			    old.ignore_velocity != offboard_control_mode.ignore_velocity ||
+			    old.ignore_acceleration_force != offboard_control_mode.ignore_acceleration_force ||
+			    old.ignore_alt_hold != offboard_control_mode.ignore_alt_hold) {
+				status_changed = true;
+			}
 		}
 
 		if (offboard_control_mode.timestamp != 0 &&
@@ -2228,32 +2239,31 @@ Commander::run()
 		}
 
 		/* Check for failure detector status */
-		const bool failure_detector_updated = _failure_detector.update();
+		if (armed.armed) {
 
-		if (failure_detector_updated) {
+			if (_failure_detector.update()) {
 
-			const uint8_t failure_status = _failure_detector.getStatus();
+				const uint8_t failure_status = _failure_detector.getStatus();
 
-			if (failure_status != status.failure_detector_status) {
-				status.failure_detector_status = failure_status;
-				status_changed = true;
-			}
-		}
+				if (failure_status != status.failure_detector_status) {
+					status.failure_detector_status = failure_status;
+					status_changed = true;
+				}
 
-		if (armed.armed &&
-		    failure_detector_updated &&
-		    !_flight_termination_triggered &&
-		    !status_flags.circuit_breaker_flight_termination_disabled) {
+				if (!_flight_termination_triggered &&
+				    !status_flags.circuit_breaker_flight_termination_disabled) {
 
-			if (_failure_detector.isFailure()) {
+					if (_failure_detector.isFailure()) {
 
-				armed.force_failsafe = true;
-				status_changed = true;
+						armed.force_failsafe = true;
+						status_changed = true;
 
-				_flight_termination_triggered = true;
+						_flight_termination_triggered = true;
 
-				mavlink_log_critical(&mavlink_log_pub, "Critical failure detected: terminate flight");
-				set_tune_override(TONE_PARACHUTE_RELEASE_TUNE);
+						mavlink_log_critical(&mavlink_log_pub, "Critical failure detected: terminate flight");
+						set_tune_override(TONE_PARACHUTE_RELEASE_TUNE);
+					}
+				}
 			}
 		}
 

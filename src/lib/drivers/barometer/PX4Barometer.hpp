@@ -31,26 +31,34 @@
  *
  ****************************************************************************/
 
-/**
- * @file FlightTaskRampup.hpp
- *
- */
+#include <drivers/drv_baro.h>
+#include <drivers/drv_hrt.h>
+#include <lib/cdev/CDev.hpp>
+#include <lib/conversion/rotation.h>
+#include <uORB/uORB.h>
+#include <uORB/Publication.hpp>
+#include <uORB/topics/sensor_baro.h>
 
-#pragma once
-
-#include "FlightTask.hpp"
-
-class FlightTaskRampup : public FlightTask
+class PX4Barometer : public cdev::CDev
 {
-public:
-	FlightTaskRampup() = default;
 
-	virtual ~FlightTaskRampup() = default;
-	bool activate() override;
-	bool updateInitialize() override;
-	bool update() override;
+public:
+	PX4Barometer(uint32_t device_id, uint8_t priority);
+	~PX4Barometer() override;
+
+	void set_device_type(uint8_t devtype);
+	void set_error_count(uint64_t error_count) { _sensor_baro_pub.get().error_count = error_count; }
+
+	void set_temperature(float temperature) { _sensor_baro_pub.get().temperature = temperature; }
+
+	void update(hrt_abstime timestamp, float pressure);
+
+	void print_status();
 
 private:
-	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
-					(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _takeoff_ramp_tc)
+
+	uORB::Publication<sensor_baro_s>	_sensor_baro_pub;
+
+	int			_class_device_instance{-1};
+
 };

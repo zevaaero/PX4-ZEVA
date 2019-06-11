@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,32 +31,59 @@
  *
  ****************************************************************************/
 
-/**
- * @file FlightTaskRampup.cpp
- */
 
-#include "FlightTaskRampup.hpp"
+#include "PX4Barometer.hpp"
 
-bool FlightTaskRampup::updateInitialize()
+#include <lib/drivers/device/Device.hpp>
+
+PX4Barometer::PX4Barometer(uint32_t device_id, uint8_t priority) :
+	CDev(nullptr),
+	_sensor_baro_pub{ORB_ID(sensor_baro), priority}
 {
-	return FlightTask::updateInitialize();
+	_class_device_instance = register_class_devname(BARO_BASE_DEVICE_PATH);
+
+	_sensor_baro_pub.get().device_id = device_id;
+
+	// force initial publish to allocate uORB buffer
+	// TODO: can be removed once all drivers are in threads
+	_sensor_baro_pub.update();
 }
 
-bool FlightTaskRampup::activate()
+PX4Barometer::~PX4Barometer()
 {
-	FlightTask::activate();
-	_thrust_setpoint(0) = _thrust_setpoint(1) = _thrust_setpoint(2) = 0.0f;
-
-	return true;
+	if (_class_device_instance != -1) {
+		unregister_class_devname(BARO_BASE_DEVICE_PATH, _class_device_instance);
+	}
 }
 
-bool FlightTaskRampup::update()
+void PX4Barometer::set_device_type(uint8_t devtype)
 {
-	_thrust_setpoint(0) = _thrust_setpoint(1) = 0.0f;
-	_thrust_setpoint(2) -= _takeoff_ramp_tc.get() * _deltatime;
+	// current DeviceStructure
+	union device::Device::DeviceId device_id;
+	device_id.devid = _sensor_baro_pub.get().device_id;
 
-	_position_setpoint *= NAN;
-	_velocity_setpoint *= NAN;
+	// update to new device type
+	device_id.devid_s.devtype = devtype;
 
-	return true;
+	// copy back to report
+	_sensor_baro_pub.get().device_id = device_id.devid;
+}
+
+void PX4Barometer::update(hrt_abstime timestamp, float pressure)
+{
+	sensor_baro_s &report = _sensor_baro_pub.get();
+
+	report.timestamp = timestamp;
+	report.pressure = pressure;
+
+	poll_notify(POLLIN);
+
+	_sensor_baro_pub.update();
+}
+
+void PX4Barometer::print_status()
+{
+	PX4_INFO(BARO_BASE_DEVICE_PATH " device instance: %d", _class_device_instance);
+
+	print_message(_sensor_baro_pub.get());
 }

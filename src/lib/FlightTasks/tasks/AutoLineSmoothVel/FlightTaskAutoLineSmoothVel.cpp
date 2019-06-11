@@ -57,9 +57,12 @@ bool FlightTaskAutoLineSmoothVel::activate()
 
 void FlightTaskAutoLineSmoothVel::reActivate()
 {
-	for (int i = 0; i < 3; ++i) {
+	// On ground, reset acceleration and velocity to zero
+	for (int i = 0; i < 2; ++i) {
 		_trajectory[i].reset(0.f, 0.f, _position(i));
 	}
+
+	_trajectory[2].reset(0.f, 0.7f, _position(2));
 }
 
 void FlightTaskAutoLineSmoothVel::_generateSetpoints()
@@ -200,9 +203,9 @@ void FlightTaskAutoLineSmoothVel::_updateTrajConstraints()
 	_trajectory[1].setMaxAccel(_param_mpc_acc_hor_max.get());
 	_trajectory[0].setMaxVel(_param_mpc_xy_vel_max.get());
 	_trajectory[1].setMaxVel(_param_mpc_xy_vel_max.get());
-	_trajectory[0].setMaxJerk(_param_mpc_jerk_min.get()); // TODO : Should be computed using heading
-	_trajectory[1].setMaxJerk(_param_mpc_jerk_min.get());
-	_trajectory[2].setMaxJerk(_param_mpc_jerk_min.get());
+	_trajectory[0].setMaxJerk(_param_mpc_jerk_auto.get()); // TODO : Should be computed using heading
+	_trajectory[1].setMaxJerk(_param_mpc_jerk_auto.get());
+	_trajectory[2].setMaxJerk(_param_mpc_jerk_auto.get());
 
 	if (_velocity_setpoint(2) < 0.f) { // up
 		_trajectory[2].setMaxAccel(_param_mpc_acc_up_max.get());
