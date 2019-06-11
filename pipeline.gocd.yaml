@@ -10,7 +10,7 @@ pipelines:
           version: 1
         options:
           url: "git@github.com:Auterion/PX4_firmware_private.git"
-          defaultBranch: pr-test-auterion-ci
+          defaultBranch: devel
     label_template: "${firmware_git[:8]}"
     stages:
       - test:
