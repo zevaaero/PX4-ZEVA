@@ -1,0 +1,27 @@
+format_version: 4
+
+pipelines:
+  px4_firmware_build_PR:
+    group: px4_firmware
+    materials:
+      firmware_git:
+        plugin_configuration:
+          id: "github.pr"
+          version: 1
+        options:
+          url: "git@github.com:Auterion/PX4_firmware_private.git"
+          defaultBranch: pr-test-auterion-ci
+    label_template: "${firmware_git[:8]}"
+    stages:
+      - test:
+          jobs:
+            check_format:
+              resources:
+                - docker
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - check_format
