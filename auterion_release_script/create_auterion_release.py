@@ -15,6 +15,7 @@ class GitNode:
     def add_dependency(self, git_node):
         self.dependencies.append(git_node)
 
+
 class CreateRelease:
     _default_url = "git@github.com:Auterion/"
     _default_build_dir = "/tmp/release/"
@@ -44,6 +45,7 @@ class CreateRelease:
                 print("New instruction : \n {0}".format(new_content))
                 break
 
+
     def add_release_repo(self, branch, repo_name, url=_default_url):
         print("Adding repo " + repo_name)
         path = self._version + "/" + hashlib.md5((url + repo_name).encode()).hexdigest() + "-" + repo_name
@@ -55,7 +57,6 @@ class CreateRelease:
         git_node = GitNode(repo, repo_name)
         self._git_nodes[repo_name] = git_node
         self._root_node.add_dependency(git_node)
-        return self
 
     def update_repo_file(self, repo_name, src_file, to_repo_path):
         repo_full_path = self._git_nodes[repo_name].repo.working_dir + "/" + to_repo_path
@@ -83,7 +84,7 @@ class CreateRelease:
         print("Creating release {0}".format(self._version))
 
         # Create a submodule dependency tree so we can update
-        # submodules that are dependent on release changes
+        # and submodules that are dependent on release changes
         # last
 
         for dependency in self._root_node.dependencies:
@@ -104,9 +105,15 @@ class CreateRelease:
                 print("Updating submodule " + submodule_name + " in repo " + git_node.repo_name)
                 submodule_repo = submodule.module()
                 if submodule_name in self._git_nodes.keys():
-                    submodule_repo.git.fetch()
-                    submodule_repo.git.checkout(self._git_nodes[submodule_name].repo.head.object.hexsha)
+                    tag_sha = self._git_nodes[submodule_name].repo.head.object.hexsha
+                    submodule_repo.git.fetch("origin", tag_sha)
+                    submodule_repo.git.checkout(tag_sha)
+                    git_node.repo.git.add(submodule.name)
 
             print("Creating and pushing tag {0} in repo {1} ".format(self._version, git_node.repo_name))
+
+            if git_node.repo.is_dirty():
+                git_node.repo.git.commit("-am", self._version)
+
             new_tag = git_node.repo.create_tag(self._version)
             git_node.repo.remotes.origin.push(new_tag)
