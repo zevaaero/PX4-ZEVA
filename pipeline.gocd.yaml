@@ -13,6 +13,28 @@ pipelines:
           defaultBranch: devel
     label_template: "${firmware_git[:8]}"
     stages:
+      - test:
+          jobs:
+            check_format:
+              resources:
+                - docker
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - check_format
+            tests:
+              resources:
+                - docker
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - tests
       - build:
           jobs:
             px4_fmu-v3_default:
@@ -57,25 +79,3 @@ pipelines:
                       - "-f"
                       - Makefile.ci
                       - px4_fmu-v5_default
-      - test:
-          jobs:
-            check_format:
-              resources:
-                - docker
-              tasks:
-                - exec:
-                    command: make
-                    arguments:
-                      - "-f"
-                      - Makefile.ci
-                      - check_format
-            tests:
-              resources:
-                - docker
-              tasks:
-                - exec:
-                    command: make
-                    arguments:
-                      - "-f"
-                      - Makefile.ci
-                      - tests
