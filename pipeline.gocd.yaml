@@ -25,3 +25,57 @@ pipelines:
                       - "-f"
                       - Makefile.ci
                       - check_format
+            tests:
+              resources:
+                - docker
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - tests
+      - build:
+          jobs:
+            px4_fmu-v3_default:
+              resources:
+                - docker
+              artifacts:
+                - test:
+                    source: build/px4_fmu-v3_default/
+                    destination: px4-fw-artifacts/px4_fmu-v3_default/
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - px4_fmu-v3_default
+            px4_fmu-v4_default:
+              resources:
+                - docker
+              artifacts:
+                - test:
+                    source: build/px4_fmu-v4_default/
+                    destination: px4-fw-artifacts/px4_fmu-v4_default/
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - px4_fmu-v4_default
+            px4_fmu-v5_default:
+              resources:
+                - docker
+              artifacts:
+                - test:
+                    source: build/px4_fmu-v5_default/
+                    destination: px4-fw-artifacts/px4_fmu-v5_default/
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - px4_fmu-v5_default
