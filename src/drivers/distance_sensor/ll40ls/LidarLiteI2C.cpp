@@ -183,36 +183,36 @@ int LidarLiteI2C::probe()
 
 		set_device_address(addresses[i]);
 
-		/*
-			The probing is divided in two cases. One to detect v1, v2 and v3 and one to
-			detect v3HP. The reason for this is that registers are not consistent
-			between different versions. The v3HP doesn't have the HW and SW VERSION
-			registers while v1, v2 and some v3 don't have the unit id register.
-			It would be better if we had a proper WHOAMI register.
-		*/
+		if (addresses[i] == LL40LS_BASEADDR) {
 
-		/*
-		  check for hw and sw versions for v1, v2 and v3
-		 */
-		if ((read_reg(LL40LS_HW_VERSION, _hw_version) == OK && _hw_version) > 0 &&
-		    (read_reg(LL40LS_SW_VERSION, _sw_version) == OK && _sw_version > 0)) {
-			goto ok;
+			/*
+			  check for unit id. It would be better if
+			  we had a proper WHOAMI register
+			 */
+			if (read_reg(LL40LS_UNIT_ID_HIGH, id_high) == OK && id_high > 0 &&
+			    read_reg(LL40LS_UNIT_ID_LOW, id_low) == OK && id_low > 0) {
+				_unit_id = (uint16_t)((id_high << 8) | id_low) & 0xFFFF;
+				goto ok;
+			}
+
+			PX4_DEBUG("probe failed unit_id=0x%02x\n",
+				  (unsigned)_unit_id);
+
+		} else {
+			/*
+			  check for hw and sw versions. It would be better if
+			  we had a proper WHOAMI register
+			 */
+			if (read_reg(LL40LS_HW_VERSION, _hw_version) == OK && _hw_version > 0 &&
+			    read_reg(LL40LS_SW_VERSION, _sw_version) == OK && _sw_version > 0) {
+				set_maximum_distance(LL40LS_MAX_DISTANCE_V1);
+				goto ok;
+			}
+
+			PX4_DEBUG("probe failed hw_version=0x%02x sw_version=0x%02x\n",
+				  (unsigned)_hw_version,
+				  (unsigned)_sw_version);
 		}
-
-		/*
-		  check for unit id for v3HP
-		 */
-		if (read_reg(LL40LS_UNIT_ID_HIGH, id_high) == OK && id_high > 0 &&
-		    read_reg(LL40LS_UNIT_ID_LOW, id_low) == OK && id_low > 0) {
-			_unit_id = (uint16_t)((id_high << 8) | id_low) & 0xFFFF;
-			set_maximum_distance(LL40LS_MAX_DISTANCE_V3HP);
-			goto ok;
-		}
-
-		PX4_DEBUG("probe failed unit_id=0x%02x hw_version=0x%02x sw_version=0x%02x\n",
-			  (unsigned)_unit_id,
-			  (unsigned)_hw_version,
-			  (unsigned)_sw_version);
 
 	}
 
@@ -343,9 +343,7 @@ int LidarLiteI2C::measure()
 int LidarLiteI2C::reset_sensor()
 {
 	int ret;
-
-	ret = write_reg(LL40LS_MEASURE_REG, 0x01);	// hack to be able to reset the sensor
-	ret |= write_reg(LL40LS_MEASURE_REG, LL40LS_MSRREG_RESET);
+	ret = write_reg(LL40LS_MEASURE_REG, LL40LS_MSRREG_RESET);
 
 	if (ret != OK) {
 		return ret;
