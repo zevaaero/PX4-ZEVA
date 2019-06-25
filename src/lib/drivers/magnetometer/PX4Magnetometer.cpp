@@ -72,6 +72,20 @@ int PX4Magnetometer::ioctl(cdev::file_t *filp, int cmd, unsigned long arg)
 
 		return PX4_OK;
 
+	case MAGIOCGSCALE: {
+			// copy out scale factors
+			mag_calibration_s cal{};
+			cal.x_offset = _calibration_offset(0);
+			cal.y_offset = _calibration_offset(1);
+			cal.z_offset = _calibration_offset(2);
+			cal.x_scale = _calibration_scale(0);
+			cal.y_scale = _calibration_scale(1);
+			cal.z_scale = _calibration_scale(2);
+			memcpy((mag_calibration_s *)arg, &cal, sizeof(cal));
+		}
+
+		return 0;
+
 	case DEVIOCGDEVICEID:
 		return _sensor_mag_pub.get().device_id;
 
@@ -104,8 +118,10 @@ void PX4Magnetometer::update(hrt_abstime timestamp, int16_t x, int16_t y, int16_
 	float zraw_f = z;
 	rotate_3f(_rotation, xraw_f, yraw_f, zraw_f);
 
+	const matrix::Vector3f raw_f{xraw_f, yraw_f, zraw_f};
+
 	// Apply range scale and the calibrating offset/scale
-	const matrix::Vector3f val_calibrated{(((matrix::Vector3f{xraw_f, yraw_f, zraw_f} * report.scaling) - _calibration_offset).emult(_calibration_scale))};
+	const matrix::Vector3f val_calibrated{(((raw_f.emult(_sensitivity) * report.scaling) - _calibration_offset).emult(_calibration_scale))};
 
 	// Raw values (ADC units 0 - 65535)
 	report.x_raw = x;
