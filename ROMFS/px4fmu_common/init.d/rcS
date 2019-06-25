@@ -41,7 +41,6 @@ set MIXER_FILE none
 set MK_MODE none
 set MKBLCTRL_ARG ""
 set OUTPUT_MODE none
-set PARAM_DEFAULTS_VER 1
 set PARAM_FILE /fs/microsd/params
 set PWM_AUX_DISARMED p:PWM_AUX_DISARMED
 set PWM_AUX_MAX p:PWM_AUX_MAX
