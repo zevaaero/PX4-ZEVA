@@ -41,7 +41,7 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
+                - build:
                     source: build/px4_fmu-v3_default/
                     destination: px4-fw-artifacts/px4_fmu-v3_default/
               tasks:
@@ -55,7 +55,7 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
+                - build:
                     source: build/px4_fmu-v4_default/
                     destination: px4-fw-artifacts/px4_fmu-v4_default/
               tasks:
@@ -69,7 +69,7 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
+                - build:
                     source: build/px4_fmu-v5_default/
                     destination: px4-fw-artifacts/px4_fmu-v5_default/
               tasks:
