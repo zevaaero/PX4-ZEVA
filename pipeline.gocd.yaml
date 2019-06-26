@@ -41,9 +41,15 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
-                    source: build/px4_fmu-v3_default/
-                    destination: px4-fw-artifacts/px4_fmu-v3_default/
+                - build:
+                    source: build/px4_fmu-v3_default/px4_fmu-v3_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v3_default/px4_fmu-v3_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v3_default/parameters.xml
+                    destination: build/
               tasks:
                 - exec:
                     command: make
@@ -55,9 +61,15 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
-                    source: build/px4_fmu-v4_default/
-                    destination: px4-fw-artifacts/px4_fmu-v4_default/
+                - build:
+                    source: build/px4_fmu-v4_default/px4_fmu-v4_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v4_default/px4_fmu-v4_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v4_default/parameters.xml
+                    destination: build/
               tasks:
                 - exec:
                     command: make
@@ -69,9 +81,15 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
-                    source: build/px4_fmu-v5_default/
-                    destination: px4-fw-artifacts/px4_fmu-v5_default/
+                - build:
+                    source: build/px4_fmu-v5_default/px4_fmu-v5_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v5_default/px4_fmu-v5_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v5_default/parameters.xml
+                    destination: build/
               tasks:
                 - exec:
                     command: make
