@@ -1,17 +1,19 @@
+BASE_BUILDER=docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w "/mnt" -e CI=true -e LOCAL_USER_ID=`id -u` px4io/px4-dev-base-bionic:2019-03-08
+NUTTX_BUILDER=docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w "/mnt" -e CI=true -e LOCAL_USER_ID=`id -u` px4io/px4-dev-nuttx:2019-03-08
 
 .PHONY: check_format tests px4_fmu-v3_default px4_fmu-v4_default px4_fmu-v5_default
 
 check_format:
-	docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w '/mnt' -e CI=true px4io/px4-dev-base-bionic:2019-03-08 make check_format
+	$(BASE_BUILDER) make check_format
 
 tests:
-	docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w '/mnt' -e CI=true px4io/px4-dev-base-bionic:2019-03-08 make tests
+	$(BASE_BUILDER) make tests
 
 px4_fmu-v3_default:
-	docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w '/mnt' -e CI=true px4io/px4-dev-nuttx:2019-03-08 make px4_fmu-v3_default
+	$(NUTTX_BUILDER) make px4_fmu-v3_default
 
 px4_fmu-v4_default:
-	docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w '/mnt' -e CI=true px4io/px4-dev-nuttx:2019-03-08 make px4_fmu-v4_default
+	$(NUTTX_BUILDER) make px4_fmu-v4_default
 
 px4_fmu-v5_default:
-	docker run --rm --mount "type=bind,src=`pwd`,dst=/mnt" -w '/mnt' -e CI=true px4io/px4-dev-nuttx:2019-03-08 make px4_fmu-v5_default
+	$(NUTTX_BUILDER) make px4_fmu-v5_default
