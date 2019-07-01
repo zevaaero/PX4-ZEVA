@@ -105,7 +105,7 @@ pipelines:
       firmware_git:
         git: "git@github.com:Auterion/PX4_firmware_private.git"
         branch: devel
-      label_template: "${firmware_git[:8]}"
+    label_template: "${firmware_git[:8]}"
     stages:
       - test:
           jobs:
@@ -138,7 +138,7 @@ pipelines:
       px4_firmware_test:
         pipeline: px4_firmware_test
         stage: test
-      label_template: "${firmware_git[:8]}"
+    label_template: "${firmware_git[:8]}"
     stages:
       - build:
           jobs:
