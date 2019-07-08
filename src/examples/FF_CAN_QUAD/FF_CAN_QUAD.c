@@ -31,6 +31,7 @@
 #include <systemlib/mavlink_log.h>
 
 // hardware specific includes
+#include <board_config.h>
 #include <nuttx/can/can.h>
 #include "stm32.h"
 #include "stm32_can.h"
@@ -281,6 +282,11 @@ void FF_CAN(void)
 
 	// CAN port we want to access on Pixhawk is 1. Marked as CAN 2 on the Cube board.
 	int canPort = 1;
+
+	// DeInit wifi or other - TBD make as function of param SYS_COMPANION
+	stm32_configgpio(GPIO_GPIO1_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 0);	// low should pull enable low and shut it down
+
 
 	// Hardware specific can initialization function.
 	// This returns the CAN device handle
