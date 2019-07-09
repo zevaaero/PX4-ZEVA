@@ -283,9 +283,34 @@ void FF_CAN(void)
 	// CAN port we want to access on Pixhawk is 1. Marked as CAN 2 on the Cube board.
 	int canPort = 1;
 
-	// DeInit wifi or other - TBD make as function of param SYS_COMPANION
+	// Set GPIOs for Wifi, disable, then decide if enabled.
+	// -------------------------------------------------
+
+	// disABLE
 	stm32_configgpio(GPIO_GPIO1_OUTPUT);
 	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 0);	// low should pull enable low and shut it down
+
+	// Reset
+	stm32_configgpio(GPIO_GPIO0_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO0_OUTPUT, 1);	// low should pull enable low and shut it down
+
+	// IO2 - boot pin
+	stm32_configgpio(GPIO_GPIO5_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO5_OUTPUT, 1);	
+
+	// IO0 - boot pin
+	stm32_configgpio(GPIO_GPIO4_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO4_OUTPUT, 1);	
+
+	// IO15 - boot pin (this is formerly the CTS pin, which hopefully cube won't miss)
+	stm32_configgpio((GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN11));
+	stm32_gpiowrite((GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTD|GPIO_PIN11), 1);	
+
+	// Enable
+	stm32_configgpio(GPIO_GPIO1_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// Wifi should come online
+
+
 
 
 	// Hardware specific can initialization function.
