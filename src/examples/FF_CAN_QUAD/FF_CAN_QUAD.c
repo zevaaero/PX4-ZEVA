@@ -253,6 +253,8 @@ void FF_CAN(void)
 
 	/// Param finds 
 	param_find("FF_OSD_TELEM");
+	uint32_t syscomp = 0;
+	param_get(param_find("SYS_COMPANION"), &syscomp);
 
 	// CAN initialization and device registration done below. Selim. 08/08/2018
 
@@ -307,9 +309,12 @@ void FF_CAN(void)
 	stm32_gpiowrite(GPIO_GPIO4_OUTPUT, 1);	
 
 
-	// Enable
-	stm32_configgpio(GPIO_GPIO1_OUTPUT);
-	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// low should pull enable low and shut it down
+	// Enable - only if  SYS_COMPANION == 1921600
+	if( syscomp == 1921600 ) 
+	{
+		stm32_configgpio(GPIO_GPIO1_OUTPUT);
+		stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// low should pull enable low and shut it down
+	}
 
 
 
