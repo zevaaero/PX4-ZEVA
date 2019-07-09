@@ -286,9 +286,9 @@ void FF_CAN(void)
 	// Set GPIOs for Wifi, disable, then decide if enabled.
 	// -------------------------------------------------
 
-	// IO15 - boot pin (this is formerly the CTS pin, which hopefully cube won't miss)
+	// IO15 - boot pin (this is formerly the CTS pin, which hopefully cube won't miss, at least long enough to boot wifi)
 	stm32_configgpio(GPIO_GPIOWF15_OUTPUT);
-	stm32_gpiowrite(GPIO_GPIOWF15_OUTPUT, 1);	
+	stm32_gpiowrite(GPIO_GPIOWF15_OUTPUT, 0);	
 
 	// disABLE
 	stm32_configgpio(GPIO_GPIO1_OUTPUT);
@@ -308,8 +308,8 @@ void FF_CAN(void)
 
 
 	// Enable
-	stm32_configgpio(GPIO_GPIO1_OUTPUT);
-	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// Wifi should come online
+	stm32_configgpio(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11);
+	stm32_gpiowrite(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11, 1);	// Wifi should come online
 
 
 
