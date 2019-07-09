@@ -287,8 +287,8 @@ void FF_CAN(void)
 	// -------------------------------------------------
 
 	// IO15 - boot pin (this is formerly the CTS pin, which hopefully cube won't miss, at least long enough to boot wifi)
-	stm32_configgpio(GPIO_GPIOWF15_OUTPUT);
-	stm32_gpiowrite(GPIO_GPIOWF15_OUTPUT, 0);	
+	stm32_configgpio(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11);
+	stm32_gpiowrite(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11, 0);	
 
 	// disABLE
 	stm32_configgpio(GPIO_GPIO1_OUTPUT);
@@ -308,8 +308,8 @@ void FF_CAN(void)
 
 
 	// Enable
-	stm32_configgpio(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11);
-	stm32_gpiowrite(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11, 1);	// Wifi should come online
+	stm32_configgpio(GPIO_GPIO1_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// low should pull enable low and shut it down
 
 
 
