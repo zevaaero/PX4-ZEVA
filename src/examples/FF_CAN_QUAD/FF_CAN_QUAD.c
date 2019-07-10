@@ -31,6 +31,7 @@
 #include <systemlib/mavlink_log.h>
 
 // hardware specific includes
+#include <board_config.h>
 #include <nuttx/can/can.h>
 #include "stm32.h"
 #include "stm32_can.h"
@@ -252,6 +253,8 @@ void FF_CAN(void)
 
 	/// Param finds 
 	param_find("FF_OSD_TELEM");
+	uint32_t syscomp = 0;
+	param_get(param_find("SYS_COMPANION"), &syscomp);
 
 	// CAN initialization and device registration done below. Selim. 08/08/2018
 
@@ -281,6 +284,40 @@ void FF_CAN(void)
 
 	// CAN port we want to access on Pixhawk is 1. Marked as CAN 2 on the Cube board.
 	int canPort = 1;
+
+	// Set GPIOs for Wifi, disable, then decide if enabled.
+	// -------------------------------------------------
+
+	// IO15 - boot pin (this is formerly the CTS pin, which hopefully cube won't miss, at least long enough to boot wifi)
+	stm32_configgpio(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11);
+	stm32_gpiowrite(GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_SET|GPIO_PORTD|GPIO_PIN11, 0);	
+
+	// disABLE
+	stm32_configgpio(GPIO_GPIO1_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 0);	// low should pull enable low and shut it down
+
+	// Reset
+	stm32_configgpio(GPIO_GPIO0_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO0_OUTPUT, 1);	// low should pull enable low and shut it down
+
+	// IO2 - boot pin
+	stm32_configgpio(GPIO_GPIO5_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO5_OUTPUT, 1);	
+
+	// IO0 - boot pin
+	stm32_configgpio(GPIO_GPIO4_OUTPUT);
+	stm32_gpiowrite(GPIO_GPIO4_OUTPUT, 1);	
+
+
+	// Enable - only if  SYS_COMPANION == 1921600
+	if( syscomp == 1921600 ) 
+	{
+		stm32_configgpio(GPIO_GPIO1_OUTPUT);
+		stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// low should pull enable low and shut it down
+	}
+
+
+
 
 	// Hardware specific can initialization function.
 	// This returns the CAN device handle
