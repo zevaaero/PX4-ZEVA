@@ -34,6 +34,7 @@
 add_subdirectory(airframes)
 
 px4_add_romfs_files(
+	rc.autostart_ext
 	rc.fw_apps
 	rc.fw_defaults
 	rc.interface

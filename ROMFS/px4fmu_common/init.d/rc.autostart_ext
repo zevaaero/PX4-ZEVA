@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# External airframe startup script (on SD card)
+#
+
+set SDCARD_EXT_PATH /fs/microsd/ext_autostart
+set SDCARD_MIXERS_PATH ${SDCARD_EXT_PATH}/mixers
+
+# Check for an update
+if [ -e /fs/microsd/new ]
+then
+	echo "Updating external autostart files"
+	# FIXME: add NuttX support for recursive rm, then we can remove the
+	# directory (for now this is done during updating via MAVLink FTP)
+	#rm -r $SDCARD_EXT_PATH
+	mv /fs/microsd/new $SDCARD_EXT_PATH
+fi
+
+if [ -e ${SDCARD_EXT_PATH}/rc.autostart ]
+then
+	sh ${SDCARD_EXT_PATH}/rc.autostart
+else
+	echo "Error: ${SDCARD_EXT_PATH}/rc.autostart does not exist"
+fi
+
+unset SDCARD_EXT_PATH
+

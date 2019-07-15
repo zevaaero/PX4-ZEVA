@@ -225,7 +225,13 @@ else
 	#
 	if ! param compare SYS_AUTOSTART 0
 	then
-		sh /etc/init.d/rc.autostart
+		if param greater SYS_AUTOSTART 1000000
+		then
+			# Use external startup file
+			sh /etc/init.d/rc.autostart_ext
+		else
+			sh /etc/init.d/rc.autostart
+		fi
 	fi
 
 	#
