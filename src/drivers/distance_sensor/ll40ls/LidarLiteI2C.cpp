@@ -52,8 +52,8 @@
 
 LidarLiteI2C::LidarLiteI2C(int bus, const char *path, uint8_t rotation, int address) :
 	I2C("LL40LS", path, bus, address, 100000),
+	ScheduledWorkItem(px4::device_bus_to_wq(get_device_id())),
 	_rotation(rotation),
-	_work{},
 	_reports(nullptr),
 	_sensor_ok(false),
 	_collect_phase(false),
@@ -74,9 +74,6 @@ LidarLiteI2C::LidarLiteI2C(int bus, const char *path, uint8_t rotation, int addr
 {
 	// up the retries since the device misses the first measure attempts
 	_retries = 3;
-
-	// work_cancel in the dtor will explode if we don't do this...
-	memset(&_work, 0, sizeof(_work));
 }
 
 LidarLiteI2C::~LidarLiteI2C()
@@ -186,36 +183,36 @@ int LidarLiteI2C::probe()
 
 		set_device_address(addresses[i]);
 
-		/*
-			The probing is divided in two cases. One to detect v1, v2 and v3 and one to
-			detect v3HP. The reason for this is that registers are not consistent
-			between different versions. The v3HP doesn't have the HW and SW VERSION
-			registers while v1, v2 and some v3 don't have the unit id register.
-			It would be better if we had a proper WHOAMI register.
-		*/
+		if (addresses[i] == LL40LS_BASEADDR) {
 
-		/*
-		  check for hw and sw versions for v1, v2 and v3
-		 */
-		if ((read_reg(LL40LS_HW_VERSION, _hw_version) == OK && _hw_version) > 0 &&
-		    (read_reg(LL40LS_SW_VERSION, _sw_version) == OK && _sw_version > 0)) {
-			goto ok;
+			/*
+			  check for unit id. It would be better if
+			  we had a proper WHOAMI register
+			 */
+			if (read_reg(LL40LS_UNIT_ID_HIGH, id_high) == OK && id_high > 0 &&
+			    read_reg(LL40LS_UNIT_ID_LOW, id_low) == OK && id_low > 0) {
+				_unit_id = (uint16_t)((id_high << 8) | id_low) & 0xFFFF;
+				goto ok;
+			}
+
+			PX4_DEBUG("probe failed unit_id=0x%02x\n",
+				  (unsigned)_unit_id);
+
+		} else {
+			/*
+			  check for hw and sw versions. It would be better if
+			  we had a proper WHOAMI register
+			 */
+			if (read_reg(LL40LS_HW_VERSION, _hw_version) == OK && _hw_version > 0 &&
+			    read_reg(LL40LS_SW_VERSION, _sw_version) == OK && _sw_version > 0) {
+				set_maximum_distance(LL40LS_MAX_DISTANCE_V1);
+				goto ok;
+			}
+
+			PX4_DEBUG("probe failed hw_version=0x%02x sw_version=0x%02x\n",
+				  (unsigned)_hw_version,
+				  (unsigned)_sw_version);
 		}
-
-		/*
-		  check for unit id for v3HP
-		 */
-		if (read_reg(LL40LS_UNIT_ID_HIGH, id_high) == OK && id_high > 0 &&
-		    read_reg(LL40LS_UNIT_ID_LOW, id_low) == OK && id_low > 0) {
-			_unit_id = (uint16_t)((id_high << 8) | id_low) & 0xFFFF;
-			set_maximum_distance(LL40LS_MAX_DISTANCE_V3HP);
-			goto ok;
-		}
-
-		PX4_DEBUG("probe failed unit_id=0x%02x hw_version=0x%02x sw_version=0x%02x\n",
-			  (unsigned)_unit_id,
-			  (unsigned)_hw_version,
-			  (unsigned)_sw_version);
 
 	}
 
@@ -254,7 +251,7 @@ ssize_t LidarLiteI2C::read(device::file_t *filp, char *buffer, size_t buflen)
 	}
 
 	/* if automatic measurement is enabled */
-	if (getMeasureTicks() > 0) {
+	if (getMeasureInterval() > 0) {
 
 		/*
 		 * While there is space in the caller's buffer, and reports, copy them.
@@ -346,9 +343,7 @@ int LidarLiteI2C::measure()
 int LidarLiteI2C::reset_sensor()
 {
 	int ret;
-
-	ret = write_reg(LL40LS_MEASURE_REG, 0x01);	// hack to be able to reset the sensor
-	ret |= write_reg(LL40LS_MEASURE_REG, LL40LS_MSRREG_RESET);
+	ret = write_reg(LL40LS_MEASURE_REG, LL40LS_MSRREG_RESET);
 
 	if (ret != OK) {
 		return ret;
@@ -572,22 +567,15 @@ void LidarLiteI2C::start()
 	_reports->flush();
 
 	/* schedule a cycle to start things */
-	work_queue(HPWORK, &_work, (worker_t)&LidarLiteI2C::cycle_trampoline, this, 1);
+	ScheduleNow();
 }
 
 void LidarLiteI2C::stop()
 {
-	work_cancel(HPWORK, &_work);
+	ScheduleClear();
 }
 
-void LidarLiteI2C::cycle_trampoline(void *arg)
-{
-	LidarLiteI2C *dev = (LidarLiteI2C *)arg;
-
-	dev->cycle();
-}
-
-void LidarLiteI2C::cycle()
+void LidarLiteI2C::Run()
 {
 	/* collection phase? */
 	if (_collect_phase) {
@@ -609,14 +597,10 @@ void LidarLiteI2C::cycle()
 			/*
 			 * Is there a collect->measure gap?
 			 */
-			if (getMeasureTicks() > USEC2TICK(LL40LS_CONVERSION_INTERVAL)) {
+			if (getMeasureInterval() > (LL40LS_CONVERSION_INTERVAL)) {
 
 				/* schedule a fresh cycle call when we are ready to measure again */
-				work_queue(HPWORK,
-					   &_work,
-					   (worker_t)&LidarLiteI2C::cycle_trampoline,
-					   this,
-					   getMeasureTicks() - USEC2TICK(LL40LS_CONVERSION_INTERVAL));
+				ScheduleDelayed(getMeasureInterval() - LL40LS_CONVERSION_INTERVAL);
 
 				return;
 			}
@@ -637,11 +621,7 @@ void LidarLiteI2C::cycle()
 	}
 
 	/* schedule a fresh cycle call when the measurement is done */
-	work_queue(HPWORK,
-		   &_work,
-		   (worker_t)&LidarLiteI2C::cycle_trampoline,
-		   this,
-		   USEC2TICK(LL40LS_CONVERSION_INTERVAL));
+	ScheduleDelayed(LL40LS_CONVERSION_INTERVAL);
 }
 
 void LidarLiteI2C::print_info()
@@ -650,7 +630,7 @@ void LidarLiteI2C::print_info()
 	perf_print_counter(_comms_errors);
 	perf_print_counter(_sensor_resets);
 	perf_print_counter(_sensor_zero_resets);
-	printf("poll interval:  %u ticks\n", getMeasureTicks());
+	printf("poll interval:  %u \n", getMeasureInterval());
 	_reports->print_info("report queue");
 	printf("distance: %ucm (0x%04x)\n",
 	       (unsigned)_last_distance, (unsigned)_last_distance);
