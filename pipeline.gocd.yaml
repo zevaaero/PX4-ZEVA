@@ -41,9 +41,15 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
-                    source: build/px4_fmu-v3_default/
-                    destination: px4-fw-artifacts/px4_fmu-v3_default/
+                - build:
+                    source: build/px4_fmu-v3_default/px4_fmu-v3_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v3_default/px4_fmu-v3_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v3_default/parameters.xml
+                    destination: build/
               tasks:
                 - exec:
                     command: make
@@ -55,9 +61,15 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
-                    source: build/px4_fmu-v4_default/
-                    destination: px4-fw-artifacts/px4_fmu-v4_default/
+                - build:
+                    source: build/px4_fmu-v4_default/px4_fmu-v4_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v4_default/px4_fmu-v4_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v4_default/parameters.xml
+                    destination: build/
               tasks:
                 - exec:
                     command: make
@@ -69,9 +81,15 @@ pipelines:
               resources:
                 - docker
               artifacts:
-                - test:
-                    source: build/px4_fmu-v5_default/
-                    destination: px4-fw-artifacts/px4_fmu-v5_default/
+                - build:
+                    source: build/px4_fmu-v5_default/px4_fmu-v5_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v5_default/px4_fmu-v5_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v5_default/parameters.xml
+                    destination: build/
               tasks:
                 - exec:
                     command: make
@@ -79,3 +97,109 @@ pipelines:
                       - "-f"
                       - Makefile.ci
                       - px4_fmu-v5_default
+
+
+  px4_firmware_test:
+    group: px4_firmware
+    materials:
+      firmware_git:
+        git: "git@github.com:Auterion/PX4_firmware_private.git"
+        branch: devel
+    label_template: "${firmware_git[:8]}"
+    stages:
+      - test:
+          jobs:
+            check_format:
+              resources:
+                - docker
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - check_format
+            tests:
+              resources:
+                - docker
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - tests
+  px4_firmware_build:
+    group: px4_firmware
+    materials:
+      firmware_git:
+        git: "git@github.com:Auterion/PX4_firmware_private.git"
+        branch: devel
+      px4_firmware_test:
+        pipeline: px4_firmware_test
+        stage: test
+    label_template: "${firmware_git[:8]}"
+    stages:
+      - build:
+          jobs:
+            px4_fmu-v3_default:
+              resources:
+                - docker
+              artifacts:
+                - build:
+                    source: build/px4_fmu-v3_default/px4_fmu-v3_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v3_default/px4_fmu-v3_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v3_default/parameters.xml
+                    destination: build/
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - px4_fmu-v3_default
+            px4_fmu-v4_default:
+              resources:
+                - docker
+              artifacts:
+                - build:
+                    source: build/px4_fmu-v4_default/px4_fmu-v4_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v4_default/px4_fmu-v4_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v4_default/parameters.xml
+                    destination: build/
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - px4_fmu-v4_default
+            px4_fmu-v5_default:
+              resources:
+                - docker
+              artifacts:
+                - build:
+                    source: build/px4_fmu-v5_default/px4_fmu-v5_default.px4
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v5_default/px4_fmu-v5_default.elf
+                    destination: build/
+                - build:
+                    source: build/px4_fmu-v5_default/parameters.xml
+                    destination: build/
+              tasks:
+                - exec:
+                    command: make
+                    arguments:
+                      - "-f"
+                      - Makefile.ci
+                      - px4_fmu-v5_default
+
