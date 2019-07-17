@@ -1,4 +1,4 @@
-#!nsh
+#!/bin/sh
 #
 # Standard startup script for sensor drivers.
 #
@@ -29,7 +29,6 @@ then
 
 	adc start
 fi
-
 
 ###############################################################################
 #                           Begin Optional drivers                            #
