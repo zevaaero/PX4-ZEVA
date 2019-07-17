@@ -145,11 +145,6 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		return true;
 	}
 
-	// if already landed and that the drone has low thrust, it has to be on the ground
-	if (_state == LandDetectionState::LANDED && _has_low_thrust()) {
-		return true;
-	}
-
 	// land speed threshold
 	float land_speed_threshold = 0.9f * math::max(_params.landSpeed, 0.1f);
 
@@ -187,7 +182,6 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	    && (!verticalMovement || !_has_altitude_lock())) {
 		return true;
 	}
-
 
 	return false;
 }
@@ -244,8 +238,8 @@ bool MulticopterLandDetector::_get_maybe_landed_state()
 
 bool MulticopterLandDetector::_get_landed_state()
 {
-	// if already landed and that the drone has low thrust, it has to be on the ground
-	if (_state == LandDetectionState::LANDED && _has_low_thrust()) {
+	// When not armed, consider to be landed
+	if (!_arming.armed) {
 		return true;
 	}
 
