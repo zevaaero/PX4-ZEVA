@@ -56,8 +56,8 @@
 	branch = px4_firmware_nuttx-7.28+
 [submodule "platforms/nuttx/NuttX/nuttx"]
 	path = platforms/nuttx/NuttX/nuttx
-	url = git@github.com:Auterion/NuttX_private.git
-	branch = freefly
+	url = git@bitbucket.org:freeflyhq/nuttx.git
+	branch = auterion/develop
 [submodule "cmake/configs/uavcan_board_ident"]
 	path = cmake/configs/uavcan_board_ident
 	url = https://github.com/PX4/uavcan_board_ident.git
