@@ -219,6 +219,7 @@ private:
 		(ParamFloat<px4::params::MC_RR_INT_LIM>) _param_mc_rr_int_lim,
 		(ParamFloat<px4::params::MC_ROLLRATE_D>) _param_mc_rollrate_d,
 		(ParamFloat<px4::params::MC_ROLLRATE_FF>) _param_mc_rollrate_ff,
+		(ParamFloat<px4::params::MC_ROLLRATE_K>) _param_mc_rollrate_k,
 
 		(ParamFloat<px4::params::MC_PITCH_P>) _param_mc_pitch_p,
 		(ParamFloat<px4::params::MC_PITCHRATE_P>) _param_mc_pitchrate_p,
@@ -226,6 +227,7 @@ private:
 		(ParamFloat<px4::params::MC_PR_INT_LIM>) _param_mc_pr_int_lim,
 		(ParamFloat<px4::params::MC_PITCHRATE_D>) _param_mc_pitchrate_d,
 		(ParamFloat<px4::params::MC_PITCHRATE_FF>) _param_mc_pitchrate_ff,
+		(ParamFloat<px4::params::MC_PITCHRATE_K>) _param_mc_pitchrate_k,
 
 		(ParamFloat<px4::params::MC_YAW_P>) _param_mc_yaw_p,
 		(ParamFloat<px4::params::MC_YAWRATE_P>) _param_mc_yawrate_p,
@@ -233,6 +235,7 @@ private:
 		(ParamFloat<px4::params::MC_YR_INT_LIM>) _param_mc_yr_int_lim,
 		(ParamFloat<px4::params::MC_YAWRATE_D>) _param_mc_yawrate_d,
 		(ParamFloat<px4::params::MC_YAWRATE_FF>) _param_mc_yawrate_ff,
+		(ParamFloat<px4::params::MC_YAWRATE_K>) _param_mc_yawrate_k,
 
 		(ParamFloat<px4::params::MC_DTERM_CUTOFF>) _d_term_cutoff_freq,			/**< Cutoff frequency for the D-term filter */
 		(ParamFloat<px4::params::MC_YRERR_CUTOFF>)
@@ -288,6 +291,7 @@ private:
 	matrix::Vector3f _rate_int_lim;		/**< integrator state limit for rate loop */
 	matrix::Vector3f _rate_d;		/**< D gain for angular rate error */
 	matrix::Vector3f _rate_ff;		/**< Feedforward gain for desired rates */
+	matrix::Vector3f _rate_k;		/**< Rate controller global gain */
 
 	matrix::Vector3f _acro_rate_max;	/**< max attitude rates in acro mode */
 	float _man_tilt_max;			/**< maximum tilt allowed for manual flight [rad] */
