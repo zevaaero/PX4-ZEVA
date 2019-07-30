@@ -38,7 +38,7 @@ then
 	param set MPC_JERK_MAX 20.0000
 	param set MPC_MAN_TILT_MAX 25.0000
 	param set MPC_MAN_Y_MAX 60.0000
-	param set MPC_SPOOLUP_TIME 2.0000
+	param set MPC_SPOOLUP_TIME 1.0000
 	param set MPC_THR_HOVER 0.5200
 	param set MPC_VEL_MANUAL 6.0
 	param set MPC_XY_P 0.6
@@ -53,7 +53,7 @@ then
 	param set MPC_LAND_SPEED 0.5000
 	param set MPC_THR_MIN 0.0800
 	param set MPC_TILTMAX_AIR 25.0000
-	param set MPC_TKO_RAMP_T 0.6000
+	param set MPC_TKO_RAMP_T 3
 	param set MPC_YAW_EXPO 0.6000
 	param set MPC_Z_MAN_EXPO 0.6000
 	param set MPC_XY_MAN_EXPO 0.7000
@@ -134,5 +134,6 @@ then
 
 	# Commander Parameters
 	param set COM_DISARM_LAND 1
+	param set COM_RC_OVERRIDE 1
 
 fi
