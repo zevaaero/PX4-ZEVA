@@ -7,7 +7,6 @@
 # The critical parameters are
 # MPC_POS_MODE to enable jerk limited multicopter position control
 # MAV_1_CONFIG and SER_TEL2_BAUD to enable mavlink on companion link (TELEM2)
-# SYS_FORCE_F7DC to enable DCACHE on PH4 to not run out of CPU
 #
 
 # Position Mode Tuning
@@ -51,9 +50,6 @@ param set CBRK_IO_SAFETY 22027
 
 # Commander Parameters
 param set COM_DISARM_LAND 1
-
-# System Parameters
-param set SYS_FORCE_F7DC 2
 
 # RC mapping
 param set RC_MAP_THROTTLE 1

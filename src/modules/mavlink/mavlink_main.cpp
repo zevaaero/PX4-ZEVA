@@ -1633,6 +1633,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("UTM_GLOBAL_POSITION", 1.0f);
 		configure_stream_local("VFR_HUD", 4.0f);
 		configure_stream_local("WIND_COV", 1.0f);
+		configure_stream_local("BATTERY_STATUS", 0.5f);
 		break;
 
 	case MAVLINK_MODE_ONBOARD:
@@ -1667,7 +1668,6 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("POSITION_TARGET_GLOBAL_INT", 10.0f);
 		configure_stream_local("POSITION_TARGET_LOCAL_NED", 10.0f);
 		configure_stream_local("RC_CHANNELS", 20.0f);
-		configure_stream_local("SCALED_IMU", 50.0f);
 		configure_stream_local("SERVO_OUTPUT_RAW_0", 10.0f);
 		configure_stream_local("SYS_STATUS", 5.0f);
 		configure_stream_local("SYSTEM_TIME", 1.0f);
@@ -1676,6 +1676,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("UTM_GLOBAL_POSITION", 1.0f);
 		configure_stream_local("VFR_HUD", 10.0f);
 		configure_stream_local("WIND_COV", 10.0f);
+		configure_stream_local("BATTERY_STATUS", 0.5f);
 		break;
 
 	case MAVLINK_MODE_EXTVISION:
@@ -1717,10 +1718,12 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("UTM_GLOBAL_POSITION", 1.0f);
 		configure_stream_local("VFR_HUD", 4.0f);
 		configure_stream_local("WIND_COV", 1.0f);
+		configure_stream_local("BATTERY_STATUS", 0.5f);
 		break;
 
+
 	case MAVLINK_MODE_OSD:
-		configure_stream_local("ALTITUDE", 1.0f);
+		configure_stream_local("ALTITUDE", 10.0f);
 		configure_stream_local("ATTITUDE", 25.0f);
 		configure_stream_local("ATTITUDE_TARGET", 10.0f);
 		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
@@ -1734,6 +1737,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("SYSTEM_TIME", 1.0f);
 		configure_stream_local("VFR_HUD", 25.0f);
 		configure_stream_local("WIND_COV", 2.0f);
+		configure_stream_local("BATTERY_STATUS", 0.5f);
 		break;
 
 	case MAVLINK_MODE_MAGIC:
@@ -1775,6 +1779,9 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("PING", 1.0f);
 		configure_stream_local("POSITION_TARGET_GLOBAL_INT", 10.0f);
 		configure_stream_local("RC_CHANNELS", 10.0f);
+		configure_stream_local("SCALED_IMU", 25.0f);
+		configure_stream_local("SCALED_IMU2", 25.0f);
+		configure_stream_local("SCALED_IMU3", 25.0f);
 		configure_stream_local("SERVO_OUTPUT_RAW_0", 20.0f);
 		configure_stream_local("SERVO_OUTPUT_RAW_1", 20.0f);
 		configure_stream_local("SYS_STATUS", 1.0f);
@@ -1783,6 +1790,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("UTM_GLOBAL_POSITION", 1.0f);
 		configure_stream_local("VFR_HUD", 20.0f);
 		configure_stream_local("WIND_COV", 10.0f);
+		configure_stream_local("BATTERY_STATUS", 0.5f);
 		break;
 
 	case MAVLINK_MODE_IRIDIUM:
