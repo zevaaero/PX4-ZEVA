@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -311,6 +311,8 @@ AK09916::init()
 		return ret;
 	}
 
+	reset();
+
 	_mag_reports = new ringbuffer::RingBuffer(2, sizeof(mag_report));
 
 	if (_mag_reports == nullptr) {
@@ -318,8 +320,6 @@ AK09916::init()
 	}
 
 	_mag_class_instance = register_class_devname(MAG_BASE_DEVICE_PATH);
-
-	reset();
 
 	/* advertise sensor topic, measure manually to initialize valid report */
 	struct mag_report mrp;
@@ -355,7 +355,7 @@ AK09916::measure()
 	uint8_t ret, cmd = AK09916REG_ST1;
 	struct ak09916_regs raw_data;
 
-	ret = transfer(&cmd, 1, (uint8_t*)(&raw_data), sizeof(struct ak09916_regs));
+	ret = transfer(&cmd, 1, (uint8_t *)(&raw_data), sizeof(struct ak09916_regs));
 
 	if (ret == OK) {
 		raw_data.st2 = raw_data.st2;
@@ -529,6 +529,7 @@ AK09916::ioctl(struct file *filp, int cmd, unsigned long arg)
 				}
 			}
 		}
+
 	case SENSORIOCRESET:
 		return reset();
 
@@ -542,9 +543,12 @@ AK09916::ioctl(struct file *filp, int cmd, unsigned long arg)
 		memcpy((struct mag_scale *) arg, &_mag_scale, sizeof(_mag_scale));
 		return OK;
 
-	case MAGIOCSELFTEST:
+	case MAGIOCCALIBRATE:
 		return OK;
-		
+
+	case MAGIOCEXSTRAP:
+		return OK;
+
 	default:
 		return (int)I2C::ioctl(filp, cmd, arg);
 	}
@@ -579,8 +583,7 @@ AK09916::write_reg(uint8_t reg, uint8_t value)
 int
 AK09916::reset(void)
 {
-	// First initialize it to use the bus
-	int rv = setup();
+	int rv = probe();
 
 	if (rv == OK) {
 		// Now reset the mag
@@ -594,7 +597,7 @@ AK09916::reset(void)
 }
 
 int
-AK09916::setup(void)
+AK09916::probe(void)
 {
 	int retries = 10;
 
@@ -604,11 +607,18 @@ AK09916::setup(void)
 		uint8_t id = 0;
 
 		if (check_id(id)) {
-			break;
+			return OK;
 		}
+
 		retries--;
 	} while (retries > 0);
 
+	return PX4_ERROR;
+}
+
+int
+AK09916::setup(void)
+{
 	write_reg(AK09916REG_CNTL2, AK09916_CNTL2_CONTINOUS_MODE_100HZ);
 
 	return OK;
@@ -629,7 +639,6 @@ AK09916::start()
 {
 	/* reset the report ring and state machine */
 	_mag_reports->flush();
-	PX4_INFO("Got Here!1");
 
 	/* schedule a cycle to start things */
 	work_queue(HPWORK, &_work, (worker_t)&AK09916::cycle_trampoline, this, 1);
@@ -672,7 +681,7 @@ ak09916_main(int argc, char *argv[])
 	int ch;
 	const char *myoptarg = nullptr;
 	bool external_bus = false;
-	enum Rotation rotation = ROTATION_YAW_90;
+	enum Rotation rotation = ROTATION_NONE;
 
 	while ((ch = px4_getopt(argc, argv, "XR:", &myoptind, &myoptarg)) != EOF) {
 		switch (ch) {

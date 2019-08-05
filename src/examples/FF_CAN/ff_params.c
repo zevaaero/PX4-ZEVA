@@ -49,9 +49,9 @@ PARAM_DEFINE_INT32(OSD_HOR_OS, 32);
 PARAM_DEFINE_INT32(OSD_VER_OS, 16);
 
 /**
-* OSD left margin 
+* OSD left margin
 *
-* changes left display margin 
+* changes left display margin
 *
 * @min 0
 *
@@ -112,7 +112,7 @@ PARAM_DEFINE_INT32(OSD_UNITS, 0);
 
 
 /**
-* Show Height 
+* Show Height
 *
 * Show height value
 *
@@ -129,7 +129,7 @@ PARAM_DEFINE_INT32(OSD_SHOW_HEIGHT, 1);
 /**
 * Show VARIO
 *
-* Show vario 
+* Show vario
 *
 * @value 0 OFF
 * @value 1 SMALL
@@ -474,7 +474,7 @@ PARAM_DEFINE_FLOAT(OSD_MAX_CLIMB, 3.5f);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM_BRT,15);
+PARAM_DEFINE_INT32(BOOM_BRT, 15);
 
 /**
 * Boom 1 LED Color
@@ -503,7 +503,7 @@ PARAM_DEFINE_INT32(BOOM_BRT,15);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM1_COLOR,4);
+PARAM_DEFINE_INT32(BOOM1_COLOR, 4);
 
 /**
 * Boom 2 LED Color
@@ -532,7 +532,7 @@ PARAM_DEFINE_INT32(BOOM1_COLOR,4);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM2_COLOR,0);
+PARAM_DEFINE_INT32(BOOM2_COLOR, 0);
 
 /**
 * Boom 3 LED Color
@@ -561,7 +561,7 @@ PARAM_DEFINE_INT32(BOOM2_COLOR,0);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM3_COLOR,0);
+PARAM_DEFINE_INT32(BOOM3_COLOR, 0);
 
 /**
 * Boom 4 LED Color
@@ -590,7 +590,7 @@ PARAM_DEFINE_INT32(BOOM3_COLOR,0);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM4_COLOR,1);
+PARAM_DEFINE_INT32(BOOM4_COLOR, 1);
 
 /**
 * Boom 5 LED Color
@@ -619,7 +619,7 @@ PARAM_DEFINE_INT32(BOOM4_COLOR,1);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM5_COLOR,1);
+PARAM_DEFINE_INT32(BOOM5_COLOR, 1);
 
 /**
 * Boom 6 LED Color
@@ -648,7 +648,7 @@ PARAM_DEFINE_INT32(BOOM5_COLOR,1);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM6_COLOR,0);
+PARAM_DEFINE_INT32(BOOM6_COLOR, 0);
 
 /**
 * Boom 7 LED Color
@@ -677,7 +677,7 @@ PARAM_DEFINE_INT32(BOOM6_COLOR,0);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM7_COLOR,0);
+PARAM_DEFINE_INT32(BOOM7_COLOR, 0);
 
 /**
 * Boom 8 LED Color
@@ -706,7 +706,7 @@ PARAM_DEFINE_INT32(BOOM7_COLOR,0);
 * @reboot_required false
 * @group ALTA
 */
-PARAM_DEFINE_INT32(BOOM8_COLOR,4);
+PARAM_DEFINE_INT32(BOOM8_COLOR, 4);
 
 /**
 * FF telem rates

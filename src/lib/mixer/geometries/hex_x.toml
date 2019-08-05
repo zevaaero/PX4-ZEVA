@@ -38,8 +38,3 @@ direction = "CCW"
 name      = "front_left"
 position  = [0.866025, -0.5, 0.0]
 direction = "CW"
-
-
-
-
-

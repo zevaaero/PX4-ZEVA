@@ -605,3 +605,18 @@ PARAM_DEFINE_INT32(BOOM4_COLOR,1);
 * @group ALTA
 */
 PARAM_DEFINE_INT32(FF_OSD_TELEM, 0);
+
+
+/**
+* Enable Wifi
+*
+* Enable or disable wifi module hardware
+* (Serial still must be configured for MAVLINK TELEM2)
+*
+* @value 0 Disabled
+* @value 1 Enabled
+*
+* @reboot_required true
+* @group ALTA
+*/
+PARAM_DEFINE_INT32(FF_WIFI_ENABLE, 0);

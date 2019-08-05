@@ -253,8 +253,8 @@ void FF_CAN(void)
 
 	/// Param finds 
 	param_find("FF_OSD_TELEM");
-	uint32_t syscomp = 0;
-	param_get(param_find("SYS_COMPANION"), &syscomp);
+	uint32_t wifien = 0;
+	param_get(param_find("FF_WIFI_ENABLE"), &wifien);
 
 	// CAN initialization and device registration done below. Selim. 08/08/2018
 
@@ -309,8 +309,8 @@ void FF_CAN(void)
 	stm32_gpiowrite(GPIO_GPIO4_OUTPUT, 1);	
 
 
-	// Enable - only if  SYS_COMPANION == 1921600
-	if( syscomp == 1921600 ) 
+	// Enable - only if  FF_WIFI_ENABLE == 1
+	if( wifien == 1 ) 
 	{
 		stm32_configgpio(GPIO_GPIO1_OUTPUT);
 		stm32_gpiowrite(GPIO_GPIO1_OUTPUT, 1);	// low should pull enable low and shut it down

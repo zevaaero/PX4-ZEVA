@@ -177,8 +177,8 @@ private:
 	actuator_controls_s 	_controls;
 	MotorData_t 			Motor[MAX_MOTORS];
 
-	static void				task_main_trampoline(int argc, char *argv[]);
-	void					task_main();
+	static int				task_main_trampoline(int argc, char *argv[]);
+	int					task_main();
 
 	static int				control_callback(uintptr_t handle,
 			uint8_t control_group,
@@ -319,10 +319,10 @@ MK::init(unsigned motors)
 	return OK;
 }
 
-void
+int
 MK::task_main_trampoline(int argc, char *argv[])
 {
-	g_mk->task_main();
+	return g_mk->task_main();
 }
 
 void
@@ -458,7 +458,7 @@ MK::play_beep(int count)
 
 }
 
-void
+int
 MK::task_main()
 {
 	int32_t param_mkblctrl_test = 0;
@@ -664,7 +664,7 @@ MK::task_main()
 
 	/* tell the dtor that we are exiting */
 	_task = -1;
-	_exit(0);
+	return 0;
 }
 
 
@@ -1051,27 +1051,6 @@ MK::pwm_ioctl(file *filp, int cmd, unsigned long arg)
 		}
 
 		break;
-
-	case MIXERIOCADDSIMPLE: {
-			mixer_simple_s *mixinfo = (mixer_simple_s *)arg;
-
-			SimpleMixer *mixer = new SimpleMixer(control_callback,
-							     (uintptr_t)&_controls, mixinfo);
-
-			if (mixer->check()) {
-				delete mixer;
-				ret = -EINVAL;
-
-			} else {
-				if (_mixers == nullptr)
-					_mixers = new MixerGroup(control_callback,
-								 (uintptr_t)&_controls);
-
-				_mixers->add_mixer(mixer);
-			}
-
-			break;
-		}
 
 	case MIXERIOCLOADBUF: {
 			const char *buf = (const char *)arg;

@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# IF750A drone with centered IMU on isolation plate
+# 180 degrees yaw autopilot and 270 degrees yaw GPS.
+# This vehicle doesn't enable Trimble GPS by default
+#
+# @name IF750A-V2
+#
+# @type Quadrotor x
+# @class Copter
+#
+
+sh /etc/init.d/rc.mc_defaults
+
+set MIXER if750a_IO
+set PWM_OUT 12345
+
+set MIXER_AUX if750a_FMU
+set PWM_OUT_AUX 1234
+
+#
+# Configuration defaults
+#
+# When the system configuration changes this variable
+# needs to be incremented. This will not reset the
+# calibration but will reset the system tuning and gains
+# to reflect the new defaults
+#
+set PARAM_DEFAULTS_VER 2
+
+if [ $AUTOCNF = yes ]
+then
+	# Base Parameters
+	sh /etc/init.d/airframes/1230000_if750a_base
+
+	# EKF2 parameters
+	param set EKF2_AID_MASK 33
+	param set EKF2_BCOEF_X 45.0000
+	param set EKF2_BCOEF_Y 45.0000
+	param set EKF2_GND_EFF_DZ 4.0000
+	param set EKF2_GPS_POS_X 0.1100
+	param set EKF2_GPS_POS_Y 0.0000
+	param set EKF2_GPS_POS_Z -0.1750
+	param set EKF2_HGT_MODE 0
+	param set EKF2_IMU_POS_X 0.0
+	param set EKF2_IMU_POS_Y 0.0
+	param set EKF2_IMU_POS_Z -0.075
+	param set EKF2_OF_POS_X -0.1740
+	param set EKF2_OF_POS_Z 0.2300
+	param set EKF2_PCOEF_XN -0.1000
+	param set EKF2_PCOEF_XP -0.1000
+	param set EKF2_PCOEF_YN -0.1000
+	param set EKF2_PCOEF_YP -0.1000
+	param set EKF2_RNG_POS_X -0.1410
+	param set EKF2_RNG_POS_Z 0.2300
+
+	# Sensors Parameters
+	param set SENS_BOARD_ROT 4
+	param set CAL_MAG0_ROT 6
+
+	# GPS Parameters
+	param set GPS_1_CONFIG 201
+	param set SER_GPS1_BAUD 0
+
+fi
+
+# Forced parameters
+param set MAV_1_CONFIG 102
+param set SER_TEL2_BAUD 1500000

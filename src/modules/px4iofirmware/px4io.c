@@ -154,7 +154,7 @@ update_mem_usage(void)
 static void
 heartbeat_blink(void)
 {
-	// static bool heartbeat = false; 
+	// static bool heartbeat = false;
 	// LED_BLUE(heartbeat = !heartbeat); // Set this to off always because the logic to reach here is fuzzy. Don't want this accidentally on.
 }
 
@@ -270,8 +270,8 @@ user_start(int argc, char *argv[])
 
 	up_cxxinitialize();
 
-#	if defined(CONFIG_EXAMPLES_NSH_CXXINITIALIZE)
-#  		error CONFIG_EXAMPLES_NSH_CXXINITIALIZE Must not be defined! Use CONFIG_HAVE_CXX and CONFIG_HAVE_CXXINITIALIZE.
+#	if defined(CONFIG_SYSTEM_NSH_CXXINITIALIZE)
+#  		error CONFIG_SYSTEM_NSH_CXXINITIALIZE Must not be defined! Use CONFIG_HAVE_CXX and CONFIG_HAVE_CXXINITIALIZE.
 #	endif
 
 #else

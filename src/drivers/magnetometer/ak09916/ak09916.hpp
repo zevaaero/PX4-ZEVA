@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -66,9 +66,9 @@
 #include <drivers/device/integrator.h>
 #include <drivers/device/i2c.h>
 #include <drivers/drv_mag.h>
-#include <perf/perf_counter.h>
 
 
+#define AK09916_SAMPLE_RATE					100
 #define AK09916_DEVICE_PATH_MAG              "/dev/ak09916_i2c_int"
 
 #define AK09916_DEVICE_PATH_MAG_EXT          "/dev/ak09916_i2c_ext"
@@ -139,6 +139,7 @@ public:
 	void read_block(uint8_t reg, uint8_t *val, uint8_t count);
 
 	int reset(void);
+	int probe(void);
 	int setup(void);
 	void print_info(void);
 	int setup_master_i2c(void);
