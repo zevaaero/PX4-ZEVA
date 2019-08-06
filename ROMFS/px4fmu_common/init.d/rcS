@@ -555,7 +555,7 @@ unset VEHICLE_TYPE
 # TODO: Get rid of this mavlink initialization
 
 # FF start, customize output rates for all packets
-mavlink start -d /dev/ttyS5 -b 57600 -m osd -r 5000
+mavlink start -d /dev/ttyS5 -b 57600 -m custom -r 5000
 
 # Check if we should enable full rate ESC telemetry
 if param compare FF_OSD_TELEM 0
@@ -568,7 +568,7 @@ then
 	mavlink stream -d /dev/ttyS5 -r 25 -s ATTITUDE
 	mavlink stream -d /dev/ttyS5 -r 10 -s VFR_HUD
 	mavlink stream -d /dev/ttyS5 -r 2 -s ALTITUDE
-	mavlink stream -d /dev/ttyS5 -r 1 -s BATTERY_STATUS
+#	mavlink stream -d /dev/ttyS5 -r 1 -s BATTERY_STATUS
 	mavlink stream -d /dev/ttyS5 -r 0 -s ESTIMATOR_STATUS
 	mavlink stream -d /dev/ttyS5 -r 0 -s WIND_COV
 	mavlink stream -d /dev/ttyS5 -r 0 -s VIBRATION
@@ -590,7 +590,7 @@ then
 	mavlink stream -d /dev/ttyS5 -r 5 -s ATTITUDE
 	mavlink stream -d /dev/ttyS5 -r 5 -s VFR_HUD
 	mavlink stream -d /dev/ttyS5 -r 2 -s ALTITUDE
-	mavlink stream -d /dev/ttyS5 -r 1 -s BATTERY_STATUS
+#	mavlink stream -d /dev/ttyS5 -r 1 -s BATTERY_STATUS
 	mavlink stream -d /dev/ttyS5 -r 0 -s ESTIMATOR_STATUS
 	mavlink stream -d /dev/ttyS5 -r 0 -s WIND_COV
 	mavlink stream -d /dev/ttyS5 -r 0 -s VIBRATION
