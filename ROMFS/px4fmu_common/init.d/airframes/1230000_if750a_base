@@ -111,9 +111,10 @@ then
 	param set MNT_RANGE_ROLL 90
 
 	# RTL Parameters
-	param set RTL_DESCEND_ALT 10
+	param set RTL_DESCEND_ALT 5
 	param set RTL_LAND_DELAY 0
 	param set RTL_RETURN_ALT 30
+	param set RTL_CONE_ANG 45
 
 	# Logger Parameters
 	param set SDLOG_DIRS_MAX 20
