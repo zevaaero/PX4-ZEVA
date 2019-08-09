@@ -60,7 +60,10 @@ public:
 	 */
 	PublicationQueued(const orb_metadata *meta) : _meta(meta) {}
 
-	~PublicationQueued() { orb_unadvertise(_handle); }
+	~PublicationQueued()
+	{
+		//orb_unadvertise(_handle);
+	}
 
 	/**
 	 * Publish the struct
