@@ -3933,7 +3933,7 @@ void Commander::data_link_check(bool &status_changed)
 	    && (hrt_elapsed_time(&_datalink_last_heartbeat_onboard_controller) > 5_s)
 	    && !_onboard_controller_lost) {
 
-		mavlink_log_warning(&mavlink_log_pub, "Onboard controller lost");
+		// mavlink_log_warning(&mavlink_log_pub, "Onboard controller lost");
 		_onboard_controller_lost = true;
 		status_changed = true;
 	}
