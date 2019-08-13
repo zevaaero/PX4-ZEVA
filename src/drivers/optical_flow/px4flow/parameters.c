@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,36 +31,12 @@
  *
  ****************************************************************************/
 
-#pragma once
-
-#include <drivers/device/device.h>
-#include <drivers/drv_gyro.h>
-#include <uORB/uORB.h>
-
-class ICM20948;
-
 /**
- * Helper class implementing the gyro driver node.
+ * PX4 Flow Optical Flow
+ *
+ * @reboot_required true
+ *
+ * @boolean
+ * @group Sensors
  */
-class ICM20948_gyro : public device::CDev
-{
-public:
-	ICM20948_gyro(ICM20948 *parent, const char *path);
-	~ICM20948_gyro();
-
-	virtual int		ioctl(struct file *filp, int cmd, unsigned long arg);
-
-	virtual int		init();
-
-protected:
-	friend class ICM20948;
-
-	void			parent_poll_notify();
-
-private:
-	ICM20948			*_parent;
-
-	orb_advert_t		_gyro_topic{nullptr};
-	int			_gyro_orb_class_instance{-1};
-	int			_gyro_class_instance{-1};
-};
+PARAM_DEFINE_INT32(SENS_EN_PX4FLOW, 0);

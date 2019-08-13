@@ -65,19 +65,6 @@ ObstacleAvoidance::ObstacleAvoidance(ModuleParams *parent) :
 
 }
 
-ObstacleAvoidance::~ObstacleAvoidance()
-{
-	//unadvertise publishers
-	if (_pub_traj_wp_avoidance_desired != nullptr) {
-		orb_unadvertise(_pub_traj_wp_avoidance_desired);
-	}
-
-	if (_pub_pos_control_status != nullptr) {
-		orb_unadvertise(_pub_pos_control_status);
-	}
-
-}
-
 bool ObstacleAvoidance::initializeSubscriptions(SubscriptionArray &subscription_array)
 {
 	if (!subscription_array.get(ORB_ID(vehicle_trajectory_waypoint), _sub_vehicle_trajectory_waypoint)) {
@@ -174,7 +161,7 @@ void ObstacleAvoidance::updateAvoidanceDesiredSetpoints(const Vector3f &pos_sp, 
 	_desired_waypoint.waypoints[vehicle_trajectory_waypoint_s::POINT_0].type = type;
 	_desired_waypoint.waypoints[vehicle_trajectory_waypoint_s::POINT_0].point_valid = true;
 
-	_publishAvoidanceDesiredWaypoint();
+	_pub_traj_wp_avoidance_desired.publish(_desired_waypoint);
 
 	_desired_waypoint = empty_trajectory_waypoint;
 }
@@ -217,27 +204,7 @@ void ObstacleAvoidance::checkAvoidanceProgress(const Vector3f &pos, const Vector
 	// do not check for waypoints yaw acceptance in navigator
 	pos_control_status.yaw_acceptance = NAN;
 
-	if (_pub_pos_control_status == nullptr) {
-		_pub_pos_control_status = orb_advertise(ORB_ID(position_controller_status), &pos_control_status);
-
-	} else {
-		orb_publish(ORB_ID(position_controller_status), _pub_pos_control_status, &pos_control_status);
-
-	}
-
-}
-
-void
-ObstacleAvoidance::_publishAvoidanceDesiredWaypoint()
-{
-	// publish desired waypoint
-	if (_pub_traj_wp_avoidance_desired != nullptr) {
-		orb_publish(ORB_ID(vehicle_trajectory_waypoint_desired), _pub_traj_wp_avoidance_desired, &_desired_waypoint);
-
-	} else {
-		_pub_traj_wp_avoidance_desired = orb_advertise(ORB_ID(vehicle_trajectory_waypoint_desired),
-						 &_desired_waypoint);
-	}
+	_pub_pos_control_status.publish(pos_control_status);
 }
 
 void ObstacleAvoidance::_publishVehicleCmdDoLoiter()
@@ -257,11 +224,5 @@ void ObstacleAvoidance::_publishVehicleCmdDoLoiter()
 	command.param3 = (float)PX4_CUSTOM_SUB_MODE_AUTO_LOITER;
 
 	// publish the vehicle command
-	if (_pub_vehicle_command == nullptr) {
-		_pub_vehicle_command = orb_advertise_queue(ORB_ID(vehicle_command), &command,
-				       vehicle_command_s::ORB_QUEUE_LENGTH);
-
-	} else {
-		orb_publish(ORB_ID(vehicle_command), _pub_vehicle_command, &command);
-	}
+	_pub_vehicle_command.publish(command);
 }

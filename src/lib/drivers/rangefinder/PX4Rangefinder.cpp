@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,59 +31,61 @@
  *
  ****************************************************************************/
 
-/**
- * @file mavlink_log.c
- * MAVLink text logging.
- *
- * @author Lorenz Meier <lorenz@px4.io>
- */
+#include "PX4Rangefinder.hpp"
 
-#include <drivers/drv_hrt.h>
-#include <px4_posix.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <lib/drivers/device/Device.hpp>
 
-#include <uORB/topics/mavlink_log.h>
-#include "mavlink_log.h"
-
-#define MAVLINK_LOG_QUEUE_SIZE 5
-
-
-__EXPORT void mavlink_vasprintf(int severity, orb_advert_t *mavlink_log_pub, const char *fmt, ...)
+PX4Rangefinder::PX4Rangefinder(uint32_t device_id, uint8_t priority, uint8_t rotation) :
+	CDev(nullptr),
+	_distance_sensor_pub{ORB_ID(distance_sensor), priority}
 {
-	// TODO: add compile check for maxlen
+	_class_device_instance = register_class_devname(RANGE_FINDER_BASE_DEVICE_PATH);
 
-	if (!fmt) {
-		return;
-	}
+	// TODO: range finders should have device ids
+	//_distance_sensor_pub.get().device_id = device_id;
 
-	if (mavlink_log_pub == NULL) {
-		return;
-	}
+	_distance_sensor_pub.get().orientation = rotation;
+}
 
-	struct mavlink_log_s log_msg;
-
-	log_msg.severity = severity;
-
-	log_msg.timestamp = hrt_absolute_time();
-
-	va_list ap;
-
-	va_start(ap, fmt);
-
-	vsnprintf((char *)log_msg.text, sizeof(log_msg.text), fmt, ap);
-
-	va_end(ap);
-
-	if (*mavlink_log_pub != NULL) {
-		orb_publish(ORB_ID(mavlink_log), *mavlink_log_pub, &log_msg);
-
-	} else {
-		*mavlink_log_pub = orb_advertise_queue(ORB_ID(mavlink_log),
-						       &log_msg,
-						       MAVLINK_LOG_QUEUE_SIZE);
+PX4Rangefinder::~PX4Rangefinder()
+{
+	if (_class_device_instance != -1) {
+		unregister_class_devname(RANGE_FINDER_BASE_DEVICE_PATH, _class_device_instance);
 	}
 }
 
+void
+PX4Rangefinder::set_device_type(uint8_t devtype)
+{
+	// TODO: range finders should have device ids
+
+	// // current DeviceStructure
+	// union device::Device::DeviceId device_id;
+	// device_id.devid = _distance_sensor_pub.get().device_id;
+
+	// // update to new device type
+	// device_id.devid_s.devtype = devtype;
+
+	// // copy back to report
+	// _distance_sensor_pub.get().device_id = device_id.devid;
+}
+
+void
+PX4Rangefinder::update(hrt_abstime timestamp, float distance, int8_t quality)
+{
+	distance_sensor_s &report = _distance_sensor_pub.get();
+
+	report.timestamp = timestamp;
+	report.current_distance = distance;
+	report.signal_quality = quality;
+
+	_distance_sensor_pub.update();
+}
+
+void
+PX4Rangefinder::print_status()
+{
+	PX4_INFO(RANGE_FINDER_BASE_DEVICE_PATH " device instance: %d", _class_device_instance);
+
+	print_message(_distance_sensor_pub.get());
+}
