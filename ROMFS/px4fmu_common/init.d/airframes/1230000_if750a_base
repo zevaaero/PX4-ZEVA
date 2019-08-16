@@ -122,9 +122,8 @@ then
 	param set SDLOG_PROFILE 3
 
 	# Camera Trigger
-	param set TRIG_MODE 1
+	param set TRIG_MODE 4
 	param set TRIG_INTERFACE 3
-	param set TRIG_PINS 56
 
 	# Power Parametets
 	param set BAT_N_CELLS 6
