@@ -95,6 +95,7 @@
 #include <uORB/topics/telemetry_status.h>
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vtol_vehicle_status.h>
+#include <uORB/topics/esc_status.h>
 
 typedef enum VEHICLE_MODE_FLAG {
 	VEHICLE_MODE_FLAG_CUSTOM_MODE_ENABLED = 1, /* 0b00000001 Reserved for future use. | */
@@ -199,7 +200,7 @@ void print_status();
 
 bool shutdown_if_allowed();
 
-transition_result_t arm_disarm(bool arm, orb_advert_t *mavlink_log_pub, const char *armedBy);
+transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub, const char *armedBy);
 
 /**
  * Loop that runs at a lower rate and priority for calibration and parameter tasks.
@@ -382,7 +383,13 @@ int commander_main(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "arm")) {
-		if (TRANSITION_CHANGED != arm_disarm(true, &mavlink_log_pub, "command line")) {
+		bool force_arming = false;
+
+		if (argc > 2 && !strcmp(argv[2], "-f")) {
+			force_arming = true;
+		}
+
+		if (TRANSITION_CHANGED != arm_disarm(true, !force_arming, &mavlink_log_pub, "command line")) {
 			PX4_ERR("arming failed");
 		}
 
@@ -390,7 +397,7 @@ int commander_main(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "disarm")) {
-		if (TRANSITION_DENIED == arm_disarm(false, &mavlink_log_pub, "command line")) {
+		if (TRANSITION_DENIED == arm_disarm(false, true, &mavlink_log_pub, "command line")) {
 			PX4_ERR("rejected disarm");
 		}
 
@@ -404,7 +411,7 @@ int commander_main(int argc, char *argv[])
 		/* see if we got a home position */
 		if (status_flags.condition_local_position_valid) {
 
-			if (TRANSITION_DENIED != arm_disarm(true, &mavlink_log_pub, "command line")) {
+			if (TRANSITION_DENIED != arm_disarm(true, true, &mavlink_log_pub, "command line")) {
 				ret = send_vehicle_command(vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF);
 
 			} else {
@@ -511,11 +518,34 @@ int commander_main(int argc, char *argv[])
 
 void usage(const char *reason)
 {
-	if (reason && *reason > 0) {
+	if (reason) {
 		PX4_INFO("%s", reason);
 	}
 
-	PX4_INFO("usage: commander {start|stop|status|calibrate|check|arm|disarm|takeoff|land|transition|mode}\n");
+	PRINT_MODULE_DESCRIPTION(
+		R"DESCR_STR(
+### Description
+The commander module contains the state machine for mode switching and failsafe behavior.
+)DESCR_STR");
+
+	PRINT_MODULE_USAGE_NAME("commander", "system");
+	PRINT_MODULE_USAGE_COMMAND("start");
+	PRINT_MODULE_USAGE_PARAM_FLAG('h', "Enable HIL mode", true);
+	PRINT_MODULE_USAGE_COMMAND_DESCR("calibrate", "Run sensor calibration");
+	PRINT_MODULE_USAGE_ARG("mag|accel|gyro|level|esc|airspeed", "Calibration type", false);
+	PRINT_MODULE_USAGE_COMMAND_DESCR("check", "Run preflight checks");
+	PRINT_MODULE_USAGE_COMMAND("arm");
+	PRINT_MODULE_USAGE_PARAM_FLAG('f', "Force arming (do not run preflight checks)", true);
+	PRINT_MODULE_USAGE_COMMAND("disarm");
+	PRINT_MODULE_USAGE_COMMAND("takeoff");
+	PRINT_MODULE_USAGE_COMMAND("land");
+	PRINT_MODULE_USAGE_COMMAND_DESCR("transition", "VTOL transition");
+	PRINT_MODULE_USAGE_COMMAND_DESCR("mode", "Change flight mode");
+	PRINT_MODULE_USAGE_ARG("manual|acro|offboard|stabilized|rattitude|altctl|posctl|auto:mission|auto:loiter|auto:rtl|auto:takeoff|auto:land|auto:precland",
+			"Flight mode", false);
+	PRINT_MODULE_USAGE_COMMAND("lockdown");
+	PRINT_MODULE_USAGE_ARG("off", "Turn lockdown off", true);
+	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
 void print_status()
@@ -530,7 +560,8 @@ bool shutdown_if_allowed()
 			hrt_elapsed_time(&commander_boot_timestamp));
 }
 
-transition_result_t arm_disarm(bool arm, orb_advert_t *mavlink_log_pub_local, const char *armedBy)
+transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub_local,
+			       const char *armedBy)
 {
 	transition_result_t arming_res = TRANSITION_NOT_CHANGED;
 
@@ -540,7 +571,7 @@ transition_result_t arm_disarm(bool arm, orb_advert_t *mavlink_log_pub_local, co
 					     safety,
 					     arm ? vehicle_status_s::ARMING_STATE_ARMED : vehicle_status_s::ARMING_STATE_STANDBY,
 					     &armed,
-					     true /* fRunPreArmChecks */,
+					     run_preflight_checks,
 					     mavlink_log_pub_local,
 					     &status_flags,
 					     arm_requirements,
@@ -560,7 +591,7 @@ Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
 {
-	_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+	_auto_disarm_landed.set_hysteresis_time_from(false, _param_com_disarm_preflight.get() * 1_s);
 	_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
 
 	// We want to accept RC inputs as default
@@ -817,7 +848,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 					}
 				}
 
-				transition_result_t arming_res = arm_disarm(cmd_arms, &mavlink_log_pub, "Arm/Disarm component command");
+				transition_result_t arming_res = arm_disarm(cmd_arms, true, &mavlink_log_pub, "Arm/Disarm component command");
 
 				if (arming_res == TRANSITION_DENIED) {
 					cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED;
@@ -1021,7 +1052,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 					// switch to AUTO_MISSION and ARM
 					if ((TRANSITION_DENIED != main_state_transition(*status_local, commander_state_s::MAIN_STATE_AUTO_MISSION, status_flags,
 							&internal_state))
-					    && (TRANSITION_DENIED != arm_disarm(true, &mavlink_log_pub, "Mission start command"))) {
+					    && (TRANSITION_DENIED != arm_disarm(true, true, &mavlink_log_pub, "Mission start command"))) {
 
 						cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
 
@@ -1198,6 +1229,7 @@ Commander::run()
 	param_t _param_arm_switch_is_button = param_find("COM_ARM_SWISBTN");
 	param_t _param_rc_override = param_find("COM_RC_OVERRIDE");
 	param_t _param_arm_mission_required = param_find("COM_ARM_MIS_REQ");
+	param_t _param_escs_checks_required = param_find("COM_ARM_CHK_ESCS");
 	param_t _param_flight_uuid = param_find("COM_FLIGHT_UUID");
 	param_t _param_takeoff_finished_action = param_find("COM_TAKEOFF_ACT");
 
@@ -1210,9 +1242,6 @@ Commander::run()
 
 	param_t _param_airmode = param_find("MC_AIRMODE");
 	param_t _param_rc_map_arm_switch = param_find("RC_MAP_ARM_SW");
-
-	/* failsafe response to loss of navigation accuracy */
-	param_t _param_posctl_nav_loss_act = param_find("COM_POSCTL_NAVL");
 
 	status_flags.avoidance_system_required = _param_com_obs_avoid.get();
 
@@ -1242,6 +1271,7 @@ Commander::run()
 	if (board_register_power_state_notification_cb(power_button_state_notification_cb) != 0) {
 		PX4_ERR("Failed to register power notification callback");
 	}
+
 
 	get_circuit_breaker_params();
 
@@ -1275,6 +1305,7 @@ Commander::run()
 	uORB::Subscription subsys_sub{ORB_ID(subsystem_info)};
 	uORB::Subscription system_power_sub{ORB_ID(system_power)};
 	uORB::Subscription vtol_vehicle_status_sub{ORB_ID(vtol_vehicle_status)};
+	uORB::Subscription esc_status_sub{ORB_ID(esc_status)};
 
 	geofence_result_s geofence_result {};
 
@@ -1329,6 +1360,10 @@ Commander::run()
 	param_get(_param_arm_mission_required, &arm_mission_required_param);
 	arm_requirements |= (arm_mission_required_param & (ARM_REQ_MISSION_BIT | ARM_REQ_ARM_AUTH_BIT));
 
+	int32_t arm_escs_checks_required_param = 0;
+	param_get(_param_escs_checks_required, &arm_escs_checks_required_param);
+	arm_requirements |= (arm_escs_checks_required_param == 0) ? ARM_REQ_NONE : ARM_REQ_ESCS_CHECK_BIT;
+
 	status.rc_input_mode = rc_in_off;
 
 	// user adjustable duration required to assert arm/disarm via throttle/rudder stick
@@ -1336,7 +1371,6 @@ Commander::run()
 	param_get(_param_rc_arm_hyst, &rc_arm_hyst);
 	rc_arm_hyst *= COMMANDER_MONITORING_LOOPSPERMSEC;
 
-	int32_t posctl_nav_loss_act = 0;
 	int32_t geofence_action = 0;
 	int32_t flight_uuid = 0;
 	int32_t airmode = 0;
@@ -1458,6 +1492,9 @@ Commander::run()
 			arm_requirements = (arm_without_gps_param == 1) ? ARM_REQ_NONE : ARM_REQ_GPS_BIT;
 			param_get(_param_arm_mission_required, &arm_mission_required_param);
 			arm_requirements |= (arm_mission_required_param & (ARM_REQ_MISSION_BIT | ARM_REQ_ARM_AUTH_BIT));
+			param_get(_param_escs_checks_required, &arm_escs_checks_required_param);
+			arm_requirements |= (arm_escs_checks_required_param == 0) ? ARM_REQ_NONE : ARM_REQ_ESCS_CHECK_BIT;
+
 
 			/* flight mode slots */
 			param_get(_param_fmode_1, &_flight_mode_slots[0]);
@@ -1466,9 +1503,6 @@ Commander::run()
 			param_get(_param_fmode_4, &_flight_mode_slots[3]);
 			param_get(_param_fmode_5, &_flight_mode_slots[4]);
 			param_get(_param_fmode_6, &_flight_mode_slots[5]);
-
-			/* failsafe response to loss of navigation accuracy */
-			param_get(_param_posctl_nav_loss_act, &posctl_nav_loss_act);
 
 			param_get(_param_takeoff_finished_action, &takeoff_complete_act);
 
@@ -1610,6 +1644,14 @@ Commander::run()
 			}
 		}
 
+		if (esc_status_sub.updated()) {
+			/* ESCs status changed */
+			esc_status_s esc_status = {};
+
+			esc_status_sub.copy(&esc_status);
+			esc_status_check(esc_status);
+		}
+
 		estimator_check(&status_changed);
 		airspeed_use_check();
 
@@ -1651,30 +1693,28 @@ Commander::run()
 		// Auto disarm when landed or kill switch engaged
 		if (armed.armed) {
 
-			// Check for auto-disarm on landing
-			if (_param_com_disarm_land.get() > 0) {
+			// Check for auto-disarm on landing or pre-flight
+			if (_param_com_disarm_land.get() > 0 || _param_com_disarm_preflight.get() > 0) {
 
-				if (!have_taken_off_since_arming) {
-					// pilot has ten seconds time to take off
-					_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
-
-				} else {
+				if (_param_com_disarm_land.get() > 0 && have_taken_off_since_arming) {
 					_auto_disarm_landed.set_hysteresis_time_from(false, _param_com_disarm_land.get() * 1_s);
-				}
+					_auto_disarm_landed.set_state_and_update(land_detector.landed, hrt_absolute_time());
 
-				_auto_disarm_landed.set_state_and_update(land_detector.landed, hrt_absolute_time());
+				} else if (_param_com_disarm_preflight.get() > 0 && !have_taken_off_since_arming) {
+					_auto_disarm_landed.set_hysteresis_time_from(false, _param_com_disarm_preflight.get() * 1_s);
+					_auto_disarm_landed.set_state_and_update(true, hrt_absolute_time());
+				}
 
 				if (_auto_disarm_landed.get_state()) {
-					arm_disarm(false, &mavlink_log_pub, "Auto disarm on land");
+					arm_disarm(false, true, &mavlink_log_pub, "Auto disarm initiated");
 				}
 			}
-
 
 			// Auto disarm after 5 seconds if kill switch is engaged
 			_auto_disarm_killed.set_state_and_update(armed.manual_lockdown, hrt_absolute_time());
 
 			if (_auto_disarm_killed.get_state()) {
-				arm_disarm(false, &mavlink_log_pub, "Kill-switch still engaged, disarming");
+				arm_disarm(false, true, &mavlink_log_pub, "Kill-switch still engaged, disarming");
 			}
 
 		} else {
@@ -2268,9 +2308,9 @@ Commander::run()
 						       status_flags,
 						       land_detector.landed,
 						       (link_loss_actions_t)_param_nav_rcl_act.get(),
-						       _param_com_obl_act.get(),
-						       _param_com_obl_rc_act.get(),
-						       posctl_nav_loss_act);
+						       (offboard_loss_actions_t)_param_com_obl_act.get(),
+						       (offboard_loss_rc_actions_t)_param_com_obl_rc_act.get(),
+						       (position_nav_loss_actions_t)_param_com_posctl_navl.get());
 
 		if (status.failsafe != failsafe_old) {
 			status_changed = true;
@@ -3610,7 +3650,7 @@ Commander *Commander::instantiate(int argc, char *argv[])
 	Commander *instance = new Commander();
 
 	if (instance) {
-		if (argc >= 2 && !strcmp(argv[1], "--hil")) {
+		if (argc >= 2 && !strcmp(argv[1], "-h")) {
 			instance->enable_hil();
 		}
 	}
@@ -4346,4 +4386,40 @@ Commander::offboard_control_update(bool &status_changed)
 		}
 	}
 
+}
+
+void Commander::esc_status_check(const esc_status_s &esc_status)
+{
+	char esc_fail_msg[50];
+	esc_fail_msg[0] = '\0';
+
+	int online_bitmask = (1 << esc_status.esc_count) - 1;
+
+	// Check if ALL the ESCs are online
+	if (online_bitmask == esc_status.esc_online_flags) {
+		status_flags.condition_escs_error = false;
+		_last_esc_online_flags = esc_status.esc_online_flags;
+
+	} else if (_last_esc_online_flags == esc_status.esc_online_flags || esc_status.esc_count == 0)  {
+
+		// Avoid checking the status if the flags are the same or if the mixer has not yet been loaded in the ESC driver
+
+		status_flags.condition_escs_error = true;
+
+	} else if (esc_status.esc_online_flags < _last_esc_online_flags) {
+
+		// Only warn the user when an ESC goes from ONLINE to OFFLINE. This is done to prevent showing Offline ESCs warnings at boot
+
+		for (int index = 0; index < esc_status.esc_count; index++) {
+			if ((esc_status.esc_online_flags & (1 << index)) == 0) {
+				snprintf(esc_fail_msg + strlen(esc_fail_msg), sizeof(esc_fail_msg) - strlen(esc_fail_msg), "ESC%d ", index + 1);
+				esc_fail_msg[sizeof(esc_fail_msg) - 1] = '\0';
+			}
+		}
+
+		mavlink_log_critical(&mavlink_log_pub, "%soffline", esc_fail_msg);
+
+		_last_esc_online_flags = esc_status.esc_online_flags;
+		status_flags.condition_escs_error = true;
+	}
 }

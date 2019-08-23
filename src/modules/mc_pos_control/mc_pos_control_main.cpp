@@ -323,13 +323,13 @@ MulticopterPositionControl::parameters_update(bool force)
 		if (_param_mpc_xy_cruise.get() > _param_mpc_xy_vel_max.get()) {
 			_param_mpc_xy_cruise.set(_param_mpc_xy_vel_max.get());
 			_param_mpc_xy_cruise.commit();
-			mavlink_log_critical(&_mavlink_log_pub, "Cruise speed has been constrained by max speed")
+			mavlink_log_critical(&_mavlink_log_pub, "Cruise speed has been constrained by max speed");
 		}
 
 		if (_param_mpc_vel_manual.get() > _param_mpc_xy_vel_max.get()) {
 			_param_mpc_vel_manual.set(_param_mpc_xy_vel_max.get());
 			_param_mpc_vel_manual.commit();
-			mavlink_log_critical(&_mavlink_log_pub, "Manual speed has been constrained by max speed")
+			mavlink_log_critical(&_mavlink_log_pub, "Manual speed has been constrained by max speed");
 		}
 
 		if (_param_mpc_thr_hover.get() > _param_mpc_thr_max.get() ||
@@ -337,7 +337,7 @@ MulticopterPositionControl::parameters_update(bool force)
 			_param_mpc_thr_hover.set(math::constrain(_param_mpc_thr_hover.get(), _param_mpc_thr_min.get(),
 						 _param_mpc_thr_max.get()));
 			_param_mpc_thr_hover.commit();
-			mavlink_log_critical(&_mavlink_log_pub, "Hover thrust has been constrained by min/max")
+			mavlink_log_critical(&_mavlink_log_pub, "Hover thrust has been constrained by min/max");
 		}
 
 		_flight_tasks.handleParameterUpdate();
@@ -535,12 +535,14 @@ MulticopterPositionControl::run()
 		if (_wv_controller != nullptr) {
 
 			// in manual mode we just want to use weathervane if position is controlled as well
-			if (_wv_controller->weathervane_enabled() && (!_control_mode.flag_control_manual_enabled
-					|| _control_mode.flag_control_position_enabled)) {
-				_wv_controller->activate();
+			// in mission, enabling wv is done in flight task
+			if (_control_mode.flag_control_manual_enabled) {
+				if (_control_mode.flag_control_position_enabled && _wv_controller->weathervane_enabled()) {
+					_wv_controller->activate();
 
-			} else {
-				_wv_controller->deactivate();
+				} else {
+					_wv_controller->deactivate();
+				}
 			}
 
 			_wv_controller->update(matrix::Quatf(_att_sp.q_d), _states.yaw);

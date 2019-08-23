@@ -65,6 +65,7 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_local_position.h>
+#include <uORB/topics/esc_status.h>
 
 using math::constrain;
 
@@ -115,6 +116,7 @@ private:
 		(ParamFloat<px4::params::COM_POS_FS_EPH>) _param_com_pos_fs_eph,
 		(ParamFloat<px4::params::COM_POS_FS_EPV>) _param_com_pos_fs_epv,
 		(ParamFloat<px4::params::COM_VEL_FS_EVH>) _param_com_vel_fs_evh,
+		(ParamInt<px4::params::COM_POSCTL_NAVL>) _param_com_posctl_navl,	/* failsafe response to loss of navigation accuracy */
 
 		(ParamInt<px4::params::COM_POS_FS_DELAY>) _param_com_pos_fs_delay,
 		(ParamInt<px4::params::COM_POS_FS_PROB>) _param_com_pos_fs_prob,
@@ -122,6 +124,7 @@ private:
 
 		(ParamInt<px4::params::COM_LOW_BAT_ACT>) _param_com_low_bat_act,
 		(ParamFloat<px4::params::COM_DISARM_LAND>) _param_com_disarm_land,
+		(ParamFloat<px4::params::COM_DISARM_PRFLT>) _param_com_disarm_preflight,
 
 		(ParamInt<px4::params::COM_OBS_AVOID>) _param_com_obs_avoid,
 		(ParamInt<px4::params::COM_OA_BOOT_T>) _param_com_oa_boot_t,
@@ -217,6 +220,8 @@ private:
 
 	void battery_status_check();
 
+	void esc_status_check(const esc_status_s &esc_status);
+
 	/**
 	 * Checks the status of all available data links and handles switching between different system telemetry states.
 	 */
@@ -239,6 +244,8 @@ private:
 
 	hrt_abstime	_high_latency_datalink_heartbeat{0};
 	hrt_abstime	_high_latency_datalink_lost{0};
+
+	int  _last_esc_online_flags{-1};
 
 	uORB::Subscription _battery_sub{ORB_ID(battery_status)};
 	uint8_t _battery_warning{battery_status_s::BATTERY_WARNING_NONE};
