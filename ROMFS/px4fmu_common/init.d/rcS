@@ -215,11 +215,6 @@ else
 	#
 	tone_alarm start
 
-	if param compare SYS_FMU_TASK 1
-	then
-		set FMU_ARGS "-t"
-	fi
-
 	#
 	# Set parameters and env variables for selected AUTOSTART.
 	#
@@ -327,7 +322,7 @@ else
 	then
 		set OUTPUT_MODE hil
 		sensors start -h
-		commander start --hil
+		commander start -h
 		# disable GPS
 		param set GPS_1_CONFIG 0
 
@@ -440,14 +435,6 @@ else
 	# Start the navigator.
 	#
 	navigator start
-
-	#
-	# Start the standalone wind estimator.
-	#
-	if param compare WEST_EN 1
-	then
-		wind_estimator start
-	fi
 
 	#
 	# Start a thermal calibration if required.

@@ -258,6 +258,8 @@ rtps:
     id: 112
   - msg: vehicle_acceleration
     id: 113
+  - msg: sensor_gyro_control
+    id: 114
   # multi topics
   - msg: actuator_controls_0
     id: 120
@@ -318,3 +320,5 @@ rtps:
   - msg: vehicle_angular_velocity_groundtruth
     id: 138
     alias: vehicle_angular_velocity
+  - msg: airspeed_validated
+    id: 139
