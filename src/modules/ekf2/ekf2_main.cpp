@@ -528,7 +528,9 @@ private:
 		_param_ekf2_move_test,	///< scaling applied to IMU data thresholds used to determine if the vehicle is static or moving.
 
 		(ParamFloat<px4::params::EKF2_REQ_GPS_H>) _param_ekf2_req_gps_h, ///< Required GPS health time
-		(ParamExtInt<px4::params::EKF2_MAG_CHECK>) _param_ekf2_mag_check ///< Mag field strength check
+		(ParamExtInt<px4::params::EKF2_MAG_CHECK>) _param_ekf2_mag_check, ///< Mag field strength check
+		(ParamExtInt<px4::params::EKF2_SYNT_MAG_Z>)
+		_param_ekf2_synthetic_mag_z  ///< Enables the use of a synthetic value for the Z axis of the magnetometer calculated from the 3D magnetic field vector at the location of the drone.
 
 	)
 
@@ -634,7 +636,8 @@ Ekf2::Ekf2(bool replay_mode):
 	_param_ekf2_bcoef_x(_params->bcoef_x),
 	_param_ekf2_bcoef_y(_params->bcoef_y),
 	_param_ekf2_move_test(_params->is_moving_scaler),
-	_param_ekf2_mag_check(_params->check_mag_strength)
+	_param_ekf2_mag_check(_params->check_mag_strength),
+	_param_ekf2_synthetic_mag_z(_params->synthesize_mag_z)
 {
 	// initialise parameter cache
 	updateParams();

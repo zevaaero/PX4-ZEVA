@@ -1417,3 +1417,18 @@ PARAM_DEFINE_FLOAT(EKF2_REQ_GPS_H, 10.0f);
  * @boolean
  */
 PARAM_DEFINE_INT32(EKF2_MAG_CHECK, 0);
+
+/**
+ * Enable synthetic magnetometer Z component measurement.
+ *
+ * Use for vehicles where the measured body Z magnetic field is subject to strong magnetic interference.
+ * For magnetic heading fusion the magnetometer Z measurement will be replaced by a synthetic value calculated
+ * using the knowledge of the 3D magnetic field vector at the location of the drone. Therefore, this parameter
+ * will only have an effect if the global position of the drone is known.
+ * For 3D mag fusion the magnetometer Z measurement will simply be ingored instead of fusing the synthetic value.
+ *
+ * @group EKF2
+ * @min 0
+ * @max 1
+ */
+PARAM_DEFINE_INT32(EKF2_SYNT_MAG_Z, 0);
