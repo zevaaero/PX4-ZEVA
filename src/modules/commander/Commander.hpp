@@ -279,6 +279,7 @@ private:
 	systemlib::Hysteresis	_auto_disarm_killed{false};
 
 	bool _print_avoidance_msg_once{false};
+	bool _onboard_logging_system_valid_prev{false};
 
 	// Subscriptions
 	uORB::Subscription					_vehicle_acceleration_sub{ORB_ID(vehicle_acceleration)};

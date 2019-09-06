@@ -3815,9 +3815,14 @@ void Commander::data_link_check(bool &status_changed)
 
 	if (status_flags.onboard_logging_system_required) {
 		update_onboard_system_state(_logger, status_flags.onboard_logging_system_valid, status_changed);
-		if(status_flags.onboard_logging_system_valid && status_changed)
+		if(status_flags.onboard_logging_system_valid && !_onboard_logging_system_valid_prev)
 		{
 			tune_companion_is_up(true);
+			_onboard_logging_system_valid_prev = status_flags.onboard_logging_system_valid;
+		}
+		else if(!status_flags.onboard_logging_system_valid && status_changed)
+		{
+			_onboard_logging_system_valid_prev = status_flags.onboard_logging_system_valid;
 		}
 	}
 
