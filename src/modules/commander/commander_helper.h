@@ -68,6 +68,7 @@ void tune_positive(bool use_buzzer);
 void tune_neutral(bool use_buzzer);
 void tune_negative(bool use_buzzer);
 void tune_failsafe(bool use_buzzer);
+void tune_companion_is_up(bool use_buzzer);
 
 int blink_msg_state();
 

@@ -268,6 +268,20 @@ void tune_failsafe(bool use_buzzer)
 	}
 }
 
+/**
+ * Blink green LED and play positive tune (if use_buzzer == true).
+ */
+void tune_companion_is_up(bool use_buzzer)
+{
+	blink_msg_end = hrt_absolute_time() + BLINK_MSG_TIME;
+	rgbled_set_color_and_mode(led_control_s::COLOR_CYAN, led_control_s::MODE_BREATHE);
+
+	if (use_buzzer) {
+		set_tune(TONE_SINGLE_BEEP_TUNE);
+	}
+}
+
+
 int blink_msg_state()
 {
 	if (blink_msg_end == 0) {

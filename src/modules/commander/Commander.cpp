@@ -3815,6 +3815,10 @@ void Commander::data_link_check(bool &status_changed)
 
 	if (status_flags.onboard_logging_system_required) {
 		update_onboard_system_state(_logger, status_flags.onboard_logging_system_valid, status_changed);
+		if(status_flags.onboard_logging_system_valid && status_changed)
+		{
+			tune_companion_is_up(true);
+		}
 	}
 
 	// GCS data link loss failsafe
