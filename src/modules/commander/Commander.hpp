@@ -259,10 +259,6 @@ private:
 	bool 				_onboard_controller_lost{false};
 
 	hrt_abstime	_datalink_last_heartbeat_avoidance_system{0};
-	bool				_avoidance_system_lost{false};
-
-	bool		_avoidance_system_status_change{false};
-	uint8_t	_datalink_last_status_avoidance_system{telemetry_status_s::MAV_STATE_UNINIT};
 
 	uORB::Subscription _iridiumsbd_status_sub{ORB_ID(iridiumsbd_status)};
 
