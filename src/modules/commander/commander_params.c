@@ -954,6 +954,20 @@ PARAM_DEFINE_INT32(COM_FLT_PROFILE, 0);
  */
 PARAM_DEFINE_INT32(COM_ARM_CHK_ESCS, 1);
 
+/**
+ * Condition to enter prearmed mode
+ *
+ * Condition to enter the prearmed state, an intermediate state between disarmed and armed
+ * in which non-throttling actuators are active.
+ *
+ * @value 0 Disabled
+ * @value 1 Safety button
+ * @value 2 Always
+ *
+ * @group Commander
+ */
+PARAM_DEFINE_INT32(COM_PREARM_MODE, 1);
+
 /*
  * Allow arming without onboard logger being enabled and in ready state
  *
