@@ -480,7 +480,7 @@ void AirspeedModule::select_airspeed_and_publish()
 	}
 
 	/* publish critical message (and log) in index has changed */
-	if (_valid_airspeed_index != _prev_airspeed_index) {
+	if (_valid_airspeed_index != _prev_airspeed_index && _number_of_airspeed_sensors > 0) {
 		mavlink_log_critical(&_mavlink_log_pub, "Airspeed: switched from sensor %i to %i", _prev_airspeed_index,
 				     _valid_airspeed_index);
 	}
