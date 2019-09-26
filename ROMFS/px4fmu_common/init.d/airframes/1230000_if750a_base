@@ -139,5 +139,6 @@ then
 
 	# Commander Parameters
 	param set COM_DISARM_LAND 1
+	param set COM_LOW_BAT_ACT 3
 	param set COM_RC_OVERRIDE 1
 fi
