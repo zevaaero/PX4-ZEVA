@@ -700,6 +700,7 @@ MulticopterPositionControl::Run()
 			attitude_setpoint.yaw_sp_move_rate = _control.getYawspeedSetpoint();
 			attitude_setpoint.fw_control_yaw = false;
 			attitude_setpoint.apply_flaps = false;
+			attitude_setpoint.timestamp = hrt_absolute_time();
 
 			// publish attitude setpoint
 			// Note: this requires review. The reason for not sending
