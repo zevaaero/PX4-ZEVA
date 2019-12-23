@@ -7,10 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     container: px4io/px4-dev-nuttx:2019-10-24
     steps:
-    - uses: actions/checkout@v1
-    - name: Build FMUv3 (Hex Cube)
-      run: make px4_fmu-v3_default
-    - name: Build FMUv5 (Pixhawk 4)
-      run: make px4_fmu-v5_default
-    - name: Build FMUv5X (Auterion Skynode)
-      run: make px4_fmu-v5x_default
+      # see https://github.com/actions/checkout/issues/14
+      - uses: actions/checkout@v1
+      - name: disable the keychain credential helper
+        run: git config --global credential.helper ""
+      - name: enable the local store credential helper
+        run: git config --global --add credential.helper store
+      - name: add credential
+        run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+      - name: tell git to use https instead of ssh whenever it encounters it
+        run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+      - name: get submodules
+        run: 'git submodule update --init --recursive'
+      - name: Build FMUv3 (Hex Cube)
+        run: make px4_fmu-v3_default
+      - name: Build FMUv5 (Pixhawk 4)
+        run: make px4_fmu-v5_default
+      - name: Build FMUv5X (Auterion Skynode)
+        run: make px4_fmu-v5x_default
