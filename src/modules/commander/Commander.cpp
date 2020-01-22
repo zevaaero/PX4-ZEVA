@@ -3739,7 +3739,7 @@ void Commander::enable_hil()
 void Commander::mission_init()
 {
 	/* init mission state, do it here to allow navigator to use stored mission even if mavlink failed to start */
-	mission_s mission = {};
+	mission_s mission;
 
 	if (dm_read(DM_KEY_MISSION_STATE, 0, &mission, sizeof(mission_s)) == sizeof(mission_s)) {
 		if (mission.dataman_id == DM_KEY_WAYPOINTS_OFFBOARD_0 || mission.dataman_id == DM_KEY_WAYPOINTS_OFFBOARD_1) {
@@ -3756,8 +3756,7 @@ void Commander::mission_init()
 			dm_write(DM_KEY_MISSION_STATE, 0, DM_PERSIST_POWER_ON_RESET, &mission, sizeof(mission_s));
 		}
 
-		orb_advert_t mission_pub = orb_advertise(ORB_ID(mission), &mission);
-		orb_unadvertise(mission_pub);
+		orb_advertise(ORB_ID(mission), &mission);
 	}
 }
 
