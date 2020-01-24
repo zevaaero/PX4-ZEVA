@@ -3812,11 +3812,16 @@ void Commander::data_link_check(bool &status_changed)
 			switch (telemetry.remote_type) {
 			case telemetry_status_s::MAV_TYPE_GCS:
 
-				// Recover from data link lost
+				// Initial connection or recovery from data link lost
 				if (status.data_link_lost) {
 					if (telemetry.heartbeat_time > _datalink_last_heartbeat_gcs) {
 						status.data_link_lost = false;
 						status_changed = true;
+
+						if (!armed.armed) {
+							// make sure to report preflight check failures to a connecting GCS
+							Commander::preflight_check(true);
+						}
 
 						if (_datalink_last_heartbeat_gcs != 0) {
 							mavlink_log_info(&mavlink_log_pub, "Data link regained");
