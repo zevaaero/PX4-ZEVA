@@ -3764,7 +3764,7 @@ bool Commander::preflight_check(bool report)
 {
 	const bool checkGNSS = (arm_requirements & PreFlightCheck::ARM_REQ_GPS_BIT);
 
-	const bool success = PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, checkGNSS, report, false,
+	const bool success = PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, checkGNSS, report, true,
 			     hrt_elapsed_time(&commander_boot_timestamp));
 
 	if (success) {

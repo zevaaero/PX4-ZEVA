@@ -157,7 +157,7 @@ transition_result_t arming_state_transition(vehicle_status_s *status, const safe
 
 				status_flags->condition_system_sensors_initialized = PreFlightCheck::preflightCheck(mavlink_log_pub, *status,
 						*status_flags,
-						checkGNSS, false, false, time_since_boot);
+						checkGNSS, false, status->arming_state != vehicle_status_s::ARMING_STATE_ARMED, time_since_boot);
 
 				last_preflight_check = hrt_absolute_time();
 			}
