@@ -33,7 +33,6 @@
 
 px4_add_library(Ekf2Utility
 	PreFlightChecker.cpp
-	ReInitEvaluator.cpp
 )
 
 target_include_directories(Ekf2Utility

@@ -79,7 +79,6 @@
 #include <uORB/topics/wind_estimate.h>
 
 #include "Utility/PreFlightChecker.hpp"
-#include "Utility/ReInitEvaluator.hpp"
 
 // defines used to specify the mask position for use of different accuracy metrics in the GPS blending algorithm
 #define BLEND_MASK_USE_SPD_ACC      1
@@ -118,9 +117,6 @@ public:
 
 private:
 	int getRangeSubIndex(); ///< get subscription index of first downward-facing range sensor
-
-	ReInitEvaluator _ekf_reinit_eval;
-	void runEkfReinit(const hrt_abstime sensor_time_us);
 
 	PreFlightChecker _preflt_checker;
 	void runPreFlightChecks(float dt, const filter_control_status_u &control_status,
@@ -726,8 +722,6 @@ void Ekf2::Run()
 			// update parameters from storage
 			updateParams();
 		}
-
-		runEkfReinit(sensors.timestamp);
 
 		// ekf2_timestamps (using 0.1 ms relative timestamps)
 		ekf2_timestamps_s ekf2_timestamps{};
@@ -1685,29 +1679,6 @@ void Ekf2::Run()
 
 		// publish ekf2_timestamps
 		_ekf2_timestamps_pub.publish(ekf2_timestamps);
-	}
-}
-
-void Ekf2::runEkfReinit(const hrt_abstime sensor_time_us)
-{
-	const bool is_armed = (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
-
-	if (is_armed) {
-		_ekf_reinit_eval.reset();
-
-	} else {
-		_ekf_reinit_eval.update(_ekf.isVehicleAtRest());
-
-		if (_ekf_reinit_eval.shouldResetAll()) {
-			PX4_INFO("Long motion detected: Reinitialize EKF");
-			_ekf.reset(sensor_time_us);
-			_ekf_reinit_eval.reset();
-
-		} else if (_ekf_reinit_eval.shouldResetStatesAndCovariances()) {
-			PX4_INFO("Motion detected: Reset EKF states and covariances");
-			_ekf.resetStatesAndCovariances();
-			_ekf_reinit_eval.reset();
-		}
 	}
 }
 
