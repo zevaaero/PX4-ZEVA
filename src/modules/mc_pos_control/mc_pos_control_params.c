@@ -720,6 +720,7 @@ PARAM_DEFINE_FLOAT(MPC_TKO_RAMP_T, 3.0f);
  * @value 0 Default position control
  * @value 1 Smooth position control
  * @value 3 Smooth position control (Velocity)
+ * @value 4 Acceleration based input
  * @group Multicopter Position Control
  */
 PARAM_DEFINE_INT32(MPC_POS_MODE, 3);
