@@ -40,10 +40,10 @@
 
 #pragma once
 
-#include "FlightTaskManual.hpp"
+#include "FlightTaskManualAltitudeSmoothVel.hpp"
 #include "PositionLock.hpp"
 
-class FlightTaskManualAcceleration : public FlightTaskManual
+class FlightTaskManualAcceleration : public FlightTaskManualAltitudeSmoothVel
 {
 public:
 	FlightTaskManualAcceleration() = default;
@@ -62,7 +62,7 @@ protected:
 	void _ekfResetHandlerVelocityZ() override;
 	void _ekfResetHandlerHeading(float delta_psi) override;
 
-	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskManual,
+	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskManualAltitudeSmoothVel,
 					(ParamFloat<px4::params::MPC_VEL_MANUAL>) _param_mpc_vel_manual,
 					(ParamFloat<px4::params::MPC_ACC_HOR>) _param_mpc_acc_hor,
 					(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max

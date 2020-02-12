@@ -43,27 +43,16 @@ using namespace matrix;
 
 bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s last_setpoint)
 {
-	bool ret = FlightTaskManual::activate(last_setpoint);
-	_velocity_setpoint.zero();
-	return ret;
+	return FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
 }
 
 bool FlightTaskManualAcceleration::update()
 {
+	bool ret = FlightTaskManualAltitudeSmoothVel::update();
+
 	// maximum commanded acceleration and velocity
-	Vector3f acceleration_scale;
-	Vector3f velocity_scale;
-	acceleration_scale.xy() = _param_mpc_acc_hor.get();
-	velocity_scale.xy() = _param_mpc_vel_manual.get();
-
-	if (_velocity(2) < 0.f) {
-		acceleration_scale(2) = _param_mpc_acc_up_max.get();
-		velocity_scale(2) = _param_mpc_z_vel_max_up.get();
-
-	} else {
-		acceleration_scale(2) = _param_mpc_acc_down_max.get();
-		velocity_scale(2) = _param_mpc_z_vel_max_dn.get();
-	}
+	Vector2f acceleration_scale(_param_mpc_acc_hor.get(), _param_mpc_acc_hor.get());
+	Vector2f velocity_scale(_param_mpc_vel_manual.get(), _param_mpc_vel_manual.get());
 
 	acceleration_scale *= 2.f; // because of drag the average aceleration is half
 
@@ -76,44 +65,18 @@ bool FlightTaskManualAcceleration::update()
 	_position_lock.limitStickUnitLengthXY(stick_xy);
 	_position_lock.rotateIntoHeadingFrameXY(stick_xy, _yaw, _yaw_setpoint);
 
-	_acceleration_setpoint = Vector3f(stick_xy(0), stick_xy(1), _sticks_expo(2)).emult(acceleration_scale);
+	Vector2f acceleration_setpoint_xy = stick_xy.emult(acceleration_scale);
 
 	// Add drag to limit speed and brake again
-	Vector3f drag_coefficient = acceleration_scale.edivide(velocity_scale);
-	_acceleration_setpoint -= drag_coefficient.emult(_velocity);
+	Vector2f drag_coefficient = acceleration_scale.edivide(velocity_scale);
+	acceleration_setpoint_xy -= drag_coefficient.emult(_velocity.xy());
 
-	lockAltitude();
+	_acceleration_setpoint.xy() = acceleration_setpoint_xy;
+
 	lockPosition(stick_xy.length());
 
 	_constraints.want_takeoff = _checkTakeoff();
-	return true;
-}
-
-void FlightTaskManualAcceleration::lockAltitude()
-{
-	// make sure to use the actually executed velocity in case it got limited (e.g. on takeoff)
-	if (PX4_ISFINITE(_velocity_setpoint_feedback(2)) && !PX4_ISFINITE(_position_setpoint(2))) {
-		_velocity_setpoint(2) = _velocity_setpoint_feedback(2);
-	}
-
-	// integrate vertical velocity
-	const float velocity_setpoint_z_last = _velocity_setpoint(2);
-	_velocity_setpoint(2) += _acceleration_setpoint(2) * _deltatime;
-
-	if (fabsf(_sticks_expo(2)) > FLT_EPSILON) {
-		_position_setpoint(2) = NAN;
-
-	} else {
-		if (!PX4_ISFINITE(_position_setpoint(2))) {
-			_position_setpoint(2) = _position(2);
-		}
-
-		_position_setpoint(2) += _velocity_setpoint(2) * _deltatime;
-
-		if (fabsf(_velocity_setpoint(2)) > fabsf(velocity_setpoint_z_last)) {
-			_velocity_setpoint(2) = velocity_setpoint_z_last;
-		}
-	}
+	return ret;
 }
 
 void FlightTaskManualAcceleration::lockPosition(const float stick_input_xy)
