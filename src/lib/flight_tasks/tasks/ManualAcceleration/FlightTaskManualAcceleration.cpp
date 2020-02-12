@@ -43,7 +43,9 @@ using namespace matrix;
 
 bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s last_setpoint)
 {
-	return FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
+	bool ret = FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
+	_velocity_setpoint(0) = _velocity_setpoint(1) = 0.f;
+	return ret;
 }
 
 bool FlightTaskManualAcceleration::update()
@@ -65,13 +67,15 @@ bool FlightTaskManualAcceleration::update()
 	_position_lock.limitStickUnitLengthXY(stick_xy);
 	_position_lock.rotateIntoHeadingFrameXY(stick_xy, _yaw, _yaw_setpoint);
 
-	Vector2f acceleration_setpoint_xy = stick_xy.emult(acceleration_scale);
-
 	// Add drag to limit speed and brake again
+	Vector2f acceleration_setpoint_xy = stick_xy.emult(acceleration_scale);
 	Vector2f drag_coefficient = acceleration_scale.edivide(velocity_scale);
-	acceleration_setpoint_xy -= drag_coefficient.emult(_velocity.xy());
-
+	acceleration_setpoint_xy -= drag_coefficient.emult(_velocity_setpoint.xy());
 	_acceleration_setpoint.xy() = acceleration_setpoint_xy;
+
+	Vector2f velocity_setpoint_xy = _velocity_setpoint.xy();
+	velocity_setpoint_xy += Vector2f(_acceleration_setpoint) * _deltatime;
+	_velocity_setpoint.xy() = velocity_setpoint_xy;
 
 	lockPosition(stick_xy.length());
 
@@ -83,30 +87,16 @@ void FlightTaskManualAcceleration::lockPosition(const float stick_input_xy)
 {
 	if (stick_input_xy > FLT_EPSILON) {
 		_position_setpoint(0) = _position_setpoint(1) = NAN;
-		_velocity_setpoint(0) = _velocity_setpoint(1) = NAN;
 
 	} else {
 		Vector2f position_xy(_position_setpoint);
-		Vector2f velocity_xy(_velocity_setpoint);
 
 		if (!PX4_ISFINITE(position_xy(0))) {
 			position_xy = Vector2f(_position);
-			velocity_xy = Vector2f(_velocity);
 		}
 
-		position_xy += Vector2f(velocity_xy) * _deltatime;
-
-		const Vector2f velocity_xy_last = velocity_xy;
-		velocity_xy += Vector2f(_acceleration_setpoint) * _deltatime;
-
-		if (velocity_xy.norm_squared() > velocity_xy_last.norm_squared()) {
-			velocity_xy = velocity_xy_last;
-		}
-
-		_position_setpoint(0) = position_xy(0);
-		_position_setpoint(1) = position_xy(1);
-		_velocity_setpoint(0) = velocity_xy(0);
-		_velocity_setpoint(1) = velocity_xy(1);
+		position_xy += Vector2f(_velocity_setpoint.xy()) * _deltatime;
+		_position_setpoint.xy() = position_xy;
 	}
 }
 
