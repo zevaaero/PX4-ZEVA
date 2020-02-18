@@ -42,6 +42,7 @@
 
 #include "FlightTaskManualAltitudeSmoothVel.hpp"
 #include "PositionLock.hpp"
+#include "SlewRate.hpp"
 
 class FlightTaskManualAcceleration : public FlightTaskManualAltitudeSmoothVel
 {
@@ -67,6 +68,9 @@ protected:
 					(ParamFloat<px4::params::MPC_ACC_HOR>) _param_mpc_acc_hor,
 					(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max
 				       )
+
+	SlewRate<float> _acceleration_slew_rate_x;
+	SlewRate<float> _acceleration_slew_rate_y;
 private:
 
 };

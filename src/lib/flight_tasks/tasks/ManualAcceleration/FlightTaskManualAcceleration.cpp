@@ -76,6 +76,12 @@ bool FlightTaskManualAcceleration::update()
 
 	acceleration_xy -= drag_coefficient.emult(drag_velocity);
 
+	// Apply jerk limit - acceleration slew rate
+	_acceleration_slew_rate_x.setSlewRate(_param_mpc_jerk_max.get());
+	_acceleration_slew_rate_y.setSlewRate(_param_mpc_jerk_max.get());
+	acceleration_xy(0) = _acceleration_slew_rate_x.update(acceleration_xy(0), _deltatime);
+	acceleration_xy(1) = _acceleration_slew_rate_y.update(acceleration_xy(1), _deltatime);
+
 	_acceleration_setpoint.xy() = acceleration_xy;
 
 	lockPosition(stick_xy.length());
