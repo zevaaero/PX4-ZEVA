@@ -272,6 +272,10 @@ rtps:
     id: 120
   - msg: sensor_gyro_status
     id: 121
+  - msg: trajectory_bezier
+    id: 122
+  - msg: vehicle_trajectory_bezier
+    id: 123
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150
@@ -341,4 +345,5 @@ rtps:
   - msg: estimator_innovation_test_ratios
     id: 171
     alias: estimator_innovations
+
   ########## multi topics: end ##########
