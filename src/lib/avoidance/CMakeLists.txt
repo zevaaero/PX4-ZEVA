@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2020 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,9 +31,9 @@
 #
 ############################################################################
 
-px4_add_library(FlightTaskAuto
-	FlightTaskAuto.cpp
+px4_add_library(avoidance
+		ObstacleAvoidance.cpp
 )
+target_link_libraries(avoidance PUBLIC hysteresis bezier)
 
-target_link_libraries(FlightTaskAuto PUBLIC avoidance FlightTask FlightTaskUtility)
-target_include_directories(FlightTaskAuto PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+px4_add_functional_gtest(SRC ObstacleAvoidanceTest.cpp LINKLIBS avoidance)
