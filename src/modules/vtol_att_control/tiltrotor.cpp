@@ -219,21 +219,33 @@ void Tiltrotor::update_mc_state()
 	* tilt angle in case the propellers don't spin up smootly in full upright (MC mode) position.
 	*/
 
+	float spin_up_duration_p1 = 1000_ms; // duration of 1st phase of spinup (at fixed tilt)
+	float spin_up_duration_p2 = 700_ms; // duration of 2nd phase of spinup (transition from spinup tilt to mc tilt)
+
 	// reset this timestamp while disarmed
 	if (!_v_control_mode->flag_armed) {
 		_last_timestamp_disarmed = hrt_absolute_time();
 		_tilt_motors_for_startup = true;
 
 	} else if (_tilt_motors_for_startup) {
-		// leave motors tilted forward for 1 second after arming to allow them to spin up easier
-		if (hrt_absolute_time() - _last_timestamp_disarmed > 1_s) {
+		// leave motors tilted forward after arming to allow them to spin up easier
+		if (hrt_absolute_time() - _last_timestamp_disarmed > (spin_up_duration_p1 + spin_up_duration_p2)) {
 			_tilt_motors_for_startup = false;
 		}
 	}
 
 	if (_tilt_motors_for_startup) {
-		_tilt_control = _params_tiltrotor.tilt_spinup;
-		_mc_yaw_weight = 0.0f;
+		if (hrt_absolute_time() - _last_timestamp_disarmed < spin_up_duration_p1) {
+			_tilt_control = _params_tiltrotor.tilt_spinup;
+
+		} else {
+			// duration phase 2: begin to adapt tilt to multicopter tilt
+			float delta_tilt = (_params_tiltrotor.tilt_mc - _params_tiltrotor.tilt_spinup);
+			_tilt_control = _params_tiltrotor.tilt_spinup + delta_tilt / spin_up_duration_p2 * (hrt_absolute_time() -
+					(_last_timestamp_disarmed + spin_up_duration_p1));
+		}
+
+		_mc_yaw_weight = 0.0f; //disable yaw control during spinup
 
 	} else {
 		// normal operation
