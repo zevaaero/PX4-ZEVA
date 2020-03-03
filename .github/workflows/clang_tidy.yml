@@ -1,11 +1,11 @@
-name: Build Tests
+name: Linting
 
 on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-bionic:2020-01-13
+    container: px4io/px4-dev-clang:2020-01-13
     steps:
       # see https://github.com/actions/checkout/issues/14
       - uses: actions/checkout@v1
@@ -19,5 +19,11 @@ jobs:
         run: 'git config --global url."https://github.com/".insteadof git@github.com:'
       - name: get submodules
         run: 'git submodule update --init --recursive'
-      - name: main tests
-        run: make tests
+      - name: check_format
+        env:
+          CI: true
+        run: make check_format
+      - name: clang_tidy
+        env:
+          CI: true
+        run: make clang-tidy
