@@ -2245,6 +2245,16 @@ Commander::run()
 
 			/* publish vehicle_status_flags */
 			status_flags.timestamp = hrt_absolute_time();
+
+			// Evaluate current prearm status
+			if (!armed.armed) {
+				bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, status, status_flags, true, true, true, 30_s);
+				bool prearm_check_res = PreFlightCheck::preArmCheck(nullptr, status_flags, safety_s{},
+							PreFlightCheck::arm_requirements_t{}, status);
+				set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_PREARM_CHECK, true, true, (preflight_check_res
+						 && prearm_check_res), status);
+			}
+
 			_vehicle_status_flags_pub.publish(status_flags);
 		}
 
@@ -3844,6 +3854,9 @@ void Commander::battery_status_check()
 		&& num_connected_batteries > 0
 		// No currently-connected batteries have any warning
 		&& (_battery_warning == battery_status_s::BATTERY_WARNING_NONE);
+
+	set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_SENSORBATTERY, true, true,
+			 (_battery_warning == battery_status_s::BATTERY_WARNING_NONE), status);
 
 	// execute battery failsafe if the state has gotten worse while we are armed
 	if (battery_warning_level_increased_while_armed) {
