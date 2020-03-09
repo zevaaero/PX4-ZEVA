@@ -219,8 +219,8 @@ void Tiltrotor::update_mc_state()
 	* tilt angle in case the propellers don't spin up smootly in full upright (MC mode) position.
 	*/
 
-	float spin_up_duration_p1 = 1000_ms; // duration of 1st phase of spinup (at fixed tilt)
-	float spin_up_duration_p2 = 700_ms; // duration of 2nd phase of spinup (transition from spinup tilt to mc tilt)
+	const int spin_up_duration_p1 = 1000_ms; // duration of 1st phase of spinup (at fixed tilt)
+	const int spin_up_duration_p2 = 700_ms; // duration of 2nd phase of spinup (transition from spinup tilt to mc tilt)
 
 	// reset this timestamp while disarmed
 	if (!_v_control_mode->flag_armed) {
