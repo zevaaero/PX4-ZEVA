@@ -25,6 +25,15 @@ jobs:
       run: dpkg -i mavsdk_0.23.0_ubuntu18.04_amd64.deb
     - name: Install psutil
       run: pip3 install psutil
+    - uses: actions/cache@v1.1.0
+      id: ccache-persistence
+      with:
+        path: ~/.ccache
+        key: ${{ matrix.config.name }}-ccache-sitl-tests
+        restore-keys: |
+          ${{ matrix.config.name }}-ccache-sitl-tests
+    - name: setup ccache
+      run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf
     - name: Build PX4 in SITL integration test mode
       # Build all targets
       run: DONT_RUN=1 make px4_sitl gazebo mavsdk_tests

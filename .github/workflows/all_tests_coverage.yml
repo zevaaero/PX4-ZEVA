@@ -29,6 +29,15 @@ jobs:
     #   run: git clone https://github.com/mavlink/MAVSDK.git && cd MAVSDK && git submodule init && git submodule update && mkdir -p build/default
     # - name: Build newer mavsdk
     #   run: mkdir -p MAVSDK/build/default && cd MAVSDK/build/default && cmake ../.. && make -j4 && make install
+    - uses: actions/cache@v1.1.0
+      id: ccache-persistence
+      with:
+        path: ~/.ccache
+        key: ${{ matrix.config.name }}-ccache-coverage
+        restore-keys: |
+          ${{ matrix.config.name }}-ccache-coverage
+    - name: setup ccache
+      run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf
     - name: Run Coverage Tests
       run: make tests_all_coverage
     - name: Upload coverage information to Coveralls

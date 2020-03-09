@@ -19,5 +19,14 @@ jobs:
         run: 'git config --global url."https://github.com/".insteadof git@github.com:'
       - name: get submodules
         run: 'git submodule update --init --recursive'
+      - uses: actions/cache@v1.1.0
+        id: ccache-persistence
+        with:
+          path: ~/.ccache
+          key: ${{ matrix.config.name }}-ccache-ccpp
+          restore-keys: |
+            ${{ matrix.config.name }}-ccache-ccpp
+      - name: setup ccache
+        run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf
       - name: make
         run: make
