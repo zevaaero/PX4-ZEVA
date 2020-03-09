@@ -37,9 +37,11 @@ jobs:
         restore-keys: |
           ${{ matrix.config.name }}-ccache-coverage
     - name: setup ccache
-      run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf
+      run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf && ccache -z && ccache -s
     - name: Run Coverage Tests
       run: make tests_all_coverage
+    - name: ccache post-run
+      run: ccache -s && ccache -z
     - name: Upload coverage information to Coveralls
       uses: coverallsapp/github-action@master
       with:
