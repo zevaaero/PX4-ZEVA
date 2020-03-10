@@ -37,7 +37,7 @@ jobs:
         restore-keys: |
           ${{ matrix.config.name }}-ccache-coverage
     - name: setup ccache
-      run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf && ccache -z && ccache -s
+      run: mkdir -p ~/.ccache && echo "max_size = 1G" > ~/.ccache/ccache.conf && ccache -z && ccache -s
     - name: Run Coverage Tests
       run: make tests_all_coverage
     - name: ccache post-run
