@@ -97,6 +97,9 @@
  * Resolution according to datasheet is 0.3µT/LSB
  */
 #define IST8310_RESOLUTION	0.3
+#define IST8310_TEMP_RESOLUTION	(1/67.2)
+#define IST8310_TEMP_25C_OFFSET	27100
+#define IST8310_OTP_SENSITIVITY 330
 
 static const int16_t IST8310_MAX_VAL_XY	= (1600 / IST8310_RESOLUTION) + 1;
 static const int16_t IST8310_MIN_VAL_XY	= -IST8310_MAX_VAL_XY;
@@ -151,6 +154,8 @@ static const int16_t IST8310_MIN_VAL_Z  = -IST8310_MAX_VAL_Z;
 # define STR_SELF_TEST_SHFITS   6
 # define STR_SELF_TEST_ON       (1 << STR_SELF_TEST_SHFITS)
 # define STR_SELF_TEST_OFF      (0 << STR_SELF_TEST_SHFITS)
+
+#define ADDR_OTP			0x99
 
 #define ADDR_Y11_Low			0x9c
 #define ADDR_Y11_High			0x9d
@@ -214,6 +219,10 @@ private:
 	bool        _collect_phase{false};
 	int         _class_instance{-1};
 	int         _orb_class_instance{-1};
+
+	float crossaxis_inv[9];
+
+	int32_t crossaxis_det;
 
 	orb_advert_t        _mag_topic{nullptr};
 
@@ -364,6 +373,25 @@ private:
 	*/
 	int         set_selftest(unsigned enable);
 
+
+	/**
+	* Pull cross axis compensation from device and calculate compensation matrix.
+	*
+	*/
+	void        cross_axis_comp();
+
+	/**
+	* Update cross axis matrix to identity
+	*
+	*/
+	void	    update_crossaxis();
+
+	/**
+	* Print cross axis matrix
+	*
+	*/
+	void	    print_cross_axis_info();
+
 	/* this class has pointer data members, do not allow copying it */
 	IST8310(const IST8310 &);
 	IST8310 operator=(const IST8310 &);
@@ -437,6 +465,9 @@ IST8310::init()
 	/* reset the device configuration */
 	reset();
 
+	/* Pull & process cross-axis compensation */
+	cross_axis_comp();
+
 	_class_instance = register_class_devname(MAG_BASE_DEVICE_PATH);
 
 	ret = OK;
@@ -444,6 +475,153 @@ IST8310::init()
 	_sensor_ok = true;
 out:
 	return ret;
+}
+
+void
+IST8310::cross_axis_comp()
+{
+	int ret;
+	uint8_t bOTPDataFlags;
+	uint8_t tempBuff[2];
+	bool crossaxis_enable = 0;
+	float inv[9] = {0};
+	short OTPcrossaxis[9] = {0};
+
+	uint8_t crossxbuf[6];
+	uint8_t crossybuf[6];
+	uint8_t crosszbuf[6];
+
+	//check otp_date (Sensors before some date appears to have the matrix stored transposed)
+	bOTPDataFlags = 0;
+
+	//readRegister(ADDR_OTP, tempBuff, 3);
+	ret = read(ADDR_OTP, (uint8_t *)&tempBuff, sizeof(tempBuff));
+
+	if (OK != ret) {
+		perf_count(_comms_errors);
+		return;
+	}
+
+
+	if (tempBuff[0] == 0xff) {
+		bOTPDataFlags = 0;
+
+	} else if (tempBuff[0] <= 0x12) {
+		if (tempBuff[1] <= 0x07) {
+			bOTPDataFlags = 1;
+		}
+	}
+
+	ret = read(ADDR_Y11_Low, (uint8_t *)&tempBuff, sizeof(tempBuff));
+
+	if (OK != ret) {
+		perf_count(_comms_errors);
+		return;
+	}
+
+	if ((tempBuff[0] == 0xFF) && (tempBuff[1] == 0xFF)) {
+		crossaxis_enable = 0;
+
+	} else {
+		crossaxis_enable = 1;
+	}
+
+	if (crossaxis_enable == 0) {
+		update_crossaxis();
+		return;
+
+	} else {
+		ret = read(ADDR_Y11_Low, (uint8_t *)&crossxbuf, sizeof(crossxbuf));
+
+		if (OK != ret) {
+			perf_count(_comms_errors);
+			return;
+		}
+
+		ret = read(ADDR_Y21_Low, (uint8_t *)&crossybuf, sizeof(crossybuf));
+
+		if (OK != ret) {
+			perf_count(_comms_errors);
+			return;
+		}
+
+		ret = read(ADDR_Y31_Low, (uint8_t *)&crosszbuf, sizeof(crosszbuf));
+
+		if (OK != ret) {
+			perf_count(_comms_errors);
+			return;
+		}
+
+		if (bOTPDataFlags) {
+			//before
+			OTPcrossaxis[0] = ((int16_t) crossxbuf[1]) << 8 | crossxbuf[0];
+			OTPcrossaxis[1] = ((int16_t) crossxbuf[3]) << 8 | crossxbuf[2];
+			OTPcrossaxis[2] = ((int16_t) crossxbuf[5]) << 8 | crossxbuf[4];
+			OTPcrossaxis[3] = ((int16_t) crossybuf[1]) << 8 | crossybuf[0];
+			OTPcrossaxis[4] = ((int16_t) crossybuf[3]) << 8 | crossybuf[2];
+			OTPcrossaxis[5] = ((int16_t) crossybuf[5]) << 8 | crossybuf[4];
+			OTPcrossaxis[6] = ((int16_t) crosszbuf[1]) << 8 | crosszbuf[0];
+			OTPcrossaxis[7] = ((int16_t) crosszbuf[3]) << 8 | crosszbuf[2];
+			OTPcrossaxis[8] = ((int16_t) crosszbuf[5]) << 8 | crosszbuf[4];
+
+		} else {
+			//after
+			OTPcrossaxis[0] = ((int16_t) crossxbuf[1]) << 8 | crossxbuf[0];
+			OTPcrossaxis[3] = ((int16_t) crossxbuf[3]) << 8 | crossxbuf[2];
+			OTPcrossaxis[6] = ((int16_t) crossxbuf[5]) << 8 | crossxbuf[4];
+			OTPcrossaxis[1] = ((int16_t) crossybuf[1]) << 8 | crossybuf[0];
+			OTPcrossaxis[4] = ((int16_t) crossybuf[3]) << 8 | crossybuf[2];
+			OTPcrossaxis[7] = ((int16_t) crossybuf[5]) << 8 | crossybuf[4];
+			OTPcrossaxis[2] = ((int16_t) crosszbuf[1]) << 8 | crosszbuf[0];
+			OTPcrossaxis[5] = ((int16_t) crosszbuf[3]) << 8 | crosszbuf[2];
+			OTPcrossaxis[8] = ((int16_t) crosszbuf[5]) << 8 | crosszbuf[4];
+		}
+
+		crossaxis_det = ((int32_t)OTPcrossaxis[0]) * ((int32_t)OTPcrossaxis[4]) * ((int32_t)OTPcrossaxis[8]) +
+				((int32_t)OTPcrossaxis[1]) * ((int32_t)OTPcrossaxis[5]) * ((int32_t)OTPcrossaxis[6]) +
+				((int32_t)OTPcrossaxis[2]) * ((int32_t)OTPcrossaxis[3]) * ((int32_t)OTPcrossaxis[7]) -
+				((int32_t)OTPcrossaxis[0]) * ((int32_t)OTPcrossaxis[5]) * ((int32_t)OTPcrossaxis[7]) -
+				((int32_t)OTPcrossaxis[2]) * ((int32_t)OTPcrossaxis[4]) * ((int32_t)OTPcrossaxis[6]) -
+				((int32_t)OTPcrossaxis[1]) * ((int32_t)OTPcrossaxis[3]) * ((int32_t)OTPcrossaxis[8]);
+
+		if (crossaxis_det == 0) {
+			update_crossaxis();
+		}
+
+		inv[0] = (float)OTPcrossaxis[4] * (float)OTPcrossaxis[8] - (float)OTPcrossaxis[5] * (float)OTPcrossaxis[7];
+		inv[1] = (float)OTPcrossaxis[2] * (float)OTPcrossaxis[7] - (float)OTPcrossaxis[1] * (float)OTPcrossaxis[8];
+		inv[2] = (float)OTPcrossaxis[1] * (float)OTPcrossaxis[5] - (float)OTPcrossaxis[2] * (float)OTPcrossaxis[4];
+		inv[3] = (float)OTPcrossaxis[5] * (float)OTPcrossaxis[6] - (float)OTPcrossaxis[3] * (float)OTPcrossaxis[8];
+		inv[4] = (float)OTPcrossaxis[0] * (float)OTPcrossaxis[8] - (float)OTPcrossaxis[2] * (float)OTPcrossaxis[6];
+		inv[5] = (float)OTPcrossaxis[2] * (float)OTPcrossaxis[3] - (float)OTPcrossaxis[0] * (float)OTPcrossaxis[5];
+		inv[6] = (float)OTPcrossaxis[3] * (float)OTPcrossaxis[7] - (float)OTPcrossaxis[4] * (float)OTPcrossaxis[6];
+		inv[7] = (float)OTPcrossaxis[1] * (float)OTPcrossaxis[6] - (float)OTPcrossaxis[0] * (float)OTPcrossaxis[7];
+		inv[8] = (float)OTPcrossaxis[0] * (float)OTPcrossaxis[4] - (float)OTPcrossaxis[1] * (float)OTPcrossaxis[3];
+
+		for (int i = 0; i < 9; i++) {
+			crossaxis_inv[i] = inv[i] * ((float)IST8310_OTP_SENSITIVITY) / ((float)crossaxis_det);
+		}
+
+	}
+
+	return;
+}
+
+void
+IST8310::update_crossaxis()
+{
+	*crossaxis_inv = 1;
+	*(crossaxis_inv + 1) = 0;
+	*(crossaxis_inv + 2) = 0;
+	*(crossaxis_inv + 3) = 0;
+	*(crossaxis_inv + 4) = 1;
+	*(crossaxis_inv + 5) = 0;
+	*(crossaxis_inv + 6) = 0;
+	*(crossaxis_inv + 7) = 0;
+	*(crossaxis_inv + 8) = 1;
+	crossaxis_det = 1;
+
+	return;
 }
 
 int
@@ -773,8 +951,16 @@ IST8310::collect()
 		uint8_t     z[2];
 	} report_buffer;
 #pragma pack(pop)
+
+
+#pragma pack(push, 1)
+	struct { /* status register and data as read back from the device */
+		uint8_t     t[2];
+	} temp_report_buffer;
+#pragma pack(pop)
+
 	struct {
-		int16_t     x, y, z;
+		int16_t     x, y, z, t;
 	} report;
 
 	int ret;
@@ -811,10 +997,20 @@ IST8310::collect()
 		goto out;
 	}
 
+	/* get temp measurements from the device */
+	ret = read(ADDR_TEMPL, (uint8_t *)&temp_report_buffer, sizeof(temp_report_buffer));
+
+	if (ret != OK) {
+		perf_count(_comms_errors);
+		DEVICE_DEBUG("I2C read error");
+		goto out;
+	}
+
 	/* swap the data we just received */
 	report.x = (((int16_t)report_buffer.x[1]) << 8) | (int16_t)report_buffer.x[0];
 	report.y = (((int16_t)report_buffer.y[1]) << 8) | (int16_t)report_buffer.y[0];
 	report.z = (((int16_t)report_buffer.z[1]) << 8) | (int16_t)report_buffer.z[0];
+	report.t = (((int16_t)temp_report_buffer.t[1]) << 8) | (int16_t)temp_report_buffer.t[0];
 
 
 	/*
@@ -829,23 +1025,33 @@ IST8310::collect()
 		goto out;
 	}
 
-	/* temperature measurement is not available on IST8310 */
-	new_report.temperature = 0;
+
+	/* temperature measurement from IST8310 */
+	new_report.temperature = (IST8310_TEMP_25C_OFFSET - report.t) * IST8310_TEMP_RESOLUTION + 25;
 
 	/*
-	 * raw outputs
+	 * raw outputs, with cross-axis compensation
 	 *
 	 * Sensor doesn't follow right hand rule, swap x and y to make it obey
 	 * it.
 	 */
-	new_report.x_raw = report.y;
-	new_report.y_raw = report.x;
-	new_report.z_raw = report.z;
 
 	/* scale values for output */
-	xraw_f = report.y;
-	yraw_f = report.x;
-	zraw_f = report.z;
+	xraw_f = (float)report.x * crossaxis_inv[3] +
+		 (float)report.y * crossaxis_inv[4] +
+		 (float)report.z * crossaxis_inv[5];
+
+	yraw_f = (float)report.x * crossaxis_inv[0] +
+		 (float)report.y * crossaxis_inv[1] +
+		 (float)report.z * crossaxis_inv[2];
+
+	zraw_f = (float)report.x * crossaxis_inv[6] +
+		 (float)report.y * crossaxis_inv[7] +
+		 (float)report.z * crossaxis_inv[8];
+
+	new_report.x_raw = (int16_t)xraw_f;
+	new_report.y_raw = (int16_t)yraw_f;
+	new_report.z_raw = (int16_t)zraw_f;
 
 	/* apply user specified rotation */
 	rotate_3f(_rotation, xraw_f, yraw_f, zraw_f);
@@ -1114,7 +1320,23 @@ IST8310::print_info()
 	perf_print_counter(_comms_errors);
 	printf("poll interval:  %u interval\n", _measure_interval);
 	print_message(_last_report);
+	print_cross_axis_info();
 	_reports->print_info("report queue");
+}
+
+void
+IST8310::print_cross_axis_info()
+{
+	PX4_INFO("cross axis cal: [%+3.2f,%+3.2f,%+3.2f|%+3.2f,%+3.2f,%+3.2f|%+3.2f,%+3.2f,%+3.2f]",
+		 (double)crossaxis_inv[0],
+		 (double)crossaxis_inv[1],
+		 (double)crossaxis_inv[2],
+		 (double)crossaxis_inv[3],
+		 (double)crossaxis_inv[4],
+		 (double)crossaxis_inv[5],
+		 (double)crossaxis_inv[6],
+		 (double)crossaxis_inv[7],
+		 (double)crossaxis_inv[8]);
 }
 
 /**
