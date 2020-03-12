@@ -19,12 +19,8 @@ BUILD_DIR=$2
 export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:${BUILD_DIR}/build_gazebo
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:${SRC_DIR}/Tools/sitl_gazebo/models
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BUILD_DIR}/build_gazebo
+export GAZEBO_MODEL_DATABASE_URI=http://simulation-models.tools.auterion.dev/
 
 echo -e "GAZEBO_PLUGIN_PATH $GAZEBO_PLUGIN_PATH"
 echo -e "GAZEBO_MODEL_PATH $GAZEBO_MODEL_PATH"
 echo -e "LD_LIBRARY_PATH $LD_LIBRARY_PATH"
-
-# Trigger auto-downloader if present
-if test -f "$SRC_DIR/custom/model_downloader.bash"; then
-    $SRC_DIR/custom/model_downloader.bash $SRC_DIR $BUILD_DIR
-fi
