@@ -1007,7 +1007,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 		break;
 
 	case battery_status_s::BATTERY_WARNING_LOW:
-		mavlink_log_critical(mavlink_log_pub, "Low battery level! Return advised");
+		mavlink_log_info(mavlink_log_pub, "Low battery level! Return advised");
 		break;
 
 	case battery_status_s::BATTERY_WARNING_CRITICAL:
@@ -1016,7 +1016,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 
 		switch (low_battery_action) {
 		case LOW_BAT_ACTION::WARNING:
-			mavlink_log_critical(mavlink_log_pub, "%s, landing advised", battery_critical);
+			mavlink_log_info(mavlink_log_pub, "%s, landing advised", battery_critical);
 			break;
 
 		case LOW_BAT_ACTION::RETURN:
@@ -1027,11 +1027,12 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 			if (status_flags.condition_global_position_valid && status_flags.condition_home_position_valid) {
 				internal_state->main_state = commander_state_s::MAIN_STATE_AUTO_RTL;
 				internal_state->timestamp = hrt_absolute_time();
-				mavlink_log_critical(mavlink_log_pub, "%s, executing RTL", battery_critical);
+				mavlink_log_info(mavlink_log_pub, "%s, executing RTL", battery_critical);
 
 			} else {
 				internal_state->main_state = commander_state_s::MAIN_STATE_AUTO_LAND;
 				internal_state->timestamp = hrt_absolute_time();
+				// This warning is still sent out as an emergency because it is something critical if the user doesn't understand what is happening
 				mavlink_log_emergency(mavlink_log_pub, "%s, can't execute RTL, landing instead", battery_critical);
 			}
 
@@ -1040,7 +1041,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 		case LOW_BAT_ACTION::LAND:
 			internal_state->main_state = commander_state_s::MAIN_STATE_AUTO_LAND;
 			internal_state->timestamp = hrt_absolute_time();
-			mavlink_log_emergency(mavlink_log_pub, "%s, landing", battery_critical);
+			mavlink_log_info(mavlink_log_pub, "%s, landing", battery_critical);
 
 			break;
 		}
