@@ -43,6 +43,7 @@
 #include "vtol_att_control_main.h"
 
 using namespace time_literals;
+using namespace matrix;
 
 #define ARSP_YAW_CTRL_DISABLE 7.0f	// airspeed at which we stop controlling yaw during a front transition
 
@@ -268,6 +269,9 @@ void Tiltrotor::update_transition_state()
 {
 	VtolType::update_transition_state();
 
+	// copy virtual attitude setpoint to real attitude setpoint (we use multicopter att sp)
+	memcpy(_v_att_sp, _mc_virtual_att_sp, sizeof(vehicle_attitude_setpoint_s));
+
 	float time_since_trans_start = (float)(hrt_absolute_time() - _vtol_schedule.transition_start) * 1e-6f;
 
 	if (!_flag_was_in_trans_mode) {
@@ -315,6 +319,12 @@ void Tiltrotor::update_transition_state()
 
 		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
 
+		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
+
+		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
+		q_sp.copyTo(_v_att_sp->q_d);
+		_v_att_sp->q_d_valid = true;
+
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {
 		// the plane is ready to go into fixed wing mode, tilt the rotors forward completely
 		_tilt_control = _params_tiltrotor.tilt_transition +
@@ -333,6 +343,12 @@ void Tiltrotor::update_transition_state()
 
 
 		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
+
+		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
+
+		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
+		q_sp.copyTo(_v_att_sp->q_d);
+		_v_att_sp->q_d_valid = true;
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {
 		// turn on all MC motors
@@ -366,6 +382,13 @@ void Tiltrotor::update_transition_state()
 			// slowly ramp up throttle to avoid step inputs
 			_mc_throttle_weight = (time_since_trans_start - 1.0f) / 1.0f;
 		}
+
+		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
+		_v_att_sp->pitch_body = update_and_get_backtransition_pitch_sp();
+
+		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
+		q_sp.copyTo(_v_att_sp->q_d);
+		_v_att_sp->q_d_valid = true;
 	}
 
 	_mc_roll_weight = math::constrain(_mc_roll_weight, 0.0f, 1.0f);
