@@ -60,6 +60,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("estimator_innovations", 200);
 	add_topic("estimator_status", 200);
 	add_topic("home_position");
+	add_topic("hover_thrust_estimate", 100);
 	add_topic("input_rc", 200);
 	add_topic("log_message_incoming");
 	add_topic("manual_control_setpoint", 200);
