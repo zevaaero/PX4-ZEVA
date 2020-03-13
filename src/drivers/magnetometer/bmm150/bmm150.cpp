@@ -565,29 +565,29 @@ BMM150::collect()
 	*/
 
 	/* Extract X axis data */
-	lsb = ((mag_data[0] & 0xF8) >> 3);
-	msb = (((int8_t)mag_data[1]) << 5);
+	lsb = ((mag_data[0] & 0xF8));
+	msb = ((uint16_t)(mag_data[1]) << 8);
 	msblsb = (msb | lsb);
-	mrb.x_raw = (int16_t)msblsb;
+	mrb.x_raw = (int16_t)msblsb / 8;
 
 
 	/* Extract Y axis data */
-	lsb = ((mag_data[2] & 0xF8) >> 3);
-	msb = (((int8_t)mag_data[3]) << 5);
+	lsb = ((mag_data[2] & 0xF8));
+	msb = (((uint16_t)(mag_data[3])) << 8);
 	msblsb = (msb | lsb);
-	mrb.y_raw = (int16_t)msblsb;
+	mrb.y_raw = (int16_t)msblsb / 8;
 
 	/* Extract Z axis data */
-	lsb = ((mag_data[4] & 0xFE) >> 1);
-	msb = (((int8_t)mag_data[5]) << 7);
+	lsb = ((mag_data[4] & 0xFE));
+	msb = (((uint16_t)(mag_data[5])) << 8);
 	msblsb = (msb | lsb);
-	mrb.z_raw = (int16_t)msblsb;
+	mrb.z_raw = (int16_t)msblsb / 2;
 
 	/* Extract Resistance data */
-	lsb = ((mag_data[6] & 0xFC) >> 2);
-	msb = (mag_data[7] << 6);
+	lsb = ((mag_data[6] & 0xFC));
+	msb = (((uint16_t)mag_data[7]) << 8);
 	msblsb = (msb | lsb);
-	resistance = (uint16_t)msblsb;
+	resistance = (uint16_t)msblsb / 4;
 
 	/* Check whether data is new or old */
 	if (!(status & 0x01)) {
@@ -749,10 +749,14 @@ BMM150::ioctl(struct file *filp, int cmd, unsigned long arg)
 		return reset();
 
 	case MAGIOCSSCALE:
-		return OK;
+		/* set new scale factors */
+		memcpy(&_scale, (struct mag_calibration_s *)arg, sizeof(_scale));
+		return 0;
 
 	case MAGIOCGSCALE:
-		return OK;
+		/* copy out scale factors */
+		memcpy((struct mag_calibration_s *)arg, &_scale, sizeof(_scale));
+		return 0;
 
 	case MAGIOCCALIBRATE:
 		return OK;
