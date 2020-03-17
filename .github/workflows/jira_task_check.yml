@@ -1,0 +1,87 @@
+name: CheckForJiraTask
+on:
+  pull_request:
+    types: [synchronize, opened, edited]
+jobs:
+  checkComments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check_comment
+        uses: khan/pull-request-comment-trigger@master
+        id: check
+        with:
+          trigger: 'auterion.atlassian.net/'
+          reaction: rocket
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: github_script_add_comment
+        uses: actions/github-script@0.3.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const core = require('@actions/core')
+            // Remove all comments from GitHub Actions bot
+            let request = await github.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            for(const comment of request.data) {
+              if(comment.user.login == "github-actions[bot]") {
+                await github.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id
+                });
+              }
+            }
+            if(!${{steps.check.outputs.triggered}}) {
+              // Add a new comment
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'Please add a Jira task in the PR comment!'
+              });
+              // Remove rocket reaction
+              request = await github.reactions.listForIssue({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              for(const reaction of request.data) {
+                if(reaction.user.login == "github-actions[bot]") {
+                  await github.reactions.delete({
+                    reaction_id: reaction.id
+                  });
+                }
+              }
+            }
+      - name: github_check_updater
+        uses: actions/github-script@0.3.0
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const core = require('@actions/core');
+            let request = await github.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.payload.pull_request.head.ref
+            });
+            let status = "failure";
+            if(${{steps.check.outputs.triggered}}) {
+              status = "success";
+            }
+            for(const check of request.data.check_runs) {
+              if(check.name == "checkComments") {
+                await github.checks.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  check_run_id: check.id,
+                  conclusion: status
+                });
+              }
+            }
+      - run: exit 1
+        if: steps.check.outputs.triggered != 'true'
