@@ -77,7 +77,9 @@ void FlightTaskTransition::updateAccelerationEstimate()
 
 bool FlightTaskTransition::update()
 {
-	// level wings during the transition, altitude should be controlled
+	// demand zero vertical velocity and level attitude
+	// tailsitters will override attitude and thrust setpoint
+	// tiltrotors and standard vtol will overrride roll and pitch setpoint but keep vertical thrust setpoint
 	_thrust_setpoint.xy() = matrix::Vector2f(0.f, 0.f);
 	_thrust_setpoint(2) = NAN;
 	_position_setpoint *= NAN;
