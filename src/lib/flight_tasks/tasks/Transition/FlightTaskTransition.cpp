@@ -82,7 +82,7 @@ bool FlightTaskTransition::update()
 	// tiltrotors and standard vtol will overrride roll and pitch setpoint but keep vertical thrust setpoint
 	_thrust_setpoint.xy() = matrix::Vector2f(0.f, 0.f);
 	_thrust_setpoint(2) = NAN;
-	_position_setpoint *= NAN;
+	_position_setpoint.setAll(NAN);
 	_velocity_setpoint(2) = 0.0f;
 	_position_setpoint(2) = NAN;
 
