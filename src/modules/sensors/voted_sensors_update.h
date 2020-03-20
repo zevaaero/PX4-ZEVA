@@ -51,6 +51,7 @@
 
 #include <lib/ecl/validation/data_validator.h>
 #include <lib/ecl/validation/data_validator_group.h>
+#include <lib/mag_compensation/MagCompensation.hpp>
 
 #include <uORB/Publication.hpp>
 #include <uORB/PublicationQueued.hpp>
@@ -73,7 +74,7 @@ namespace sensors
  *
  * Handling of sensor updates with voting
  */
-class VotedSensorsUpdate
+class VotedSensorsUpdate : public ModuleParams
 {
 public:
 	/**
@@ -143,6 +144,21 @@ public:
 	 */
 	void calcMagInconsistency(sensor_preflight_s &preflt);
 
+	/**
+	 * Update armed flag for mag compensation.
+	 */
+	void update_mag_comp_armed(bool armed);
+
+	/**
+	 * Update throttle for mag compensation.
+	 */
+	void update_mag_comp_throttle(float throttle);
+
+	/**
+	 * Update current for mag compensation.
+	 */
+	void update_mag_comp_current(float current);
+
 private:
 
 	struct SensorData {
@@ -167,6 +183,7 @@ private:
 		int subscription_count;
 		DataValidatorGroup voter;
 		unsigned int last_failover_count;
+		matrix::Vector3f power_compensation[SENSOR_COUNT_MAX];
 	};
 
 	void initSensorClass(const orb_metadata *meta, SensorData &sensor_data, uint8_t sensor_count_max);
@@ -235,6 +252,9 @@ private:
 	float _accel_diff[3][2] {};			/**< filtered accel differences between IMU units (m/s/s) */
 	float _gyro_diff[3][2] {};			/**< filtered gyro differences between IMU uinits (rad/s) */
 	float _mag_angle_diff[2] {};			/**< filtered mag angle differences between sensor instances (Ga) */
+
+	/* Magnetometer interference compensation */
+	MagCompensator _mag_compensator;
 
 	uint32_t _accel_device_id[SENSOR_COUNT_MAX] {};	/**< accel driver device id for each uorb instance */
 	uint32_t _baro_device_id[SENSOR_COUNT_MAX] {};	/**< baro driver device id for each uorb instance */

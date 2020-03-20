@@ -53,4 +53,5 @@ px4_add_module(
 		mathlib
 		vehicle_acceleration
 		vehicle_angular_velocity
+		mag_compensation
 	)
