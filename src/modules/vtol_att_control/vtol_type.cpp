@@ -401,7 +401,8 @@ float VtolType::pusher_assist()
 
 	// disable pusher assist during landing
 	if (_attc->get_pos_sp_triplet()->current.valid
-	    && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND) {
+	    && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND
+	    && _v_control_mode->flag_control_auto_enabled) {
 		return 0.0f;
 	}
 
