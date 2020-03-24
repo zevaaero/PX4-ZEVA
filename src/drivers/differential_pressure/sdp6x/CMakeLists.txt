@@ -30,9 +30,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
-add_subdirectory(ets)
-add_subdirectory(ms4525)
-add_subdirectory(ms5525)
-add_subdirectory(sdp3x)
-add_subdirectory(sdp6x)
+px4_add_module(
+	MODULE drivers__sdp6x_airspeed
+	MAIN sdp6x_airspeed
+	COMPILE_FLAGS
+	SRCS
+		SDP6X.cpp
+		SDP6X_main.cpp
+	DEPENDS
+		drivers__airspeed
+	)
