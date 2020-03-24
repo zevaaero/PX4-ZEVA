@@ -12,13 +12,13 @@ ina226 -X -b 2 -t 2 -k start
 mpu6000 -R 4 -s -T 20602 start
 
 # Internal SPI bus ISM300DLC
-# ism330dlc start
+# ism330dlc -s start
 
 # Internal SPI bus BMI088 accel
-bmi088 -A -R 12 start
+bmi088 -A -R 12 -s start
 
 # Internal SPI bus BMI088 gyro
-bmi088 -G -R 12 start
+bmi088 -G -R 12 -s start
 
 # Possible external compasses
 ist8310 -X start
@@ -32,5 +32,5 @@ bmm150 -I start
 bmp388 -I start
 bmp388 -I -a 0x77 start
 
-# External RM3100 (I2C or SPI)
-rm3100 start
+# External RM3100
+rm3100 -X start
