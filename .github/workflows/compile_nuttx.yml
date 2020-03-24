@@ -21,7 +21,7 @@ jobs:
           px4_fmu-v4_default,
           px4_fmu-v5_default, px4_fmu-v5_fixedwing, px4_fmu-v5_multicopter, px4_fmu-v5_rover, px4_fmu-v5_rtps, px4_fmu-v5_stackcheck,
           px4_fmu-v5x_default, px4_fmu-v5x_p2_base_phy_LAN8742Ai,
-          holybro_durandal-v1_default, holybro_durandal-v1_stackcheck,
+          holybro_durandal-v1_default,
           ]
     steps:
     - uses: actions/checkout@v1

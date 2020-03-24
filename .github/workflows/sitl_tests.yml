@@ -38,15 +38,6 @@ jobs:
           ccache-sitl-tests
     - name: setup ccache
       run: mkdir -p ~/.ccache && echo "max_size = 1G" > ~/.ccache/ccache.conf && ccache -z && ccache -s
-    - uses: actions/cache@v1.1.0
-      id: ccache-persistence
-      with:
-        path: ~/.ccache
-        key: ${{ matrix.config.name }}-ccache-sitl-tests
-        restore-keys: |
-          ${{ matrix.config.name }}-ccache-sitl-tests
-    - name: setup ccache
-      run: mkdir -p ~/.ccache && echo "max_size = 300M" > ~/.ccache/ccache.conf && ccache -z && ccache -s
     - name: Build PX4 in SITL integration test mode
       run: DONT_RUN=1 make px4_sitl PX4_CMAKE_BUILD_TYPE=Coverage gazebo mavsdk_tests
     - name: ccache post-run
@@ -61,14 +52,6 @@ jobs:
         test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early test/mavsdk_tests/configs/sitl.json
 
     # Report test coverage
-    - name: disable the keychain credential helper
-      run: git config --global credential.helper ""
-    - name: enable the local store credential helper
-      run: git config --global --add credential.helper store
-    - name: add credential
-      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
-    - name: tell git to use https instead of ssh whenever it encounters it
-      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
     - name: Check code coverage
       run: |
         mkdir -p coverage
