@@ -56,11 +56,11 @@
 #define PX4_NUMBER_I2C_BUSES    2
 
 #define PX4_I2C_OBDEV_MPU9250 0x68
-#define PX4_I2C_OBDEV_BMP280  0x76
 
 
 // ADC channels:
 #define ADC_CHANNELS (1 << 5)
+#define BOARD_ADC_POS_REF_V (1.8f)
 
 #define ADC_BATTERY_VOLTAGE_CHANNEL  5
 #define ADC_BATTERY_CURRENT_CHANNEL  ((uint8_t)(-1))

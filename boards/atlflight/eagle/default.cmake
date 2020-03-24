@@ -50,7 +50,6 @@ px4_add_board(
 		gps
 		#imu # all available imu drivers
 		#lights/rgbled
-		linux_sbus
 		#magnetometer # all available magnetometer drivers
 		pwm_out_sim
 		qshell/posix
@@ -84,6 +83,7 @@ px4_add_board(
 		rover_pos_control
 		sensors
 		#sih
+		temperature_compensation
 		simulator
 		vmount
 		vtol_att_control
@@ -112,7 +112,6 @@ px4_add_board(
 		ver
 		work_queue
 	EXAMPLES
-		#bottle_drop # OBC challenge
 		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		#hello
 		#hwtest # Hardware test

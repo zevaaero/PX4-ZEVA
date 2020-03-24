@@ -104,7 +104,7 @@ SDP6X::collect()
 }
 
 void
-SDP6X::Run()
+SDP6X::RunImpl()
 {
 	int ret = PX4_ERROR;
 

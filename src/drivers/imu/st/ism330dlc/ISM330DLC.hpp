@@ -48,47 +48,53 @@
 #include <lib/drivers/gyroscope/PX4Gyroscope.hpp>
 #include <lib/ecl/geo/geo.h>
 #include <lib/perf/perf_counter.h>
-#include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 
-using ST_ISM330DLC::Register;
+using namespace ST_ISM330DLC;
 
 class ISM330DLC : public device::SPI, public px4::ScheduledWorkItem
 {
 public:
 	ISM330DLC(int bus, uint32_t device, enum Rotation rotation = ROTATION_NONE);
-	virtual ~ISM330DLC();
+	~ISM330DLC() override;
 
-	bool		Init();
-	void		Start();
-	void		Stop();
-	bool		Reset();
-	void		PrintInfo();
-
-protected:
-	virtual int	probe();
+	bool Init();
+	void Start();
+	void Stop();
+	bool Reset();
+	void PrintInfo();
 
 private:
 
-	static int	DataReadyInterruptCallback(int irq, void *context, void *arg);
-	void		DataReady();
+	// Sensor Configuration
+	static constexpr uint32_t GYRO_RATE{ST_ISM330DLC::G_ODR};
+	static constexpr uint32_t ACCEL_RATE{ST_ISM330DLC::LA_ODR};
+	static constexpr uint32_t FIFO_MAX_SAMPLES{ math::min(FIFO::SIZE / sizeof(FIFO::DATA) + 1, sizeof(PX4Gyroscope::FIFOSample::x) / sizeof(PX4Gyroscope::FIFOSample::x[0]))};
 
-	void		Run() override;
+	// Transfer data
+	struct FIFOTransferBuffer {
+		uint8_t cmd{static_cast<uint8_t>(Register::FIFO_DATA_OUT_L) | DIR_READ};
+		FIFO::DATA f[FIFO_MAX_SAMPLES] {};
+	};
+	// ensure no struct padding
+	static_assert(sizeof(FIFOTransferBuffer) == (sizeof(uint8_t) + FIFO_MAX_SAMPLES *sizeof(FIFO::DATA)));
 
-	uint8_t		RegisterRead(Register reg);
-	void		RegisterWrite(Register reg, uint8_t value);
-	void		RegisterSetBits(Register reg, uint8_t setbits);
-	void		RegisterClearBits(Register reg, uint8_t clearbits);
+	int probe() override;
 
-	void		ResetFIFO();
+	static int DataReadyInterruptCallback(int irq, void *context, void *arg);
+	void DataReady();
 
+	void Run() override;
 
-	uint8_t	*_dma_data_buffer{nullptr};
+	uint8_t RegisterRead(Register reg);
+	void RegisterWrite(Register reg, uint8_t value);
+	void RegisterSetBits(Register reg, uint8_t setbits);
+	void RegisterClearBits(Register reg, uint8_t clearbits);
 
-	PX4Accelerometer	_px4_accel;
-	PX4Gyroscope		_px4_gyro;
+	void ResetFIFO();
 
-	static constexpr uint32_t _fifo_interval{1000};						// 1000 us sample interval
+	PX4Accelerometer _px4_accel;
+	PX4Gyroscope _px4_gyro;
 
 	perf_counter_t _interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": run interval")};
 	perf_counter_t _transfer_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": transfer")};
@@ -100,5 +106,4 @@ private:
 
 	hrt_abstime _time_data_ready{0};
 	hrt_abstime _time_last_temperature_update{0};
-
 };

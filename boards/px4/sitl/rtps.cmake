@@ -48,6 +48,7 @@ px4_add_board(
 		sensors
 		#sih
 		simulator
+		temperature_compensation
 		vmount
 		vtol_att_control
 	SYSTEMCMDS
@@ -74,7 +75,6 @@ px4_add_board(
 		ver
 		work_queue
 	EXAMPLES
-		bottle_drop # OBC challenge
 		dyn_hello # dynamically loading modules example
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello

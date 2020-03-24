@@ -93,6 +93,9 @@ VtolAttitudeControl::VtolAttitudeControl() :
 	_params_handles.down_pitch_max = param_find("VT_DWN_PITCH_MAX");
 	_params_handles.forward_thrust_scale = param_find("VT_FWD_THRUST_SC");
 
+	_params_handles.down_pitch_max = param_find("VT_DWN_PITCH_MAX");
+	_params_handles.forward_thrust_scale = param_find("VT_FWD_THRUST_SC");
+
 	/* fetch initial parameter values */
 	parameters_update();
 

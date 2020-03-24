@@ -36,6 +36,7 @@ px4_add_board(
 		#imu/adis16448
 		#imu/adis16477
 		#imu/adis16497
+		#imu/invensense/mpu6000 # WIP
 		imu/l3gd20
 		imu/lsm303d
 		imu/mpu6000
@@ -88,8 +89,9 @@ px4_add_board(
 		#rover_pos_control
 		sensors
 		#sih
+		#temperature_compensation
 		vmount
-		vtol_att_control
+		#vtol_att_control
 	SYSTEMCMDS
 		bl_update
 		#config
@@ -105,7 +107,7 @@ px4_add_board(
 		mtd
 		#nshterm
 		param
-		perf
+		#perf
 		pwm
 		reboot
 		#reflect
@@ -119,7 +121,6 @@ px4_add_board(
 		ver
 		#work_queue
 	EXAMPLES
-		#bottle_drop # OBC challenge
 		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		#hello
 		#hwtest # Hardware test

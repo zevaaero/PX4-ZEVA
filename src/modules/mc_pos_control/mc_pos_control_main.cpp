@@ -96,14 +96,14 @@ public:
 	/** @see ModuleBase */
 	static int print_usage(const char *reason = nullptr);
 
-	void Run() override;
-
 	bool init();
 
 	/** @see ModuleBase::print_status() */
 	int print_status() override;
 
 private:
+	void Run() override;
+
 	Takeoff _takeoff; /**< state machine and ramp to bring the vehicle off the ground without jumps */
 
 	uORB::Publication<vehicle_attitude_setpoint_s>	_vehicle_attitude_setpoint_pub;
@@ -198,6 +198,8 @@ private:
 	static constexpr uint64_t LOITER_TIME_BEFORE_DESCEND = 200_ms;
 	/** During smooth-takeoff, below ALTITUDE_THRESHOLD the yaw-control is turned off ant tilt is limited */
 	static constexpr float ALTITUDE_THRESHOLD = 0.3f;
+
+	static constexpr float MAX_SAFE_TILT_DEG = 89.f; // Numerical issues above this value due to tanf
 
 	systemlib::Hysteresis _failsafe_land_hysteresis{false}; /**< becomes true if task did not update correctly for LOITER_TIME_BEFORE_DESCEND */
 
@@ -342,6 +344,18 @@ MulticopterPositionControl::parameters_update(bool force)
 		// update parameters from storage
 		ModuleParams::updateParams();
 		SuperBlock::updateParams();
+
+		if (_param_mpc_tiltmax_air.get() > MAX_SAFE_TILT_DEG) {
+			_param_mpc_tiltmax_air.set(MAX_SAFE_TILT_DEG);
+			_param_mpc_tiltmax_air.commit();
+			mavlink_log_critical(&_mavlink_log_pub, "Tilt constrained to safe value");
+		}
+
+		if (_param_mpc_tiltmax_lnd.get() > _param_mpc_tiltmax_air.get()) {
+			_param_mpc_tiltmax_lnd.set(_param_mpc_tiltmax_air.get());
+			_param_mpc_tiltmax_lnd.commit();
+			mavlink_log_critical(&_mavlink_log_pub, "Land tilt has been constrained by max tilt");
+		}
 
 		_control.setPositionGains(Vector3f(_param_mpc_xy_p.get(), _param_mpc_xy_p.get(), _param_mpc_z_p.get()));
 		_control.setVelocityGains(Vector3f(_param_mpc_xy_vel_p.get(), _param_mpc_xy_vel_p.get(), _param_mpc_z_vel_p.get()),

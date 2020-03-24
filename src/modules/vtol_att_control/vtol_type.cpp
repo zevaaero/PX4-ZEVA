@@ -182,8 +182,6 @@ void VtolType::update_transition_state()
 	_transition_dt = math::constrain(_transition_dt, 0.0001f, 0.02f);
 	_last_loop_ts = t_now;
 
-
-
 	check_quadchute_condition();
 }
 
@@ -490,7 +488,6 @@ float VtolType::pusher_assist()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, euler_sp(2)));
 		q_sp.copyTo(_v_att_sp->q_d);
-		_v_att_sp->q_d_valid = true;
 	}
 
 	return forward_thrust;

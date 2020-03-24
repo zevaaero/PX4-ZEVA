@@ -54,11 +54,9 @@
 
 #define PX4_NUMBER_I2C_BUSES    3
 
-#define PX4_I2C_OBDEV_BMP280  0x76
-
 // SPI
 #define PX4_SPI_BUS_SENSORS    1
-#define PX4_SPIDEV_MPU         PX4_MK_SPI_SEL(PX4_SPI_BUS_SENSORS, 1) // spi-1 - mpu9250
+#define PX4_SPIDEV_MPU         PX4_MK_SPI_SEL(0, DRV_IMU_DEVTYPE_MPU9250) // spi-1 - mpu9250
 
 // Battery ADC channels
 

@@ -1,6 +1,12 @@
 name: Build Tests
 
-on: [push]
+on:
+  push:
+    branches:
+    - 'master'
+  pull_request:
+    branches:
+    - '*'
 
 jobs:
   build:
@@ -19,6 +25,10 @@ jobs:
         run: 'git config --global url."https://github.com/".insteadof git@github.com:'
       - name: get submodules
         run: 'git submodule update --init --recursive'
+      - name: check_format
+        env:
+          CI: true
+        run: make check_format
       - uses: actions/cache@v1.1.0
         id: ccache-persistence
         with:

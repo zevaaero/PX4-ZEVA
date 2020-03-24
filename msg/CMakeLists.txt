@@ -60,8 +60,9 @@ set(msg_files
 	ekf_gps_position.msg
 	esc_report.msg
 	esc_status.msg
-	estimator_status.msg
 	estimator_innovations.msg
+	estimator_sensor_bias.msg
+	estimator_status.msg
 	follow_target.msg
 	geofence_result.msg
 	gps_dump.msg
@@ -76,6 +77,7 @@ set(msg_files
 	landing_target_pose.msg
 	led_control.msg
 	log_message.msg
+	logger_status.msg
 	manual_control_setpoint.msg
 	mavlink_log.msg
 	mission.msg
@@ -86,6 +88,9 @@ set(msg_files
 	offboard_control_mode.msg
 	onboard_computer_status.msg
 	optical_flow.msg
+	orb_test.msg
+	orb_test_large.msg
+	orb_test_medium.msg
 	orbit_status.msg
 	parameter_update.msg
 	ping.msg
@@ -102,18 +107,19 @@ set(msg_files
 	rate_ctrl_status.msg
 	rc_channels.msg
 	rc_parameter_map.msg
+	rpm.msg
 	safety.msg
 	satellite_info.msg
 	sensor_accel.msg
 	sensor_accel_fifo.msg
+	sensor_accel_integrated.msg
 	sensor_accel_status.msg
 	sensor_baro.msg
-	sensor_bias.msg
 	sensor_combined.msg
 	sensor_correction.msg
 	sensor_gyro.msg
-	sensor_gyro_control.msg
 	sensor_gyro_fifo.msg
+	sensor_gyro_integrated.msg
 	sensor_gyro_status.msg
 	sensor_mag.msg
 	sensor_preflight.msg
@@ -125,6 +131,7 @@ set(msg_files
 	tecs_status.msg
 	telemetry_status.msg
 	test_motor.msg
+	timesync.msg
 	timesync_status.msg
 	trajectory_bezier.msg
 	trajectory_waypoint.msg
@@ -136,6 +143,7 @@ set(msg_files
 	ulog_stream_ack.msg
 	vehicle_acceleration.msg
 	vehicle_air_data.msg
+	vehicle_angular_acceleration.msg
 	vehicle_angular_velocity.msg
 	vehicle_attitude.msg
 	vehicle_attitude_setpoint.msg
@@ -145,6 +153,7 @@ set(msg_files
 	vehicle_control_mode.msg
 	vehicle_global_position.msg
 	vehicle_gps_position.msg
+	vehicle_imu.msg
 	vehicle_land_detected.msg
 	vehicle_local_position.msg
 	vehicle_local_position_setpoint.msg
@@ -159,7 +168,8 @@ set(msg_files
 	vtol_vehicle_status.msg
 	wheel_encoders.msg
 	wind_estimate.msg
-	)
+	yaw_estimator_status.msg
+)
 
 set(deprecated_msgs
 	ekf2_innovations.msg	# 2019-11-22, Updated estimator interface and logging; replaced by 'estimator_innovations'.
@@ -200,7 +210,7 @@ endif()
 set(msg_out_path ${PX4_BINARY_DIR}/uORB/topics)
 set(msg_source_out_path	${CMAKE_CURRENT_BINARY_DIR}/topics_sources)
 
-set(uorb_headers)
+set(uorb_headers ${msg_out_path}/uORBTopics.hpp)
 set(uorb_sources ${msg_source_out_path}/uORBTopics.cpp)
 foreach(msg_file ${msg_files})
 	get_filename_component(msg ${msg_file} NAME_WE)
@@ -226,6 +236,7 @@ add_custom_command(OUTPUT ${uorb_headers}
 	DEPENDS
 		${msg_files}
 		templates/uorb/msg.h.em
+		templates/uorb/uORBTopics.hpp.em
 		tools/px_generate_uorb_topic_files.py
 	COMMENT "Generating uORB topic headers"
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -247,6 +258,7 @@ add_custom_command(OUTPUT ${uorb_sources}
 	DEPENDS
 		${msg_files}
 		templates/uorb/msg.cpp.em
+		templates/uorb/uORBTopics.cpp.em
 		tools/px_generate_uorb_topic_files.py
 	COMMENT "Generating uORB topic sources"
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
