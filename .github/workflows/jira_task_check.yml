@@ -21,31 +21,9 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const core = require('@actions/core')
-            // Remove all comments from GitHub Actions bot
-            let request = await github.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
-            for(const comment of request.data) {
-              if(comment.user.login == "github-actions[bot]") {
-                await github.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: comment.id
-                });
-              }
-            }
             if(!${{steps.check.outputs.triggered}}) {
-              // Add a new comment
-              github.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: 'Please add a Jira task in the PR comment!'
-              });
               // Remove rocket reaction
-              request = await github.reactions.listForIssue({
+             let request = await github.reactions.listForIssue({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
