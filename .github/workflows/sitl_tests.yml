@@ -3,7 +3,7 @@ name: SITL Tests
 on:
   push:
     branches:
-    - 'master'
+    - 'develop'
   pull_request:
     branches:
     - '*'
