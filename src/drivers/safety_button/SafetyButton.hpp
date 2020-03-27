@@ -55,7 +55,7 @@ class SafetyButton : public ModuleBase<SafetyButton>, public px4::ScheduledWorkI
 {
 public:
 	SafetyButton();
-	virtual ~SafetyButton();
+	~SafetyButton() override;
 
 	/** @see ModuleBase */
 	static int task_spawn(int argc, char *argv[]);
@@ -66,11 +66,13 @@ public:
 	/** @see ModuleBase */
 	static int print_usage(const char *reason = nullptr);
 
-	void Run() override;
+	/** @see ModuleBase::print_status() */
+	int print_status() override;
 
 	int Start();
 
 private:
+	void Run() override;
 
 	void CheckButton();
 	void FlashButton();
@@ -86,7 +88,7 @@ private:
 
 	uint8_t				_button_counter{0};
 	uint8_t				_blink_counter{0};
-	bool				_safety_disabled{false}; ///< circuit breaker to disable the safety button
+	bool				_safety_disabled{false};	///< circuit breaker to disable the safety button
 	bool				_safety_btn_off{false};		///< State of the safety button read from the HW button
 	bool				_safety_btn_prev_sate{false};	///< Previous state of the HW button
 

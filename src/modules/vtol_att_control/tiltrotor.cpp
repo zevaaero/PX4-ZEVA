@@ -323,7 +323,6 @@ void Tiltrotor::update_transition_state()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
-		_v_att_sp->q_d_valid = true;
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {
 		// the plane is ready to go into fixed wing mode, tilt the rotors forward completely
@@ -348,7 +347,6 @@ void Tiltrotor::update_transition_state()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
-		_v_att_sp->q_d_valid = true;
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {
 		// turn on all MC motors
@@ -388,7 +386,6 @@ void Tiltrotor::update_transition_state()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
-		_v_att_sp->q_d_valid = true;
 	}
 
 	_mc_roll_weight = math::constrain(_mc_roll_weight, 0.0f, 1.0f);

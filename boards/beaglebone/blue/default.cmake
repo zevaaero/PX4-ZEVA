@@ -1,3 +1,8 @@
+add_definitions(
+	-D__PX4_LINUX
+
+	-DRC_AUTOPILOT_EXT  # Enable extensions in Robotics Cape Library, TODO: remove
+)
 
 px4_add_board(
 	VENDOR beaglebone
@@ -20,7 +25,6 @@ px4_add_board(
 		#imu # all available imu drivers
 		imu/mpu9250
 		linux_pwm_out
-		linux_sbus
 		#magnetometer # all available magnetometer drivers
 		magnetometer/hmc5883
 		pwm_out_sim
@@ -54,6 +58,7 @@ px4_add_board(
 		sensors
 		sih
 		#simulator
+		temperature_compensation
 		vmount
 		vtol_att_control
 	SYSTEMCMDS
@@ -75,7 +80,6 @@ px4_add_board(
 		ver
 		work_queue
 	EXAMPLES
-		bottle_drop # OBC challenge
 		dyn_hello # dynamically loading modules example
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello

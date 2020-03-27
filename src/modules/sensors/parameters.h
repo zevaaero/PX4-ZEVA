@@ -61,8 +61,6 @@ struct Parameters {
 	float mag_comp_paramY[4];
 	float mag_comp_paramZ[4];
 
-	float baro_qnh;
-
 	int32_t air_cmodel;
 	float air_tube_length;
 	float air_tube_diameter_mm;
@@ -81,8 +79,6 @@ struct ParameterHandles {
 	param_t mag_comp_paramX[4];
 	param_t mag_comp_paramY[4];
 	param_t mag_comp_paramZ[4];
-
-	param_t baro_qnh;
 
 	param_t air_cmodel;
 	param_t air_tube_length;

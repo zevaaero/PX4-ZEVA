@@ -36,6 +36,7 @@
 #include <float.h>
 
 #include <board_config.h>
+#include <drivers/drv_adc.h>
 #include <drivers/drv_hrt.h>
 #include <drivers/drv_rc_input.h>
 #include <lib/perf/perf_counter.h>
@@ -77,15 +78,15 @@ public:
 	/** @see ModuleBase */
 	static int print_usage(const char *reason = nullptr);
 
-	/** @see ModuleBase::run() */
-	void Run() override;
-
 	/** @see ModuleBase::print_status() */
 	int print_status() override;
 
 	int	init();
 
 private:
+
+	void Run() override;
+
 	enum RC_SCAN {
 		RC_SCAN_PPM = 0,
 		RC_SCAN_SBUS,

@@ -45,13 +45,14 @@
  *   CONFIG_STM32F7_I2C_DYNTIMEO_USECPERBYTE=10000
  */
 
-#ifndef DRIVERS_SDP6X_AIRSPEED_HPP_
-#define DRIVERS_SDP6X_AIRSPEED_HPP_
+#pragma once
 
 #include <drivers/airspeed/airspeed.h>
 #include <math.h>
 #include <mathlib/math/filter/LowPassFilter2p.hpp>
 #include <px4_platform_common/getopt.h>
+#include <px4_platform_common/module.h>
+#include <px4_platform_common/i2c_spi_buses.h>
 
 #define I2C_ADDRESS_SDP6X		0x40
 
@@ -64,21 +65,25 @@
 #define SDP6X_MEAS_DRIVER_FILTER_FREQ 3.0f
 #define CONVERSION_INTERVAL	(1000000 / SPD6X_MEAS_RATE)	/* microseconds */
 
-class SDP6X : public Airspeed
+class SDP6X : public Airspeed, public I2CSPIDriver<SDP6X>
 {
 public:
-	SDP6X(int bus, int address = I2C_ADDRESS_SDP6X, const char *path = PATH_SDP6X) :
-		Airspeed(bus, address, CONVERSION_INTERVAL, path)
+	SDP6X(I2CSPIBusOption bus_option, const int bus, int bus_frequency, int address = I2C_ADDRESS_SDP6X) :
+		Airspeed(bus, bus_frequency, address, CONVERSION_INTERVAL),
+		I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus, address)
 	{
 	}
 
+	virtual ~SDP6X() = default;
+
+	static I2CSPIDriverBase *instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
+					     int runtime_instance);
+	static void print_usage();
+
+	void	RunImpl();
+
 private:
 
-	/**
-	 * Perform a poll cycle; collect from the previous measurement
-	 * and start a new one.
-	 */
-	void	Run() override;
 	int	measure() override { return 0; }
 	int	collect() override;
 	int	probe() override;
@@ -92,5 +97,3 @@ private:
 	 */
 	bool crc(const uint8_t data[], unsigned size, uint8_t checksum);
 };
-
-#endif /* DRIVERS_SDP6X_AIRSPEED_HPP_ */

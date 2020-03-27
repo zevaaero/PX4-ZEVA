@@ -136,7 +136,7 @@ SafetyButton::CheckPairingRequest(bool button_pressed)
 		vehicle_command_s vcmd{};
 		vcmd.command = vehicle_command_s::VEHICLE_CMD_START_RX_PAIR;
 		vcmd.timestamp = now;
-		vcmd.param1 = 10.f; // GCS pairing request handled by a companion. TODO: requires mavlink spec
+		vcmd.param1 = 10.f; // GCS pairing request handled by a companion.
 		_to_command.publish(vcmd);
 		PX4_DEBUG("Sending GCS pairing request");
 
@@ -261,6 +261,15 @@ SafetyButton::custom_command(int argc, char *argv[])
 }
 
 int
+SafetyButton::print_status()
+{
+	PX4_INFO("Safety Disabled: %s", _safety_disabled ? "yes" : "no");
+	PX4_INFO("Safety State (from button): %s", _safety_btn_off ? "off" : "on");
+
+	return 0;
+}
+
+int
 SafetyButton::print_usage(const char *reason)
 {
 	if (reason) {
@@ -271,6 +280,7 @@ SafetyButton::print_usage(const char *reason)
 		R"DESCR_STR(
 ### Description
 This module is responsible for the safety button.
+Pressing the safety button 3 times quickly will trigger a GCS pairing request.
 
 )DESCR_STR");
 

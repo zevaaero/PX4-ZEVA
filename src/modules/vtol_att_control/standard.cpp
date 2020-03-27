@@ -269,7 +269,6 @@ void Standard::update_transition_state()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
-		_v_att_sp->q_d_valid = true;
 
 		// check front transition timeout
 		if (_params->front_trans_timeout > FLT_EPSILON) {
@@ -288,7 +287,6 @@ void Standard::update_transition_state()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
-		_v_att_sp->q_d_valid = true;
 
 		_pusher_throttle = 0.0f;
 
