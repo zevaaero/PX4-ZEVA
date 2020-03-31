@@ -5,3 +5,9 @@
 
 # Start MAVLink on the USB port
 mavlink start -d /dev/ttyACM0
+
+# if skynodeV2 base board is detected start Mavlink on Telem2
+if ver hwtypecmp V5X90
+then
+	mavlink start -d /dev/ttyS4 -m onboard -r 100000 -b 1500000 -x
+fi
