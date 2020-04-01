@@ -8,17 +8,37 @@ adc start
 ina226 -X -b 1 -t 1 -k start
 ina226 -X -b 2 -t 2 -k start
 
-# Internal SPI bus ICM-20602
-mpu6000 -R 4 -s -T 20602 start
+if ver hwtypecmp V5X90
+then
+	#SKYNODE base fmu board orientation
 
-# Internal SPI bus ISM300DLC
-# ism330dlc -s start
+	# Internal SPI bus ICM-20602
+	mpu6000 -R 6 -s -T 20602 start
 
-# Internal SPI bus BMI088 accel
-bmi088 -A -R 12 -s start
+	# Internal SPI bus ISM300DLC
+	# ism330dlc start
 
-# Internal SPI bus BMI088 gyro
-bmi088 -G -R 12 -s start
+	# Internal SPI bus BMI088 accel
+	bmi088 -A -R 14 start
+
+	# Internal SPI bus BMI088 gyro
+	bmi088 -G -R 14 start
+else
+	#FMUv5Xbase board orientation
+	# Internal SPI bus ICM-20602
+	mpu6000 -R 4 -s -T 20602 start
+
+	# Internal SPI bus ISM300DLC
+	ism330dlc start
+
+	# Internal SPI bus BMI088 accel
+	bmi088 -A -R 12 start
+
+	# Internal SPI bus BMI088 gyro
+	bmi088 -G -R 12 start
+
+
+fi
 
 # Possible external compasses
 ist8310 -X start
