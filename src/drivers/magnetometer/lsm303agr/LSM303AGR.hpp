@@ -180,4 +180,3 @@ private:
 	LSM303AGR(const LSM303AGR &);
 	LSM303AGR operator=(const LSM303AGR &);
 };
-
