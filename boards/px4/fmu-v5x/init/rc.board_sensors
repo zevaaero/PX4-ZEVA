@@ -16,26 +16,26 @@ then
 	mpu6000 -R 6 -s -T 20602 start
 
 	# Internal SPI bus ISM300DLC
-	# ism330dlc start
+	# ism330dlc -s start
 
 	# Internal SPI bus BMI088 accel
-	bmi088 -A -R 14 start
+	bmi088 -A -R 14 -s start
 
 	# Internal SPI bus BMI088 gyro
-	bmi088 -G -R 14 start
+	bmi088 -G -R 14 -s start
 else
 	#FMUv5Xbase board orientation
 	# Internal SPI bus ICM-20602
 	mpu6000 -R 4 -s -T 20602 start
 
 	# Internal SPI bus ISM300DLC
-	ism330dlc start
+	#ism330dlc -s start
 
 	# Internal SPI bus BMI088 accel
-	bmi088 -A -R 12 start
+	bmi088 -A -R 12 -s start
 
 	# Internal SPI bus BMI088 gyro
-	bmi088 -G -R 12 start
+	bmi088 -G -R 12 -s start
 
 
 fi
