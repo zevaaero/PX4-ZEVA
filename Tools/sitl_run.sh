@@ -104,8 +104,11 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 				gzserver "$PX4_SITL_WORLD" &
 			fi
 		fi
-		gz model --spawn-file="${src_path}/Tools/sitl_gazebo/models/${model}/${model}.sdf" --model-name=${model} -x 1.01 -y 0.98 -z 0.83
-
+		if [ -f ${src_path}/Tools/auterion/models/${model}/${model}.sdf ]; then
+			gz model --spawn-file="${src_path}/Tools/auterion/models/${model}/${model}.sdf" --model-name=${model} -x 1.01 -y 0.98 -z 0.83
+		else
+			gz model --spawn-file="${src_path}/Tools/sitl_gazebo/models/${model}/${model}.sdf" --model-name=${model} -x 1.01 -y 0.98 -z 0.83
+		fi
 		SIM_PID=`echo $!`
 
 		if [[ -n "$HEADLESS" ]]; then
