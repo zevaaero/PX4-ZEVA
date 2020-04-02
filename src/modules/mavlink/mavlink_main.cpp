@@ -1663,7 +1663,6 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 
 	case MAVLINK_MODE_EXTVISION:
 		configure_stream_local("HIGHRES_IMU", unlimited_rate);		// for VIO
-		configure_stream_local("TIMESYNC", 10.0f);
 
 	// FALLTHROUGH
 	case MAVLINK_MODE_EXTVISIONMIN:
@@ -1699,6 +1698,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("RC_CHANNELS", 5.0f);
 		configure_stream_local("SERVO_OUTPUT_RAW_0", 1.0f);
 		configure_stream_local("SYS_STATUS", 5.0f);
+		configure_stream_local("TIMESYNC", 10.0f);
 		configure_stream_local("TRAJECTORY_REPRESENTATION_WAYPOINTS", 5.0f);
 		configure_stream_local("UTM_GLOBAL_POSITION", 1.0f);
 		configure_stream_local("VFR_HUD", 4.0f);
