@@ -80,6 +80,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("sensor_selection");
 	add_topic("system_power", 500);
 	add_topic("tecs_status", 200);
+	add_topic("timesync_status", 100);
 	add_topic("trajectory_setpoint", 200);
 	add_topic("vehicle_air_data", 200);
 	add_topic("vehicle_angular_velocity", 20);
