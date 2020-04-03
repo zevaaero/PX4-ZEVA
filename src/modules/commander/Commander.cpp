@@ -2218,13 +2218,23 @@ Commander::run()
 		if (_was_armed != armed.armed) {
 			_status_changed = true;
 
-			if (!armed.armed) { // increase the flight uuid upon disarming
+			if (armed.armed) {
+				if (!_land_detector.landed) { // check if takeoff already detected upon arming
+					_have_taken_off_since_arming = true;
+				}
+
+			} else { // increase the flight uuid upon disarming
 				const int32_t flight_uuid = _param_flight_uuid.get() + 1;
 				_param_flight_uuid.set(flight_uuid);
 				_param_flight_uuid.commit();
 
 				_last_disarmed_timestamp = hrt_absolute_time();
 			}
+		}
+
+		if (!armed.armed) {
+			/* Reset the flag if disarmed. */
+			_have_taken_off_since_arming = false;
 		}
 
 		_was_armed = armed.armed;
@@ -2387,11 +2397,6 @@ Commander::run()
 		}
 
 		_status_changed = false;
-
-		if (!armed.armed) {
-			/* Reset the flag if disarmed. */
-			_have_taken_off_since_arming = false;
-		}
 
 		arm_auth_update(now, params_updated || param_init_forced);
 
