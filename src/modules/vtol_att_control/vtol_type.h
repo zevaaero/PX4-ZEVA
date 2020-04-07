@@ -81,6 +81,7 @@ struct Params {
 	float mpc_land_alt1;
 	float mpc_land_alt2;
 	int32_t act_test_mode;
+	bool vt_mc_on_fmu;
 };
 
 // Has to match 1:1 msg/vtol_vehicle_status.msg
