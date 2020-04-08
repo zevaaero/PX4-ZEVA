@@ -88,3 +88,26 @@ PARAM_DEFINE_FLOAT(BAT_CRIT_THR, 0.07f);
  * @reboot_required true
  */
 PARAM_DEFINE_FLOAT(BAT_EMERGEN_THR, 0.05f);
+
+/**
+ * Average current consumption in multicopter flight.
+ *
+ *
+ * @group Battery Calibration
+ * @unit A
+ * @min 0.0
+ * @max 500.0
+ * @increment 0.1
+ */
+PARAM_DEFINE_FLOAT(BAT_AVG_I_MC, -1.0f);
+
+/**
+ * Average current consumption in fixed-wing flight.
+ *
+ * @group Battery Calibration
+ * @unit A
+ * @min 0.0
+ * @max 500.0
+ * @increment 0.1
+ */
+PARAM_DEFINE_FLOAT(BAT_AVG_I_FW, -1.0f);
