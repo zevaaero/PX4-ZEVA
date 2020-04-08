@@ -1788,7 +1788,7 @@ MavlinkReceiver::handle_message_trajectory_representation_bezier(mavlink_message
 
 	vehicle_trajectory_bezier_s trajectory_bezier{};
 
-	trajectory_bezier.timestamp =  _mavlink_timesync.sync_stamp(trajectory.time_usec);
+	trajectory_bezier.timestamp = hrt_absolute_time();
 
 	for (int i = 0; i < vehicle_trajectory_bezier_s::NUMBER_POINTS; ++i) {
 		trajectory_bezier.control_points[i].position[0] = trajectory.pos_x[i];
