@@ -105,6 +105,15 @@ bool PreFlightCheck::preArmCheck(orb_advert_t *mavlink_log_pub, const vehicle_st
 		}
 	}
 
+	// check if home position valid
+	if (arm_requirements.home_position && !status_flags.condition_home_position_valid) {
+		if (prearm_ok) {
+			if (report_fail) { mavlink_log_critical(mavlink_log_pub, "Arming denied! Home Position not yet set"); }
+
+			prearm_ok = false;
+		}
+	}
+
 	// safety button
 	if (safety.safety_switch_available && !safety.safety_off) {
 		// Fail transition if we need safety switch press
