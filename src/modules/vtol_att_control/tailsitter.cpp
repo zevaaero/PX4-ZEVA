@@ -317,4 +317,8 @@ void Tailsitter::fill_actuator_outputs()
 		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] =
 			_actuators_fw_in->control[actuator_controls_s::INDEX_PITCH];
 	}
+
+	if (_in_actuator_test_mode) {
+		_in_actuator_test_mode = override_controls_for_test_mode();
+	}
 }

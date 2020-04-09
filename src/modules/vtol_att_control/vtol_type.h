@@ -47,6 +47,8 @@
 #include <drivers/drv_hrt.h>
 #include <drivers/drv_pwm_output.h>
 
+using namespace time_literals;
+
 struct Params {
 	int32_t idle_pwm_mc;			// pwm value for idle in mc mode
 	int32_t vtol_motor_id;
@@ -78,6 +80,7 @@ struct Params {
 	int vt_forward_thrust_enable_mode;
 	float mpc_land_alt1;
 	float mpc_land_alt2;
+	int32_t act_test_mode;
 };
 
 // Has to match 1:1 msg/vtol_vehicle_status.msg
@@ -119,6 +122,15 @@ enum class motor_state {
 enum class pwm_limit_type {
 	TYPE_MINIMUM = 0,
 	TYPE_MAXIMUM
+};
+
+// defines the pre-flight control surface and tilting mechanism test types
+enum class actuator_test_type {
+	TYPE_NONE = 0,
+	TYPE_AILERON,
+	TYPE_ELEVATOR,
+	TYPE_RUDDER,
+	TYPE_TILT
 };
 
 class VtolAttitudeControl;
@@ -184,6 +196,16 @@ public:
 	 */
 	float pusher_assist();
 
+	/**
+	 * Activate a pre-flight control surface or tilt mechanism functionality check, according to test_type.
+	 */
+	void activate_actuator_test_mode(actuator_test_type test_type);
+
+	/**
+	 * Returns true if we are currently executing a control surface or tilt mechanism functionality check.
+	 */
+	bool in_actuator_test_mode() {return _in_actuator_test_mode;}
+
 
 	mode get_mode() {return _vtol_mode;}
 
@@ -241,7 +263,9 @@ protected:
 
 	float _accel_to_pitch_integ = 0;
 
-
+	bool _in_actuator_test_mode{false};
+	hrt_abstime _actuator_test_start_ts{0};
+	actuator_test_type _actuator_test_type{actuator_test_type::TYPE_NONE};
 
 	/**
 	 * @brief      Sets mc motor minimum pwm to VT_IDLE_PWM_MC which ensures
@@ -273,6 +297,13 @@ protected:
 	motor_state set_motor_state(const motor_state current_state, const motor_state next_state, const int value = 0);
 
 	float update_and_get_backtransition_pitch_sp();
+
+	/**
+	 * @brief      Overrides controls for control surface or tilt mechanism in the context of preflight tests.
+	 *
+	 * @return     true while executing the test, false once done
+	 */
+	bool override_controls_for_test_mode();
 
 private:
 

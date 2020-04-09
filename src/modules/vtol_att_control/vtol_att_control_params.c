@@ -342,3 +342,22 @@ PARAM_DEFINE_FLOAT(VT_B_DEC_FF, 0.12f);
  * @group VTOL Attitude Control
  */
 PARAM_DEFINE_FLOAT(VT_B_DEC_I, 0.1f);
+
+/**
+ * Actuator Test mode
+ *
+ * If the parameter is set the system will carry out control surface and tilting mechanism tests.
+ * After the specific test has finished the parameter will automatically be set back to zero.
+ * The tests will only be carried out when the vehicle is disarmed. Different test can be executed depending on the value
+ * set.
+ *
+ * @value 0 Disabled
+ * @value 1 Test ailerons
+ * @value 2 Test elevator
+ * @value 3 Test rudder
+ * @value 4 Test motor tilt (tiltrotor only)
+ * @min 0
+ * @max 4
+ * @group VTOL Attitude Control
+ */
+PARAM_DEFINE_INT32(VT_ACT_TEST_MODE, 0);

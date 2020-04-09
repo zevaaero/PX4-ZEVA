@@ -516,3 +516,50 @@ float VtolType::pusher_assist()
 	return forward_thrust;
 
 }
+
+bool VtolType::override_controls_for_test_mode()
+{
+	if (_v_control_mode->flag_armed) {
+		// if vehicle arms immediately deactivate test mode
+		return false;
+	}
+
+	const int64_t deflection_hold_time = 2_s;
+	const float time_since_test_start = (hrt_absolute_time() - _actuator_test_start_ts);
+
+	const bool positive_deflection = time_since_test_start < deflection_hold_time;
+	const float actuator_control_value_target = positive_deflection ? 1.0f : -1.0f;
+
+	if (_actuator_test_type == actuator_test_type::TYPE_AILERON) {
+		_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = actuator_control_value_target;
+
+	} else if (_actuator_test_type == actuator_test_type::TYPE_ELEVATOR) {
+		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] = actuator_control_value_target;
+
+	} else if (_actuator_test_type == actuator_test_type::TYPE_RUDDER) {
+		_actuators_out_1->control[actuator_controls_s::INDEX_YAW] = actuator_control_value_target;
+
+	} else if (_actuator_test_type == actuator_test_type::TYPE_TILT) {
+		_actuators_out_1->control[4] = actuator_control_value_target;
+	}
+
+
+	// return false as soon as we held both positve and negative deflection for the desired amount of time
+	return time_since_test_start < 2 * deflection_hold_time;
+}
+
+void VtolType::activate_actuator_test_mode(actuator_test_type test_type)
+{
+	if (test_type > actuator_test_type::TYPE_TILT || test_type <= actuator_test_type::TYPE_NONE
+	    || _v_control_mode->flag_armed) {
+		return;
+	}
+
+	if (_actuator_test_type == actuator_test_type::TYPE_TILT && _params->vtol_type != (int32_t)vtol_type::TILTROTOR) {
+		return;
+	}
+
+	_in_actuator_test_mode = true;
+	_actuator_test_start_ts = hrt_absolute_time();
+	_actuator_test_type = test_type;
+}

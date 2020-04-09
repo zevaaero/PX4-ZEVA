@@ -209,6 +209,7 @@ private:
 		param_t vt_forward_thrust_enable_mode;
 		param_t mpc_land_alt1;
 		param_t mpc_land_alt2;
+		param_t act_test_mode;
 	} _params_handles{};
 
 	/* for multicopters it is usual to have a non-zero idle speed of the engines

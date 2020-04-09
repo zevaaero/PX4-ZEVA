@@ -98,6 +98,9 @@ VtolAttitudeControl::VtolAttitudeControl() :
 
 	_params_handles.down_pitch_max = param_find("VT_DWN_PITCH_MAX");
 	_params_handles.forward_thrust_scale = param_find("VT_FWD_THRUST_SC");
+
+	_params_handles.act_test_mode = param_find("VT_ACT_TEST_MODE");
+
 	/* fetch initial parameter values */
 	parameters_update();
 
@@ -305,10 +308,12 @@ VtolAttitudeControl::parameters_update()
 	param_get(_params_handles.vt_forward_thrust_enable_mode, &_params.vt_forward_thrust_enable_mode);
 	param_get(_params_handles.mpc_land_alt1, &_params.mpc_land_alt1);
 	param_get(_params_handles.mpc_land_alt2, &_params.mpc_land_alt2);
+	param_get(_params_handles.act_test_mode, &_params.act_test_mode);
 
 	// update the parameters of the instances of base VtolType
 	if (_vtol_type != nullptr) {
 		_vtol_type->parameters_update();
+		_vtol_type->activate_actuator_test_mode((actuator_test_type)_params.act_test_mode);
 	}
 
 	return OK;
@@ -450,6 +455,12 @@ VtolAttitudeControl::Run()
 		}
 
 		_vtol_type->fill_actuator_outputs();
+
+		if (!_vtol_type->in_actuator_test_mode() && _params.act_test_mode > 0) {
+			int32_t val = 0;
+			param_set_no_notification(_params_handles.act_test_mode, &val);
+		}
+
 		_actuators_0_pub.publish(_actuators_out_0);
 		_actuators_1_pub.publish(_actuators_out_1);
 
