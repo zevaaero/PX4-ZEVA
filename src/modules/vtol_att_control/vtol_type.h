@@ -75,6 +75,9 @@ struct Params {
 	float dec_to_pitch_ff;
 	float dec_to_pitch_i;
 	float back_trans_dec_sp;
+	int vt_forward_thrust_enable_mode;
+	float mpc_land_alt1;
+	float mpc_land_alt2;
 };
 
 // Has to match 1:1 msg/vtol_vehicle_status.msg
@@ -89,6 +92,14 @@ enum class vtol_type {
 	TAILSITTER = 0,
 	TILTROTOR,
 	STANDARD
+};
+
+enum VtolForwardActuationMode {
+	DISABLE = 0,
+	ENABLE_WITHOUT_LAND,
+	ENABLE_FROM_MPC_LAND_ALT1,
+	ENABLE_FROM_MPC_LAND_ALT2,
+	ENABLE_ALL_MODES
 };
 
 // these are states that can be applied to a selection of multirotor motors.
