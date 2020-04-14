@@ -527,8 +527,8 @@ bool VtolType::override_controls_for_test_mode()
 	const int64_t deflection_hold_time = 2_s;
 	const float time_since_test_start = (hrt_absolute_time() - _actuator_test_start_ts);
 
-	const bool positive_deflection = time_since_test_start < deflection_hold_time;
-	const float actuator_control_value_target = positive_deflection ? 1.0f : -1.0f;
+	const float actuator_control_value_target = (_actuator_test_dir == actuator_test_direction::DIRECTION_POSITIVE ? 1.0f :
+			-1.0f);
 
 	if (_actuator_test_type == actuator_test_type::TYPE_AILERON) {
 		_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = actuator_control_value_target;
@@ -544,11 +544,11 @@ bool VtolType::override_controls_for_test_mode()
 	}
 
 
-	// return false as soon as we held both positve and negative deflection for the desired amount of time
-	return time_since_test_start < 2 * deflection_hold_time;
+	// return false as soon as we held the control for the specified amount of time, this will deactivate the test mode
+	return time_since_test_start < deflection_hold_time;
 }
 
-void VtolType::activate_actuator_test_mode(actuator_test_type test_type)
+void VtolType::activate_actuator_test_mode(actuator_test_type test_type, actuator_test_direction direction)
 {
 	if (test_type > actuator_test_type::TYPE_TILT || test_type <= actuator_test_type::TYPE_NONE
 	    || _v_control_mode->flag_armed) {
@@ -562,4 +562,5 @@ void VtolType::activate_actuator_test_mode(actuator_test_type test_type)
 	_in_actuator_test_mode = true;
 	_actuator_test_start_ts = hrt_absolute_time();
 	_actuator_test_type = test_type;
+	_actuator_test_dir = direction;
 }

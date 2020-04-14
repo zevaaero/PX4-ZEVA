@@ -133,6 +133,11 @@ enum class actuator_test_type {
 	TYPE_TILT
 };
 
+enum class actuator_test_direction {
+	DIRECTION_POSITIVE = 0,
+	DIRECTION_NEGATIVE
+};
+
 class VtolAttitudeControl;
 
 class VtolType
@@ -199,7 +204,7 @@ public:
 	/**
 	 * Activate a pre-flight control surface or tilt mechanism functionality check, according to test_type.
 	 */
-	void activate_actuator_test_mode(actuator_test_type test_type);
+	void activate_actuator_test_mode(actuator_test_type test_type, actuator_test_direction direction);
 
 	/**
 	 * Returns true if we are currently executing a control surface or tilt mechanism functionality check.
@@ -266,6 +271,7 @@ protected:
 	bool _in_actuator_test_mode{false};
 	hrt_abstime _actuator_test_start_ts{0};
 	actuator_test_type _actuator_test_type{actuator_test_type::TYPE_NONE};
+	actuator_test_direction _actuator_test_dir{actuator_test_direction::DIRECTION_POSITIVE};
 
 	/**
 	 * @brief      Sets mc motor minimum pwm to VT_IDLE_PWM_MC which ensures

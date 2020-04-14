@@ -175,6 +175,11 @@ VtolAttitudeControl::handle_command()
 			uORB::PublicationQueued<vehicle_command_ack_s> command_ack_pub{ORB_ID(vehicle_command_ack)};
 			command_ack_pub.publish(command_ack);
 		}
+
+	} else if (_vehicle_cmd.command == vehicle_command_s::VEHICLE_CMD_PREFLIGHT_ACTUATOR_TEST) {
+		const actuator_test_type test_type = (actuator_test_type)static_cast<int>(_vehicle_cmd.param1 + 0.5f);
+		const actuator_test_direction direction = (actuator_test_direction)static_cast<int>(_vehicle_cmd.param2 + 0.5f);
+		_vtol_type->activate_actuator_test_mode(test_type, direction);
 	}
 }
 
@@ -313,7 +318,6 @@ VtolAttitudeControl::parameters_update()
 	// update the parameters of the instances of base VtolType
 	if (_vtol_type != nullptr) {
 		_vtol_type->parameters_update();
-		_vtol_type->activate_actuator_test_mode((actuator_test_type)_params.act_test_mode);
 	}
 
 	return OK;
@@ -455,11 +459,6 @@ VtolAttitudeControl::Run()
 		}
 
 		_vtol_type->fill_actuator_outputs();
-
-		if (!_vtol_type->in_actuator_test_mode() && _params.act_test_mode > 0) {
-			int32_t val = 0;
-			param_set_no_notification(_params_handles.act_test_mode, &val);
-		}
 
 		_actuators_0_pub.publish(_actuators_out_0);
 		_actuators_1_pub.publish(_actuators_out_1);
