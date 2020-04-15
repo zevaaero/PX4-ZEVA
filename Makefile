@@ -214,6 +214,9 @@ define deprecation_warning
 	$(warning $(1) has been deprecated and will be removed, please use $(2)!)
 endef
 
+skynode:
+	$(MAKE) px4_fmu-v5x_p2_base_phy_LAN8742Ai $(ARGS)
+
 # All targets with just dependencies but no recipe must either be marked as phony (or have the special @: as recipe).
 .PHONY: all px4_sitl_default all_config_targets all_default_targets
 
