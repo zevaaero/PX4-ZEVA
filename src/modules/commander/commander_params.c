@@ -865,17 +865,6 @@ PARAM_DEFINE_INT32(COM_FLT_PROFILE, 0);
 PARAM_DEFINE_INT32(COM_ARM_CHK_ESCS, 1);
 
 /**
- * Require valid home position to arm.
- *
- * @value 0 Home not required
- * @value 1 Home position required
- *
- * @group Commander
- * @boolean
- */
-PARAM_DEFINE_INT32(COM_ARM_CHK_HOME, 1);
-
-/**
  * Condition to enter prearmed mode
  *
  * Condition to enter the prearmed state, an intermediate state between disarmed and armed

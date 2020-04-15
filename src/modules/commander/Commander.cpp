@@ -1380,7 +1380,6 @@ Commander::run()
 			_arm_requirements.esc_check = _param_escs_checks_required.get();
 			_arm_requirements.global_position = !_param_arm_without_gps.get();
 			_arm_requirements.mission = _param_arm_mission_required.get();
-			_arm_requirements.home_position = _param_arm_home_position_required.get();
 
 			/* flight mode slots */
 			_flight_mode_slots[0] = _param_fltmode_1.get();

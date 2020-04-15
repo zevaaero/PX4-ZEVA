@@ -18,7 +18,4 @@ then
 	param set LPE_FAKE_ORIGIN 1
 
 	param set MPC_ALT_MODE 2
-
-	# disable home position preflight check
-	param set COM_ARM_CHK_HOME 0
 fi

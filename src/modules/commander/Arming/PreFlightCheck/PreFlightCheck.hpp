@@ -86,7 +86,6 @@ public:
 		bool esc_check = false;
 		bool global_position = false;
 		bool mission = false;
-		bool home_position = false;
 	};
 
 	static bool preArmCheck(orb_advert_t *mavlink_log_pub, const vehicle_status_flags_s &status_flags,
