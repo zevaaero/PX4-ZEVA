@@ -79,11 +79,11 @@ void LandDetector::Run()
 
 	} else {
 		if (!_high_hysteresis_active && !_vehicle_local_position.dist_bottom_valid) {
-			_set_high_hysteresis();
+			_set_hysteresis_factor(3);
 			_high_hysteresis_active = true;
 
 		} else if (_high_hysteresis_active && _vehicle_local_position.dist_bottom_valid) {
-			_set_low_hysteresis();
+			_set_hysteresis_factor(1);
 			_high_hysteresis_active = false;
 		}
 	}

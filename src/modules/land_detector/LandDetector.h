@@ -136,9 +136,8 @@ protected:
 	 */
 	virtual bool _get_ground_effect_state() { return false; }
 
-	virtual void _set_high_hysteresis() = 0;
+	virtual void _set_hysteresis_factor(const int factor) = 0;
 
-	virtual void _set_low_hysteresis() = 0;
 
 	/** Run main land detector loop at this interval. */
 	static constexpr uint32_t LAND_DETECTOR_UPDATE_INTERVAL = 20_ms;

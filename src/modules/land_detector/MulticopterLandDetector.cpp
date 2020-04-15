@@ -80,7 +80,7 @@ MulticopterLandDetector::MulticopterLandDetector()
 	_paramHandle.hoverThrottle  = param_find("MPC_THR_HOVER");
 
 	// Use Trigger time when transitioning from in-air (false) to landed (true) / ground contact (true).
-	_set_low_hysteresis();
+	_set_hysteresis_factor(1);
 }
 
 void MulticopterLandDetector::_update_topics()
@@ -331,20 +331,11 @@ bool MulticopterLandDetector::_is_close_to_ground()
 	}
 }
 
-void MulticopterLandDetector::_set_high_hysteresis()
+void MulticopterLandDetector::_set_hysteresis_factor(const int factor)
 {
-	const int factor = 3;
-
 	_ground_contact_hysteresis.set_hysteresis_time_from(false, GROUND_CONTACT_TRIGGER_TIME_US * factor);
 	_landed_hysteresis.set_hysteresis_time_from(false, LAND_DETECTOR_TRIGGER_TIME_US * factor);
 	_maybe_landed_hysteresis.set_hysteresis_time_from(false, MAYBE_LAND_DETECTOR_TRIGGER_TIME_US * factor);
-}
-
-void MulticopterLandDetector::_set_low_hysteresis()
-{
-	_ground_contact_hysteresis.set_hysteresis_time_from(false, GROUND_CONTACT_TRIGGER_TIME_US);
-	_landed_hysteresis.set_hysteresis_time_from(false, LAND_DETECTOR_TRIGGER_TIME_US);
-	_maybe_landed_hysteresis.set_hysteresis_time_from(false, MAYBE_LAND_DETECTOR_TRIGGER_TIME_US);
 }
 
 } // namespace land_detector

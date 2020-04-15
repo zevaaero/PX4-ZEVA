@@ -75,8 +75,7 @@ protected:
 
 	float _get_max_altitude() override;
 
-	void _set_high_hysteresis() override;
-	void _set_low_hysteresis() override;
+	void _set_hysteresis_factor(const int factor) override;
 private:
 
 	/** Get control mode dependent pilot throttle threshold with which we should quit landed state and take off. */
