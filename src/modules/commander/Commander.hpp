@@ -212,6 +212,7 @@ private:
 		(ParamInt<px4::params::COM_ARM_WO_OBLOG>) _param_com_arm_wo_ob_logger,
 
 		(ParamFloat<px4::params::COM_KILL_DISARM>) _param_com_kill_disarm,
+		(ParamFloat<px4::params::COM_LKDOWN_TKO>) _param_com_lkdown_tko,
 
 		// Engine failure
 		(ParamFloat<px4::params::COM_EF_THROT>) _param_ef_throttle_thres,
