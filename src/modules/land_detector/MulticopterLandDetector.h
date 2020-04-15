@@ -74,6 +74,9 @@ protected:
 	bool _get_ground_effect_state() override;
 
 	float _get_max_altitude() override;
+
+	void _set_high_hysteresis() override;
+	void _set_low_hysteresis() override;
 private:
 
 	/** Get control mode dependent pilot throttle threshold with which we should quit landed state and take off. */
@@ -84,6 +87,7 @@ private:
 	bool _has_altitude_lock();
 	bool _has_position_lock();
 	bool _is_climb_rate_enabled();
+	bool _is_close_to_ground();
 
 	/** Time in us that landing conditions have to hold before triggering a land. */
 	static constexpr hrt_abstime LAND_DETECTOR_TRIGGER_TIME_US = 300_ms;

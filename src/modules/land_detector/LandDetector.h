@@ -136,6 +136,10 @@ protected:
 	 */
 	virtual bool _get_ground_effect_state() { return false; }
 
+	virtual void _set_high_hysteresis() = 0;
+
+	virtual void _set_low_hysteresis() = 0;
+
 	/** Run main land detector loop at this interval. */
 	static constexpr uint32_t LAND_DETECTOR_UPDATE_INTERVAL = 20_ms;
 
@@ -170,6 +174,9 @@ private:
 	void _update_total_flight_time();
 
 	bool _previous_armed_state{false};	///< stores the previous actuator_armed.armed state
+
+	bool _dist_bottom_is_observable{false};
+	bool _high_hysteresis_active{false};
 
 	hrt_abstime _takeoff_time{0};
 	hrt_abstime _total_flight_time{0};	///< total vehicle flight time in microseconds

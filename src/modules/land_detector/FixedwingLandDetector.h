@@ -62,6 +62,8 @@ protected:
 
 	bool _get_landed_state() override;
 	void _update_topics() override;
+	void _set_high_hysteresis() override {};
+	void _set_low_hysteresis() override {};
 
 private:
 

@@ -80,9 +80,7 @@ MulticopterLandDetector::MulticopterLandDetector()
 	_paramHandle.hoverThrottle  = param_find("MPC_THR_HOVER");
 
 	// Use Trigger time when transitioning from in-air (false) to landed (true) / ground contact (true).
-	_ground_contact_hysteresis.set_hysteresis_time_from(false, GROUND_CONTACT_TRIGGER_TIME_US);
-	_landed_hysteresis.set_hysteresis_time_from(false, LAND_DETECTOR_TRIGGER_TIME_US);
-	_maybe_landed_hysteresis.set_hysteresis_time_from(false, MAYBE_LAND_DETECTOR_TRIGGER_TIME_US);
+	_set_low_hysteresis();
 }
 
 void MulticopterLandDetector::_update_topics()
@@ -179,8 +177,11 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		      && (_vehicle_local_position_setpoint.vz >= land_speed_threshold);
 	bool hit_ground = _in_descend && !vertical_movement;
 
+	// will be true if we don't have a valid estimate
+	const bool is_close_to_ground = _is_close_to_ground() || !_vehicle_local_position.dist_bottom_valid;
+
 	// TODO: we need an accelerometer based check for vertical movement for flying without GPS
-	return (_has_low_thrust() || hit_ground) && (!_horizontal_movement || !_has_position_lock())
+	return is_close_to_ground && (_has_low_thrust() || hit_ground) && (!_horizontal_movement || !_has_position_lock())
 	       && (!vertical_movement || !_has_altitude_lock());
 }
 
@@ -316,6 +317,34 @@ bool MulticopterLandDetector::_has_minimal_thrust()
 bool MulticopterLandDetector::_get_ground_effect_state()
 {
 	return _in_descend && !_horizontal_movement;
+}
+
+bool MulticopterLandDetector::_is_close_to_ground()
+{
+	const float distance_to_ground_threshold = 1.0f;
+
+	if (_vehicle_local_position.dist_bottom_valid) {
+		return _vehicle_local_position.dist_bottom < distance_to_ground_threshold;
+
+	} else {
+		return false;
+	}
+}
+
+void MulticopterLandDetector::_set_high_hysteresis()
+{
+	const int factor = 3;
+
+	_ground_contact_hysteresis.set_hysteresis_time_from(false, GROUND_CONTACT_TRIGGER_TIME_US * factor);
+	_landed_hysteresis.set_hysteresis_time_from(false, LAND_DETECTOR_TRIGGER_TIME_US * factor);
+	_maybe_landed_hysteresis.set_hysteresis_time_from(false, MAYBE_LAND_DETECTOR_TRIGGER_TIME_US * factor);
+}
+
+void MulticopterLandDetector::_set_low_hysteresis()
+{
+	_ground_contact_hysteresis.set_hysteresis_time_from(false, GROUND_CONTACT_TRIGGER_TIME_US);
+	_landed_hysteresis.set_hysteresis_time_from(false, LAND_DETECTOR_TRIGGER_TIME_US);
+	_maybe_landed_hysteresis.set_hysteresis_time_from(false, MAYBE_LAND_DETECTOR_TRIGGER_TIME_US);
 }
 
 } // namespace land_detector

@@ -73,6 +73,21 @@ void LandDetector::Run()
 	_update_topics();
 	_update_state();
 
+	// TODO: come up with a better check how to determine if the system can estimate distance to the ground
+	if (!_dist_bottom_is_observable) {
+		_dist_bottom_is_observable = _vehicle_local_position.dist_bottom_valid;
+
+	} else {
+		if (!_high_hysteresis_active && !_vehicle_local_position.dist_bottom_valid) {
+			_set_high_hysteresis();
+			_high_hysteresis_active = true;
+
+		} else if (_high_hysteresis_active && _vehicle_local_position.dist_bottom_valid) {
+			_set_low_hysteresis();
+			_high_hysteresis_active = false;
+		}
+	}
+
 	const bool freefallDetected = _freefall_hysteresis.get_state();
 	const bool ground_contactDetected = _ground_contact_hysteresis.get_state();
 	const bool maybe_landedDetected = _maybe_landed_hysteresis.get_state();

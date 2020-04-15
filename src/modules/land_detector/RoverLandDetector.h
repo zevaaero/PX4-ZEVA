@@ -55,6 +55,8 @@ public:
 protected:
 	bool _get_ground_contact_state() override;
 	bool _get_landed_state() override;
+	void _set_high_hysteresis() override {};
+	void _set_low_hysteresis() override {};
 
 private:
 
