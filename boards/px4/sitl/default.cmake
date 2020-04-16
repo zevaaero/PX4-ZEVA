@@ -62,6 +62,7 @@ px4_add_board(
 		motor_test
 		#mtd
 		#nshterm
+		pairing_button_sim
 		param
 		perf
 		pwm
