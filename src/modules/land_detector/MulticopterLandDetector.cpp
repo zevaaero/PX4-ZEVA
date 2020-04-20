@@ -324,10 +324,8 @@ bool MulticopterLandDetector::_get_ground_effect_state()
 
 bool MulticopterLandDetector::_is_close_to_ground()
 {
-	const float distance_to_ground_threshold = 1.0f;
-
 	if (_vehicle_local_position.dist_bottom_valid) {
-		return _vehicle_local_position.dist_bottom < distance_to_ground_threshold;
+		return _vehicle_local_position.dist_bottom < DIST_FROM_GROUND_THRESHOLD;
 
 	} else {
 		return false;
