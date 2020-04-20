@@ -177,11 +177,14 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		      && (_vehicle_local_position_setpoint.vz >= land_speed_threshold);
 	bool hit_ground = _in_descend && !vertical_movement;
 
-	// will be true if we don't have a valid estimate
-	const bool is_close_to_ground = _is_close_to_ground() || !_vehicle_local_position.dist_bottom_valid;
+	// if there is no distance to ground estimate available then don't enforce using it.
+	// if a distance to the ground estimate is generally available (_dist_bottom_is_observable=true), then
+	// we already increased the hysteresis for the land detection states in order to reduce the chance of false positives.
+	const bool skip_close_to_ground_check = !_dist_bottom_is_observable || !_vehicle_local_position.dist_bottom_valid;
 
 	// TODO: we need an accelerometer based check for vertical movement for flying without GPS
-	return is_close_to_ground && (_has_low_thrust() || hit_ground) && (!_horizontal_movement || !_has_position_lock())
+	return (_is_close_to_ground() || skip_close_to_ground_check) && (_has_low_thrust() || hit_ground)
+	       && (!_horizontal_movement || !_has_position_lock())
 	       && (!vertical_movement || !_has_altitude_lock());
 }
 

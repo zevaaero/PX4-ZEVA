@@ -164,6 +164,8 @@ protected:
 
 	uORB::Publication<vehicle_land_detected_s> _vehicle_land_detected_pub{ORB_ID(vehicle_land_detected)};
 
+	bool _dist_bottom_is_observable{false};
+
 private:
 
 	void Run() override;
@@ -174,7 +176,6 @@ private:
 
 	bool _previous_armed_state{false};	///< stores the previous actuator_armed.armed state
 
-	bool _dist_bottom_is_observable{false};
 	bool _high_hysteresis_active{false};
 
 	hrt_abstime _takeoff_time{0};
