@@ -1985,7 +1985,13 @@ Commander::run()
 			if (_sp_man.kill_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
 				/* set lockdown flag */
 				if (!armed.manual_lockdown) {
-					mavlink_and_console_log_info(&mavlink_log_pub, "Manual kill-switch engaged");
+					if (_land_detector.landed) {
+						mavlink_and_console_log_info(&mavlink_log_pub, "Manual kill-switch engaged");
+
+					} else {
+						mavlink_log_critical(&mavlink_log_pub, "Manual kill-switch engaged");
+					}
+
 					_status_changed = true;
 					armed.manual_lockdown = true;
 				}
