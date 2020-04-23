@@ -70,8 +70,7 @@ PX4Accelerometer::PX4Accelerometer(uint32_t device_id, ORB_PRIO priority, enum R
 	_sensor_integrated_pub{ORB_ID(sensor_accel_integrated), priority},
 	_sensor_status_pub{ORB_ID(sensor_accel_status), priority},
 	_device_id{device_id},
-	_rotation{rotation},
-	_rotation_dcm{get_rot_matrix(rotation)}
+	_rotation{rotation}
 {
 	// register class and advertise immediately to keep instance numbering in sync
 	_class_device_instance = register_class_devname(ACCEL_BASE_DEVICE_PATH);
@@ -269,16 +268,14 @@ void PX4Accelerometer::updateFIFO(const FIFOSample &sample)
 
 		if (_integrator_fifo_samples > 0 && (_integrator_samples >= _integrator_reset_samples)) {
 
-			// Apply rotation and scale
-			// integrated in microseconds, convert to seconds
-			const Vector3f delta_velocity_uncalibrated{_rotation_dcm *_integration_raw * _scale};
+			// Apply rotation (before scaling)
+			rotate_3f(_rotation, _integration_raw(0), _integration_raw(1), _integration_raw(2));
 
-			// scale calibration offset to number of samples
-			const Vector3f offset{_calibration_offset * _integrator_fifo_samples};
+			// integrated in microseconds, convert to seconds
+			const Vector3f delta_velocity_uncalibrated{_integration_raw * 1e-6f * dt * _scale};
 
 			// Apply calibration and scale to seconds
-			Vector3f delta_velocity{((delta_velocity_uncalibrated - offset).emult(_calibration_scale))};
-			delta_velocity *= 1e-6f * dt;
+			const Vector3f delta_velocity{(delta_velocity_uncalibrated - _calibration_offset).emult(_calibration_scale)};
 
 			// fill sensor_accel_integrated and publish
 			sensor_accel_integrated_s report;
