@@ -65,14 +65,15 @@ static constexpr uint32_t G_ODR = 6664;		// Angular rate output data rate
 enum class
 Register : uint8_t {
 	FIFO_CTRL1	= 0x06,	// FIFO threshold level setting.
-
+	FIFO_CTRL2	= 0x07,	// FIFO threshold level setting 2.
 	FIFO_CTRL3	= 0x08,	// FIFO control register (r/w).
-
+	FIFO_CTRL4	= 0x09,	// FIFO control register (r/w).
 	FIFO_CTRL5	= 0x0A,
 
-	INT1_CTRL	= 0x0D,
-	INT2_CTRL	= 0x0E,
-	WHO_AM_I	= 0x0F,
+	DRDY_PULSE_CFG = 0x0B,
+	INT1_CTRL	   = 0x0D,
+	INT2_CTRL	   = 0x0E,
+	WHO_AM_I	   = 0x0F,
 
 	CTRL1_XL	= 0x10,	// Linear acceleration sensor control register 1 (r/w).
 	CTRL2_G		= 0x11,	// Angular rate sensor control register 2 (r/w).
@@ -80,6 +81,7 @@ Register : uint8_t {
 	CTRL4_C		= 0x13,
 	CTRL5_C		= 0x14, // Control register 5 (r/w).
 	CTRL6_C		= 0x15,	// Angular rate sensor control register 6 (r/w).
+	CTRL8_XL	= 0x17,	// Linear acceleration sensor control register 8 (r/w).
 
 	OUT_TEMP_L	= 0x20,
 	OUT_TEMP_H	= 0x21,
@@ -87,6 +89,7 @@ Register : uint8_t {
 	FIFO_STATUS1	= 0x3A,	// FIFO status control register (r)
 	FIFO_STATUS2	= 0x3B,	// FIFO status control register (r)
 	FIFO_STATUS3	= 0x3C,	// FIFO status control register (r)
+	FIFO_STATUS4	= 0x3D,	// FIFO status control register (r)
 
 	FIFO_DATA_OUT_L	= 0x3E,	// FIFO data output (first byte)
 	FIFO_DATA_OUT_H	= 0x3F,	// FIFO data output (second byte)
@@ -107,6 +110,12 @@ FIFO_CTRL5_BIT : uint8_t {
 
 	FIFO_MODE_CONTINUOUS	= Bit2 | Bit1,	// Continuous mode. If the FIFO is full, the new sample overwrites the older one.
 
+};
+
+// DRDY_PULSE_CFG
+enum
+DRDY_PULSE_CFG : uint8_t {
+	DRDY_PULSED		= Bit7,
 };
 
 // INT1_CTRL
@@ -137,6 +146,8 @@ CTRL1_XL_BIT : uint8_t {
 	ODR_XL_6_66KHZ	= Bit7 | Bit5,	// 6.66 kHz Output data rate and power mode selection
 
 	FS_XL_16	= Bit2,		// FS_XL 01: ±16 g
+	LPF1_BW_SEL = Bit1,
+	BW0_XL      = Bit0,
 };
 
 // CTRL2_G
@@ -160,6 +171,7 @@ CTRL3_C_BIT : uint8_t {
 // CTRL4_C
 enum
 CTRL4_C_BIT : uint8_t {
+	LPF1_SEL_G	= Bit1,
 	INT2_on_INT1	= Bit5,
 };
 

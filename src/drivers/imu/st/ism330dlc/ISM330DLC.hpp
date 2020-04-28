@@ -80,7 +80,10 @@ private:
 	// Sensor Configuration
 	static constexpr uint32_t GYRO_RATE{ST_ISM330DLC::G_ODR};
 	static constexpr uint32_t ACCEL_RATE{ST_ISM330DLC::LA_ODR};
-	static constexpr uint32_t FIFO_MAX_SAMPLES{ math::min(FIFO::SIZE / sizeof(FIFO::DATA) + 1, sizeof(PX4Gyroscope::FIFOSample::x) / sizeof(PX4Gyroscope::FIFOSample::x[0]))};
+	static constexpr uint32_t FIFO_MAX_SAMPLES{ math::min(math::min(FIFO::SIZE / sizeof(FIFO::DATA) + 1,
+			sizeof(PX4Gyroscope::FIFOSample::x) / sizeof(PX4Gyroscope::FIFOSample::x[0])),
+			sizeof(PX4Accelerometer::FIFOSample::x) / sizeof(PX4Accelerometer::FIFOSample::x[0]))
+						  };
 
 	// Transfer data
 	struct FIFOTransferBuffer {
@@ -90,16 +93,30 @@ private:
 	// ensure no struct padding
 	static_assert(sizeof(FIFOTransferBuffer) == (sizeof(uint8_t) + FIFO_MAX_SAMPLES *sizeof(FIFO::DATA)));
 
+	struct register_config_t {
+		Register reg;
+		uint8_t set_bits{0};
+		uint8_t clear_bits{0};
+	};
+
 	int probe() override;
+
+	void ConfigureSampleRate(int sample_rate);
 
 	static int DataReadyInterruptCallback(int irq, void *context, void *arg);
 	void DataReady();
 
+	bool RegisterCheck(const register_config_t &reg_cfg, bool notify = false);
 	uint8_t RegisterRead(Register reg);
 	void RegisterWrite(Register reg, uint8_t value);
 	void RegisterSetBits(Register reg, uint8_t setbits);
 	void RegisterClearBits(Register reg, uint8_t clearbits);
+	void RegisterSetAndClearBits(Register reg, uint8_t setbits, uint8_t clearbits);
 
+	bool Configure();
+
+	uint16_t FIFOReadCount();
+	bool FIFORead(const hrt_abstime &timestamp_sample, uint16_t samples);
 	void ResetFIFO();
 
 	const spi_drdy_gpio_t _drdy_gpio;
@@ -107,6 +124,11 @@ private:
 	PX4Accelerometer _px4_accel;
 	PX4Gyroscope _px4_gyro;
 
+	uint16_t _fifo_empty_interval_us{1000}; // 1000 us / 1000 Hz transfer interval
+	uint8_t _fifo_gyro_samples{static_cast<uint8_t>(_fifo_empty_interval_us / (1000000 / GYRO_RATE))};
+	uint8_t _fifo_accel_samples{static_cast<uint8_t>(_fifo_empty_interval_us / (1000000 / ACCEL_RATE))};
+
+	perf_counter_t _bad_transfer_perf{perf_alloc(PC_COUNT, MODULE_NAME": bad transfer")};
 	perf_counter_t _interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": run interval")};
 	perf_counter_t _transfer_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": transfer")};
 	perf_counter_t _fifo_empty_perf{perf_alloc(PC_COUNT, MODULE_NAME": fifo empty")};
@@ -114,7 +136,31 @@ private:
 	perf_counter_t _fifo_reset_perf{perf_alloc(PC_COUNT, MODULE_NAME": fifo reset")};
 	perf_counter_t _drdy_count_perf{perf_alloc(PC_COUNT, MODULE_NAME": drdy count")};
 	perf_counter_t _drdy_interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": drdy interval")};
+	perf_counter_t _bad_register_perf{perf_alloc(PC_COUNT, MODULE_NAME": bad register")};
 
-	hrt_abstime _time_data_ready{0};
-	hrt_abstime _time_last_temperature_update{0};
+	hrt_abstime _last_config_check_timestamp{0};
+	hrt_abstime _fifo_watermark_interrupt_timestamp{0};
+	hrt_abstime _temperature_update_timestamp{0};
+
+	px4::atomic<uint8_t> _fifo_read_samples{0};
+	bool _data_ready_interrupt_enabled{false};
+	uint8_t _checked_register{0};
+
+	static constexpr uint8_t size_register_cfg{5};
+	register_config_t _register_cfg[size_register_cfg] {
+		// Register               | Set bits, Clear bits
+
+		// Accelerometer configuration
+		// Accel has an analog anti-aliasing filter (BW @ 1.5kHz, if BW0_XL=1: BW @ 400Hz)
+		// CTRL1_XL: Accelerometer 16 G range and ODR 6.66 kHz, LPF1_BW_SEL=0
+		{ Register::CTRL1_XL,      CTRL1_XL_BIT::ODR_XL_6_66KHZ | CTRL1_XL_BIT::FS_XL_16, CTRL1_XL_BIT::LPF1_BW_SEL},
+		{ Register::CTRL8_XL,      0, 0xff}, // disable additional fitering (LPF2, HP)
+
+		// Gyroscope configuration
+		{ Register::CTRL4_C,       CTRL4_C_BIT::LPF1_SEL_G, 0}, // enable LPF1 (disabling it adds too much noise)
+		// CTRL2_G: Gyroscope 2000 degrees/second and ODR 6.66 kHz
+		{ Register::CTRL2_G,       CTRL2_G_BIT::ODR_G_6_66KHZ | CTRL2_G_BIT::FS_G_2000, 0},
+		// CTRL6_C: Gyroscope low-pass filter (LPF1) bandwidth 937 Hz (maximum)
+		{ Register::CTRL6_C,       CTRL6_C_BIT::FTYPE_GYRO_LPF_BW_937_HZ, 0},
+	};
 };
