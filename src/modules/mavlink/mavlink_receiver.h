@@ -200,9 +200,6 @@ private:
 
 	bool evaluate_target_ok(int command, int target_system, int target_component);
 
-	void send_flight_information();
-	void send_storage_information(int storage_id);
-
 	void fill_thrust(float *thrust_body_array, uint8_t vehicle_type, float thrust);
 
 	/**
