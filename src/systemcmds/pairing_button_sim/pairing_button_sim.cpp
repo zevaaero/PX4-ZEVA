@@ -40,7 +40,7 @@
 
 #include <drivers/drv_hrt.h>
 #include <px4_platform_common/px4_config.h>
-#include <uORB/PublicationQueued.hpp>
+#include <uORB/Publication.hpp>
 #include <uORB/topics/vehicle_command.h>
 
 extern "C" __EXPORT int pairing_button_sim_main(int argc, char *argv[]);

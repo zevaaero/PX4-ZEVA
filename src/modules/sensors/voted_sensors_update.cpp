@@ -171,7 +171,7 @@ void VotedSensorsUpdate::parametersUpdate()
 				_gyro.enabled[driver_index] = (device_enabled == 1);
 
 				if (!_gyro.enabled[driver_index]) {
-					_gyro.priority[driver_index] = 0;
+					_gyro.priority[driver_index] = ORB_PRIO_UNINITIALIZED;
 				}
 
 				gyro_calibration_s gscale{};
@@ -267,7 +267,7 @@ void VotedSensorsUpdate::parametersUpdate()
 				_accel.enabled[driver_index] = (device_enabled == 1);
 
 				if (!_accel.enabled[driver_index]) {
-					_accel.priority[driver_index] = 0;
+					_accel.priority[driver_index] = ORB_PRIO_UNINITIALIZED;
 				}
 
 				accel_calibration_s ascale{};
@@ -404,7 +404,7 @@ void VotedSensorsUpdate::parametersUpdate()
 				// the mags that were published after the initial parameterUpdate
 				// would be given the priority even if disabled. Reset it to 0 in this case
 				if (!_mag.enabled[topic_instance]) {
-					_mag.priority[topic_instance] = 0;
+					_mag.priority[topic_instance] = ORB_PRIO_UNINITIALIZED;
 				}
 
 				mag_calibration_s mscale{};
@@ -504,9 +504,9 @@ void VotedSensorsUpdate::accelPoll(struct sensor_combined_s &raw)
 
 			// First publication with data
 			if (_accel.priority[uorb_index] == 0) {
-				int32_t priority = 0;
+				ORB_PRIO priority = ORB_PRIO_UNINITIALIZED;
 				orb_priority(_accel.subscription[uorb_index], &priority);
-				_accel.priority[uorb_index] = (uint8_t)priority;
+				_accel.priority[uorb_index] = priority;
 			}
 
 			_accel_device_id[uorb_index] = accel_report.device_id;
@@ -585,9 +585,9 @@ void VotedSensorsUpdate::gyroPoll(struct sensor_combined_s &raw)
 
 			// First publication with data
 			if (_gyro.priority[uorb_index] == 0) {
-				int32_t priority = 0;
+				ORB_PRIO priority = ORB_PRIO_UNINITIALIZED;
 				orb_priority(_gyro.subscription[uorb_index], &priority);
-				_gyro.priority[uorb_index] = (uint8_t)priority;
+				_gyro.priority[uorb_index] = priority;
 			}
 
 			_gyro_device_id[uorb_index] = gyro_report.device_id;
@@ -664,9 +664,9 @@ void VotedSensorsUpdate::magPoll(vehicle_magnetometer_s &magnetometer)
 
 			// First publication with data
 			if (_mag.priority[uorb_index] == 0) {
-				int32_t priority = 0;
+				ORB_PRIO priority = ORB_PRIO_UNINITIALIZED;
 				orb_priority(_mag.subscription[uorb_index], &priority);
-				_mag.priority[uorb_index] = (uint8_t)priority;
+				_mag.priority[uorb_index] = priority;
 
 				/* force a scale and offset update the first time we get data */
 				parametersUpdate();
@@ -737,14 +737,16 @@ bool VotedSensorsUpdate::checkFailover(SensorData &sensor, const char *sensor_na
 						      ((flags & DataValidator::ERROR_FLAG_HIGH_ERRDENSITY) ? " ERR DNST" : ""));
 
 				// reduce priority of failed sensor to the minimum
-				sensor.priority[failover_index] = 1;
+				sensor.priority[failover_index] = ORB_PRIO_MIN;
 
 				PX4_ERR("Sensor %s #%i failed. Reconfiguring sensor priorities.", sensor_name, failover_index);
 
 				int ctr_valid = 0;
 
 				for (uint8_t i = 0; i < sensor.subscription_count; i++) {
-					if (sensor.priority[i] > 1) { ctr_valid++; }
+					if (sensor.priority[i] > ORB_PRIO_MIN) {
+						ctr_valid++;
+					}
 
 					PX4_WARN("Remaining sensors after failover event %u: %s #%u priority: %u", failover_index, sensor_name, i,
 						 sensor.priority[i]);
