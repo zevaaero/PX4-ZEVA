@@ -5,19 +5,19 @@ This file defines a single mixer for a tiltrotor (SITL gazebo) with motors in X 
 
 R: 3y 10000 10000 10000 0
 
-# tilt servo motor 1
+# tilt servo motor 1 (right)
 M: 2
 O:      10000  10000      0 -10000  10000
 S: 1 4      0  20000 -10000 -10000  10000
 S: 0 2 -10000 -10000       0 -10000  10000
 
-# tilt servo motor 2
+# tilt servo motor 2 (left)
 M: 2
 O:      10000  10000      0 -10000  10000
 S: 1 4      0  20000 -10000 -10000  10000
 S: 0 2  10000  10000      0  -10000  10000
 
-REAR up:2100 down:900
+# tilt servo motor 3 (rear)
 -------------
 M: 1
 S: 1 4      0  20000  -10000 -10000  10000
