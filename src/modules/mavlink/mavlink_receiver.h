@@ -68,6 +68,8 @@
 #include <uORB/topics/debug_vect.h>
 #include <uORB/topics/distance_sensor.h>
 #include <uORB/topics/follow_target.h>
+#include <uORB/topics/gimbal_manager_set_attitude.h>
+#include <uORB/topics/gimbal_device_information.h>
 #include <uORB/topics/gps_inject_data.h>
 #include <uORB/topics/home_position.h>
 #include <uORB/topics/input_rc.h>
@@ -175,7 +177,8 @@ private:
 	void handle_message_utm_global_position(mavlink_message_t *msg);
 	void handle_message_vision_position_estimate(mavlink_message_t *msg);
 	void handle_message_onboard_computer_status(mavlink_message_t *msg);
-
+	void handle_message_gimbal_manager_set_attitude(mavlink_message_t *msg);
+	void handle_message_gimbal_device_information(mavlink_message_t *msg);
 
 	void Run();
 
@@ -232,6 +235,8 @@ private:
 	uORB::Publication<debug_value_s>			_debug_value_pub{ORB_ID(debug_value)};
 	uORB::Publication<debug_vect_s>				_debug_vect_pub{ORB_ID(debug_vect)};
 	uORB::Publication<follow_target_s>			_follow_target_pub{ORB_ID(follow_target)};
+	uORB::Publication<gimbal_manager_set_attitude_s>			_gimbal_manager_set_attitude_pub{ORB_ID(gimbal_manager_set_attitude)};
+	uORB::Publication<gimbal_device_information_s>			_gimbal_device_information_pub{ORB_ID(gimbal_device_information)};
 	uORB::Publication<landing_target_pose_s>		_landing_target_pose_pub{ORB_ID(landing_target_pose)};
 	uORB::Publication<log_message_s>			_log_message_pub{ORB_ID(log_message)};
 	uORB::Publication<obstacle_distance_s>			_obstacle_distance_pub{ORB_ID(obstacle_distance)};

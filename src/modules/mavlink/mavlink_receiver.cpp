@@ -266,6 +266,14 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_statustext(msg);
 		break;
 
+	case MAVLINK_MSG_ID_GIMBAL_MANAGER_SET_ATTITUDE:
+		handle_message_gimbal_manager_set_attitude(msg);
+		break;
+
+	case MAVLINK_MSG_ID_GIMBAL_DEVICE_INFORMATION:
+		handle_message_gimbal_device_information(msg);
+		break;
+
 	default:
 		break;
 	}
@@ -489,10 +497,12 @@ uint8_t MavlinkReceiver::handle_request_message_command(uint16_t message_id, flo
 		float param5, float param6, float param7)
 {
 	bool stream_found = false;
+	bool message_sent = false;
 
-	for (const auto stream : _mavlink->get_streams()) {
+	for (const auto &stream : _mavlink->get_streams()) {
 		if (stream->get_id() == message_id) {
-			stream_found = stream->request_message(param2, param3, param4, param5, param6, param7);
+			stream_found = true;
+			message_sent = stream->request_message(param2, param3, param4, param5, param6, param7);
 			break;
 		}
 	}
@@ -505,16 +515,16 @@ uint8_t MavlinkReceiver::handle_request_message_command(uint16_t message_id, flo
 			_mavlink->configure_stream_threadsafe(stream_name, 0.0f);
 
 			// Now we try again to send it.
-			for (const auto stream : _mavlink->get_streams()) {
+			for (const auto &stream : _mavlink->get_streams()) {
 				if (stream->get_id() == message_id) {
-					stream_found = stream->request_message(param2, param3, param4, param5, param6, param7);
+					message_sent = stream->request_message(param2, param3, param4, param5, param6, param7);
 					break;
 				}
 			}
 		}
 	}
 
-	return (stream_found ? vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED : vehicle_command_ack_s::VEHICLE_RESULT_DENIED);
+	return (message_sent ? vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED : vehicle_command_ack_s::VEHICLE_RESULT_DENIED);
 }
 
 
@@ -2634,6 +2644,66 @@ MavlinkReceiver::handle_message_statustext(mavlink_message_t *msg)
 	log_msg.text[sizeof(log_msg.text) - 1] = '\0';
 
 	_log_message_incoming_pub.publish(log_msg);
+}
+
+
+void
+MavlinkReceiver::handle_message_gimbal_manager_set_attitude(mavlink_message_t *msg)
+{
+
+	mavlink_gimbal_manager_set_attitude_t set_attitude_msg;
+	mavlink_msg_gimbal_manager_set_attitude_decode(msg, &set_attitude_msg);
+
+	gimbal_manager_set_attitude_s gimbal_attitude{};
+	gimbal_attitude.timestamp = hrt_absolute_time();
+	gimbal_attitude.target_system = set_attitude_msg.target_system;
+	gimbal_attitude.target_component = set_attitude_msg.target_component;
+	gimbal_attitude.flags = set_attitude_msg.flags;
+	gimbal_attitude.gimbal_device_id = set_attitude_msg.gimbal_device_id;
+
+	matrix::Quatf q(set_attitude_msg.q);
+	q.copyTo(gimbal_attitude.q);
+
+	gimbal_attitude.angular_velocity_x = set_attitude_msg.angular_velocity_x;
+	gimbal_attitude.angular_velocity_y = set_attitude_msg.angular_velocity_y;
+	gimbal_attitude.angular_velocity_z = set_attitude_msg.angular_velocity_z;
+
+	_gimbal_manager_set_attitude_pub.publish(gimbal_attitude);
+
+}
+
+void
+MavlinkReceiver::handle_message_gimbal_device_information(mavlink_message_t *msg)
+{
+
+	mavlink_gimbal_device_information_t gimbal_device_info_msg;
+	mavlink_msg_gimbal_device_information_decode(msg, &gimbal_device_info_msg);
+
+	gimbal_device_information_s gimbal_information{};
+	gimbal_information.timestamp = hrt_absolute_time();
+
+	static_assert(sizeof(gimbal_information.vendor_name) == sizeof(gimbal_device_info_msg.vendor_name),
+		      "vendor_name length doesn't match");
+	static_assert(sizeof(gimbal_information.model_name) == sizeof(gimbal_device_info_msg.model_name),
+		      "model_name length doesn't match");
+	memcpy(gimbal_information.vendor_name, gimbal_device_info_msg.vendor_name, sizeof(gimbal_information.vendor_name));
+	memcpy(gimbal_information.model_name, gimbal_device_info_msg.model_name, sizeof(gimbal_information.model_name));
+	gimbal_device_info_msg.vendor_name[sizeof(gimbal_device_info_msg.vendor_name) - 1] = '\0';
+	gimbal_device_info_msg.model_name[sizeof(gimbal_device_info_msg.model_name) - 1] = '\0';
+
+	gimbal_information.firmware_version = gimbal_device_info_msg.firmware_version;
+	gimbal_information.capability_flags = gimbal_device_info_msg.cap_flags;
+
+	gimbal_information.tilt_max = gimbal_device_info_msg.tilt_max;
+	gimbal_information.tilt_min = gimbal_device_info_msg.tilt_min;
+	gimbal_information.tilt_rate_max = gimbal_device_info_msg.tilt_rate_max;
+
+	gimbal_information.pan_max = gimbal_device_info_msg.pan_max;
+	gimbal_information.pan_min = gimbal_device_info_msg.pan_min;
+	gimbal_information.pan_rate_max = gimbal_device_info_msg.pan_rate_max;
+
+	_gimbal_device_information_pub.publish(gimbal_information);
+
 }
 
 /**
