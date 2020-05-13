@@ -34,6 +34,13 @@
 
 set(PX4_FW_NAME ${PX4_BINARY_DIR}/${PX4_BOARD_VENDOR}_${PX4_BOARD_MODEL}_${PX4_BOARD_LABEL}.px4)
 
+add_custom_target(upload_usb
+	COMMAND ${PX4_SOURCE_DIR}/Tools/auterion/upload_skynode.sh ${PX4_FW_NAME} --default-ip=10.41.1.1
+	DEPENDS ${PX4_FW_NAME}
+	COMMENT "uploading PX4"
+	USES_TERMINAL
+)
+
 add_custom_target(upload_wifi
 	COMMAND ${PX4_SOURCE_DIR}/Tools/auterion/upload_skynode.sh ${PX4_FW_NAME}
 	DEPENDS ${PX4_FW_NAME}
