@@ -651,7 +651,7 @@ void FixedwingAttitudeControl::Run()
 		    _vcontrol_mode.flag_control_manual_enabled) {
 
 			_actuators_0_pub.publish(_actuators);
-			_actuators_2_pub.publish(_actuators_airframe);
+			// _actuators_2_pub.publish(_actuators_airframe);
 		}
 	}
 
