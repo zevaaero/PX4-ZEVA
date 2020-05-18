@@ -70,6 +70,10 @@ bool FlightTaskManualAcceleration::update()
 	Vector2f drag_coefficient = acceleration_scale.edivide(velocity_scale);
 	Vector2f drag_velocity = _velocity_setpoint.xy();
 
+	if (stick_xy.length() < FLT_EPSILON) {
+		drag_coefficient *= 2.f;
+	}
+
 	if (!PX4_ISFINITE(drag_velocity(0))) {
 		drag_velocity = _velocity.xy();
 	}
