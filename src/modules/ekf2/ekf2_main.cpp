@@ -1309,6 +1309,7 @@ void Ekf2::Run()
 				odom.yawspeed = rates(2) - gyro_bias(2);
 
 				lpos.dist_bottom_valid = _ekf.get_terrain_valid();
+				lpos.dist_bottom_sensor_bitfield = _ekf.getTerrainEstimateSensorBitfield();
 
 				float terrain_vpos = _ekf.getTerrainVertPos();
 				lpos.dist_bottom = terrain_vpos - lpos.z; // Distance to bottom surface (ground) in meters
