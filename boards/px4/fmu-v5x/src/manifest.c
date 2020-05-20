@@ -114,6 +114,7 @@ static px4_hw_mft_list_entry_t mft_lists[] = {
 	{0x0000, hw_mft_list_v0500, arraySize(hw_mft_list_v0500)},
 	{0x0001, hw_mft_list_v0501, arraySize(hw_mft_list_v0501)},
 	{0x0900, hw_mft_list_v0509, arraySize(hw_mft_list_v0509)},
+	{0x0a00, hw_mft_list_v0509, arraySize(hw_mft_list_v0509)},
 };
 
 
