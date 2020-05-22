@@ -53,8 +53,8 @@ qmc5883 -X start
 lis2mdl -X start
 
 # Possible internal Baro
-bmp388 -I start
 bmp388 -I -a 0x77 start
+bmp388 -I start
 
 # External RM3100
 rm3100 -X start
