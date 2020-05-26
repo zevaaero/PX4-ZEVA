@@ -363,24 +363,14 @@ MissionBlock::is_mission_item_reached()
 		}
 	}
 
-	/* Check if the waypoint and the requested yaw setpoint. */
+	/* Check if the requested yaw setpoint is reached (only for rotary wing flight). */
 
 	if (_waypoint_position_reached && !_waypoint_yaw_reached) {
 
-		if ((_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
-		     && PX4_ISFINITE(_navigator->get_yaw_acceptance(_mission_item.yaw)))
-		    || ((_mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) && _mission_item.force_heading
-			&& PX4_ISFINITE(_mission_item.yaw))) {
+		if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
+		    && PX4_ISFINITE(_navigator->get_yaw_acceptance(_mission_item.yaw))) {
 
-			/* check course if defined only for rotary wing except takeoff */
-			float cog = (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) ?
-				    _navigator->get_local_position()->heading :
-				    atan2f(
-					    _navigator->get_local_position()->vy,
-					    _navigator->get_local_position()->vx
-				    );
-
-			float yaw_err = wrap_pi(_mission_item.yaw - cog);
+			float yaw_err = wrap_pi(_mission_item.yaw - _navigator->get_local_position()->heading);
 
 			/* accept yaw if reached or if timeout is set in which case we ignore not forced headings */
 			if (fabsf(yaw_err) < _navigator->get_yaw_threshold()
