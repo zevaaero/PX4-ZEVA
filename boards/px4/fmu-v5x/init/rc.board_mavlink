@@ -9,5 +9,13 @@ mavlink start -d /dev/ttyACM0
 # if skynodeV2 base board is detected start Mavlink on Telem2
 if ver hwtypecmp V5X90 V5Xa0
 then
-	mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x
+	# flow control: early boards had incorrect flow control wiring
+	# so it cannot be force enabled. The parameter can be removed once
+	# the boards are replaced.
+	if param compare MAV_FLOW_CONTROL 1
+	then
+		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x -z
+	else
+		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x
+	fi
 fi
