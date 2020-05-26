@@ -50,7 +50,7 @@ TEST_CASE("Offboard takeoff and land", "[multicopter][offboard][nogps]")
 	tester.offboard_goto(takeoff_position, 0.5f);
 	tester.offboard_land();
 	tester.wait_until_disarmed();
-	tester.check_home_within(0.5f);
+	tester.check_home_within(1.0f);
 }
 
 TEST_CASE("Offboard position control", "[multicopter][offboard][nogps]")
