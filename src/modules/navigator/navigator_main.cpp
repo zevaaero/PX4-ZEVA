@@ -893,7 +893,7 @@ Navigator::reset_position_setpoint(position_setpoint_s &sp)
 	sp.cruising_throttle = get_cruising_throttle();
 	sp.valid = false;
 	sp.type = position_setpoint_s::SETPOINT_TYPE_IDLE;
-	sp.disable_weather_vane = true;
+	sp.disable_weather_vane = false;
 }
 
 float
