@@ -47,7 +47,8 @@ TEST_CASE("Offboard takeoff and land", "[multicopter][offboard][nogps]")
 	tester.wait_until_ready_local_position_only();
 	tester.store_home();
 	tester.arm();
-	tester.offboard_goto(takeoff_position, 0.5f);
+	std::chrono::seconds goto_timeout = std::chrono::seconds(10);
+	tester.offboard_goto(takeoff_position, 0.1f, goto_timeout);
 	tester.offboard_land();
 	tester.wait_until_disarmed();
 	tester.check_home_within(1.0f);
@@ -64,11 +65,12 @@ TEST_CASE("Offboard position control", "[multicopter][offboard][nogps]")
 	tester.wait_until_ready_local_position_only();
 	tester.store_home();
 	tester.arm();
-	tester.offboard_goto(takeoff_position, 0.5f);
-	tester.offboard_goto(setpoint_1, 1.0f);
-	tester.offboard_goto(setpoint_2, 1.0f);
-	tester.offboard_goto(setpoint_3, 1.0f);
-	tester.offboard_goto(takeoff_position, 0.2f);
+	std::chrono::seconds goto_timeout = std::chrono::seconds(10);
+	tester.offboard_goto(takeoff_position, 0.1f, goto_timeout);
+	tester.offboard_goto(setpoint_1, 0.1f, goto_timeout);
+	tester.offboard_goto(setpoint_2, 0.1f, goto_timeout);
+	tester.offboard_goto(setpoint_3, 0.1f, goto_timeout);
+	tester.offboard_goto(takeoff_position, 0.1f, goto_timeout);
 	tester.offboard_land();
 	tester.wait_until_disarmed();
 	tester.check_home_within(1.0f);
