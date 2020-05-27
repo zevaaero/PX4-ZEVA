@@ -37,7 +37,6 @@
 #include <drivers/device/spi.h>
 #include <drivers/drv_mag.h>
 #include <drivers/device/ringbuffer.h>
-#include <drivers/device/integrator.h>
 #include <mathlib/math/filter/LowPassFilter2p.hpp>
 #include <lib/conversion/rotation.h>
 #include <perf/perf_counter.h>

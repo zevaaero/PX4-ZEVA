@@ -325,9 +325,6 @@ void ICM20608G::ConfigureSampleRate(int sample_rate)
 	_fifo_empty_interval_us = _fifo_gyro_samples * (1000000 / GYRO_RATE);
 
 	_fifo_accel_samples = math::min(_fifo_empty_interval_us / (1000000 / ACCEL_RATE), FIFO_MAX_SAMPLES);
-
-	_px4_accel.set_update_rate(1000000 / _fifo_empty_interval_us);
-	_px4_gyro.set_update_rate(1000000 / _fifo_empty_interval_us);
 }
 
 bool ICM20608G::Configure()

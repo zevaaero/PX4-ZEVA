@@ -330,9 +330,6 @@ void ICM40609D::ConfigureSampleRate(int sample_rate)
 
 	_fifo_accel_samples = math::min(_fifo_empty_interval_us / (1000000 / ACCEL_RATE), FIFO_MAX_SAMPLES);
 
-	_px4_accel.set_update_rate(1000000 / _fifo_empty_interval_us);
-	_px4_gyro.set_update_rate(1000000 / _fifo_empty_interval_us);
-
 	// FIFO watermark threshold in number of bytes
 	const uint16_t fifo_watermark_threshold = _fifo_gyro_samples * sizeof(FIFO::DATA);
 
