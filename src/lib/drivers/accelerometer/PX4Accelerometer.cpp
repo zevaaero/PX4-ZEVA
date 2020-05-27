@@ -145,8 +145,8 @@ void PX4Accelerometer::update(hrt_abstime timestamp_sample, float x, float y, fl
 	// Clipping (check unscaled raw values)
 	for (int i = 0; i < 3; i++) {
 		if (fabsf(raw(i)) > _clip_limit) {
-			_clipping[i]++;
-			_integrator_clipping++;
+			_clipping_total[i]++;
+			_integrator_clipping(i)++;
 		}
 	}
 
@@ -185,7 +185,11 @@ void PX4Accelerometer::update(hrt_abstime timestamp_sample, float x, float y, fl
 		delta_velocity.copyTo(report.delta_velocity);
 		report.dt = integral_dt;
 		report.samples = _integrator_samples;
-		report.clip_count = _integrator_clipping;
+
+		for (int i = 0; i < 3; i++) {
+			report.clip_counter[i] = fabsf(roundf(_integrator_clipping(i)));
+		}
+
 		report.timestamp = hrt_absolute_time();
 
 		_sensor_integrated_pub.publish(report);
@@ -238,11 +242,13 @@ void PX4Accelerometer::updateFIFO(const FIFOSample &sample)
 	unsigned clip_count_y = clipping(sample.y, _clip_limit, N);
 	unsigned clip_count_z = clipping(sample.z, _clip_limit, N);
 
-	_clipping[0] += clip_count_x;
-	_clipping[1] += clip_count_y;
-	_clipping[2] += clip_count_z;
+	_clipping_total[0] += clip_count_x;
+	_clipping_total[1] += clip_count_y;
+	_clipping_total[2] += clip_count_z;
 
-	_integrator_clipping += clip_count_x + clip_count_y + clip_count_z;
+	_integrator_clipping(0) += clip_count_x;
+	_integrator_clipping(1) += clip_count_y;
+	_integrator_clipping(2) += clip_count_z;
 
 	// integrated data (INS)
 	{
@@ -286,7 +292,12 @@ void PX4Accelerometer::updateFIFO(const FIFOSample &sample)
 			delta_velocity.copyTo(report.delta_velocity);
 			report.dt = _integrator_fifo_samples * dt; // time span in microseconds
 			report.samples = _integrator_fifo_samples;
-			report.clip_count = _integrator_clipping;
+
+			const Vector3f clipping{_rotation_dcm * _integrator_clipping};
+
+			for (int i = 0; i < 3; i++) {
+				report.clip_counter[i] = fabsf(roundf(clipping(i)));
+			}
 
 			report.timestamp = hrt_absolute_time();
 			_sensor_integrated_pub.publish(report);
@@ -334,9 +345,9 @@ void PX4Accelerometer::PublishStatus()
 		status.measure_rate_hz = _update_rate;
 		status.temperature = _temperature;
 		status.vibration_metric = _vibration_metric;
-		status.clipping[0] = _clipping[0];
-		status.clipping[1] = _clipping[1];
-		status.clipping[2] = _clipping[2];
+		status.clipping[0] = _clipping_total[0];
+		status.clipping[1] = _clipping_total[1];
+		status.clipping[2] = _clipping_total[2];
 		status.timestamp = hrt_absolute_time();
 		_sensor_status_pub.publish(status);
 
@@ -349,7 +360,7 @@ void PX4Accelerometer::ResetIntegrator()
 	_integrator_samples = 0;
 	_integrator_fifo_samples = 0;
 	_integration_raw.zero();
-	_integrator_clipping = 0;
+	_integrator_clipping.zero();
 
 	_timestamp_sample_prev = 0;
 }
