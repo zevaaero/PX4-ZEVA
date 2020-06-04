@@ -60,6 +60,7 @@
 #include <uORB/topics/sensor_preflight.h>
 #include <uORB/topics/sensor_selection.h>
 #include <uORB/topics/vehicle_imu.h>
+#include <uORB/topics/vehicle_imu_status.h>
 #include <uORB/topics/vehicle_magnetometer.h>
 #include <uORB/topics/subsystem_info.h>
 
@@ -196,6 +197,11 @@ private:
 
 	// references
 	uORB::SubscriptionCallbackWorkItem(&_vehicle_imu_sub)[3];
+	uORB::Subscription _vehicle_imu_status_sub[ACCEL_COUNT_MAX] {
+		{ORB_ID(vehicle_imu_status), 0},
+		{ORB_ID(vehicle_imu_status), 1},
+		{ORB_ID(vehicle_imu_status), 2},
+	};
 
 	sensor_combined_s _last_sensor_data[SENSOR_COUNT_MAX] {};	/**< latest sensor data from all sensors instances */
 	vehicle_magnetometer_s _last_magnetometer[SENSOR_COUNT_MAX] {}; /**< latest sensor data from all sensors instances */
