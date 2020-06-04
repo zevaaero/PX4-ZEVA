@@ -237,8 +237,6 @@ MissionBlock::is_mission_item_reached()
 			}
 
 		} else if (_mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
-
-
 			// NAV_CMD_LOITER_TO_ALT only uses mission item altitude once it's in the loiter
 			//  first check if the altitude setpoint is the mission setpoint
 			struct position_setpoint_s *curr_sp = &_navigator->get_position_setpoint_triplet()->current;
@@ -267,22 +265,6 @@ MissionBlock::is_mission_item_reached()
 				    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 
 					_waypoint_position_reached = true;
-
-					// set required yaw from bearing to the next mission item
-					if (_mission_item.force_heading) {
-						const position_setpoint_s &next_sp = _navigator->get_position_setpoint_triplet()->next;
-
-						if (next_sp.valid) {
-							_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
-									    _navigator->get_global_position()->lon,
-									    next_sp.lat, next_sp.lon);
-
-							_waypoint_yaw_reached = false;
-
-						} else {
-							_waypoint_yaw_reached = true;
-						}
-					}
 				}
 			}
 
@@ -361,6 +343,11 @@ MissionBlock::is_mission_item_reached()
 			// reached just now
 			_time_wp_reached = now;
 		}
+
+		// consider yaw reached for non-rotary wing vehicles (such as fixed-wing)
+		if (_navigator->get_vstatus()->vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+			_waypoint_yaw_reached = true;
+		}
 	}
 
 	/* Check if the requested yaw setpoint is reached (only for rotary wing flight). */
@@ -399,10 +386,50 @@ MissionBlock::is_mission_item_reached()
 			_time_first_inside_orbit = now;
 		}
 
+		bool time_inside_reached = false;
+
 		/* check if the MAV was long enough inside the waypoint orbit */
 		if ((get_time_inside(_mission_item) < FLT_EPSILON) ||
 		    (now - _time_first_inside_orbit >= (hrt_abstime)(get_time_inside(_mission_item) * 1e6f))) {
+			time_inside_reached = true;
+		}
 
+		bool exit_heading_reached = false;
+
+		if (time_inside_reached) {
+
+			if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+				exit_heading_reached = true;
+			}
+
+			if ((_mission_item.nav_cmd == NAV_CMD_LOITER_TIME_LIMIT || _mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) &&
+			    _mission_item.force_heading) {
+				// set required yaw from bearing to the next mission item
+				const position_setpoint_s &next_sp = _navigator->get_position_setpoint_triplet()->next;
+
+				if (next_sp.valid) {
+					_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
+							    _navigator->get_global_position()->lon,
+							    next_sp.lat, next_sp.lon);
+
+					/* check course if defined only for rotary wing except takeoff */
+					float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
+					float yaw_err = wrap_pi(_mission_item.yaw - cog);
+
+					if (abs(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
+						exit_heading_reached = true;
+					}
+
+				} else {
+					exit_heading_reached = true;
+				}
+
+			} else {
+				exit_heading_reached = true;
+			}
+		}
+
+		if (exit_heading_reached) {
 			position_setpoint_s &curr_sp = _navigator->get_position_setpoint_triplet()->current;
 			const position_setpoint_s &next_sp = _navigator->get_position_setpoint_triplet()->next;
 
@@ -433,8 +460,10 @@ MissionBlock::is_mission_item_reached()
 								   &curr_sp.lat, &curr_sp.lon);
 			}
 
-			return true;
+			return true; // mission item is reached
 		}
+
+
 	}
 
 	// all acceptance criteria must be met in the same iteration
