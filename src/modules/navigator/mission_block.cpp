@@ -159,7 +159,7 @@ MissionBlock::is_mission_item_reached()
 			/* close to waypoint, but altitude error greater than twice acceptance */
 			if ((dist >= 0.0f)
 			    && (dist_z > 2 * _navigator->get_altitude_acceptance_radius())
-			    && (dist_xy < 2 * _navigator->get_loiter_radius())) {
+			    && (dist_xy < 1.2f * _navigator->get_loiter_radius())) {
 
 				/* SETPOINT_TYPE_POSITION -> SETPOINT_TYPE_LOITER */
 				if (curr_sp->type == position_setpoint_s::SETPOINT_TYPE_POSITION) {
@@ -169,7 +169,7 @@ MissionBlock::is_mission_item_reached()
 					_navigator->set_position_setpoint_triplet_updated();
 				}
 
-			} else if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+			} else if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
 				   && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 
 				_waypoint_position_reached = true;
@@ -234,12 +234,11 @@ MissionBlock::is_mission_item_reached()
 			}
 
 		} else if (_mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
-			// NAV_CMD_LOITER_TO_ALT only uses mission item altitude once it's in the loiter
-			//  first check if the altitude setpoint is the mission setpoint
+			// NAV_CMD_LOITER_TO_ALT only uses mission item altitude once it's in the loiter.
+			// First check if the altitude setpoint is the mission setpoint (that means that the loiter is not yet reached)
 			struct position_setpoint_s *curr_sp = &_navigator->get_position_setpoint_triplet()->current;
 
 			if (fabsf(curr_sp->alt - mission_item_altitude_amsl) >= FLT_EPSILON) {
-				// check if the initial loiter has been accepted
 				dist_xy = -1.0f;
 				dist_z = -1.0f;
 
@@ -250,7 +249,7 @@ MissionBlock::is_mission_item_reached()
 						&dist_xy, &dist_z);
 
 				// check if within loiter radius around wp, if yes then set altitude sp to mission item, plus type LOITER
-				if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+				if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
 				    && dist_z <= _navigator->get_default_altitude_acceptance_radius()) {
 
 					curr_sp->alt = mission_item_altitude_amsl;
@@ -259,7 +258,8 @@ MissionBlock::is_mission_item_reached()
 				}
 
 			} else {
-				if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+				// loitering, check if new altitude is reached, while still also having check on position
+				if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
 				    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 
 					_waypoint_position_reached = true;
