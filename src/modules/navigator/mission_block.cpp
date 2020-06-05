@@ -216,12 +216,17 @@ MissionBlock::is_mission_item_reached()
 			 * Therefore the item is marked as reached once the system reaches the loiter
 			 * radius (+ some margin). Time inside and turn count is handled elsewhere.
 			 */
-			float radius = (fabsf(_mission_item.loiter_radius) > NAV_EPSILON_POSITION) ? fabsf(_mission_item.loiter_radius) :
-				       _navigator->get_loiter_radius();
 
-			if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius(fabsf(radius) * 1.2f)
+			struct position_setpoint_s *curr_sp = &_navigator->get_position_setpoint_triplet()->current;
+
+			if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)) {
+				curr_sp->type = position_setpoint_s::SETPOINT_TYPE_LOITER;
+				_navigator->set_position_setpoint_triplet_updated();
+			}
+
+			// check if within loiter radius around wp, if yes then set altitude sp to mission item, plus type LOITER
+			if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
 			    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
-
 				_waypoint_position_reached = true;
 
 			} else {
@@ -244,11 +249,12 @@ MissionBlock::is_mission_item_reached()
 						_navigator->get_global_position()->alt,
 						&dist_xy, &dist_z);
 
+				// check if within loiter radius around wp, if yes then set altitude sp to mission item, plus type LOITER
 				if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
 				    && dist_z <= _navigator->get_default_altitude_acceptance_radius()) {
 
-					// now set the loiter to the final altitude in the NAV_CMD_LOITER_TO_ALT mission item
 					curr_sp->alt = mission_item_altitude_amsl;
+					curr_sp->type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 					_navigator->set_position_setpoint_triplet_updated();
 				}
 
@@ -592,6 +598,19 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 	sp->cruising_speed = _navigator->get_cruising_speed();
 	sp->cruising_throttle = _navigator->get_cruising_throttle();
 
+	float dist = -1.0f;
+	float dist_xy = -1.0f;
+	float dist_z = -1.0f;
+	float mission_item_altitude_amsl = _mission_item.altitude_is_relative ?
+					   _mission_item.altitude + _navigator->get_home_position()->alt
+					   : _mission_item.altitude;
+
+	dist = get_distance_to_point_global_wgs84(_mission_item.lat, _mission_item.lon, mission_item_altitude_amsl,
+			_navigator->get_global_position()->lat,
+			_navigator->get_global_position()->lon,
+			_navigator->get_global_position()->alt,
+			&dist_xy, &dist_z);
+
 	switch (item.nav_cmd) {
 	case NAV_CMD_IDLE:
 		sp->type = position_setpoint_s::SETPOINT_TYPE_IDLE;
@@ -637,7 +656,16 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 	// fall through
 	case NAV_CMD_LOITER_TIME_LIMIT:
 	case NAV_CMD_LOITER_UNLIMITED:
-		sp->type = position_setpoint_s::SETPOINT_TYPE_LOITER;
+
+		/* if in FW, set to LOITER type once close to loiter wp, otherwise set type POSITION */
+		if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
+		    (dist >= 0.0f && dist_xy > 1.2f * _navigator->get_loiter_radius())) {
+			sp->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+
+		} else {
+			sp->type = position_setpoint_s::SETPOINT_TYPE_LOITER;
+		}
+
 		break;
 
 	default:
