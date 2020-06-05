@@ -168,11 +168,6 @@ MissionBlock::is_mission_item_reached()
 					curr_sp->loiter_direction = 1;
 					_navigator->set_position_setpoint_triplet_updated();
 				}
-
-			} else if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
-				   && dist_z <= _navigator->get_altitude_acceptance_radius()) {
-
-				_waypoint_position_reached = true;
 			}
 		}
 
@@ -306,8 +301,20 @@ MissionBlock::is_mission_item_reached()
 			_time_wp_reached = now;
 
 		} else {
-			/* for normal mission items used their acceptance radius */
-			float mission_acceptance_radius = _navigator->get_acceptance_radius(_mission_item.acceptance_radius);
+			/*normal mission items */
+
+			struct position_setpoint_s *curr_sp = &_navigator->get_position_setpoint_triplet()->current;
+
+			/* change acceptance radius if vehicle is currently loitering and in fixed-wing */
+			float mission_acceptance_radius;
+
+			if (curr_sp->type == position_setpoint_s::SETPOINT_TYPE_LOITER &&
+			    _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
+				mission_acceptance_radius = (fabsf(curr_sp->loiter_radius) * 1.2f);
+
+			} else {
+				mission_acceptance_radius = _navigator->get_acceptance_radius(_mission_item.acceptance_radius);
+			}
 
 			/* if set to zero use the default instead */
 			if (mission_acceptance_radius < NAV_EPSILON_POSITION) {
