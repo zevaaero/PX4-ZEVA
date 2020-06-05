@@ -1143,7 +1143,7 @@ Mission::set_mission_items()
 		}
 
 	} else {
-		if (_mission_item.autocontinue && get_time_inside(_mission_item) < FLT_EPSILON) {
+		if (_mission_item.autocontinue) {
 			/* try to process next mission item */
 			if (has_next_position_item) {
 				/* got next mission item, update setpoint triplet */
