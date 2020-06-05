@@ -169,18 +169,10 @@ MissionBlock::is_mission_item_reached()
 					_navigator->set_position_setpoint_triplet_updated();
 				}
 
-			} else {
-				/* restore SETPOINT_TYPE_POSITION */
-				if (curr_sp->type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-					/* loiter acceptance criteria required to revert back to SETPOINT_TYPE_POSITION */
-					if ((dist >= 0.0f)
-					    && (dist_z < _navigator->get_loiter_radius())
-					    && (dist_xy <= _navigator->get_loiter_radius() * 1.2f)) {
+			} else if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+				   && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 
-						curr_sp->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-						_navigator->set_position_setpoint_triplet_updated();
-					}
-				}
+				_waypoint_position_reached = true;
 			}
 		}
 
@@ -382,6 +374,7 @@ MissionBlock::is_mission_item_reached()
 	/* Once the waypoint and yaw setpoint have been reached we can start the loiter time countdown */
 	if (_waypoint_position_reached && _waypoint_yaw_reached) {
 
+		// check if time inside condition is reached
 		if (_time_first_inside_orbit == 0) {
 			_time_first_inside_orbit = now;
 		}
@@ -394,33 +387,30 @@ MissionBlock::is_mission_item_reached()
 			time_inside_reached = true;
 		}
 
+		// check if heading for exit is reached (only applies for fixed-wing flight)
 		bool exit_heading_reached = false;
 
 		if (time_inside_reached) {
 
-			if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-				exit_heading_reached = true;
-			}
+			struct position_setpoint_s *curr_sp_new = &_navigator->get_position_setpoint_triplet()->current;
+			const position_setpoint_s &next_sp = _navigator->get_position_setpoint_triplet()->next;
 
-			if ((_mission_item.nav_cmd == NAV_CMD_LOITER_TIME_LIMIT || _mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) &&
-			    _mission_item.force_heading) {
+			/* enforce exit heading if in FW, the next wp is valid, the vehicle is currently loitering and either having force_heading set,
+			   or if loitering to achieve altitdue at a NAV_CMD_WAYPOINT */
+			bool enforce_exit_heading = _navigator->get_vstatus()->vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
+						    next_sp.valid &&
+						    curr_sp_new->type == position_setpoint_s::SETPOINT_TYPE_LOITER &&
+						    (_mission_item.force_heading || _mission_item.nav_cmd == NAV_CMD_WAYPOINT);
+
+			if (enforce_exit_heading) {
 				// set required yaw from bearing to the next mission item
-				const position_setpoint_s &next_sp = _navigator->get_position_setpoint_triplet()->next;
+				_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
+						    _navigator->get_global_position()->lon,
+						    next_sp.lat, next_sp.lon);
+				float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
+				float yaw_err = wrap_pi(_mission_item.yaw - cog);
 
-				if (next_sp.valid) {
-					_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
-							    _navigator->get_global_position()->lon,
-							    next_sp.lat, next_sp.lon);
-
-					/* check course if defined only for rotary wing except takeoff */
-					float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
-					float yaw_err = wrap_pi(_mission_item.yaw - cog);
-
-					if (abs(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
-						exit_heading_reached = true;
-					}
-
-				} else {
+				if (abs(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
 					exit_heading_reached = true;
 				}
 
@@ -429,6 +419,7 @@ MissionBlock::is_mission_item_reached()
 			}
 		}
 
+		// set exit flight course to next waypoint
 		if (exit_heading_reached) {
 			position_setpoint_s &curr_sp = _navigator->get_position_setpoint_triplet()->current;
 			const position_setpoint_s &next_sp = _navigator->get_position_setpoint_triplet()->next;
@@ -462,7 +453,6 @@ MissionBlock::is_mission_item_reached()
 
 			return true; // mission item is reached
 		}
-
 
 	}
 
