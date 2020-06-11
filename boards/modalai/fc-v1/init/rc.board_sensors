@@ -15,11 +15,9 @@ mpu6000 -R 6 -s -T 20602 start
 # Internal SPI bus ICM-42688
 icm42688p -R 12 -s start
 
-# Internal SPI bus BMI088 accel
-bmi088 -A -R 4 -s start
-
-# Internal SPI bus BMI088 gyro
-bmi088 -G -R 4 -s start
+# Internal SPI4 BMI088
+bmi088 -A -R 12 -s start
+bmi088 -G -R 12 -s start
 
 # Possible external compasses
 ist8310 -X start

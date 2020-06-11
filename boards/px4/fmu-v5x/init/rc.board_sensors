@@ -18,11 +18,9 @@ then
 	# Internal SPI bus ISM300DLC
 	# ism330dlc -s start
 
-	# Internal SPI bus BMI088 accel
-	bmi088 -A -R 14 -s start
-
-	# Internal SPI bus BMI088 gyro
-	bmi088 -G -R 14 -s start
+	# Internal SPI BMI088
+	bmi088 -A -R 6 -s start
+	bmi088 -G -R 6 -s start
 
 	# Internal magnetometer on I2c
 	bmm150 -I -R  2 start
@@ -35,11 +33,9 @@ else
 	# Internal SPI bus ISM300DLC
 	#ism330dlc -s start
 
-	# Internal SPI bus BMI088 accel
-	bmi088 -A -R 12 -s start
-
-	# Internal SPI bus BMI088 gyro
-	bmi088 -G -R 12 -s start
+	# Internal SPI BMI088
+	bmi088 -A -R 4 -s start
+	bmi088 -G -R 4 -s start
 
 	# Internal magnetometer on I2c
 	bmm150 -I start
