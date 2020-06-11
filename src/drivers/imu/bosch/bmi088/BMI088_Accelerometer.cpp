@@ -44,7 +44,7 @@ BMI088_Accelerometer::BMI088_Accelerometer(I2CSPIBusOption bus_option, int bus, 
 		int bus_frequency, spi_mode_e spi_mode, spi_drdy_gpio_t drdy_gpio) :
 	BMI088(DRV_ACC_DEVTYPE_BMI088, "BMI088_Accelerometer", bus_option, bus, device, spi_mode, bus_frequency, drdy_gpio),
 	ModuleParams(nullptr),
-	_px4_accel(get_device_id(), ORB_PRIO_HIGH, rotation)
+	_px4_accel(get_device_id(), ORB_PRIO_MAX, rotation)
 {
 	if (drdy_gpio != 0) {
 		_drdy_interval_perf = perf_alloc(PC_INTERVAL, MODULE_NAME"_accel: DRDY interval");
