@@ -41,6 +41,9 @@
 
 #include "parameters.h"
 
+#include "data_validator/DataValidator.hpp"
+#include "data_validator/DataValidatorGroup.hpp"
+
 #include <drivers/drv_accel.h>
 #include <drivers/drv_gyro.h>
 #include <drivers/drv_mag.h>
@@ -49,8 +52,6 @@
 #include <mathlib/mathlib.h>
 #include <matrix/math.hpp>
 
-#include <lib/ecl/validation/data_validator.h>
-#include <lib/ecl/validation/data_validator_group.h>
 #include <lib/mag_compensation/MagCompensation.hpp>
 
 #include <uORB/Publication.hpp>
