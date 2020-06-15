@@ -7,17 +7,32 @@
 # Bootloader upgrade
 #
 set BL_FILE /etc/extras/px4fmuv5x_bl.bin
+# Currently included BL version: increase this for automatic update
+# TODO: this can be removed once all Skynodes are updated
+set BL_VERSION 1
 if [ -f $BL_FILE ]
 then
+	set WANT_BL_UPDATE 0
 	if param compare SYS_BL_UPDATE 1
 	then
+		set WANT_BL_UPDATE 1
+	fi
+	if ! param compare SYS_BL_VER ${BL_VERSION}
+	then
+		set WANT_BL_UPDATE 1
+	fi
+
+	if [ $WANT_BL_UPDATE = 1 ]
+	then
 		param set SYS_BL_UPDATE 0
+		param set SYS_BL_VER ${BL_VERSION}
 		param save
 		echo "BL update..." >> $LOG_FILE
 		bl_update $BL_FILE
 		echo "BL update done" >> $LOG_FILE
 		reboot
 	fi
+	unset WANT_BL_UPDATE
 fi
 unset BL_FILE
 

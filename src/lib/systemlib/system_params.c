@@ -250,3 +250,12 @@ PARAM_DEFINE_INT32(SYS_HAS_BARO, 1);
  * @group System
  */
 PARAM_DEFINE_INT32(SYS_BL_UPDATE, 0);
+
+/**
+ * Currently installed bootloader version
+ *
+ * @reboot_required true
+ * @category system
+ * @group System
+ */
+PARAM_DEFINE_INT32(SYS_BL_VER, 0);
