@@ -43,7 +43,16 @@ using namespace matrix;
 
 bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s last_setpoint)
 {
-	return FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
+	bool ret = FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
+
+	if (PX4_ISFINITE(last_setpoint.vx)) {
+		_velocity_setpoint.xy() = Vector2f(last_setpoint.vx, last_setpoint.vy);
+
+	} else {
+		_velocity_setpoint.xy() = Vector2f(_velocity);
+	}
+
+	return ret;
 }
 
 bool FlightTaskManualAcceleration::update()
@@ -88,6 +97,11 @@ bool FlightTaskManualAcceleration::update()
 
 	_acceleration_setpoint.xy() = acceleration_xy;
 
+	// Generate velocity setpoint by forward integrating commanded acceleration
+	Vector2f velocity_xy(_velocity_setpoint);
+	velocity_xy += Vector2f(_acceleration_setpoint.xy()) * _deltatime;
+	_velocity_setpoint.xy() = velocity_xy;
+
 	lockPosition(stick_xy.length());
 
 	_constraints.want_takeoff = _checkTakeoff();
@@ -97,24 +111,16 @@ bool FlightTaskManualAcceleration::update()
 void FlightTaskManualAcceleration::lockPosition(const float stick_input_xy)
 {
 	if (stick_input_xy > FLT_EPSILON) {
-		_velocity_setpoint.xy() = NAN;
 		_position_setpoint.xy() = NAN;
 
 	} else {
-		Vector2f velocity_xy(_velocity_setpoint);
 		Vector2f position_xy(_position_setpoint);
-
-		if (!PX4_ISFINITE(velocity_xy(0))) {
-			velocity_xy = Vector2f(_velocity);
-		}
 
 		if (!PX4_ISFINITE(position_xy(0))) {
 			position_xy = Vector2f(_position);
 		}
 
-		velocity_xy += Vector2f(_acceleration_setpoint.xy()) * _deltatime;
 		position_xy += Vector2f(_velocity_setpoint.xy()) * _deltatime;
-		_velocity_setpoint.xy() = velocity_xy;
 		_position_setpoint.xy() = position_xy;
 	}
 }
