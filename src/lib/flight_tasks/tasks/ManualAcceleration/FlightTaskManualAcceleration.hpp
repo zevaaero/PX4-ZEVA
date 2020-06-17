@@ -43,6 +43,7 @@
 #include "FlightTaskManualAltitudeSmoothVel.hpp"
 #include "PositionLock.hpp"
 #include "SlewRate.hpp"
+#include <lib/ecl/EKF/AlphaFilter.hpp>
 
 class FlightTaskManualAcceleration : public FlightTaskManualAltitudeSmoothVel
 {
@@ -55,8 +56,8 @@ public:
 protected:
 	PositionLock _position_lock;
 
-	void lockAltitude();
-	void lockPosition(const float stick_input_xy);
+	void lockPosition(const bool lock);
+	void applyFeasibilityLimit(Vector2f &acceleration);
 	void _ekfResetHandlerPositionXY() override;
 	void _ekfResetHandlerVelocityXY() override;
 	void _ekfResetHandlerPositionZ() override;
@@ -71,6 +72,7 @@ protected:
 
 	SlewRate<float> _acceleration_slew_rate_x;
 	SlewRate<float> _acceleration_slew_rate_y;
+	AlphaFilter<float> _brake_boost_filter;
 private:
 
 };
