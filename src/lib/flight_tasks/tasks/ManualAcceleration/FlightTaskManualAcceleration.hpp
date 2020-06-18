@@ -59,6 +59,7 @@ protected:
 	void lockPosition();
 	void applyFeasibilityLimit(Vector2f &acceleration);
 	matrix::Vector2f calculateDrag(matrix::Vector2f drag_coefficient);
+	void applyTiltLimit(Vector2f &acceleration);
 	void _ekfResetHandlerPositionXY() override;
 	void _ekfResetHandlerVelocityXY() override;
 	void _ekfResetHandlerPositionZ() override;
@@ -68,7 +69,8 @@ protected:
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskManualAltitudeSmoothVel,
 					(ParamFloat<px4::params::MPC_VEL_MANUAL>) _param_mpc_vel_manual,
 					(ParamFloat<px4::params::MPC_ACC_HOR>) _param_mpc_acc_hor,
-					(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max
+					(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max,
+					(ParamFloat<px4::params::MPC_TILTMAX_AIR>) _param_mpc_tiltmax_air
 				       )
 
 	SlewRate<float> _acceleration_slew_rate_x;
