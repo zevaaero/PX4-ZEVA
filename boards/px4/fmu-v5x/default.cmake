@@ -31,9 +31,9 @@ px4_add_board(
 		imu/adis16448
 		imu/adis16477
 		imu/adis16497
-		imu/bmi088
-		imu/mpu6000
-		#imu/st/ism330dlc
+		imu/bosch/bmi088
+		imu/invensense/icm20602
+		imu/st/ism330dlc
 		irlock
 		lights/blinkm
 		lights/rgbled
@@ -95,6 +95,7 @@ px4_add_board(
 		dmesg
 		dumpfile
 		esc_calib
+		gpio
 		hardfault_log
 		i2cdetect
 		led_control
@@ -117,6 +118,7 @@ px4_add_board(
 		usb_connected
 		ver
 		work_queue
+		serial_test
 	EXAMPLES
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello

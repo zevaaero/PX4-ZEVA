@@ -49,8 +49,6 @@ LSM9DS1::LSM9DS1(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rota
 	_px4_accel.set_device_type(DRV_IMU_DEVTYPE_ST_LSM9DS1_AG);
 	_px4_gyro.set_device_type(DRV_IMU_DEVTYPE_ST_LSM9DS1_AG);
 
-	_px4_accel.set_update_rate(1000000 / _fifo_interval);
-	_px4_gyro.set_update_rate(1000000 / _fifo_interval);
 }
 
 LSM9DS1::~LSM9DS1()

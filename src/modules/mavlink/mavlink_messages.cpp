@@ -84,12 +84,8 @@
 #include <uORB/topics/orbit_status.h>
 #include <uORB/topics/position_controller_status.h>
 #include <uORB/topics/position_setpoint_triplet.h>
-#include <uORB/topics/sensor_accel_integrated.h>
-#include <uORB/topics/sensor_accel_status.h>
 #include <uORB/topics/sensor_baro.h>
 #include <uORB/topics/sensor_combined.h>
-#include <uORB/topics/sensor_gyro_integrated.h>
-#include <uORB/topics/sensor_gyro_status.h>
 #include <uORB/topics/sensor_mag.h>
 #include <uORB/topics/sensor_selection.h>
 #include <uORB/topics/tecs_status.h>
@@ -106,6 +102,8 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_local_position_setpoint.h>
+#include <uORB/topics/vehicle_imu.h>
+#include <uORB/topics/vehicle_imu_status.h>
 #include <uORB/topics/vehicle_magnetometer.h>
 #include <uORB/topics/vehicle_odometry.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
@@ -1034,12 +1032,11 @@ public:
 
 	unsigned get_size() override
 	{
-		return _raw_accel_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
+		return _raw_imu_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
 	}
 
 private:
-	uORB::Subscription _raw_accel_sub{ORB_ID(sensor_accel_integrated), 0};
-	uORB::Subscription _raw_gyro_sub{ORB_ID(sensor_gyro_integrated), 0};
+	uORB::Subscription _raw_imu_sub{ORB_ID(vehicle_imu), 0};
 	uORB::Subscription _raw_mag_sub{ORB_ID(sensor_mag), 0};
 
 	// do not allow top copy this class
@@ -1052,28 +1049,25 @@ protected:
 
 	bool send(const hrt_abstime t) override
 	{
-		if (_raw_accel_sub.updated() || _raw_gyro_sub.updated() || _raw_mag_sub.updated()) {
+		if (_raw_imu_sub.updated() || _raw_mag_sub.updated()) {
 
-			sensor_accel_integrated_s sensor_accel{};
-			_raw_accel_sub.copy(&sensor_accel);
-
-			sensor_gyro_integrated_s sensor_gyro{};
-			_raw_gyro_sub.copy(&sensor_gyro);
+			vehicle_imu_s imu{};
+			_raw_imu_sub.copy(&imu);
 
 			sensor_mag_s sensor_mag{};
 			_raw_mag_sub.copy(&sensor_mag);
 
 			mavlink_scaled_imu_t msg{};
 
-			msg.time_boot_ms = sensor_accel.timestamp / 1000;
+			msg.time_boot_ms = imu.timestamp / 1000;
 
 			// Accelerometer in mG
-			const float accel_dt_inv = 1.e6f / (float)sensor_accel.dt;
-			const Vector3f accel = Vector3f{sensor_accel.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
+			const float accel_dt_inv = 1.e6f / (float)imu.delta_velocity_dt;
+			const Vector3f accel = Vector3f{imu.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
 
 			// Gyroscope in mrad/s
-			const float gyro_dt_inv = 1.e6f / (float)sensor_gyro.dt;
-			const Vector3f gyro = Vector3f{sensor_gyro.delta_angle} * gyro_dt_inv * 1000.0f;
+			const float gyro_dt_inv = 1.e6f / (float)imu.delta_angle_dt;
+			const Vector3f gyro = Vector3f{imu.delta_angle} * gyro_dt_inv * 1000.0f;
 
 			msg.xacc = (int16_t)accel(0);
 			msg.yacc = (int16_t)accel(1);
@@ -1124,12 +1118,11 @@ public:
 
 	unsigned get_size() override
 	{
-		return _raw_accel_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU2_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
+		return _raw_imu_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU2_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
 	}
 
 private:
-	uORB::Subscription _raw_accel_sub{ORB_ID(sensor_accel_integrated), 1};
-	uORB::Subscription _raw_gyro_sub{ORB_ID(sensor_gyro_integrated), 1};
+	uORB::Subscription _raw_imu_sub{ORB_ID(vehicle_imu), 1};
 	uORB::Subscription _raw_mag_sub{ORB_ID(sensor_mag), 1};
 
 	// do not allow top copy this class
@@ -1142,28 +1135,25 @@ protected:
 
 	bool send(const hrt_abstime t) override
 	{
-		if (_raw_accel_sub.updated() || _raw_gyro_sub.updated() || _raw_mag_sub.updated()) {
+		if (_raw_imu_sub.updated() || _raw_mag_sub.updated()) {
 
-			sensor_accel_integrated_s sensor_accel{};
-			_raw_accel_sub.copy(&sensor_accel);
-
-			sensor_gyro_integrated_s sensor_gyro{};
-			_raw_gyro_sub.copy(&sensor_gyro);
+			vehicle_imu_s imu{};
+			_raw_imu_sub.copy(&imu);
 
 			sensor_mag_s sensor_mag{};
 			_raw_mag_sub.copy(&sensor_mag);
 
 			mavlink_scaled_imu2_t msg{};
 
-			msg.time_boot_ms = sensor_accel.timestamp / 1000;
+			msg.time_boot_ms = imu.timestamp / 1000;
 
 			// Accelerometer in mG
-			const float accel_dt_inv = 1.e6f / (float)sensor_accel.dt;
-			const Vector3f accel = Vector3f{sensor_accel.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
+			const float accel_dt_inv = 1.e6f / (float)imu.delta_velocity_dt;
+			const Vector3f accel = Vector3f{imu.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
 
 			// Gyroscope in mrad/s
-			const float gyro_dt_inv = 1.e6f / (float)sensor_gyro.dt;
-			const Vector3f gyro = Vector3f{sensor_gyro.delta_angle} * gyro_dt_inv * 1000.0f;
+			const float gyro_dt_inv = 1.e6f / (float)imu.delta_angle_dt;
+			const Vector3f gyro = Vector3f{imu.delta_angle} * gyro_dt_inv * 1000.0f;
 
 			msg.xacc = (int16_t)accel(0);
 			msg.yacc = (int16_t)accel(1);
@@ -1213,12 +1203,11 @@ public:
 
 	unsigned get_size() override
 	{
-		return _raw_accel_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU3_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
+		return _raw_imu_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU3_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
 	}
 
 private:
-	uORB::Subscription _raw_accel_sub{ORB_ID(sensor_accel_integrated), 2};
-	uORB::Subscription _raw_gyro_sub{ORB_ID(sensor_gyro_integrated), 2};
+	uORB::Subscription _raw_imu_sub{ORB_ID(vehicle_imu), 2};
 	uORB::Subscription _raw_mag_sub{ORB_ID(sensor_mag), 2};
 
 	// do not allow top copy this class
@@ -1231,28 +1220,25 @@ protected:
 
 	bool send(const hrt_abstime t) override
 	{
-		if (_raw_accel_sub.updated() || _raw_gyro_sub.updated() || _raw_mag_sub.updated()) {
+		if (_raw_imu_sub.updated() || _raw_mag_sub.updated()) {
 
-			sensor_accel_integrated_s sensor_accel{};
-			_raw_accel_sub.copy(&sensor_accel);
-
-			sensor_gyro_integrated_s sensor_gyro{};
-			_raw_gyro_sub.copy(&sensor_gyro);
+			vehicle_imu_s imu{};
+			_raw_imu_sub.copy(&imu);
 
 			sensor_mag_s sensor_mag{};
 			_raw_mag_sub.copy(&sensor_mag);
 
 			mavlink_scaled_imu3_t msg{};
 
-			msg.time_boot_ms = sensor_accel.timestamp / 1000;
+			msg.time_boot_ms = imu.timestamp / 1000;
 
 			// Accelerometer in mG
-			const float accel_dt_inv = 1.e6f / (float)sensor_accel.dt;
-			const Vector3f accel = Vector3f{sensor_accel.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
+			const float accel_dt_inv = 1.e6f / (float)imu.delta_velocity_dt;
+			const Vector3f accel = Vector3f{imu.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
 
 			// Gyroscope in mrad/s
-			const float gyro_dt_inv = 1.e6f / (float)sensor_gyro.dt;
-			const Vector3f gyro = Vector3f{sensor_gyro.delta_angle} * gyro_dt_inv * 1000.0f;
+			const float gyro_dt_inv = 1.e6f / (float)imu.delta_angle_dt;
+			const Vector3f gyro = Vector3f{imu.delta_angle} * gyro_dt_inv * 1000.0f;
 
 			msg.xacc = (int16_t)accel(0);
 			msg.yacc = (int16_t)accel(1);
@@ -1512,7 +1498,7 @@ protected:
 			_airspeed_validated_sub.copy(&airspeed_validated);
 
 			mavlink_vfr_hud_t msg{};
-			msg.airspeed = airspeed_validated.indicated_airspeed_m_s;
+			msg.airspeed = airspeed_validated.equivalent_airspeed_m_s;
 			msg.groundspeed = sqrtf(lpos.vx * lpos.vx + lpos.vy * lpos.vy);
 			msg.heading = math::degrees(wrap_2pi(lpos.yaw));
 
@@ -2530,7 +2516,7 @@ protected:
 		}
 
 		if (odom_updated) {
-			msg.time_usec = odom.timestamp;
+			msg.time_usec = odom.timestamp_sample;
 			msg.child_frame_id = MAV_FRAME_BODY_FRD;
 
 			// Current position
@@ -2544,16 +2530,27 @@ protected:
 			msg.q[2] = odom.q[2];
 			msg.q[3] = odom.q[3];
 
-			// Body-FRD frame to local NED frame Dcm matrix
-			matrix::Dcmf R_body_to_local(matrix::Quatf(odom.q));
+			switch (odom.velocity_frame) {
+			case vehicle_odometry_s::BODY_FRAME_FRD:
+				msg.vx = odom.vx;
+				msg.vy = odom.vy;
+				msg.vz = odom.vz;
+				break;
 
-			// Rotate linear and angular velocity from local NED to body-NED frame
-			matrix::Vector3f linvel_body(R_body_to_local.transpose() * matrix::Vector3f(odom.vx, odom.vy, odom.vz));
+			case vehicle_odometry_s::LOCAL_FRAME_FRD:
+			case vehicle_odometry_s::LOCAL_FRAME_NED:
+				// Body frame to local frame
+				const matrix::Dcmf R_body_to_local(matrix::Quatf(odom.q));
 
-			// Current linear velocity
-			msg.vx = linvel_body(0);
-			msg.vy = linvel_body(1);
-			msg.vz = linvel_body(2);
+				// Rotate linear velocity from local to body frame
+				const matrix::Vector3f linvel_body(R_body_to_local.transpose() *
+								   matrix::Vector3f(odom.vx, odom.vy, odom.vz));
+
+				msg.vx = linvel_body(0);
+				msg.vy = linvel_body(1);
+				msg.vz = linvel_body(2);
+				break;
+			}
 
 			// Current body rates
 			msg.rollspeed = odom.rollspeed;
@@ -2766,13 +2763,7 @@ public:
 			return size;
 		}
 
-		for (auto &x : _sensor_accel_status_sub) {
-			if (x.advertised()) {
-				return size;
-			}
-		}
-
-		for (auto &x : _sensor_gyro_status_sub) {
+		for (auto &x : _vehicle_imu_status_sub) {
 			if (x.advertised()) {
 				return size;
 			}
@@ -2784,16 +2775,10 @@ public:
 private:
 	uORB::Subscription _sensor_selection_sub{ORB_ID(sensor_selection)};
 
-	uORB::Subscription _sensor_accel_status_sub[3] {
-		{ORB_ID(sensor_accel_status), 0},
-		{ORB_ID(sensor_accel_status), 1},
-		{ORB_ID(sensor_accel_status), 2},
-	};
-
-	uORB::Subscription _sensor_gyro_status_sub[3] {
-		{ORB_ID(sensor_gyro_status), 0},
-		{ORB_ID(sensor_gyro_status), 1},
-		{ORB_ID(sensor_gyro_status), 2},
+	uORB::Subscription _vehicle_imu_status_sub[3] {
+		{ORB_ID(vehicle_imu_status), 0},
+		{ORB_ID(vehicle_imu_status), 1},
+		{ORB_ID(vehicle_imu_status), 2},
 	};
 
 	/* do not allow top copying this class */
@@ -2808,10 +2793,10 @@ protected:
 	{
 		bool updated = _sensor_selection_sub.updated();
 
-		// check for sensor_accel_status update
+		// check for vehicle_imu_status update
 		if (!updated) {
 			for (int i = 0; i < 3; i++) {
-				if (_sensor_accel_status_sub[i].updated() || _sensor_gyro_status_sub[i].updated()) {
+				if (_vehicle_imu_status_sub[i].updated()) {
 					updated = true;
 					break;
 				}
@@ -2831,29 +2816,16 @@ protected:
 			sensor_selection_s sensor_selection{};
 			_sensor_selection_sub.copy(&sensor_selection);
 
-			// primary gyro coning and high frequency vibration metrics
-			if (sensor_selection.gyro_device_id != 0) {
-				for (auto &x : _sensor_gyro_status_sub) {
-					sensor_gyro_status_s status;
-
-					if (x.copy(&status)) {
-						if (status.device_id == sensor_selection.gyro_device_id) {
-							msg.vibration_x = status.coning_vibration;
-							msg.vibration_y = status.vibration_metric;
-							break;
-						}
-					}
-				}
-			}
-
 			// primary accel high frequency vibration metric
 			if (sensor_selection.accel_device_id != 0) {
-				for (auto &x : _sensor_accel_status_sub) {
-					sensor_accel_status_s status;
+				for (auto &x : _vehicle_imu_status_sub) {
+					vehicle_imu_status_s status;
 
 					if (x.copy(&status)) {
-						if (status.device_id == sensor_selection.accel_device_id) {
-							msg.vibration_z = status.vibration_metric;
+						if (status.accel_device_id == sensor_selection.accel_device_id) {
+							msg.vibration_x = status.gyro_coning_vibration;
+							msg.vibration_y = status.gyro_vibration_metric;
+							msg.vibration_z = status.accel_vibration_metric;
 							break;
 						}
 					}
@@ -2862,11 +2834,11 @@ protected:
 
 			// accel 0, 1, 2 cumulative clipping
 			for (int i = 0; i < 3; i++) {
-				sensor_accel_status_s acc_status;
+				vehicle_imu_status_s status;
 
-				if (_sensor_accel_status_sub[i].copy(&acc_status)) {
+				if (_vehicle_imu_status_sub[i].copy(&status)) {
 
-					const uint32_t clipping = acc_status.clipping[0] + acc_status.clipping[1] + acc_status.clipping[2];
+					const uint32_t clipping = status.accel_clipping[0] + status.accel_clipping[1] + status.accel_clipping[2];
 
 					switch (i) {
 					case 0:
@@ -2944,7 +2916,7 @@ protected:
 		if (_mocap_sub.update(&mocap)) {
 			mavlink_att_pos_mocap_t msg{};
 
-			msg.time_usec = mocap.timestamp;
+			msg.time_usec = mocap.timestamp_sample;
 			msg.q[0] = mocap.q[0];
 			msg.q[1] = mocap.q[1];
 			msg.q[2] = mocap.q[2];

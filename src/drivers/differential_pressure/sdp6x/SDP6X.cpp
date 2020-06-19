@@ -85,7 +85,7 @@ SDP6X::collect()
 
 	int16_t P = (((int16_t)data[0]) << 8) | data[1];
 
-	float diff_press_pa_raw = static_cast<float>(P) / 60.f; // 500Pa -> scale factor=60
+	float diff_press_pa_raw = -static_cast<float>(P) / 60.f; // 500Pa -> scale factor=60, invert
 
 	differential_pressure_s report{};
 

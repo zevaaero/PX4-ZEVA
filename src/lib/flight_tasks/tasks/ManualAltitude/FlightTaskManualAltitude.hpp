@@ -40,6 +40,7 @@
 #pragma once
 
 #include "FlightTaskManual.hpp"
+#include <lib/ecl/EKF/AlphaFilter.hpp>
 
 class FlightTaskManualAltitude : public FlightTaskManual
 {
@@ -55,7 +56,6 @@ protected:
 	void _ekfResetHandlerHeading(float delta_psi) override; /**< adjust heading setpoint in case of EKF reset event */
 	virtual void _updateSetpoints(); /**< updates all setpoints */
 	virtual void _scaleSticks(); /**< scales sticks to velocity in z */
-	bool _checkTakeoff() override;
 	void _updateConstraintsFromEstimator();
 
 	/**
@@ -83,7 +83,8 @@ protected:
 					(ParamFloat<px4::params::MPC_LAND_SPEED>)
 					_param_mpc_land_speed, /**< desired downwards speed when approaching the ground */
 					(ParamFloat<px4::params::MPC_TKO_SPEED>)
-					_param_mpc_tko_speed /**< desired upwards speed when still close to the ground */
+					_param_mpc_tko_speed, /**< desired upwards speed when still close to the ground */
+					(ParamFloat<px4::params::MC_MAN_TILT_TAU>) _param_mc_man_tilt_tau
 				       )
 private:
 	bool _isYawInput();
@@ -137,4 +138,6 @@ private:
 	 * _dist_to_ground_lock.
 	 */
 	float _dist_to_ground_lock = NAN;
+
+	AlphaFilter<matrix::Vector2f> _man_input_filter;
 };

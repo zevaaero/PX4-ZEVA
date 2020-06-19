@@ -341,6 +341,10 @@ void FlightTaskManualAltitude::_updateSetpoints()
 	// setpoint along z-direction, which is computed in PositionControl.cpp.
 
 	Vector2f sp(&_sticks(0));
+
+	_man_input_filter.setParameters(_deltatime, _param_mc_man_tilt_tau.get());
+	_man_input_filter.update(sp);
+	sp = _man_input_filter.getState();
 	_rotateIntoHeadingFrame(sp);
 
 	if (sp.length() > 1.0f) {
@@ -351,12 +355,6 @@ void FlightTaskManualAltitude::_updateSetpoints()
 
 	_updateAltitudeLock();
 	_respectGroundSlowdown();
-}
-
-bool FlightTaskManualAltitude::_checkTakeoff()
-{
-	// stick is deflected above 65% throttle (_sticks(2) is in the range [-1,1])
-	return _sticks(2) < -0.3f;
 }
 
 bool FlightTaskManualAltitude::update()

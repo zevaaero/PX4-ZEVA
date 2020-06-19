@@ -328,6 +328,7 @@ private:
 
 	int		_last_esc_online_flags{-1};
 	int		_last_esc_failure[esc_status_s::CONNECTED_ESC_MAX] {0};
+	bool		_esc_status_was_updated{false};
 
 	uint8_t		_battery_warning{battery_status_s::BATTERY_WARNING_NONE};
 	float		_battery_current{0.0f};
@@ -366,10 +367,10 @@ private:
 	bool		_status_changed{true};
 	bool		_arm_tune_played{false};
 	bool		_was_landed{true};
-	bool		_was_falling{false};
 	bool		_was_armed{false};
 	bool		_failsafe_old{false};	///< check which state machines for changes, clear "changed" flag
 	bool		_have_taken_off_since_arming{false};
+	bool		_should_set_home_on_takeoff{true};
 	bool		_flight_termination_printed{false};
 
 	main_state_t	_main_state_pre_offboard{commander_state_s::MAIN_STATE_MANUAL};

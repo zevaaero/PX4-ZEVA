@@ -776,12 +776,18 @@ void Ekf2::Run()
 		updated = _vehicle_imu_subs[_imu_sub_index].update(&imu);
 
 		imu_sample_new.time_us = imu.timestamp_sample;
-		imu_sample_new.delta_ang_dt = imu.dt * 1.e-6f;
+		imu_sample_new.delta_ang_dt = imu.delta_angle_dt * 1.e-6f;
 		imu_sample_new.delta_ang = Vector3f{imu.delta_angle};
-		imu_sample_new.delta_vel_dt = imu.dt * 1.e-6f;
+		imu_sample_new.delta_vel_dt = imu.delta_velocity_dt * 1.e-6f;
 		imu_sample_new.delta_vel = Vector3f{imu.delta_velocity};
 
-		imu_dt = imu.dt;
+		if (imu.delta_velocity_clipping > 0) {
+			imu_sample_new.delta_vel_clipping[0] = imu.delta_velocity_clipping & vehicle_imu_s::CLIPPING_X;
+			imu_sample_new.delta_vel_clipping[1] = imu.delta_velocity_clipping & vehicle_imu_s::CLIPPING_Y;
+			imu_sample_new.delta_vel_clipping[2] = imu.delta_velocity_clipping & vehicle_imu_s::CLIPPING_Z;
+		}
+
+		imu_dt = imu.delta_angle_dt;
 
 		bias.accel_device_id = imu.accel_device_id;
 		bias.gyro_device_id = imu.gyro_device_id;
@@ -795,6 +801,12 @@ void Ekf2::Run()
 		imu_sample_new.delta_ang = Vector3f{sensor_combined.gyro_rad} * imu_sample_new.delta_ang_dt;
 		imu_sample_new.delta_vel_dt = sensor_combined.accelerometer_integral_dt * 1.e-6f;
 		imu_sample_new.delta_vel = Vector3f{sensor_combined.accelerometer_m_s2} * imu_sample_new.delta_vel_dt;
+
+		if (sensor_combined.accelerometer_clipping > 0) {
+			imu_sample_new.delta_vel_clipping[0] = sensor_combined.accelerometer_clipping & sensor_combined_s::CLIPPING_X;
+			imu_sample_new.delta_vel_clipping[1] = sensor_combined.accelerometer_clipping & sensor_combined_s::CLIPPING_Y;
+			imu_sample_new.delta_vel_clipping[2] = sensor_combined.accelerometer_clipping & sensor_combined_s::CLIPPING_Z;
+		}
 
 		imu_dt = sensor_combined.gyro_integral_dt;
 	}
@@ -1109,18 +1121,28 @@ void Ekf2::Run()
 				ev_data.vel(1) = _ev_odom.vy;
 				ev_data.vel(2) = _ev_odom.vz;
 
+				if (_ev_odom.velocity_frame == vehicle_odometry_s::BODY_FRAME_FRD) {
+					ev_data.vel_frame = estimator::BODY_FRAME_FRD;
+
+				} else {
+					ev_data.vel_frame = estimator::LOCAL_FRAME_FRD;
+				}
+
 				// velocity measurement error from ev_data or parameters
 				float param_evv_noise_var = sq(_param_ekf2_evv_noise.get());
 
-				if (!_param_ekf2_ev_noise_md.get() && PX4_ISFINITE(_ev_odom.pose_covariance[_ev_odom.COVARIANCE_MATRIX_VX_VARIANCE])
-				    && PX4_ISFINITE(_ev_odom.pose_covariance[_ev_odom.COVARIANCE_MATRIX_VY_VARIANCE])
-				    && PX4_ISFINITE(_ev_odom.pose_covariance[_ev_odom.COVARIANCE_MATRIX_VZ_VARIANCE])) {
-					ev_data.velVar(0) = fmaxf(param_evv_noise_var, _ev_odom.pose_covariance[_ev_odom.COVARIANCE_MATRIX_VX_VARIANCE]);
-					ev_data.velVar(1) = fmaxf(param_evv_noise_var, _ev_odom.pose_covariance[_ev_odom.COVARIANCE_MATRIX_VY_VARIANCE]);
-					ev_data.velVar(2) = fmaxf(param_evv_noise_var, _ev_odom.pose_covariance[_ev_odom.COVARIANCE_MATRIX_VZ_VARIANCE]);
+				if (!_param_ekf2_ev_noise_md.get() && PX4_ISFINITE(_ev_odom.velocity_covariance[_ev_odom.COVARIANCE_MATRIX_VX_VARIANCE])
+				    && PX4_ISFINITE(_ev_odom.velocity_covariance[_ev_odom.COVARIANCE_MATRIX_VY_VARIANCE])
+				    && PX4_ISFINITE(_ev_odom.velocity_covariance[_ev_odom.COVARIANCE_MATRIX_VZ_VARIANCE])) {
+					ev_data.velCov(0, 0) = _ev_odom.velocity_covariance[_ev_odom.COVARIANCE_MATRIX_VX_VARIANCE];
+					ev_data.velCov(0, 1) = ev_data.velCov(1, 0) = _ev_odom.velocity_covariance[1];
+					ev_data.velCov(0, 2) = ev_data.velCov(2, 0) = _ev_odom.velocity_covariance[2];
+					ev_data.velCov(1, 1) = _ev_odom.velocity_covariance[_ev_odom.COVARIANCE_MATRIX_VY_VARIANCE];
+					ev_data.velCov(1, 2) = ev_data.velCov(2, 1) = _ev_odom.velocity_covariance[7];
+					ev_data.velCov(2, 2) = _ev_odom.velocity_covariance[_ev_odom.COVARIANCE_MATRIX_VZ_VARIANCE];
 
 				} else {
-					ev_data.velVar.setAll(param_evv_noise_var);
+					ev_data.velCov = matrix::eye<float, 3>() * param_evv_noise_var;
 				}
 			}
 
@@ -1161,7 +1183,7 @@ void Ekf2::Run()
 			}
 
 			// use timestamp from external computer, clocks are synchronized when using MAVROS
-			ev_data.time_us = _ev_odom.timestamp;
+			ev_data.time_us = _ev_odom.timestamp_sample;
 			_ekf.setExtVisionData(ev_data);
 
 			ekf2_timestamps.visual_odometry_timestamp_rel = (int16_t)((int64_t)_ev_odom.timestamp / 100 -
@@ -1222,9 +1244,11 @@ void Ekf2::Run()
 				vehicle_odometry_s odom{};
 
 				lpos.timestamp = now;
-				odom.timestamp = lpos.timestamp;
 
-				odom.local_frame = odom.LOCAL_FRAME_NED;
+				odom.timestamp = hrt_absolute_time();
+				odom.timestamp_sample = now;
+
+				odom.local_frame = vehicle_odometry_s::LOCAL_FRAME_NED;
 
 				// Position of body origin in local NED frame
 				Vector3f position = _ekf.getPosition();
@@ -1246,6 +1270,7 @@ void Ekf2::Run()
 				lpos.vz = velocity(2);
 
 				// Vehicle odometry linear velocity
+				odom.velocity_frame = vehicle_odometry_s::LOCAL_FRAME_FRD;
 				odom.vx = lpos.vx;
 				odom.vy = lpos.vy;
 				odom.vz = lpos.vz;
@@ -1296,6 +1321,7 @@ void Ekf2::Run()
 				odom.yawspeed = rates(2) - gyro_bias(2);
 
 				lpos.dist_bottom_valid = _ekf.get_terrain_valid();
+				lpos.dist_bottom_sensor_bitfield = _ekf.getTerrainEstimateSensorBitfield();
 
 				float terrain_vpos = _ekf.getTerrainVertPos();
 				lpos.dist_bottom = terrain_vpos - lpos.z; // Distance to bottom surface (ground) in meters
@@ -1407,10 +1433,27 @@ void Ekf2::Run()
 					aligned_ev_odom.y = aligned_pos(1);
 					aligned_ev_odom.z = aligned_pos(2);
 
-					const Vector3f aligned_vel = ev_rot_mat * Vector3f(_ev_odom.vx, _ev_odom.vy, _ev_odom.vz);
-					aligned_ev_odom.vx = aligned_vel(0);
-					aligned_ev_odom.vy = aligned_vel(1);
-					aligned_ev_odom.vz = aligned_vel(2);
+					switch (_ev_odom.velocity_frame) {
+					case vehicle_odometry_s::BODY_FRAME_FRD: {
+							const Vector3f aligned_vel = Dcmf(_ekf.getQuaternion()) *
+										     Vector3f(_ev_odom.vx, _ev_odom.vy, _ev_odom.vz);
+							aligned_ev_odom.vx = aligned_vel(0);
+							aligned_ev_odom.vy = aligned_vel(1);
+							aligned_ev_odom.vz = aligned_vel(2);
+							break;
+						}
+
+					case vehicle_odometry_s::LOCAL_FRAME_FRD: {
+							const Vector3f aligned_vel = ev_rot_mat *
+										     Vector3f(_ev_odom.vx, _ev_odom.vy, _ev_odom.vz);
+							aligned_ev_odom.vx = aligned_vel(0);
+							aligned_ev_odom.vy = aligned_vel(1);
+							aligned_ev_odom.vz = aligned_vel(2);
+							break;
+						}
+					}
+
+					aligned_ev_odom.velocity_frame = vehicle_odometry_s::LOCAL_FRAME_NED;
 
 					// Compute orientation in EKF navigation frame
 					Quatf ev_quat_aligned = quat_ev2ekf * matrix::Quatf(_ev_odom.q) ;

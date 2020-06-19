@@ -54,6 +54,7 @@ public:
 	bool updateInitialize() override;
 
 protected:
+	bool _checkTakeoff() override;
 
 	bool _sticks_data_required = true; /**< let inherited task-class define if it depends on stick data */
 	matrix::Vector<float, 4> _sticks; /**< unmodified manual stick inputs */
