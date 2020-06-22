@@ -279,7 +279,7 @@ PARAM_DEFINE_FLOAT(COM_DISARM_PRFLT, 10.0f);
  * @group Commander
  * @boolean
  */
-PARAM_DEFINE_INT32(COM_ARM_WO_GPS, 1);
+PARAM_DEFINE_INT32(COM_ARM_WO_GPS, 0);
 
 /**
  * Arm switch is only a button
