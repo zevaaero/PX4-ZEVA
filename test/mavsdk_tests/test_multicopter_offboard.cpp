@@ -72,6 +72,6 @@ TEST_CASE("Offboard position control", "[multicopter][offboard][nogps]")
 	tester.offboard_goto(setpoint_3, 0.1f, goto_timeout);
 	tester.offboard_goto(takeoff_position, 0.1f, goto_timeout);
 	tester.offboard_land();
-	tester.wait_until_disarmed();
+	tester.wait_until_disarmed(goto_timeout);
 	tester.check_home_within(1.0f);
 }
