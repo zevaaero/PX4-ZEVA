@@ -197,7 +197,6 @@ PARAM_DEFINE_INT32(MAV_RADIO_TOUT, 25);
  *
  * @value 0 Disabled
  * @value 1 Enabled
- * @value 2 Disabled
  * @group MAVLink
  */
-PARAM_DEFINE_INT32(MAV_FLOW_CONTROL, 2);
+PARAM_DEFINE_INT32(MAV_FLOW_CONTROL, 1);
