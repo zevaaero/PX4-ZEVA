@@ -17,7 +17,7 @@ BUILD_DIR=$2
 
 # setup Gazebo env and update package path
 export GAZEBO_PLUGIN_PATH=$GAZEBO_PLUGIN_PATH:${BUILD_DIR}/build_gazebo
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:${SRC_DIR}/Tools/sitl_gazebo/models:${SRC_DIR}/Tools/auterion/models
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:${SRC_DIR}/Tools/sitl_gazebo/models:${SRC_DIR}/Tools/auterion/models:${SRC_DIR}/Tools/auterion/gazebo_models
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BUILD_DIR}/build_gazebo
 export GAZEBO_MODEL_DATABASE_URI=http://simulation-models.tools.auterion.dev/
 
