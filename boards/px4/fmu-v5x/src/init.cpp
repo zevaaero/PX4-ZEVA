@@ -282,8 +282,8 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 #endif /* CONFIG_MMCSD */
 
-	static MCP23009 mcp23009{2, 0x20};
-	ret = mcp23009.init();
+	static MCP23009 mcp23009{3, 0x25};
+	ret = mcp23009.init(0xf0, 0xf0, 0x0f);
 
 	if (ret != OK) {
 		led_on(LED_RED);
