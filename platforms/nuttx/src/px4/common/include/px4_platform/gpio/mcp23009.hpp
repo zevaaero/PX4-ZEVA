@@ -50,7 +50,7 @@ public:
 	MCP23009(int bus, int address, int first_minor = 0, int bus_frequency = 400000);
 	virtual ~MCP23009();
 
-	int init() override;
+	int init(uint8_t direction, uint8_t intital = 0, uint8_t pull_up = 0);
 
 protected:
 	int probe() override;

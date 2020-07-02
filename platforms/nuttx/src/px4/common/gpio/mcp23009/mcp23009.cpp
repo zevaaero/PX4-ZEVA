@@ -89,7 +89,7 @@ int MCP23009::write_reg(Register address, uint8_t value)
 	return transfer(data, sizeof(data), nullptr, 0);
 }
 
-int MCP23009::init()
+int MCP23009::init(uint8_t direction, uint8_t intital, uint8_t pull_up)
 {
 	/* do I2C init (and probe) first */
 	int ret = I2C::init();
@@ -98,8 +98,11 @@ int MCP23009::init()
 		return ret;
 	}
 
-	/* configure all as input */
-	ret = write_reg(Register::IODIR, 0xff);
+	/* Use this state as the out puts */
+
+	ret = write_reg(Register::OLAT, intital);
+	ret |= write_reg(Register::IODIR, direction);
+	ret |= write_reg(Register::GPPU, pull_up);
 
 	if (ret != PX4_OK) {
 		return ret;
