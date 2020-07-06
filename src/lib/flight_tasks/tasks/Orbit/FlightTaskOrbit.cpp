@@ -174,7 +174,7 @@ bool FlightTaskOrbit::update()
 	Vector2f center_to_position = Vector2f(_position) - _center;
 
 	// make vehicle front always point towards the center
-	_yaw_setpoint = atan2f(center_to_position(1), center_to_position(0)) + M_PI_F;
+	_yaw_setpoint = wrap_pi(atan2f(center_to_position(1), center_to_position(0)) + M_PI_F);
 
 	if (_in_circle_approach) {
 		generate_circle_approach_setpoints();
