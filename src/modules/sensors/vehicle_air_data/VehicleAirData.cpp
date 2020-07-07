@@ -36,6 +36,9 @@
 #include <px4_platform_common/log.h>
 #include <lib/ecl/geo/geo.h>
 
+namespace sensors
+{
+
 using namespace matrix;
 using namespace time_literals;
 
@@ -51,14 +54,12 @@ VehicleAirData::VehicleAirData() :
 VehicleAirData::~VehicleAirData()
 {
 	Stop();
-
 	perf_free(_cycle_perf);
 }
 
 bool VehicleAirData::Start()
 {
 	ScheduleNow();
-
 	return true;
 }
 
@@ -281,3 +282,5 @@ void VehicleAirData::PrintStatus()
 	perf_print_counter(_cycle_perf);
 	_voter.print();
 }
+
+}; // namespace sensors
