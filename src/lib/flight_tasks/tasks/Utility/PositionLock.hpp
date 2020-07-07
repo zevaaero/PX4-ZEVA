@@ -104,8 +104,8 @@ public:
 		const float vl = v.length();
 
 		if (vl > 1.0f) {
+			v(0) /= vl;
 			v(1) /= vl;
-			v(2) /= vl;
 		}
 	}
 
