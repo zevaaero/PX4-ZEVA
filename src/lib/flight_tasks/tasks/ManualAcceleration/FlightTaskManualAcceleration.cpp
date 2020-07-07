@@ -83,12 +83,12 @@ bool FlightTaskManualAcceleration::update()
 	_position_lock.limitStickUnitLengthXY(stick_xy);
 	_position_lock.rotateIntoHeadingFrameXY(stick_xy, _yaw, _yaw_setpoint);
 	Vector2f acceleration_xy = stick_xy.emult(acceleration_scale);
+
 	applyFeasibilityLimit(acceleration_xy);
 
 	// Add drag to limit speed and brake again
 	acceleration_xy -= calculateDrag(acceleration_scale.edivide(velocity_scale));
 
-	applyTiltLimit(acceleration_xy);
 	_acceleration_setpoint.xy() = acceleration_xy;
 
 	// Generate velocity setpoint by forward integrating commanded acceleration
@@ -116,7 +116,7 @@ Vector2f FlightTaskManualAcceleration::calculateDrag(Vector2f drag_coefficient)
 	_brake_boost_filter.setParameters(_deltatime, .8f);
 
 	if (Vector2f(&_sticks_expo(0)).norm_squared() < FLT_EPSILON) {
-		_brake_boost_filter.update(2.f);
+		_brake_boost_filter.update(3.f);
 
 	} else {
 		_brake_boost_filter.update(1.f);
@@ -125,17 +125,6 @@ Vector2f FlightTaskManualAcceleration::calculateDrag(Vector2f drag_coefficient)
 	drag_coefficient *= _brake_boost_filter.getState();
 
 	return drag_coefficient.emult(_velocity_setpoint.xy());
-}
-
-void FlightTaskManualAcceleration::applyTiltLimit(Vector2f &acceleration)
-{
-	// Check if acceleration would exceed the tilt limit
-	const float acc = acceleration.length();
-	const float acc_tilt_max = tanf(M_DEG_TO_RAD_F * _param_mpc_tiltmax_air.get()) * CONSTANTS_ONE_G;
-
-	if (acc > acc_tilt_max) {
-		acceleration *= acc_tilt_max / acc;
-	}
 }
 
 void FlightTaskManualAcceleration::lockPosition()
