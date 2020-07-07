@@ -38,8 +38,6 @@
 #include "FlightTaskManualAcceleration.hpp"
 #include <mathlib/mathlib.h>
 #include <float.h>
-#include "ControlMath.hpp"
-#include <ecl/geo/geo.h>
 
 using namespace matrix;
 
@@ -53,13 +51,6 @@ bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s la
 	} else {
 		_velocity_setpoint.xy() = Vector2f(_velocity);
 	}
-
-	if (PX4_ISFINITE(last_setpoint.acceleration[0])) {
-		_acceleration_slew_rate_x.setForcedValue(last_setpoint.acceleration[0]);
-		_acceleration_slew_rate_x.setForcedValue(last_setpoint.acceleration[1]);
-	}
-
-	_brake_boost_filter.reset(1.f);
 
 	return ret;
 }
@@ -84,22 +75,25 @@ bool FlightTaskManualAcceleration::update()
 	_position_lock.rotateIntoHeadingFrameXY(stick_xy, _yaw, _yaw_setpoint);
 	Vector2f acceleration_xy = stick_xy.emult(acceleration_scale);
 
-	applyFeasibilityLimit(acceleration_xy);
-
 	// Add drag to limit speed and brake again
 	Vector2f drag_coefficient = acceleration_scale.edivide(velocity_scale);
-	_brake_boost_filter.setParameters(_deltatime, .8f);
+	Vector2f drag_velocity = _velocity_setpoint.xy();
 
 	if (stick_xy.length() < FLT_EPSILON) {
-		_brake_boost_filter.update(3.f);
-
-	} else {
-		_brake_boost_filter.update(1.f);
+		drag_coefficient *= 2.f;
 	}
 
-	drag_coefficient *= _brake_boost_filter.getState();
+	if (!PX4_ISFINITE(drag_velocity(0))) {
+		drag_velocity = _velocity.xy();
+	}
 
-	acceleration_xy -= drag_coefficient.emult(_velocity_setpoint.xy());
+	acceleration_xy -= drag_coefficient.emult(drag_velocity);
+
+	// Apply jerk limit - acceleration slew rate
+	_acceleration_slew_rate_x.setSlewRate(_param_mpc_jerk_max.get());
+	_acceleration_slew_rate_y.setSlewRate(_param_mpc_jerk_max.get());
+	acceleration_xy(0) = _acceleration_slew_rate_x.update(acceleration_xy(0), _deltatime);
+	acceleration_xy(1) = _acceleration_slew_rate_y.update(acceleration_xy(1), _deltatime);
 
 	_acceleration_setpoint.xy() = acceleration_xy;
 
@@ -108,24 +102,18 @@ bool FlightTaskManualAcceleration::update()
 	velocity_xy += Vector2f(_acceleration_setpoint.xy()) * _deltatime;
 	_velocity_setpoint.xy() = velocity_xy;
 
-	lockPosition(velocity_xy.length() < 0.01f);
+	lockPosition(stick_xy.length());
 
 	_constraints.want_takeoff = _checkTakeoff();
 	return ret;
 }
 
-void FlightTaskManualAcceleration::applyFeasibilityLimit(Vector2f &acceleration)
+void FlightTaskManualAcceleration::lockPosition(const float stick_input_xy)
 {
-	// Apply jerk limit - acceleration slew rate
-	_acceleration_slew_rate_x.setSlewRate(_param_mpc_jerk_max.get());
-	_acceleration_slew_rate_y.setSlewRate(_param_mpc_jerk_max.get());
-	acceleration(0) = _acceleration_slew_rate_x.update(acceleration(0), _deltatime);
-	acceleration(1) = _acceleration_slew_rate_y.update(acceleration(1), _deltatime);
-}
+	if (stick_input_xy > FLT_EPSILON) {
+		_position_setpoint.xy() = NAN;
 
-void FlightTaskManualAcceleration::lockPosition(const bool lock)
-{
-	if (lock) {
+	} else {
 		Vector2f position_xy(_position_setpoint);
 
 		if (!PX4_ISFINITE(position_xy(0))) {
@@ -134,10 +122,6 @@ void FlightTaskManualAcceleration::lockPosition(const bool lock)
 
 		position_xy += Vector2f(_velocity_setpoint.xy()) * _deltatime;
 		_position_setpoint.xy() = position_xy;
-
-	} else {
-		_position_setpoint.xy() = NAN;
-
 	}
 }
 
