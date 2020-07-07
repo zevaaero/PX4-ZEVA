@@ -5,7 +5,7 @@
 # This script contains all the defaults for our internal vehicles.
 #
 # The critical parameters are
-# MPC_POS_MODE to enable jerk limited multicopter position control
+# MPC_POS_MODE to enable acceleration stick mapping in position mode
 # MAV_1_CONFIG and SER_TEL2_BAUD to enable mavlink on companion link (TELEM2)
 #
 
@@ -13,7 +13,7 @@
 sh /etc/extras/auterion_scripts/auterion_rc_mapping
 
 # Position Mode Tuning
-param set MPC_POS_MODE 3
+param set MPC_POS_MODE 4
 param set MPC_ACC_DOWN_MAX 1
 param set MPC_ACC_UP_MAX 2
 param set MPC_ACC_HOR 3
