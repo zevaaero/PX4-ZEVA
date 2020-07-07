@@ -87,7 +87,19 @@ bool FlightTaskManualAcceleration::update()
 	applyFeasibilityLimit(acceleration_xy);
 
 	// Add drag to limit speed and brake again
-	acceleration_xy -= calculateDrag(acceleration_scale.edivide(velocity_scale));
+	Vector2f drag_coefficient = acceleration_scale.edivide(velocity_scale);
+	_brake_boost_filter.setParameters(_deltatime, .8f);
+
+	if (stick_xy.length() < FLT_EPSILON) {
+		_brake_boost_filter.update(3.f);
+
+	} else {
+		_brake_boost_filter.update(1.f);
+	}
+
+	drag_coefficient *= _brake_boost_filter.getState();
+
+	acceleration_xy -= drag_coefficient.emult(_velocity_setpoint.xy());
 
 	_acceleration_setpoint.xy() = acceleration_xy;
 
@@ -96,7 +108,7 @@ bool FlightTaskManualAcceleration::update()
 	velocity_xy += Vector2f(_acceleration_setpoint.xy()) * _deltatime;
 	_velocity_setpoint.xy() = velocity_xy;
 
-	lockPosition();
+	lockPosition(velocity_xy.length() < 0.01f);
 
 	_constraints.want_takeoff = _checkTakeoff();
 	return ret;
@@ -111,25 +123,9 @@ void FlightTaskManualAcceleration::applyFeasibilityLimit(Vector2f &acceleration)
 	acceleration(1) = _acceleration_slew_rate_y.update(acceleration(1), _deltatime);
 }
 
-Vector2f FlightTaskManualAcceleration::calculateDrag(Vector2f drag_coefficient)
+void FlightTaskManualAcceleration::lockPosition(const bool lock)
 {
-	_brake_boost_filter.setParameters(_deltatime, .8f);
-
-	if (Vector2f(&_sticks_expo(0)).norm_squared() < FLT_EPSILON) {
-		_brake_boost_filter.update(3.f);
-
-	} else {
-		_brake_boost_filter.update(1.f);
-	}
-
-	drag_coefficient *= _brake_boost_filter.getState();
-
-	return drag_coefficient.emult(_velocity_setpoint.xy());
-}
-
-void FlightTaskManualAcceleration::lockPosition()
-{
-	if (Vector2f(_velocity_setpoint).norm_squared() < FLT_EPSILON) {
+	if (lock) {
 		Vector2f position_xy(_position_setpoint);
 
 		if (!PX4_ISFINITE(position_xy(0))) {

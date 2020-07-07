@@ -56,9 +56,8 @@ public:
 protected:
 	PositionLock _position_lock;
 
-	void lockPosition();
+	void lockPosition(const bool lock);
 	void applyFeasibilityLimit(Vector2f &acceleration);
-	matrix::Vector2f calculateDrag(matrix::Vector2f drag_coefficient);
 	void _ekfResetHandlerPositionXY() override;
 	void _ekfResetHandlerVelocityXY() override;
 	void _ekfResetHandlerPositionZ() override;
