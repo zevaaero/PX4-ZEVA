@@ -460,7 +460,10 @@ PARAM_DEFINE_FLOAT(MPC_VELD_LP, 5.0f);
 /**
  * Maximum horizontal acceleration for auto mode and for manual mode
  *
- * Maximum deceleration for MPC_POS_MODE 1. Maximum acceleration and deceleration for MPC_POS_MODE 3.
+ * MPC_POS_MODE
+ * 1 just deceleration
+ * 3 acceleration and deceleration
+ * 4 just acceleration
  *
  * @unit m/s/s
  * @min 2.0
@@ -533,7 +536,7 @@ PARAM_DEFINE_FLOAT(MPC_ACC_DOWN_MAX, 3.0f);
  *
  * Setting this to the maximum value essentially disables the limit.
  *
- * Note: This is only used when MPC_POS_MODE is set to a smoothing mode 1 or 3.
+ * Note: This is only used when MPC_POS_MODE is set to a smoothing mode 1, 3 or 4.
  *
  * @unit m/s/s/s
  * @min 0.5
