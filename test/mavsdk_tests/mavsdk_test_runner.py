@@ -379,7 +379,7 @@ class Tester:
                 gzserver_runner = ph.GzserverRunner(
                     os.getcwd(),
                     log_dir,
-                    test['model'],
+                    test['vehicle'],
                     case,
                     self.get_max_speed_factor(test),
                     self.verbose)
@@ -388,7 +388,7 @@ class Tester:
                 gzmodelspawn_runner = ph.GzmodelspawnRunner(
                     os.getcwd(),
                     log_dir,
-                    test['model'],
+                    test['vehicle'],
                     case,
                     self.verbose)
                 self.active_runners.append(gzmodelspawn_runner)

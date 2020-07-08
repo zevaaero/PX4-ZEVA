@@ -50,7 +50,7 @@ TEST_CASE("Offboard takeoff and land", "[multicopter][offboard][nogps]")
 	std::chrono::seconds goto_timeout = std::chrono::seconds(20);
 	tester.offboard_goto(takeoff_position, 0.1f, goto_timeout);
 	tester.offboard_land();
-	tester.wait_until_disarmed();
+	tester.wait_until_disarmed(goto_timeout);
 	tester.check_home_within(1.0f);
 }
 
