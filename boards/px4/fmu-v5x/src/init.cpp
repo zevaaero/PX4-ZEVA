@@ -73,6 +73,7 @@
 #include <px4_platform/gpio.h>
 #include <px4_platform/board_determine_hw_info.h>
 #include <px4_platform/board_dma_alloc.h>
+#include <px4_platform/gpio/mcp23009.hpp>
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -174,7 +175,7 @@ stm32_boardinitialize(void)
 
 	/* configure SPI interfaces (we can do this here as long as we only have a single SPI hw config version -
 	 * otherwise we need to move this after board_determine_hw_info()) */
-	_Static_assert(BOARD_NUM_SPI_CFG_HW_VERSIONS == 1, "Need to move the SPI initialization for multi-version support");
+	static_assert(BOARD_NUM_SPI_CFG_HW_VERSIONS == 1, "Need to move the SPI initialization for multi-version support");
 
 	stm32_spiinitialize();
 
@@ -280,6 +281,14 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	}
 
 #endif /* CONFIG_MMCSD */
+
+	static MCP23009 mcp23009{2, 0x20};
+	ret = mcp23009.init();
+
+	if (ret != OK) {
+		led_on(LED_RED);
+		return ret;
+	}
 
 	return OK;
 }
