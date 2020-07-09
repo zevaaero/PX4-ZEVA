@@ -35,14 +35,12 @@ px4_add_library(FlightTaskUtility
 	ManualSmoothingZ.cpp
 	ManualSmoothingXY.cpp
 	StraightLine.cpp
-	VelocitySmoothing.cpp
 	ManualVelocitySmoothingXY.cpp
 	ManualVelocitySmoothingZ.cpp
 	PositionLock.hpp
 )
 
-target_link_libraries(FlightTaskUtility PUBLIC FlightTask hysteresis bezier SlewRate)
+target_link_libraries(FlightTaskUtility PUBLIC FlightTask hysteresis bezier SlewRate motion_planning)
 target_include_directories(FlightTaskUtility PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-px4_add_unit_gtest(SRC VelocitySmoothingTest.cpp LINKLIBS FlightTaskUtility)
 px4_add_unit_gtest(SRC ManualVelocitySmoothingXYTest.cpp LINKLIBS FlightTaskUtility)
