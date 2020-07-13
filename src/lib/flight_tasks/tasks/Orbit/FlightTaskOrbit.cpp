@@ -224,9 +224,9 @@ void FlightTaskOrbit::generate_circle_setpoints(Vector2f center_to_position)
 	// xy velocity adjustment to stay on the radius distance
 	velocity_xy += (_r - center_to_position.norm()) * center_to_position.unit_or_zero();
 
-	_velocity_setpoint(0) = velocity_xy(0);
-	_velocity_setpoint(1) = velocity_xy(1);
 	_position_setpoint(0) = _position_setpoint(1) = NAN;
+	_velocity_setpoint.xy() = velocity_xy;
+	_acceleration_setpoint.xy() = -center_to_position.unit_or_zero() * _v * _v / _r;
 
 	// yawspeed feed-forward because we know the necessary angular rate
 	_yawspeed_setpoint = _v / _r;
