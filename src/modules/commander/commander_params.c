@@ -922,6 +922,18 @@ PARAM_DEFINE_FLOAT(COM_KILL_DISARM, 5.0f);
 PARAM_DEFINE_FLOAT(COM_CPU_MAX, 90.0f);
 
 /**
+ * Required number of redundant power modules
+ *
+ * This configures the a check to verify the expected number of 5V rail power supplies are present. By default only one is expected.
+ * Note: CBRK_SUPPLY_CHK disables all power checks including this one.
+ *
+ * @group Commander
+ * @min 0
+ * @max 4
+ */
+PARAM_DEFINE_INT32(COM_POWER_COUNT, 1);
+
+/**
  * Time-out for detecting a failure after takeoff
  *
  * A non-zero, positive value specifies the timeframe in seconds within Failure Detector is allowed to put the vehicle into
@@ -936,15 +948,3 @@ PARAM_DEFINE_FLOAT(COM_CPU_MAX, 90.0f);
  * @decimal 3
  */
 PARAM_DEFINE_FLOAT(COM_LKDOWN_TKO, 3.0f);
-
-/**
- * Required number of redundant power modules
- *
- * This configures the a check to verify the expected number of 5V rail power supplies are present. By default only one is expected.
- * Note: CBRK_SUPPLY_CHK disables all power checks including this one.
- *
- * @group Commander
- * @min 0
- * @max 4
- */
-PARAM_DEFINE_INT32(COM_POWER_COUNT, 1);
