@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - 'develop'
+    - 'release/*'
   pull_request:
     branches:
     - '*'
@@ -36,13 +37,18 @@ jobs:
         cd $HOME/ci_gazebo_models && git submodule update --init --recursive
         source $HOME/ci_gazebo_models/setup.bash $HOME/ci_gazebo_models $GITHUB_WORKSPACE
       shell: bash
-    - uses: actions/cache@v1.1.0
-      id: ccache-persistence
+    - name: Prepare ccache timestamp
+      id: ccache_cache_timestamp
+      shell: cmake -P {0}
+      run: |
+        string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+        message("::set-output name=timestamp::${current_date}")
+    - name: ccache cache files
+      uses: actions/cache@v2
       with:
         path: ~/.ccache
-        key: ccache-sitl-tests
-        restore-keys: |
-          ccache-sitl-tests
+        key: ${{matrix.config}}-ccache-sitl-tests-custom-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+        restore-keys: ${{matrix.config}}-ccache-sitl-tests-custom-
     - name: setup ccache
       run: mkdir -p ~/.ccache && echo "max_size = 1G" > ~/.ccache/ccache.conf && ccache -z && ccache -s
     - name: Build PX4 in SITL integration test mode
