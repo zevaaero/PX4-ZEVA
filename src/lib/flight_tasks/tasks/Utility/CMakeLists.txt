@@ -37,6 +37,7 @@ px4_add_library(FlightTaskUtility
 	StraightLine.cpp
 	ManualVelocitySmoothingXY.cpp
 	ManualVelocitySmoothingZ.cpp
+	Sticks.cpp
 	PositionLock.hpp
 )
 

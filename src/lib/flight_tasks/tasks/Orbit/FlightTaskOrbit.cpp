@@ -170,8 +170,8 @@ bool FlightTaskOrbit::update()
 	bool ret = FlightTaskManualAltitudeSmooth::update();
 
 	// stick input adjusts parameters within a fixed time frame
-	const float r = _r - _sticks_expo(0) * _deltatime * (_radius_max / 8.f);
-	const float v = _v - _sticks_expo(1) * _deltatime * (_velocity_max / 4.f);
+	const float r = _r - _sticks.getPositionExpo()(0) * _deltatime * (_radius_max / 8.f);
+	const float v = _v - _sticks.getPositionExpo()(1) * _deltatime * (_velocity_max / 4.f);
 
 	setRadius(r);
 	setVelocity(v);

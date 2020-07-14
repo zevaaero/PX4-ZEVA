@@ -76,10 +76,10 @@ bool FlightTaskManualAcceleration::update()
 
 	// Yaw
 	_position_lock.updateYawFromStick(_yawspeed_setpoint, _yaw_setpoint,
-					  _sticks_expo(3) * math::radians(_param_mpc_man_y_max.get()), _yaw, _deltatime);
+					  _sticks.getPositionExpo()(3) * math::radians(_param_mpc_man_y_max.get()), _yaw, _deltatime);
 
 	// Map stick input to acceleration
-	Vector2f stick_xy(&_sticks_expo(0));
+	Vector2f stick_xy(_sticks.getPositionExpo().slice<2, 1>(0, 0));
 	_position_lock.limitStickUnitLengthXY(stick_xy);
 	_position_lock.rotateIntoHeadingFrameXY(stick_xy, _yaw, _yaw_setpoint);
 	Vector2f acceleration_xy = stick_xy.emult(acceleration_scale);
@@ -115,7 +115,7 @@ Vector2f FlightTaskManualAcceleration::calculateDrag(Vector2f drag_coefficient)
 {
 	_brake_boost_filter.setParameters(_deltatime, .8f);
 
-	if (Vector2f(&_sticks_expo(0)).norm_squared() < FLT_EPSILON) {
+	if (Vector2f(_sticks.getPositionExpo().slice<2, 1>(0, 0)).norm_squared() < FLT_EPSILON) {
 		_brake_boost_filter.update(2.f);
 
 	} else {
