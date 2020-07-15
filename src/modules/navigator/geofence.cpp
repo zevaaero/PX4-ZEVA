@@ -239,7 +239,7 @@ bool Geofence::isCloserThanMaxDistToHome(double lat, double lon, float altitude)
 
 		if (max_horizontal_distance > FLT_EPSILON && (dist_xy > max_horizontal_distance)) {
 			if (hrt_elapsed_time(&_last_horizontal_range_warning) > GEOFENCE_RANGE_WARNING_LIMIT) {
-				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Maximum distance from home reached (%.5f)",
+				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Maximum distance from home reached (%.1f)",
 						     (double)max_horizontal_distance);
 				_last_horizontal_range_warning = hrt_absolute_time();
 			}
@@ -264,7 +264,7 @@ bool Geofence::isBelowMaxAltitude(float altitude)
 
 		if (max_vertical_distance > FLT_EPSILON && (dist_z > max_vertical_distance)) {
 			if (hrt_elapsed_time(&_last_vertical_range_warning) > GEOFENCE_RANGE_WARNING_LIMIT) {
-				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Maximum altitude above home reached (%.5f)",
+				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Maximum altitude above home reached (%.1f)",
 						     (double)max_vertical_distance);
 				_last_vertical_range_warning = hrt_absolute_time();
 			}
