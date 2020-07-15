@@ -346,6 +346,8 @@ MissionBlock::is_mission_item_reached()
 			_time_wp_reached = now;
 		}
 
+		_waypoint_position_reached_previously = _waypoint_position_reached;
+
 		// consider yaw reached for non-rotary wing vehicles (such as fixed-wing)
 		if (_navigator->get_vstatus()->vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 			_waypoint_yaw_reached = true;
@@ -461,10 +463,6 @@ MissionBlock::is_mission_item_reached()
 
 	}
 
-	// all acceptance criteria must be met in the same iteration
-	_waypoint_position_reached_previously = _waypoint_position_reached;
-	_waypoint_position_reached = false;
-	_waypoint_yaw_reached = false;
 	return false;
 }
 
