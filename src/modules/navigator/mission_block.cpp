@@ -223,9 +223,6 @@ MissionBlock::is_mission_item_reached()
 			if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
 			    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 				_waypoint_position_reached = true;
-
-			} else {
-				_time_first_inside_orbit = 0;
 			}
 
 		} else if (_mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
@@ -387,16 +384,11 @@ MissionBlock::is_mission_item_reached()
 	/* Once the waypoint and yaw setpoint have been reached we can start the loiter time countdown */
 	if (_waypoint_position_reached && _waypoint_yaw_reached) {
 
-		// check if time inside condition is reached
-		if (_time_first_inside_orbit == 0) {
-			_time_first_inside_orbit = now;
-		}
-
 		bool time_inside_reached = false;
 
 		/* check if the MAV was long enough inside the waypoint orbit */
 		if ((get_time_inside(_mission_item) < FLT_EPSILON) ||
-		    (now - _time_first_inside_orbit >= (hrt_abstime)(get_time_inside(_mission_item) * 1e6f))) {
+		    (now - _time_wp_reached >= (hrt_abstime)(get_time_inside(_mission_item) * 1e6f))) {
 			time_inside_reached = true;
 		}
 
@@ -481,7 +473,6 @@ MissionBlock::reset_mission_item_reached()
 {
 	_waypoint_position_reached = false;
 	_waypoint_yaw_reached = false;
-	_time_first_inside_orbit = 0;
 	_time_wp_reached = 0;
 }
 
