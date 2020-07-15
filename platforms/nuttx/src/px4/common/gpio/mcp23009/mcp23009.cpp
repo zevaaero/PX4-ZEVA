@@ -31,6 +31,7 @@
  *
  ****************************************************************************/
 
+#include <drivers/drv_sensor.h>
 #include <px4_platform/gpio/mcp23009.hpp>
 #include "mcp23009_registers.hpp"
 
@@ -45,7 +46,7 @@ go_setpintype : MCP23009::go_setpintype,
 };
 
 MCP23009::MCP23009(int bus, int address, int first_minor, int bus_frequency) :
-	I2C("MCP23009", nullptr, bus, address, bus_frequency),
+	I2C(DRV_GPIO_DEVTYPE_MCP23009, "MCP23009", bus, address, bus_frequency),
 	_first_minor(first_minor)
 {
 }

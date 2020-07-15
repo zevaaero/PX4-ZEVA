@@ -44,8 +44,6 @@
 #include "data_validator/DataValidator.hpp"
 #include "data_validator/DataValidatorGroup.hpp"
 
-#include <drivers/drv_accel.h>
-#include <drivers/drv_gyro.h>
 #include <drivers/drv_mag.h>
 #include <drivers/drv_hrt.h>
 
@@ -114,11 +112,6 @@ public:
 	 * so that the data can be published.
 	 */
 	void setRelativeTimestamps(sensor_combined_s &raw);
-
-	/**
-	 * check if a failover event occured. if so, report it.
-	 */
-	void checkFailover();
 
 	/**
 	 * Calculates the magnitude in m/s/s of the largest difference between the primary and any other accel sensor
@@ -191,12 +184,12 @@ private:
 	SensorData _gyro{ORB_ID::sensor_gyro};
 	SensorData _mag{ORB_ID::sensor_mag};
 
+	hrt_abstime _last_error_message{0};
 	orb_advert_t _mavlink_log_pub{nullptr};
 
 	uORB::Publication<sensor_selection_s> _sensor_selection_pub{ORB_ID(sensor_selection)};	/**< handle to the sensor selection uORB topic */
 	uORB::PublicationQueued<subsystem_info_s> _info_pub{ORB_ID(subsystem_info)};	/* subsystem info publication */
 
-	// references
 	uORB::SubscriptionCallbackWorkItem(&_vehicle_imu_sub)[3];
 	uORB::Subscription _vehicle_imu_status_sub[ACCEL_COUNT_MAX] {
 		{ORB_ID(vehicle_imu_status), 0},
@@ -213,7 +206,7 @@ private:
 	const Parameters &_parameters;
 	const bool _hil_enabled{false};			/**< is hardware-in-the-loop mode enabled? */
 
-	bool _selection_changed{false};			/**< true when a sensor selection has changed and not been published */
+	bool _selection_changed{true};			/**< true when a sensor selection has changed and not been published */
 
 	float _accel_diff[3][2] {};			/**< filtered accel differences between IMU units (m/s/s) */
 	float _gyro_diff[3][2] {};			/**< filtered gyro differences between IMU uinits (rad/s) */

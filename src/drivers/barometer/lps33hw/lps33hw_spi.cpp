@@ -68,7 +68,7 @@ LPS33HW_SPI_interface(uint8_t bus, uint32_t device, int bus_frequency, spi_mode_
 }
 
 LPS33HW_SPI::LPS33HW_SPI(uint8_t bus, uint32_t device, int bus_frequency, spi_mode_e spi_mode) :
-	SPI("LPS33HW_SPI", nullptr, bus, device, spi_mode, bus_frequency)
+	SPI(DRV_BARO_DEVTYPE_LPS33HW, MODULE_NAME, bus, device, spi_mode, bus_frequency)
 {
 }
 

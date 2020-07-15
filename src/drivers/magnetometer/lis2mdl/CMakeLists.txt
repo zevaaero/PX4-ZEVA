@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2016 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2020 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -33,8 +33,6 @@
 px4_add_module(
 	MODULE drivers__lis2mdl
 	MAIN lis2mdl
-	COMPILE_FLAGS
-		-Wno-cast-align # TODO: fix and enable
 	SRCS
 		lis2mdl_i2c.cpp
 		lis2mdl_spi.cpp

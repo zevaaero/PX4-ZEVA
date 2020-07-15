@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -95,8 +95,6 @@ public:
 					     int runtime_instance);
 	static void print_usage();
 
-	void custom_method(const BusCLIArguments &cli) override;
-
 	virtual int init();
 
 	void print_status() override;
@@ -120,19 +118,12 @@ private:
 
 	unsigned int _measure_interval;
 
-	float _range_ga;
-
 	/**
 	 * Issue a measurement command & publish data.
 	 *
 	 * @return              OK if the measurement command was successful.
 	 */
 	int measure();
-
-	/**
-	 * @brief Resets the device
-	 */
-	int reset();
 
 	/**
 	 * @brief Initialises the automatic measurement state machine and start it.
@@ -160,4 +151,4 @@ private:
 	 */
 	int write_reg(uint8_t reg, uint8_t val);
 
-}; // class LIS2MDL
+};

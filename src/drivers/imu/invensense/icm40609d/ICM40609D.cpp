@@ -42,23 +42,17 @@ static constexpr int16_t combine(uint8_t msb, uint8_t lsb)
 
 ICM40609D::ICM40609D(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rotation rotation, int bus_frequency,
 		     spi_mode_e spi_mode, spi_drdy_gpio_t drdy_gpio) :
-	SPI(MODULE_NAME, nullptr, bus, device, spi_mode, bus_frequency),
+	SPI(DRV_IMU_DEVTYPE_ICM40609D, MODULE_NAME, bus, device, spi_mode, bus_frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus),
 	_drdy_gpio(drdy_gpio),
-	_px4_accel(get_device_id(), ORB_PRIO_VERY_HIGH, rotation),
-	_px4_gyro(get_device_id(), ORB_PRIO_VERY_HIGH, rotation)
+	_px4_accel(get_device_id(), ORB_PRIO_HIGH, rotation),
+	_px4_gyro(get_device_id(), ORB_PRIO_HIGH, rotation)
 {
-	set_device_type(DRV_IMU_DEVTYPE_ICM40609D);
-
-	_px4_accel.set_device_type(DRV_IMU_DEVTYPE_ICM40609D);
-	_px4_gyro.set_device_type(DRV_IMU_DEVTYPE_ICM40609D);
-
 	ConfigureSampleRate(_px4_gyro.get_max_rate_hz());
 }
 
 ICM40609D::~ICM40609D()
 {
-	perf_free(_transfer_perf);
 	perf_free(_bad_register_perf);
 	perf_free(_bad_transfer_perf);
 	perf_free(_fifo_empty_perf);
@@ -99,16 +93,12 @@ void ICM40609D::print_status()
 	PX4_INFO("FIFO empty interval: %d us (%.3f Hz)", _fifo_empty_interval_us,
 		 static_cast<double>(1000000 / _fifo_empty_interval_us));
 
-	perf_print_counter(_transfer_perf);
 	perf_print_counter(_bad_register_perf);
 	perf_print_counter(_bad_transfer_perf);
 	perf_print_counter(_fifo_empty_perf);
 	perf_print_counter(_fifo_overflow_perf);
 	perf_print_counter(_fifo_reset_perf);
 	perf_print_counter(_drdy_interval_perf);
-
-	_px4_accel.print_status();
-	_px4_gyro.print_status();
 }
 
 int ICM40609D::probe()
@@ -142,10 +132,10 @@ void ICM40609D::RunImpl()
 
 		} else {
 			// RESET not complete
-			if (hrt_elapsed_time(&_reset_timestamp) > 10_ms) {
-				PX4_ERR("Reset failed, retrying");
+			if (hrt_elapsed_time(&_reset_timestamp) > 100_ms) {
+				PX4_DEBUG("Reset failed, retrying");
 				_state = STATE::RESET;
-				ScheduleDelayed(10_ms);
+				ScheduleDelayed(100_ms);
 
 			} else {
 				PX4_DEBUG("Reset not complete, check again in 10 ms");
@@ -203,13 +193,7 @@ void ICM40609D::RunImpl()
 				// use the time now roughly corresponding with the last sample we'll pull from the FIFO
 				timestamp_sample = hrt_absolute_time();
 				const uint16_t fifo_count = FIFOReadCount();
-
-				if (fifo_count == 0) {
-					failure = true;
-					perf_count(_fifo_empty_perf);
-				}
-
-				samples = fifo_count / sizeof(FIFO::DATA);
+				samples = (fifo_count / sizeof(FIFO::DATA) / SAMPLES_PER_TRANSFER) * SAMPLES_PER_TRANSFER; // round down to nearest
 			}
 
 			if (samples > FIFO_MAX_SAMPLES) {
@@ -218,18 +202,22 @@ void ICM40609D::RunImpl()
 				failure = true;
 				FIFOReset();
 
-			} else if (samples >= 1) {
+			} else if (samples >= SAMPLES_PER_TRANSFER) {
+				// require at least SAMPLES_PER_TRANSFER (we want at least 1 new accel sample per transfer)
 				if (!FIFORead(timestamp_sample, samples)) {
 					failure = true;
 					_px4_accel.increase_error_count();
 					_px4_gyro.increase_error_count();
 				}
+
+			} else if (samples == 0) {
+				failure = true;
+				perf_count(_fifo_empty_perf);
 			}
 
 			if (failure || hrt_elapsed_time(&_last_config_check_timestamp) > 10_ms) {
 				// check BANK_0 registers incrementally
 				if (RegisterCheck(_register_bank0_cfg[_checked_register_bank0], true)) {
-
 					_last_config_check_timestamp = timestamp_sample;
 					_checked_register_bank0 = (_checked_register_bank0 + 1) % size_register_bank0_cfg;
 
@@ -284,54 +272,58 @@ void ICM40609D::ConfigureGyro()
 {
 	const uint8_t GYRO_FS_SEL = RegisterRead(Register::BANK_0::GYRO_CONFIG0) & (Bit7 | Bit6 | Bit5); // 7:5 GYRO_FS_SEL
 
+	float range_dps = 0.f;
+
 	switch (GYRO_FS_SEL) {
 	case GYRO_FS_SEL_125_DPS:
-		_px4_gyro.set_scale(math::radians(1.f / 262.f));
-		_px4_gyro.set_range(math::radians(125.f));
+		range_dps = 125.f;
 		break;
 
 	case GYRO_FS_SEL_250_DPS:
-		_px4_gyro.set_scale(math::radians(1.f / 131.f));
-		_px4_gyro.set_range(math::radians(250.f));
+		range_dps = 250.f;
 		break;
 
 	case GYRO_FS_SEL_500_DPS:
-		_px4_gyro.set_scale(math::radians(1.f / 65.5f));
-		_px4_gyro.set_range(math::radians(500.f));
+		range_dps = 500.f;
 		break;
 
 	case GYRO_FS_SEL_1000_DPS:
-		_px4_gyro.set_scale(math::radians(1.f / 32.8f));
-		_px4_gyro.set_range(math::radians(1000.f));
+		range_dps = 1000.f;
 		break;
 
 	case GYRO_FS_SEL_2000_DPS:
-		_px4_gyro.set_scale(math::radians(1.f / 16.4f));
-		_px4_gyro.set_range(math::radians(2000.0f));
+		range_dps = 2000.f;
 		break;
 	}
+
+	_px4_gyro.set_scale(math::radians(range_dps / 32768.f));
+	_px4_gyro.set_range(math::radians(range_dps));
 }
 
 void ICM40609D::ConfigureSampleRate(int sample_rate)
 {
 	if (sample_rate == 0) {
-		sample_rate = 2000; // default to 2 kHz
+		sample_rate = 800; // default to 800 Hz
 	}
 
-	static constexpr float sample_min_interval = 1e6f / GYRO_RATE;
+	// round down to nearest FIFO sample dt * SAMPLES_PER_TRANSFER
+	const float min_interval = SAMPLES_PER_TRANSFER * FIFO_SAMPLE_DT;
+	_fifo_empty_interval_us = math::max(roundf((1e6f / (float)sample_rate) / min_interval) * min_interval, min_interval);
 
-	_fifo_empty_interval_us = math::max(((1000000 / sample_rate) / sample_min_interval) * sample_min_interval,
-					    sample_min_interval); // round down to nearest sample_min_interval
-
-	_fifo_gyro_samples = math::min(_fifo_empty_interval_us / (1000000 / GYRO_RATE), FIFO_MAX_SAMPLES);
+	_fifo_gyro_samples = math::min((float)_fifo_empty_interval_us / (1e6f / GYRO_RATE), (float)FIFO_MAX_SAMPLES);
 
 	// recompute FIFO empty interval (us) with actual gyro sample limit
-	_fifo_empty_interval_us = _fifo_gyro_samples * (1000000 / GYRO_RATE);
+	_fifo_empty_interval_us = _fifo_gyro_samples * (1e6f / GYRO_RATE);
 
-	_fifo_accel_samples = math::min(_fifo_empty_interval_us / (1000000 / ACCEL_RATE), FIFO_MAX_SAMPLES);
+	_fifo_accel_samples = math::min(_fifo_empty_interval_us / (1e6f / ACCEL_RATE), (float)FIFO_MAX_SAMPLES);
 
+	ConfigureFIFOWatermark(_fifo_gyro_samples);
+}
+
+void ICM40609D::ConfigureFIFOWatermark(uint8_t samples)
+{
 	// FIFO watermark threshold in number of bytes
-	const uint16_t fifo_watermark_threshold = _fifo_gyro_samples * sizeof(FIFO::DATA);
+	const uint16_t fifo_watermark_threshold = samples * sizeof(FIFO::DATA);
 
 	for (auto &r : _register_bank0_cfg) {
 		if (r.reg == Register::BANK_0::FIFO_CONFIG2) {
@@ -369,10 +361,10 @@ int ICM40609D::DataReadyInterruptCallback(int irq, void *context, void *arg)
 
 void ICM40609D::DataReady()
 {
+	perf_count(_drdy_interval_perf);
 	_fifo_watermark_interrupt_timestamp = hrt_absolute_time();
 	_fifo_read_samples.store(_fifo_gyro_samples);
 	ScheduleNow();
-	perf_count(_drdy_interval_perf);
 }
 
 bool ICM40609D::DataReadyInterruptConfigure()
@@ -396,8 +388,9 @@ bool ICM40609D::DataReadyInterruptDisable()
 
 bool ICM40609D::RegisterCheck(const register_bank0_config_t &reg_cfg, bool notify)
 {
-	const uint8_t reg_value = RegisterRead(reg_cfg.reg);
 	bool success = true;
+
+	const uint8_t reg_value = RegisterRead(reg_cfg.reg);
 
 	if (reg_cfg.set_bits && ((reg_value & reg_cfg.set_bits) != reg_cfg.set_bits)) {
 		PX4_DEBUG("0x%02hhX: 0x%02hhX (0x%02hhX not set)", (uint8_t)reg_cfg.reg, reg_value, reg_cfg.set_bits);
@@ -452,16 +445,6 @@ void ICM40609D::RegisterSetAndClearBits(Register::BANK_0 reg, uint8_t setbits, u
 	RegisterWrite(reg, val);
 }
 
-void ICM40609D::RegisterSetBits(Register::BANK_0 reg, uint8_t setbits)
-{
-	RegisterSetAndClearBits(reg, setbits, 0);
-}
-
-void ICM40609D::RegisterClearBits(Register::BANK_0 reg, uint8_t clearbits)
-{
-	RegisterSetAndClearBits(reg, 0, clearbits);
-}
-
 uint16_t ICM40609D::FIFOReadCount()
 {
 	// read FIFO count
@@ -478,17 +461,14 @@ uint16_t ICM40609D::FIFOReadCount()
 
 bool ICM40609D::FIFORead(const hrt_abstime &timestamp_sample, uint16_t samples)
 {
-	perf_begin(_transfer_perf);
 	FIFOTransferBuffer buffer{};
 	const size_t transfer_size = math::min(samples * sizeof(FIFO::DATA) + 4, FIFO::SIZE);
 
 	if (transfer((uint8_t *)&buffer, (uint8_t *)&buffer, transfer_size) != PX4_OK) {
-		perf_end(_transfer_perf);
 		perf_count(_bad_transfer_perf);
 		return false;
 	}
 
-	perf_end(_transfer_perf);
 
 	if (buffer.INT_STATUS & INT_STATUS_BIT::FIFO_FULL_INT) {
 		perf_count(_fifo_overflow_perf);
@@ -503,8 +483,14 @@ bool ICM40609D::FIFORead(const hrt_abstime &timestamp_sample, uint16_t samples)
 		return false;
 	}
 
+	if (fifo_count_bytes >= FIFO::SIZE) {
+		perf_count(_fifo_overflow_perf);
+		FIFOReset();
+		return false;
+	}
+
 	// check FIFO header in every sample
-	int valid_samples = 0;
+	uint16_t valid_samples = 0;
 
 	for (int i = 0; i < math::min(samples, fifo_count_samples); i++) {
 		bool valid = true;
@@ -555,9 +541,10 @@ void ICM40609D::FIFOReset()
 	_fifo_read_samples.store(0);
 }
 
-void ICM40609D::ProcessAccel(const hrt_abstime &timestamp_sample, const FIFOTransferBuffer &buffer, uint8_t samples)
+void ICM40609D::ProcessAccel(const hrt_abstime &timestamp_sample, const FIFOTransferBuffer &buffer,
+			     const uint8_t samples)
 {
-	PX4Accelerometer::FIFOSample accel;
+	sensor_accel_fifo_s accel{};
 	accel.timestamp_sample = timestamp_sample;
 	accel.dt = _fifo_empty_interval_us / _fifo_accel_samples;
 
@@ -582,9 +569,10 @@ void ICM40609D::ProcessAccel(const hrt_abstime &timestamp_sample, const FIFOTran
 	_px4_accel.updateFIFO(accel);
 }
 
-void ICM40609D::ProcessGyro(const hrt_abstime &timestamp_sample, const FIFOTransferBuffer &buffer, uint8_t samples)
+void ICM40609D::ProcessGyro(const hrt_abstime &timestamp_sample, const FIFOTransferBuffer &buffer,
+			    const uint8_t samples)
 {
-	PX4Gyroscope::FIFOSample gyro;
+	sensor_gyro_fifo_s gyro{};
 	gyro.timestamp_sample = timestamp_sample;
 	gyro.samples = samples;
 	gyro.dt = _fifo_empty_interval_us / _fifo_gyro_samples;
@@ -619,8 +607,8 @@ void ICM40609D::UpdateTemperature()
 
 	const int16_t TEMP_DATA = combine(temperature_buf[1], temperature_buf[2]);
 
-	// Temperature in Degrees Centigrade = (TEMP_DATA / 132.48) + 25
-	const float TEMP_degC = (TEMP_DATA / TEMPERATURE_SENSITIVITY) + ROOM_TEMPERATURE_OFFSET;
+	// Temperature in Degrees Centigrade
+	const float TEMP_degC = (TEMP_DATA / TEMPERATURE_SENSITIVITY) + TEMPERATURE_OFFSET;
 
 	if (PX4_ISFINITE(TEMP_degC)) {
 		_px4_accel.set_temperature(TEMP_degC);

@@ -110,13 +110,21 @@ bool param_modify_on_import(bson_node_t node)
 	device_id.devid = (uint32_t) * ivalue;
 
 	// SPI board config translation
+#ifdef __PX4_NUTTX // only on NuttX the address is 0
+
 	if (device_id.devid_s.bus_type == device::Device::DeviceBusType_SPI) {
 		device_id.devid_s.address = 0;
 	}
 
+#endif
+
 	// deprecated ACC -> IMU translations
 	if (device_id.devid_s.devtype == DRV_ACC_DEVTYPE_MPU6000_LEGACY) {
 		device_id.devid_s.devtype = DRV_IMU_DEVTYPE_MPU6000;
+	}
+
+	if (device_id.devid_s.devtype == DRV_ACC_DEVTYPE_MPU6500_LEGACY) {
+		device_id.devid_s.devtype = DRV_IMU_DEVTYPE_MPU6500;
 	}
 
 	if (device_id.devid_s.devtype == DRV_ACC_DEVTYPE_MPU9250_LEGACY) {
@@ -128,11 +136,15 @@ bool param_modify_on_import(bson_node_t node)
 	}
 
 	if (device_id.devid_s.devtype == DRV_ACC_DEVTYPE_ICM20608_LEGACY) {
-		device_id.devid_s.devtype = DRV_IMU_DEVTYPE_ICM20608;
+		device_id.devid_s.devtype = DRV_IMU_DEVTYPE_ICM20608G;
 	}
 
 	if (device_id.devid_s.devtype == DRV_ACC_DEVTYPE_ICM20689_LEGACY) {
 		device_id.devid_s.devtype = DRV_IMU_DEVTYPE_ICM20689;
+	}
+
+	if (device_id.devid_s.devtype == DRV_MAG_DEVTYPE_LSM303D_LEGACY) {
+		device_id.devid_s.devtype = DRV_IMU_DEVTYPE_LSM303D;
 	}
 
 	int32_t new_value = (int32_t)device_id.devid;

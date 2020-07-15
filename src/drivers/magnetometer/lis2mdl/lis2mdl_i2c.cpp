@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,7 +63,6 @@ public:
 	LIS2MDL_I2C(int bus, int bus_frequency);
 	virtual ~LIS2MDL_I2C() = default;
 
-	virtual int     ioctl(unsigned operation, unsigned &arg);
 	virtual int     read(unsigned address, void *data, unsigned count);
 	virtual int     write(unsigned address, void *data, unsigned count);
 
@@ -82,25 +81,8 @@ LIS2MDL_I2C_interface(int bus, int bus_frequency)
 }
 
 LIS2MDL_I2C::LIS2MDL_I2C(int bus, int bus_frequency) :
-	I2C("LIS2MDL_I2C", nullptr, bus, LIS2MDLL_ADDRESS, bus_frequency)
+	I2C(DRV_MAG_DEVTYPE_LIS2MDL, "LIS2MDL_I2C", bus, LIS2MDLL_ADDRESS, bus_frequency)
 {
-	_device_id.devid_s.devtype = DRV_MAG_DEVTYPE_LIS2MDL;
-}
-
-int
-LIS2MDL_I2C::ioctl(unsigned operation, unsigned &arg)
-{
-	switch (operation) {
-
-	case MAGIOCGEXTERNAL:
-		return external();
-
-	case DEVIOCGDEVICEID:
-		return CDev::ioctl(nullptr, operation, arg);
-
-	default:
-		return  -EINVAL;
-	}
 }
 
 int

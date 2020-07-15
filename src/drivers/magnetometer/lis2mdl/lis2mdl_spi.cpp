@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,7 +67,6 @@ public:
 	virtual ~LIS2MDL_SPI() = default;
 
 	virtual int     init();
-	virtual int     ioctl(unsigned operation, unsigned &arg);
 	virtual int     read(unsigned address, void *data, unsigned count);
 	virtual int     write(unsigned address, void *data, unsigned count);
 };
@@ -82,9 +81,8 @@ LIS2MDL_SPI_interface(int bus, uint32_t devid, int bus_frequency, spi_mode_e spi
 }
 
 LIS2MDL_SPI::LIS2MDL_SPI(int bus, uint32_t devid, int bus_frequency, spi_mode_e spi_mode) :
-	SPI("LIS2MDL_SPI", nullptr, bus, devid, spi_mode, bus_frequency)
+	SPI(DRV_MAG_DEVTYPE_LIS2MDL, "LIS2MDL_SPI", bus, devid, spi_mode, bus_frequency)
 {
-	_device_id.devid_s.devtype = DRV_MAG_DEVTYPE_LIS2MDL;
 }
 
 int
@@ -112,32 +110,6 @@ LIS2MDL_SPI::init()
 	}
 
 	return OK;
-}
-
-int
-LIS2MDL_SPI::ioctl(unsigned operation, unsigned &arg)
-{
-	int ret;
-
-	switch (operation) {
-
-	case MAGIOCGEXTERNAL:
-		/*
-		 * Even if this sensor is on the external SPI
-		 * bus it is still internal to the autopilot
-		 * assembly, so always return 0 for internal.
-		 */
-		return 0;
-
-	case DEVIOCGDEVICEID:
-		return CDev::ioctl(nullptr, operation, arg);
-
-	default: {
-			ret = -EINVAL;
-		}
-	}
-
-	return ret;
 }
 
 int

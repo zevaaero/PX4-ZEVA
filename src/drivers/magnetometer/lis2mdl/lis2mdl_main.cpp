@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -79,12 +79,6 @@ I2CSPIDriverBase *LIS2MDL::instantiate(const BusCLIArguments &cli, const BusInst
 	return dev;
 }
 
-void
-LIS2MDL::custom_method(const BusCLIArguments &cli)
-{
-	reset();
-}
-
 void LIS2MDL::print_usage()
 {
 	PRINT_MODULE_USAGE_NAME("lis2mdl", "driver");
@@ -92,7 +86,6 @@ void LIS2MDL::print_usage()
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, true);
 	PRINT_MODULE_USAGE_PARAM_INT('R', 0, 0, 35, "Rotation", true);
-	PRINT_MODULE_USAGE_COMMAND("reset");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
@@ -131,10 +124,6 @@ extern "C" int lis2mdl_main(int argc, char *argv[])
 
 	if (!strcmp(verb, "status")) {
 		return ThisDriver::module_status(iterator);
-	}
-
-	if (!strcmp(verb, "reset")) {
-		return ThisDriver::module_custom_method(cli, iterator);
 	}
 
 	ThisDriver::print_usage();

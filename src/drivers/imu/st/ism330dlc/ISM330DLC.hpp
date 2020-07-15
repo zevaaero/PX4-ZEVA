@@ -81,8 +81,8 @@ private:
 	static constexpr uint32_t GYRO_RATE{ST_ISM330DLC::G_ODR};
 	static constexpr uint32_t ACCEL_RATE{ST_ISM330DLC::LA_ODR};
 	static constexpr uint32_t FIFO_MAX_SAMPLES{ math::min(math::min(FIFO::SIZE / sizeof(FIFO::DATA) + 1,
-			sizeof(PX4Gyroscope::FIFOSample::x) / sizeof(PX4Gyroscope::FIFOSample::x[0])),
-			sizeof(PX4Accelerometer::FIFOSample::x) / sizeof(PX4Accelerometer::FIFOSample::x[0]))
+			sizeof(sensor_gyro_fifo_s::x) / sizeof(sensor_gyro_fifo_s::x[0])),
+			sizeof(sensor_accel_fifo_s::x) / sizeof(sensor_accel_fifo_s::x[0]))
 						  };
 
 	// Transfer data

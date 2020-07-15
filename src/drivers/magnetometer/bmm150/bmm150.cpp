@@ -41,7 +41,7 @@
 #include <px4_platform_common/module.h>
 
 BMM150::BMM150(I2CSPIBusOption bus_option, const int bus, int bus_frequency, enum Rotation rotation) :
-	I2C("BMM150", nullptr, bus, BMM150_SLAVE_ADDRESS, bus_frequency),
+	I2C(DRV_MAG_DEVTYPE_BMM150, MODULE_NAME, bus, BMM150_SLAVE_ADDRESS, bus_frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus),
 	_px4_mag(get_device_id(), external() ? ORB_PRIO_VERY_HIGH : ORB_PRIO_DEFAULT, rotation),
 	_sample_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": read")),
@@ -51,9 +51,6 @@ BMM150::BMM150(I2CSPIBusOption bus_option, const int bus, int bus_frequency, enu
 	_comms_errors(perf_alloc(PC_COUNT, MODULE_NAME": comms errors")),
 	_duplicates(perf_alloc(PC_COUNT, MODULE_NAME": duplicates"))
 {
-	set_device_type(DRV_MAG_DEVTYPE_BMM150);
-
-	_px4_mag.set_device_type(DRV_MAG_DEVTYPE_BMM150);
 	_px4_mag.set_external(external());
 
 	// default range scale from uT to gauss
@@ -83,8 +80,8 @@ int BMM150::init()
 
 	/* Bring the device to sleep mode */
 	modify_reg(BMM150_POWER_CTRL_REG, 1, 1);
-	up_udelay(10000);
 
+	px4_usleep(10000);
 
 	/* check id*/
 	if (read_reg(BMM150_CHIP_ID_REG) != BMM150_CHIP_ID) {
@@ -102,7 +99,7 @@ int BMM150::init()
 		return -EIO;
 	}
 
-	up_udelay(10000);
+	px4_usleep(10000);
 
 	if (collect()) {
 		return -EIO;
@@ -330,11 +327,13 @@ int BMM150::reset()
 
 	/* Soft-reset */
 	modify_reg(BMM150_POWER_CTRL_REG, BMM150_SOFT_RESET_MASK, BMM150_SOFT_RESET_VALUE);
-	up_udelay(5000);
+
+	px4_usleep(5000);
 
 	/* Enable Magnetometer in normal mode */
 	ret += set_power_mode(BMM150_DEFAULT_POWER_MODE);
-	up_udelay(1000);
+
+	px4_usleep(1000);
 
 	/* Set the data rate to default */
 	ret += set_data_rate(BMM150_DEFAULT_ODR);

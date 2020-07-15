@@ -116,7 +116,7 @@ void LoggedTopics::add_default_topics()
 	add_topic_multi("sensor_gyro", 1000);
 	add_topic_multi("sensor_mag", 1000);
 	add_topic_multi("vehicle_gps_position", 1000);
-	add_topic_multi("vehicle_imu", 1000);
+	add_topic_multi("vehicle_imu", 500);
 	add_topic_multi("vehicle_imu_status", 1000);
 
 #ifdef CONFIG_ARCH_BOARD_PX4_SITL
@@ -201,6 +201,16 @@ void LoggedTopics::add_vision_and_avoidance_topics()
 	add_topic("vehicle_trajectory_waypoint", 200);
 	add_topic("vehicle_trajectory_waypoint_desired", 200);
 	add_topic("vehicle_visual_odometry", 30);
+}
+
+void LoggedTopics::add_raw_imu_gyro_fifo()
+{
+	add_topic("sensor_gyro_fifo");
+}
+
+void LoggedTopics::add_raw_imu_accel_fifo()
+{
+	add_topic("sensor_accel_fifo");
 }
 
 void LoggedTopics::add_system_identification_topics()
@@ -402,5 +412,13 @@ void LoggedTopics::initialize_configured_topics(SDLogProfileMask profile)
 
 	if (profile & SDLogProfileMask::VISION_AND_AVOIDANCE) {
 		add_vision_and_avoidance_topics();
+	}
+
+	if (profile & SDLogProfileMask::RAW_IMU_GYRO_FIFO) {
+		add_raw_imu_gyro_fifo();
+	}
+
+	if (profile & SDLogProfileMask::RAW_IMU_ACCEL_FIFO) {
+		add_raw_imu_accel_fifo();
 	}
 }

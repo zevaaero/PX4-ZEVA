@@ -65,7 +65,7 @@ I2CSPIDriverBase *BMI088::instantiate(const BusCLIArguments &cli, const BusInsta
 
 BMI088::BMI088(uint8_t devtype, const char *name, I2CSPIBusOption bus_option, int bus, uint32_t device,
 	       enum spi_mode_e mode, uint32_t frequency, spi_drdy_gpio_t drdy_gpio) :
-	SPI(name, nullptr, bus, device, mode, frequency),
+	SPI(devtype, name, bus, device, mode, frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus, devtype),
 	_drdy_gpio(drdy_gpio)
 {

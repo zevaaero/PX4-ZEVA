@@ -31,8 +31,10 @@ px4_add_board(
 		#imu/adis16448
 		#imu/adis16477
 		#imu/adis16497
-		#imu/bmi055
-		imu/mpu6000
+		#imu/bosch/bmi055
+		#imu/invensense/icm20602
+		imu/invensense/icm20689
+		#imu/mpu6000 # legacy icm20602/icm20689 driver
 		#irlock
 		#lights/blinkm
 		lights/rgbled
@@ -45,9 +47,9 @@ px4_add_board(
 		#pca9685
 		#power_monitor/ina226
 		#protocol_splitter
-		pwm_input
+		#pwm_input
 		pwm_out_sim
-		px4fmu
+		pwm_out
 		px4io
 		rc_input
 		#roboclaw
@@ -59,12 +61,13 @@ px4_add_board(
 		#uavcan
 	MODULES
 		airspeed_selector
-		attitude_estimator_q
+		#attitude_estimator_q
 		battery_status
 		#camera_feedback
 		commander
 		dataman
 		ekf2
+		#esc_battery
 		events
 		fw_att_control
 		fw_pos_control_l1
@@ -81,15 +84,14 @@ px4_add_board(
 		#micrortps_bridge
 		navigator
 		rc_update
-		rover_pos_control
+		#rover_pos_control
 		sensors
-		sih
-		temperature_compensation
-		vmount
+		#sih
+		#temperature_compensation
+		#vmount
 		vtol_att_control
 	SYSTEMCMDS
 		bl_update
-		config
 		dmesg
 		dumpfile
 		esc_calib
@@ -107,7 +109,6 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
-		shutdown
 		tests # tests and test runner
 		top
 		topic_listener
@@ -124,4 +125,5 @@ px4_add_board(
 		#px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
 		#rover_steering_control # Rover example app
 		#uuv_example_app
+		#work_item
 	)

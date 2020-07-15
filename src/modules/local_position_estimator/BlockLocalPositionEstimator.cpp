@@ -19,7 +19,7 @@ static const char *msg_label = "[lpe] ";	// rate of land detector correction
 
 BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::att_pos_ctrl),
+	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 
 	// this block has no parent, and has name LPE
 	SuperBlock(nullptr, "LPE"),
@@ -112,11 +112,9 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 	_ref_alt(0.0)
 {
 #if defined(ENABLE_LOCKSTEP_SCHEDULER)
-	// For lockstep 250 Hz are needed because ekf2_timestamps need to be
-	// published at 250 Hz.
-	_sensors_sub.set_interval_ms(4);
+	_lockstep_component = px4_lockstep_register_component();
 #else
-	_sensors_sub.set_interval_ms(10); // main prediction loop, 100 hz
+	_sensors_sub.set_interval_ms(10); // main prediction loop, 100 hz (lockstep requires to run at full rate)
 #endif
 
 	// assign distance subs to array
@@ -145,6 +143,11 @@ BlockLocalPositionEstimator::BlockLocalPositionEstimator() :
 		 (_param_lpe_fusion.get() & FUSE_PUB_AGL_Z) != 0,
 		 (_param_lpe_fusion.get() & FUSE_FLOW_GYRO_COMP) != 0,
 		 (_param_lpe_fusion.get() & FUSE_BARO) != 0);
+}
+
+BlockLocalPositionEstimator::~BlockLocalPositionEstimator()
+{
+	px4_lockstep_unregister_component(_lockstep_component);
 }
 
 bool
@@ -207,13 +210,13 @@ void BlockLocalPositionEstimator::Run()
 				    s->get().orientation == distance_sensor_s::ROTATION_DOWNWARD_FACING &&
 				    _sub_lidar == nullptr) {
 					_sub_lidar = s;
-					mavlink_and_console_log_info(&mavlink_log_pub, "%sDownward-facing Lidar detected with ID %zu", msg_label, i);
+					mavlink_log_info(&mavlink_log_pub, "%sDownward-facing Lidar detected with ID %zu", msg_label, i);
 
 				} else if (s->get().type == distance_sensor_s::MAV_DISTANCE_SENSOR_ULTRASOUND &&
 					   s->get().orientation == distance_sensor_s::ROTATION_DOWNWARD_FACING &&
 					   _sub_sonar == nullptr) {
 					_sub_sonar = s;
-					mavlink_and_console_log_info(&mavlink_log_pub, "%sDownward-facing Sonar detected with ID %zu", msg_label, i);
+					mavlink_log_info(&mavlink_log_pub, "%sDownward-facing Sonar detected with ID %zu", msg_label, i);
 				}
 			}
 		}
@@ -346,8 +349,8 @@ void BlockLocalPositionEstimator::Run()
 		// set timestamp when origin was set to current time
 		_time_origin = _timeStamp;
 
-		mavlink_and_console_log_info(&mavlink_log_pub, "[lpe] global origin init (parameter) : lat %6.2f lon %6.2f alt %5.1f m",
-					     double(_param_lpe_lat.get()), double(_param_lpe_lon.get()), double(_altOrigin));
+		mavlink_log_info(&mavlink_log_pub, "[lpe] global origin init (parameter) : lat %6.2f lon %6.2f alt %5.1f m",
+				 double(_param_lpe_lat.get()), double(_param_lpe_lon.get()), double(_altOrigin));
 	}
 
 	// reinitialize x if necessary
@@ -359,7 +362,7 @@ void BlockLocalPositionEstimator::Run()
 		// don't want it to take too long
 		if (!PX4_ISFINITE(_x(i))) {
 			reinit_x = true;
-			mavlink_and_console_log_info(&mavlink_log_pub, "%sreinit x, x(%zu) not finite", msg_label, i);
+			mavlink_log_info(&mavlink_log_pub, "%sreinit x, x(%zu) not finite", msg_label, i);
 			break;
 		}
 	}
@@ -369,7 +372,7 @@ void BlockLocalPositionEstimator::Run()
 			_x(i) = 0;
 		}
 
-		mavlink_and_console_log_info(&mavlink_log_pub, "%sreinit x", msg_label);
+		mavlink_log_info(&mavlink_log_pub, "%sreinit x", msg_label);
 	}
 
 	// force P symmetry and reinitialize P if necessary
@@ -378,16 +381,16 @@ void BlockLocalPositionEstimator::Run()
 	for (size_t i = 0; i < n_x; i++) {
 		for (size_t j = 0; j <= i; j++) {
 			if (!PX4_ISFINITE(m_P(i, j))) {
-				mavlink_and_console_log_info(&mavlink_log_pub,
-							     "%sreinit P (%zu, %zu) not finite", msg_label, i, j);
+				mavlink_log_info(&mavlink_log_pub,
+						 "%sreinit P (%zu, %zu) not finite", msg_label, i, j);
 				reinit_P = true;
 			}
 
 			if (i == j) {
 				// make sure diagonal elements are positive
 				if (m_P(i, i) <= 0) {
-					mavlink_and_console_log_info(&mavlink_log_pub,
-								     "%sreinit P (%zu, %zu) negative", msg_label, i, j);
+					mavlink_log_info(&mavlink_log_pub,
+							 "%sreinit P (%zu, %zu) negative", msg_label, i, j);
 					reinit_P = true;
 				}
 
@@ -504,7 +507,6 @@ void BlockLocalPositionEstimator::Run()
 
 		if ((_estimatorInitialized & EST_XY) && (_map_ref.init_done || _param_lpe_fake_origin.get())) {
 			publishGlobalPos();
-			publishEk2fTimestamps();
 		}
 	}
 
@@ -519,6 +521,8 @@ void BlockLocalPositionEstimator::Run()
 		_xDelay.update(_x);
 		_time_last_hist = _timeStamp;
 	}
+
+	px4_lockstep_progress(_lockstep_component);
 }
 
 void BlockLocalPositionEstimator::checkTimeouts()
@@ -753,22 +757,6 @@ void BlockLocalPositionEstimator::publishEstimatorStatus()
 	_pub_est_status.get().pos_vert_accuracy = _pub_gpos.get().epv;
 
 	_pub_est_status.update();
-}
-
-void BlockLocalPositionEstimator::publishEk2fTimestamps()
-{
-	_pub_ekf2_timestamps.get().timestamp = _timeStamp;
-
-	// We only really publish this as a dummy because lockstep simulation
-	// requires it to be published.
-	_pub_ekf2_timestamps.get().airspeed_timestamp_rel = 0;
-	_pub_ekf2_timestamps.get().distance_sensor_timestamp_rel = 0;
-	_pub_ekf2_timestamps.get().optical_flow_timestamp_rel = 0;
-	_pub_ekf2_timestamps.get().vehicle_air_data_timestamp_rel = 0;
-	_pub_ekf2_timestamps.get().vehicle_magnetometer_timestamp_rel = 0;
-	_pub_ekf2_timestamps.get().visual_odometry_timestamp_rel = 0;
-
-	_pub_ekf2_timestamps.update();
 }
 
 void BlockLocalPositionEstimator::publishGlobalPos()
@@ -1007,7 +995,7 @@ int BlockLocalPositionEstimator::getDelayPeriods(float delay, uint8_t *periods)
 	*periods = i_hist;
 
 	if (t_delay > DELAY_MAX) {
-		mavlink_and_console_log_info(&mavlink_log_pub, "%sdelayed data old: %8.4f", msg_label, double(t_delay));
+		mavlink_log_info(&mavlink_log_pub, "%sdelayed data old: %8.4f", msg_label, double(t_delay));
 		return -1;
 	}
 

@@ -36,14 +36,13 @@
 #include "BMI088.hpp"
 
 #include <lib/drivers/accelerometer/PX4Accelerometer.hpp>
-#include <px4_platform_common/module_params.h>
 
 #include "Bosch_BMI088_Accelerometer_Registers.hpp"
 
 namespace Bosch::BMI088::Accelerometer
 {
 
-class BMI088_Accelerometer : public BMI088, public ModuleParams
+class BMI088_Accelerometer : public BMI088
 {
 public:
 	BMI088_Accelerometer(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rotation rotation, int bus_frequency,
@@ -60,7 +59,7 @@ private:
 	static constexpr uint32_t ACCEL_RATE{1600}; // 1600 Hz accel
 	static constexpr float FIFO_SAMPLE_DT{1e6f / ACCEL_RATE};
 
-	static constexpr uint32_t FIFO_MAX_SAMPLES{math::min(FIFO::SIZE / sizeof(FIFO::DATA), sizeof(PX4Accelerometer::FIFOSample::x) / sizeof(PX4Accelerometer::FIFOSample::x[0]))};
+	static constexpr uint32_t FIFO_MAX_SAMPLES{math::min(FIFO::SIZE / sizeof(FIFO::DATA), sizeof(sensor_accel_fifo_s::x) / sizeof(sensor_accel_fifo_s::x[0]))};
 
 	// Transfer data
 	struct FIFOTransferBuffer {
@@ -105,7 +104,6 @@ private:
 
 	PX4Accelerometer _px4_accel;
 
-	perf_counter_t _transfer_perf{perf_alloc(PC_ELAPSED, MODULE_NAME"_accel: transfer")};
 	perf_counter_t _bad_register_perf{perf_alloc(PC_COUNT, MODULE_NAME"_accel: bad register")};
 	perf_counter_t _bad_transfer_perf{perf_alloc(PC_COUNT, MODULE_NAME"_accel: bad transfer")};
 	perf_counter_t _fifo_empty_perf{perf_alloc(PC_COUNT, MODULE_NAME"_accel: FIFO empty")};
@@ -130,10 +128,6 @@ private:
 		{ Register::INT1_IO_CONF,          INT1_IO_CONF_BIT::int1_out, 0 },
 		{ Register::INT1_INT2_MAP_DATA,    INT1_INT2_MAP_DATA_BIT::int1_fwm, 0},
 	};
-
-	DEFINE_PARAMETERS(
-		(ParamInt<px4::params::IMU_GYRO_RATEMAX>) _param_imu_gyro_rate_max
-	)
 };
 
 } // namespace Bosch::BMI088::Accelerometer

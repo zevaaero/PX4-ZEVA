@@ -283,7 +283,7 @@ private:
 MulticopterPositionControl::MulticopterPositionControl(bool vtol) :
 	SuperBlock(nullptr, "MPC"),
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::att_pos_ctrl),
+	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 	_vehicle_attitude_setpoint_pub(vtol ? ORB_ID(mc_virtual_attitude_setpoint) : ORB_ID(vehicle_attitude_setpoint)),
 	_vel_x_deriv(this, "VELD"),
 	_vel_y_deriv(this, "VELD"),
@@ -317,7 +317,8 @@ MulticopterPositionControl::init()
 		return false;
 	}
 
-	_local_pos_sub.set_interval_us(20_ms); // 50 Hz max update rate
+	// limit to every other vehicle_local_position update (50 Hz)
+	_local_pos_sub.set_interval_us(20_ms);
 
 	_time_stamp_last_loop = hrt_absolute_time();
 
@@ -483,8 +484,8 @@ MulticopterPositionControl::set_vehicle_states(const float &vel_sp_z)
 	if (PX4_ISFINITE(_local_pos.vx) && PX4_ISFINITE(_local_pos.vy) && _local_pos.v_xy_valid) {
 		_states.velocity(0) = _local_pos.vx;
 		_states.velocity(1) = _local_pos.vy;
-		_states.acceleration(0) = _vel_x_deriv.update(-_states.velocity(0));
-		_states.acceleration(1) = _vel_y_deriv.update(-_states.velocity(1));
+		_states.acceleration(0) = _vel_x_deriv.update(_states.velocity(0));
+		_states.acceleration(1) = _vel_y_deriv.update(_states.velocity(1));
 
 	} else {
 		_states.velocity(0) = _states.velocity(1) = NAN;

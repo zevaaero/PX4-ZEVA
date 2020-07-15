@@ -39,16 +39,12 @@ static constexpr int16_t combine(uint8_t lsb, uint8_t msb) { return (msb << 8u) 
 
 ISM330DLC::ISM330DLC(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rotation rotation, int bus_frequency,
 		     spi_mode_e spi_mode, spi_drdy_gpio_t drdy_gpio) :
-	SPI(MODULE_NAME, nullptr, bus, device, spi_mode, bus_frequency),
+	SPI(DRV_IMU_DEVTYPE_ST_ISM330DLC, MODULE_NAME, bus, device, spi_mode, bus_frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus),
 	_drdy_gpio(drdy_gpio),
 	_px4_accel(get_device_id(), ORB_PRIO_DEFAULT, rotation),
 	_px4_gyro(get_device_id(), ORB_PRIO_DEFAULT, rotation)
 {
-	set_device_type(DRV_IMU_DEVTYPE_ST_ISM330DLC);
-	_px4_accel.set_device_type(DRV_IMU_DEVTYPE_ST_ISM330DLC);
-	_px4_gyro.set_device_type(DRV_IMU_DEVTYPE_ST_ISM330DLC);
-
 	ConfigureSampleRate(_px4_gyro.get_max_rate_hz());
 }
 
@@ -419,7 +415,7 @@ bool ISM330DLC::FIFORead(const hrt_abstime &timestamp_sample, uint16_t samples)
 
 	bool bad_data = false;
 
-	PX4Gyroscope::FIFOSample gyro;
+	sensor_gyro_fifo_s gyro{};
 	gyro.timestamp_sample = timestamp_sample;
 	gyro.samples = samples;
 	gyro.dt = _fifo_empty_interval_us / _fifo_gyro_samples;
@@ -438,7 +434,7 @@ bool ISM330DLC::FIFORead(const hrt_abstime &timestamp_sample, uint16_t samples)
 
 	_px4_gyro.updateFIFO(gyro);
 
-	PX4Accelerometer::FIFOSample accel;
+	sensor_accel_fifo_s accel{};
 	accel.timestamp_sample = timestamp_sample;
 	accel.samples = samples;
 	accel.dt = _fifo_empty_interval_us / _fifo_accel_samples;
@@ -494,6 +490,4 @@ void ISM330DLC::print_status()
 	perf_print_counter(_drdy_interval_perf);
 	perf_print_counter(_bad_register_perf);
 
-	_px4_accel.print_status();
-	_px4_gyro.print_status();
 }

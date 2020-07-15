@@ -45,6 +45,9 @@
 [submodule "platforms/qurt/dspal"]
 	path = platforms/qurt/dspal
 	url = https://github.com/ATLFlight/dspal.git
+[submodule "Tools/flightgear_bridge"]
+	path = Tools/flightgear_bridge
+	url = https://github.com/PX4/PX4-FlightGear-Bridge.git
 [submodule "Tools/auterion/gazebo_models"]
 	path = Tools/auterion/gazebo_models
 	url = git@github.com:Auterion/auterion_gazebo_models.git

@@ -182,6 +182,8 @@ void VtolType::update_transition_state()
 	_transition_dt = math::constrain(_transition_dt, 0.0001f, 0.02f);
 	_last_loop_ts = t_now;
 
+
+
 	check_quadchute_condition();
 }
 

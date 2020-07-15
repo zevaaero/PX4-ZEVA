@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,11 +50,10 @@ LIS2MDL::LIS2MDL(device::Device *interface, enum Rotation rotation, I2CSPIBusOpt
 	_conf_errors(perf_alloc(PC_COUNT, MODULE_NAME": conf_errors")),
 	_range_errors(perf_alloc(PC_COUNT, MODULE_NAME": range_errors")),
 	_sample_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": read")),
-	_measure_interval(0),
-	_range_ga(49.152f)
+	_measure_interval(0)
 {
 	_px4_mag.set_external(_interface->external());
-	_px4_mag.set_scale(0.0015f); /* _range_ga / (2^15) */
+	_px4_mag.set_scale(0.0015f); /* 49.152f / (2^15) */
 }
 
 LIS2MDL::~LIS2MDL()
@@ -69,7 +68,6 @@ LIS2MDL::~LIS2MDL()
 int
 LIS2MDL::measure()
 {
-#pragma pack(push, 1)
 	struct {
 		uint8_t status;
 		uint8_t x[2];
@@ -83,17 +81,15 @@ LIS2MDL::measure()
 		int16_t z;
 		int16_t t;
 	} report;
-#pragma pack(pop)
 
-	int     ret = 0;
-	uint8_t buf_rx[2] = {0};
+	uint8_t buf_rx[2] = {};
 
 	_px4_mag.set_error_count(perf_event_count(_comms_errors));
 
 	perf_begin(_sample_perf);
 
 	const hrt_abstime timestamp_sample = hrt_absolute_time();
-	ret = _interface->read(ADDR_STATUS_REG, (uint8_t *)&lis_report, sizeof(lis_report));
+	int ret = _interface->read(ADDR_STATUS_REG, (uint8_t *)&lis_report, sizeof(lis_report));
 
 	/**
 	 * Silicon Bug: the X axis will be read instead of the temperature registers if you do a sequential read through XYZ.
@@ -149,9 +145,6 @@ int
 LIS2MDL::init()
 {
 
-	/* reset the device configuration */
-	reset();
-
 	int ret = write_reg(ADDR_CFG_REG_A, CFG_REG_A_ODR | CFG_REG_A_MD | CFG_REG_A_TEMP_COMP_EN);
 	ret = write_reg(ADDR_CFG_REG_B, 0);
 	ret = write_reg(ADDR_CFG_REG_C, CFG_REG_C_BDU);
@@ -170,12 +163,6 @@ LIS2MDL::print_status()
 	perf_print_counter(_comms_errors);
 	PX4_INFO("poll interval:  %u", _measure_interval);
 	_px4_mag.print_status();
-}
-
-int
-LIS2MDL::reset()
-{
-	return PX4_OK;
 }
 
 void

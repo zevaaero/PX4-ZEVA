@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
  * @file init.c
  *
  * PX4FMU-specific early startup code.  This file implements the
- * board_app_initializ() function that is called early by nsh during startup.
+ * board_app_initialize() function that is called early by nsh during startup.
  *
  * Code here is run before the rcS script is invoked; it should start required
  * subsystems and perform board-specific initialization.
@@ -159,7 +159,7 @@ __EXPORT void board_on_reset(int status)
  *
  ************************************************************************************/
 
-__EXPORT void
+extern "C" __EXPORT void
 stm32_boardinitialize(void)
 {
 	board_on_reset(-1); /* Reset PWM first thing */
@@ -222,7 +222,6 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	board_spi_reset(10, 0xffff);
 	VDD_3V3_SENSORS4_EN(true);
 	VDD_3V3_SPEKTRUM_POWER_EN(true);
-	SE050_RESET(false);
 
 	/* Need hrt running before using the ADC */
 
