@@ -3,7 +3,8 @@ name: Clang Tidy
 on:
   push:
     branches:
-    - 'master'
+    - 'develop'
+    - 'release/*'
   pull_request:
     branches:
     - '*'
@@ -14,9 +15,16 @@ jobs:
     container: px4io/px4-dev-clang:2020-04-01
     steps:
     - uses: actions/checkout@v1
-      with:
-        token: ${{secrets.ACCESS_TOKEN}}
-
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       shell: cmake -P {0}

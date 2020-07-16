@@ -3,7 +3,8 @@ name: MAVROS Offboard Tests
 on:
   push:
     branches:
-    - 'master'
+    - 'develop'
+    - 'release/*'
   pull_request:
     branches:
     - '*'
@@ -24,8 +25,16 @@ jobs:
       options: --privileged --ulimit core=-1 --security-opt seccomp=unconfined
     steps:
     - uses: actions/checkout@v1
-      with:
-        token: ${{ secrets.ACCESS_TOKEN }}
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
 
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
@@ -85,10 +94,6 @@ jobs:
     - name: ecl EKF analysis
       if: always()
       run: ./Tools/ecl_ekf/process_logdata_ekf.py ~/.ros/log/*/*.ulg || true
-
-    - name: Upload logs to flight review
-      if: always()
-      run: ./Tools/upload_log.py -q --description "${GITHUB_WORKFLOW} ${GITHUB_RUN_ID}" --feedback "${GITHUB_WORKFLOW} ${GITHUB_RUN_ID} ${GITHUB_REPOSITORY} ${GITHUB_REF}" --source CI ~/.ros/log/*/*.ulg
 
     - name: Upload px4 binary
       if: failure()
