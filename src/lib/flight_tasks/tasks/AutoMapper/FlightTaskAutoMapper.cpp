@@ -133,7 +133,19 @@ void FlightTaskAutoMapper::_prepareIdleSetpoints()
 void FlightTaskAutoMapper::_prepareLandSetpoints()
 {
 	// Keep xy-position and go down with landspeed
-	float land_speed = _getLandSpeed();
+	float land_speed = math::gradual(_dist_to_ground,
+					 _param_mpc_land_alt2.get(), _param_mpc_land_alt1.get(),
+					 _param_mpc_land_speed.get(), _constraints.speed_down);
+
+	// user input assisted land speed
+	if (_param_mpc_land_rc_help.get()
+	    && (_dist_to_ground < _param_mpc_land_alt1.get())
+	    && _sticks.checkAndSetStickInputs(_time_stamp_current)) {
+		// stick full up -1 -> stop, stick full down 1 -> double the speed
+		land_speed *= (1 + _sticks.getPositionExpo()(2));
+
+	}
+
 	_position_setpoint = Vector3f(_target(0), _target(1), NAN);
 	_velocity_setpoint = Vector3f(Vector3f(NAN, NAN, land_speed));
 	_gear.landing_gear = landing_gear_s::GEAR_DOWN;
@@ -176,21 +188,4 @@ bool FlightTaskAutoMapper::_highEnoughForLandingGear()
 {
 	// return true if altitude is above two meters
 	return _dist_to_ground > 2.0f;
-}
-
-float FlightTaskAutoMapper::_getLandSpeed()
-{
-	float land_speed = math::gradual(_dist_to_ground,
-					 _param_mpc_land_alt2.get(), _param_mpc_land_alt1.get(),
-					 _param_mpc_land_speed.get(), _constraints.speed_down);
-
-	// user input assisted land speed
-	if (_param_mpc_land_rc_help.get()
-	    && (_dist_to_ground < _param_mpc_land_alt1.get())
-	    && _sticks.checkAndSetStickInputs(_time_stamp_current)) {
-		// stick full up -1 -> stop, stick full down 1 -> double the speed
-		land_speed *= (1 + _sticks.getPositionExpo()(2));
-	}
-
-	return land_speed;
 }
