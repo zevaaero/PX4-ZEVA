@@ -32,33 +32,35 @@
  ****************************************************************************/
 
 /**
- * @file FlightTaskManualPosition.hpp
- *
- * Flight task for manual position controlled mode.
- *
+ * @file StickYaw.cpp
  */
 
-#pragma once
-
-#include "FlightTaskManualAltitudeSmoothVel.hpp"
-#include "StickAccelerationXY.hpp"
 #include "StickYaw.hpp"
 
-class FlightTaskManualAcceleration : public FlightTaskManualAltitudeSmoothVel
+#include <px4_platform_common/defines.h>
+
+void StickYaw::generateYawSetpoint(float &yawspeed_setpoint, float &yaw_setpoint, const float desired_yawspeed,
+				   const float yaw, const float deltatime)
 {
-public:
-	FlightTaskManualAcceleration();
-	virtual ~FlightTaskManualAcceleration() = default;
-	bool activate(vehicle_local_position_setpoint_s last_setpoint) override;
-	bool update() override;
+	_yawspeed_slew_rate.setSlewRate(2.f * M_PI_F);
+	yawspeed_setpoint = _yawspeed_slew_rate.update(desired_yawspeed, deltatime);
+	yaw_setpoint = updateYawLock(yaw, yawspeed_setpoint, yaw_setpoint);
+}
 
-private:
-	StickAccelerationXY _stick_acceleration_xy;
-	StickYaw _stick_yaw;
+float StickYaw::updateYawLock(const float yaw, const float yawspeed_setpoint, const float yaw_setpoint)
+{
+	// Yaw-lock depends on desired yawspeed input. If not locked, yaw_sp is set to NAN.
+	if (fabsf(yawspeed_setpoint) > FLT_EPSILON) {
+		// no fixed heading when rotating around yaw by stick
+		return NAN;
 
-	void _ekfResetHandlerPositionXY() override;
-	void _ekfResetHandlerVelocityXY() override;
-	void _ekfResetHandlerPositionZ() override;
-	void _ekfResetHandlerVelocityZ() override;
-	void _ekfResetHandlerHeading(float delta_psi) override;
-};
+	} else {
+		// break down and hold the current heading when no more rotation commanded
+		if (!PX4_ISFINITE(yaw_setpoint)) {
+			return yaw;
+
+		} else {
+			return yaw_setpoint;
+		}
+	}
+}

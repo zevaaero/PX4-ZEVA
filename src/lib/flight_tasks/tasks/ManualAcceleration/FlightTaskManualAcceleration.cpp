@@ -43,6 +43,10 @@
 
 using namespace matrix;
 
+FlightTaskManualAcceleration::FlightTaskManualAcceleration() :
+	_stick_acceleration_xy(this)
+{};
+
 bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s last_setpoint)
 {
 	bool ret = FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
@@ -55,11 +59,8 @@ bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s la
 	}
 
 	if (PX4_ISFINITE(last_setpoint.acceleration[0])) {
-		_acceleration_slew_rate_x.setForcedValue(last_setpoint.acceleration[0]);
-		_acceleration_slew_rate_x.setForcedValue(last_setpoint.acceleration[1]);
+		_stick_acceleration_xy.resetAcceleration(Vector2f(last_setpoint.acceleration[0], last_setpoint.acceleration[1]));
 	}
-
-	_brake_boost_filter.reset(1.f);
 
 	return ret;
 }
@@ -68,92 +69,13 @@ bool FlightTaskManualAcceleration::update()
 {
 	bool ret = FlightTaskManualAltitudeSmoothVel::update();
 
-	// maximum commanded acceleration and velocity
-	Vector2f acceleration_scale(_param_mpc_acc_hor.get(), _param_mpc_acc_hor.get());
-	Vector2f velocity_scale(_param_mpc_vel_manual.get(), _param_mpc_vel_manual.get());
-
-	acceleration_scale *= 2.f; // because of drag the average aceleration is half
-
-	// Yaw
-	_position_lock.updateYawFromStick(_yawspeed_setpoint, _yaw_setpoint,
-					  _sticks.getPositionExpo()(3) * math::radians(_param_mpc_man_y_max.get()), _yaw, _deltatime);
-
-	// Map stick input to acceleration
-	Vector2f stick_xy(_sticks.getPositionExpo().slice<2, 1>(0, 0));
-	_position_lock.limitStickUnitLengthXY(stick_xy);
-	_position_lock.rotateIntoHeadingFrameXY(stick_xy, _yaw, _yaw_setpoint);
-	Vector2f acceleration_xy = stick_xy.emult(acceleration_scale);
-	applyFeasibilityLimit(acceleration_xy);
-
-	// Add drag to limit speed and brake again
-	acceleration_xy -= calculateDrag(acceleration_scale.edivide(velocity_scale));
-
-	applyTiltLimit(acceleration_xy);
-	_acceleration_setpoint.xy() = acceleration_xy;
-
-	// Generate velocity setpoint by forward integrating commanded acceleration
-	Vector2f velocity_xy(_velocity_setpoint);
-	velocity_xy += Vector2f(_acceleration_setpoint.xy()) * _deltatime;
-	_velocity_setpoint.xy() = velocity_xy;
-
-	lockPosition();
+	_stick_yaw.generateYawSetpoint(_yawspeed_setpoint, _yaw_setpoint,
+				       _sticks.getPositionExpo()(3) * math::radians(_param_mpc_man_y_max.get()), _yaw, _deltatime);
+	_stick_acceleration_xy.generateSetpoints(_sticks.getPositionExpo().slice<2, 1>(0, 0), _yaw, _yaw_setpoint, _position,
+			_deltatime, _position_setpoint, _velocity_setpoint, _acceleration_setpoint);
 
 	_constraints.want_takeoff = _checkTakeoff();
 	return ret;
-}
-
-void FlightTaskManualAcceleration::applyFeasibilityLimit(Vector2f &acceleration)
-{
-	// Apply jerk limit - acceleration slew rate
-	_acceleration_slew_rate_x.setSlewRate(_param_mpc_jerk_max.get());
-	_acceleration_slew_rate_y.setSlewRate(_param_mpc_jerk_max.get());
-	acceleration(0) = _acceleration_slew_rate_x.update(acceleration(0), _deltatime);
-	acceleration(1) = _acceleration_slew_rate_y.update(acceleration(1), _deltatime);
-}
-
-Vector2f FlightTaskManualAcceleration::calculateDrag(Vector2f drag_coefficient)
-{
-	_brake_boost_filter.setParameters(_deltatime, .8f);
-
-	if (Vector2f(_sticks.getPositionExpo().slice<2, 1>(0, 0)).norm_squared() < FLT_EPSILON) {
-		_brake_boost_filter.update(2.f);
-
-	} else {
-		_brake_boost_filter.update(1.f);
-	}
-
-	drag_coefficient *= _brake_boost_filter.getState();
-
-	return drag_coefficient.emult(_velocity_setpoint.xy());
-}
-
-void FlightTaskManualAcceleration::applyTiltLimit(Vector2f &acceleration)
-{
-	// Check if acceleration would exceed the tilt limit
-	const float acc = acceleration.length();
-	const float acc_tilt_max = tanf(M_DEG_TO_RAD_F * _param_mpc_tiltmax_air.get()) * CONSTANTS_ONE_G;
-
-	if (acc > acc_tilt_max) {
-		acceleration *= acc_tilt_max / acc;
-	}
-}
-
-void FlightTaskManualAcceleration::lockPosition()
-{
-	if (Vector2f(_velocity_setpoint).norm_squared() < FLT_EPSILON) {
-		Vector2f position_xy(_position_setpoint);
-
-		if (!PX4_ISFINITE(position_xy(0))) {
-			position_xy = Vector2f(_position);
-		}
-
-		position_xy += Vector2f(_velocity_setpoint.xy()) * _deltatime;
-		_position_setpoint.xy() = position_xy;
-
-	} else {
-		_position_setpoint.xy() = NAN;
-
-	}
 }
 
 void FlightTaskManualAcceleration::_ekfResetHandlerPositionXY()

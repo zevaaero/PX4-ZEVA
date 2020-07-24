@@ -32,33 +32,37 @@
  ****************************************************************************/
 
 /**
- * @file FlightTaskManualPosition.hpp
- *
- * Flight task for manual position controlled mode.
- *
+ * @file StickYaw.hpp
+ * @brief Generate yaw and angular yawspeed setpoints from stick input
+ * @author Matthias Grob <maetugr@gmail.com>
  */
 
 #pragma once
 
-#include "FlightTaskManualAltitudeSmoothVel.hpp"
-#include "StickAccelerationXY.hpp"
-#include "StickYaw.hpp"
+#include "SlewRate.hpp"
 
-class FlightTaskManualAcceleration : public FlightTaskManualAltitudeSmoothVel
+class StickYaw
 {
 public:
-	FlightTaskManualAcceleration();
-	virtual ~FlightTaskManualAcceleration() = default;
-	bool activate(vehicle_local_position_setpoint_s last_setpoint) override;
-	bool update() override;
+	StickYaw() = default;
+	~StickYaw() = default;
+
+	void generateYawSetpoint(float &yawspeed_setpoint, float &yaw_setpoint, const float desired_yawspeed, const float yaw,
+				 const float deltatime);
 
 private:
-	StickAccelerationXY _stick_acceleration_xy;
-	StickYaw _stick_yaw;
+	SlewRate<float> _yawspeed_slew_rate;
 
-	void _ekfResetHandlerPositionXY() override;
-	void _ekfResetHandlerVelocityXY() override;
-	void _ekfResetHandlerPositionZ() override;
-	void _ekfResetHandlerVelocityZ() override;
-	void _ekfResetHandlerHeading(float delta_psi) override;
+	/**
+	 * Lock yaw when not currently turning
+	 * When applying a yawspeed the vehicle is turning, when the speed is
+	 * set to zero the vehicle needs to slow down and then lock at the yaw
+	 * it stops at to not drift over time.
+	 * @param yawspeed current yaw rotational rate state
+	 * @param yaw current yaw rotational rate state
+	 * @param yawspeed_setpoint rotation rate at which to turn around yaw axis
+	 * @param yaw current yaw setpoint which then will be overwritten by the return value
+	 * @return yaw setpoint to execute to have a yaw lock at the correct moment in time
+	 */
+	static float updateYawLock(const float yaw, const float yawspeed_setpoint, const float yaw_setpoint);
 };

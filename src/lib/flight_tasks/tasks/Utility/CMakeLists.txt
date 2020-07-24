@@ -39,6 +39,8 @@ px4_add_library(FlightTaskUtility
 	ManualVelocitySmoothingZ.cpp
 	Sticks.cpp
 	PositionLock.hpp
+	StickAccelerationXY.cpp
+	StickYaw.cpp
 )
 
 target_link_libraries(FlightTaskUtility PUBLIC FlightTask hysteresis bezier SlewRate motion_planning)
