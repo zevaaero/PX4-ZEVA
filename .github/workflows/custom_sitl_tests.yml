@@ -3,11 +3,13 @@ name: Custom Model SITL Tests
 on:
   push:
     branches:
-    - 'develop'
-    - 'release/*'
+    - ''
+    #- 'develop'
+    #- 'release/*'
   pull_request:
     branches:
-    - '**'
+    - ''
+    #- '**'
 
 jobs:
   build:
