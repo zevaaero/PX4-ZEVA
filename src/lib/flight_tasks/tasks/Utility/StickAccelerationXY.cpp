@@ -38,6 +38,7 @@
 #include "StickAccelerationXY.hpp"
 
 #include <ecl/geo/geo.h>
+#include "Sticks.hpp"
 
 StickAccelerationXY::StickAccelerationXY(ModuleParams *parent) :
 	ModuleParams(parent)
@@ -61,8 +62,8 @@ void StickAccelerationXY::generateSetpoints(Vector2f stick_xy, const float yaw, 
 	acceleration_scale *= 2.f; // because of drag the average aceleration is half
 
 	// Map stick input to acceleration
-	_position_lock.limitStickUnitLengthXY(stick_xy);
-	_position_lock.rotateIntoHeadingFrameXY(stick_xy, yaw, yaw_sp);
+	Sticks::limitStickUnitLengthXY(stick_xy);
+	Sticks::rotateIntoHeadingFrameXY(stick_xy, yaw, yaw_sp);
 	Vector2f acceleration_xy = stick_xy.emult(acceleration_scale);
 	applyFeasibilityLimit(acceleration_xy, dt);
 

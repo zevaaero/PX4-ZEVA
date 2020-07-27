@@ -44,7 +44,6 @@
 #include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
 #include <matrix/math.hpp>
 
-#include "PositionLock.hpp"
 #include "SlewRate.hpp"
 
 class StickAccelerationXY : public ModuleParams
@@ -64,7 +63,6 @@ private:
 	void applyTiltLimit(matrix::Vector2f &acceleration);
 	void lockPosition(const matrix::Vector3f &vel_sp, const matrix::Vector3f &pos, const float dt, Vector3f &pos_sp);
 
-	PositionLock _position_lock;
 	SlewRate<float> _acceleration_slew_rate_x;
 	SlewRate<float> _acceleration_slew_rate_y;
 	AlphaFilter<float> _brake_boost_filter;

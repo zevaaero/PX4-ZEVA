@@ -38,7 +38,6 @@ px4_add_library(FlightTaskUtility
 	ManualVelocitySmoothingXY.cpp
 	ManualVelocitySmoothingZ.cpp
 	Sticks.cpp
-	PositionLock.hpp
 	StickAccelerationXY.cpp
 	StickYaw.cpp
 )
