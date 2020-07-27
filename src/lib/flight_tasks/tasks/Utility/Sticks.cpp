@@ -36,7 +36,6 @@
  */
 
 #include "Sticks.hpp"
-#include <lib/mathlib/mathlib.h>
 
 using namespace time_literals;
 

@@ -52,35 +52,32 @@ TEST_CASE("Takeoff and Land", "[multicopter][vtol]")
 	tester.wait_until_disarmed(until_disarmed_timeout);
 }
 
-TEST_CASE("Fly square Multicopter Mission including RTL", "[multicopter][vtol]")
+TEST_CASE("Fly square Multicopter Missions", "[multicopter][vtol]")
 {
 	AutopilotTester tester;
 	tester.connect(connection_url);
 	tester.wait_until_ready();
 
-	AutopilotTester::MissionOptions mission_options;
-	mission_options.rtl_at_end = true;
-	tester.prepare_square_mission(mission_options);
-	tester.arm();
-	tester.execute_mission();
-	tester.wait_until_disarmed();
-}
+	SECTION("Mission including RTL") {
+		AutopilotTester::MissionOptions mission_options;
+		mission_options.rtl_at_end = true;
+		tester.prepare_square_mission(mission_options);
+		tester.arm();
+		tester.execute_mission();
+		tester.wait_until_disarmed();
+	}
 
-TEST_CASE("Fly square Multicopter Mission with manual RTL", "[multicopter][vtol]")
-{
-	AutopilotTester tester;
-	tester.connect(connection_url);
-	tester.wait_until_ready();
-
-	AutopilotTester::MissionOptions mission_options;
-	mission_options.rtl_at_end = false;
-	tester.prepare_square_mission(mission_options);
-	tester.check_tracks_mission();
-	tester.arm();
-	tester.execute_mission();
-	tester.wait_until_hovering();
-	tester.execute_rtl();
-	tester.wait_until_disarmed();
+	SECTION("Mission with manual RTL") {
+		AutopilotTester::MissionOptions mission_options;
+		mission_options.rtl_at_end = false;
+		tester.prepare_square_mission(mission_options);
+		tester.check_tracks_mission();
+		tester.arm();
+		tester.execute_mission();
+		tester.wait_until_hovering();
+		tester.execute_rtl();
+		tester.wait_until_disarmed();
+	}
 }
 
 TEST_CASE("Fly straight Multicopter Mission", "[multicopter]")

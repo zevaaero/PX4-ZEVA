@@ -55,7 +55,7 @@ public:
 
 	void update_power(float power) { _power = power; }
 
-	void calculate_mag_corrected(matrix::Vector3f &mag, matrix::Vector3f &param_vect);
+	void calculate_mag_corrected(matrix::Vector3f &mag, const matrix::Vector3f &param_vect);
 
 private:
 	float _power{0};

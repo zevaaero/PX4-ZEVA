@@ -206,7 +206,7 @@ private:
 
 Sensors::Sensors(bool hil_enabled) :
 	ModuleParams(nullptr),
-	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::att_pos_ctrl),
+	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
 	_hil_enabled(hil_enabled),
 	_loop_perf(perf_alloc(PC_ELAPSED, "sensors")),
 	_voted_sensors_update(_parameters, hil_enabled, _vehicle_imu_sub)
@@ -239,6 +239,8 @@ Sensors::~Sensors()
 			i->Stop();
 		}
 	}
+
+	perf_free(_loop_perf);
 }
 
 bool Sensors::init()
@@ -523,9 +525,6 @@ void Sensors::Run()
 
 	diff_pres_poll();
 
-	// check failover
-	_voted_sensors_update.checkFailover();
-
 	if ((magnetometer.timestamp != 0) && (magnetometer.timestamp != _magnetometer_prev_timestamp)) {
 		_magnetometer_pub.publish(magnetometer);
 		_magnetometer_prev_timestamp = magnetometer.timestamp;
@@ -623,7 +622,9 @@ int Sensors::print_status()
 	_voted_sensors_update.printStatus();
 
 	PX4_INFO_RAW("\n");
+	_vehicle_air_data.PrintStatus();
 
+	PX4_INFO_RAW("\n");
 	PX4_INFO("Airspeed status:");
 	_airspeed_validator.print();
 
@@ -632,9 +633,6 @@ int Sensors::print_status()
 
 	PX4_INFO_RAW("\n");
 	_vehicle_angular_velocity.PrintStatus();
-
-	PX4_INFO_RAW("\n");
-	_vehicle_air_data.PrintStatus();
 
 	PX4_INFO_RAW("\n");
 

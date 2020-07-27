@@ -77,11 +77,10 @@ struct Params {
 	float dec_to_pitch_ff;
 	float dec_to_pitch_i;
 	float back_trans_dec_sp;
+	bool vt_mc_on_fmu;
 	int vt_forward_thrust_enable_mode;
 	float mpc_land_alt1;
 	float mpc_land_alt2;
-	int32_t act_test_mode;
-	bool vt_mc_on_fmu;
 };
 
 // Has to match 1:1 msg/vtol_vehicle_status.msg

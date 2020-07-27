@@ -347,7 +347,7 @@ PARAM_DEFINE_FLOAT(MPC_TILTMAX_LND, 12.0f);
 PARAM_DEFINE_FLOAT(MPC_LAND_SPEED, 0.7f);
 
 /**
- * Maximum horizontal velocity during landing
+ * Maximum horizontal position mode velocity when close to ground/home altitude
  * Set the value higher than the otherwise expected maximum to disable any slowdown.
  *
  * @unit m/s
@@ -355,7 +355,7 @@ PARAM_DEFINE_FLOAT(MPC_LAND_SPEED, 0.7f);
  * @decimal 1
  * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(MPC_LAND_VEL_XY, 2.f);
+PARAM_DEFINE_FLOAT(MPC_LAND_VEL_XY, 10.0f);
 
 /**
  * Enable user assisted descent speed for autonomous land routine.
@@ -731,7 +731,7 @@ PARAM_DEFINE_FLOAT(MPC_TKO_RAMP_T, 3.0f);
  * 3 Smooth position control with maximum acceleration and jerk limits (different algorithm
  *   than 1).
  *
- * @value 0 Default position control
+ * @value 0 Simple position control
  * @value 1 Smooth position control
  * @value 3 Smooth position control (Velocity)
  * @value 4 Acceleration based input

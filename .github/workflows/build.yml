@@ -7,12 +7,12 @@ on:
     - 'release/*'
   pull_request:
     branches:
-    - '*'
+    - '**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-bionic:2020-03-16
+    container: px4io/px4-dev-base-bionic:2020-04-01
     steps:
       # see https://github.com/actions/checkout/issues/14
       - uses: actions/checkout@v1

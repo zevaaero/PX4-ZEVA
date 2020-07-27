@@ -3,16 +3,20 @@ name: Custom Model SITL Tests
 on:
   push:
     branches:
-    - 'develop'
-    - 'release/*'
+    - ''
+    #- 'develop'
+    #- 'release/*'
   pull_request:
     branches:
-    - '*'
+    - ''
+    #- '**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-simulation-bionic:2020-03-16
+    container:
+      image: px4io/px4-dev-simulation-focal:2020-04-01
+      options: --privileged --ulimit core=-1 --security-opt seccomp=unconfined
     steps:
     # see https://github.com/actions/checkout/issues/14
     - uses: actions/checkout@v1
@@ -50,10 +54,19 @@ jobs:
         key: ${{matrix.config}}-ccache-sitl-tests-custom-${{steps.ccache_cache_timestamp.outputs.timestamp}}
         restore-keys: ${{matrix.config}}-ccache-sitl-tests-custom-
     - name: setup ccache
-      run: mkdir -p ~/.ccache && echo "max_size = 1G" > ~/.ccache/ccache.conf && ccache -z && ccache -s
+      run: |
+          mkdir -p ~/.ccache
+          echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
+          echo "compression = true" >> ~/.ccache/ccache.conf
+          echo "compression_level = 6" >> ~/.ccache/ccache.conf
+          echo "max_size = 400M" >> ~/.ccache/ccache.conf
+          ccache -s
+          ccache -z
     - name: Build PX4 in SITL integration test mode
       run: DONT_RUN=1 make px4_sitl PX4_CMAKE_BUILD_TYPE=Coverage gazebo mavsdk_tests
     - name: ccache post-run
-      run: ccache -s && ccache -z
+      run: ccache -s
     - name: Run SITL tests
+      env:
+        PX4_CMAKE_BUILD_TYPE: Coverage
       run:  test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early $HOME/ci_gazebo_models/configs/sitl.json

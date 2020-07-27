@@ -1,0 +1,69 @@
+name: Checks
+
+on:
+  push:
+    branches:
+    - 'develop'
+    - 'release/*'
+  pull_request:
+    branches:
+    - '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [
+          "check_format",
+          "tests",
+          "validate_module_configs",
+          "shellcheck_all",
+          "NO_NINJA_BUILD=1 px4_fmu-v5_default",
+          "NO_NINJA_BUILD=1 px4_sitl_default",
+          "airframe_metadata",
+          "module_documentation",
+          "parameters_metadata",
+        ]
+        ubuntu_release: [
+          #bionic,
+          focal
+          ]
+    container: px4io/px4-dev-nuttx-${{ matrix.ubuntu_release }}:2020-04-01
+    steps:
+    - uses: actions/checkout@v1
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
+    - name: Prepare ccache timestamp
+      id: ccache_cache_timestamp
+      shell: cmake -P {0}
+      run: |
+        string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+        message("::set-output name=timestamp::${current_date}")
+    - name: ccache cache files
+      uses: actions/cache@v2
+      with:
+        path: ~/.ccache
+        key: tests_${{matrix.ubuntu_release}}-ccache-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+        restore-keys: tests_${{matrix.ubuntu_release}}-ccache-
+    - name: setup ccache
+      run: |
+          mkdir -p ~/.ccache
+          echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
+          echo "compression = true" >> ~/.ccache/ccache.conf
+          echo "compression_level = 6" >> ~/.ccache/ccache.conf
+          echo "max_size = 400M" >> ~/.ccache/ccache.conf
+          ccache -s
+          ccache -z
+
+    - name: ${{matrix.check}}
+      run: make ${{matrix.check}}

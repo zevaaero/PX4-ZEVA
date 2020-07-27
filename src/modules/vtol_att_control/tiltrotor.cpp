@@ -42,8 +42,8 @@
 #include "tiltrotor.h"
 #include "vtol_att_control_main.h"
 
-using namespace time_literals;
 using namespace matrix;
+using namespace time_literals;
 
 #define ARSP_YAW_CTRL_DISABLE 7.0f	// airspeed at which we stop controlling yaw during a front transition
 
@@ -275,6 +275,8 @@ void Tiltrotor::update_transition_state()
 	// copy virtual attitude setpoint to real attitude setpoint (we use multicopter att sp)
 	memcpy(_v_att_sp, _mc_virtual_att_sp, sizeof(vehicle_attitude_setpoint_s));
 
+	_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
+
 	float time_since_trans_start = (float)(hrt_absolute_time() - _vtol_schedule.transition_start) * 1e-6f;
 
 	if (!_flag_was_in_trans_mode) {
@@ -371,6 +373,11 @@ void Tiltrotor::update_transition_state()
 
 		_mc_yaw_weight = 1.0f;
 
+		// control backtransition deceleration using pitch.
+		if (_v_control_mode->flag_control_climb_rate_enabled) {
+			_v_att_sp->pitch_body = update_and_get_backtransition_pitch_sp();
+		}
+
 		// while we quickly rotate back the motors keep throttle at idle
 		if (time_since_trans_start < 1.0f) {
 			_mc_throttle_weight = 0.0f;
@@ -394,9 +401,13 @@ void Tiltrotor::update_transition_state()
 		q_sp.copyTo(_v_att_sp->q_d);
 	}
 
+	const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
+	q_sp.copyTo(_v_att_sp->q_d);
+
 	_mc_roll_weight = math::constrain(_mc_roll_weight, 0.0f, 1.0f);
 	_mc_yaw_weight = math::constrain(_mc_yaw_weight, 0.0f, 1.0f);
 	_mc_throttle_weight = math::constrain(_mc_throttle_weight, 0.0f, 1.0f);
+
 
 }
 

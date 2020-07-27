@@ -367,9 +367,9 @@ Navigator::run()
 					rep->current.lon = cmd.param6;
 
 				} else {
-					// If one of them is non-finite, reset both
-					rep->current.lat = (double)NAN;
-					rep->current.lon = (double)NAN;
+					// If one of them is non-finite set the current global position as target
+					rep->current.lat = get_global_position()->lat;
+					rep->current.lon = get_global_position()->lon;
 				}
 
 				rep->current.alt = cmd.param7;
@@ -587,6 +587,22 @@ Navigator::run()
 
 					}
 
+
+					/* If we are already in loiter it is very likely that we are doing a reposition
+					 * so we should block that by repositioning in the current location */
+					if (_geofence.getGeofenceAction() != geofence_result_s::GF_ACTION_WARN
+					    && get_vstatus()->nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER) {
+						position_setpoint_triplet_s *rep = get_reposition_triplet();
+
+						rep->current.yaw = get_global_position()->yaw;
+						rep->current.lat = get_global_position()->lat;
+						rep->current.lon = get_global_position()->lon;
+						rep->current.alt = get_global_position()->alt;
+						rep->current.valid = true;
+
+						_pos_sp_triplet_updated = true;
+					}
+
 					_geofence_violation_warning_sent = true;
 				}
 
@@ -628,10 +644,10 @@ Navigator::run()
 				case RTL::RTL_CLOSEST:
 					if (rtl_activated) {
 						if (rtl_type() == RTL::RTL_LAND) {
-							mavlink_and_console_log_info(get_mavlink_log_pub(), "RTL LAND activated");
+							mavlink_log_info(get_mavlink_log_pub(), "RTL LAND activated");
 
 						} else {
-							mavlink_and_console_log_info(get_mavlink_log_pub(), "RTL Closest landing point activated");
+							mavlink_log_info(get_mavlink_log_pub(), "RTL Closest landing point activated");
 						}
 
 					}
@@ -666,7 +682,7 @@ Navigator::run()
 						}
 
 						if (rtl_activated) {
-							mavlink_and_console_log_info(get_mavlink_log_pub(), "RTL Mission activated, continue mission");
+							mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, continue mission");
 						}
 
 						navigation_mode_new = &_mission;
@@ -688,14 +704,14 @@ Navigator::run()
 							}
 
 							if (rtl_activated) {
-								mavlink_and_console_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly mission in reverse");
+								mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly mission in reverse");
 							}
 
 							navigation_mode_new = &_mission;
 
 						} else {
 							if (rtl_activated) {
-								mavlink_and_console_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly to home");
+								mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly to home");
 							}
 
 							navigation_mode_new = &_rtl;
@@ -706,7 +722,7 @@ Navigator::run()
 
 				default:
 					if (rtl_activated) {
-						mavlink_and_console_log_info(get_mavlink_log_pub(), "RTL HOME activated");
+						mavlink_log_info(get_mavlink_log_pub(), "RTL HOME activated");
 					}
 
 					navigation_mode_new = &_rtl;
@@ -788,7 +804,9 @@ Navigator::run()
 
 		/* iterate through navigation modes and set active/inactive for each */
 		for (unsigned int i = 0; i < NAVIGATOR_MODE_ARRAY_SIZE; i++) {
-			_navigation_mode_array[i]->run(_navigation_mode == _navigation_mode_array[i]);
+			if (_navigation_mode_array[i]) {
+				_navigation_mode_array[i]->run(_navigation_mode == _navigation_mode_array[i]);
+			}
 		}
 
 		/* if nothing is running, set position setpoint triplet invalid once */

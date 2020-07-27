@@ -43,21 +43,17 @@ namespace Bosch::BMI088::Accelerometer
 BMI088_Accelerometer::BMI088_Accelerometer(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rotation rotation,
 		int bus_frequency, spi_mode_e spi_mode, spi_drdy_gpio_t drdy_gpio) :
 	BMI088(DRV_ACC_DEVTYPE_BMI088, "BMI088_Accelerometer", bus_option, bus, device, spi_mode, bus_frequency, drdy_gpio),
-	ModuleParams(nullptr),
 	_px4_accel(get_device_id(), ORB_PRIO_MAX, rotation)
 {
 	if (drdy_gpio != 0) {
 		_drdy_interval_perf = perf_alloc(PC_INTERVAL, MODULE_NAME"_accel: DRDY interval");
 	}
 
-	_px4_accel.set_device_type(DRV_ACC_DEVTYPE_BMI088);
-
-	ConfigureSampleRate(_param_imu_gyro_rate_max.get());
+	ConfigureSampleRate(_px4_accel.get_max_rate_hz());
 }
 
 BMI088_Accelerometer::~BMI088_Accelerometer()
 {
-	perf_free(_transfer_perf);
 	perf_free(_bad_register_perf);
 	perf_free(_bad_transfer_perf);
 	perf_free(_fifo_empty_perf);
@@ -78,15 +74,12 @@ void BMI088_Accelerometer::print_status()
 
 	PX4_INFO("FIFO empty interval: %d us (%.3f Hz)", _fifo_empty_interval_us, 1e6 / _fifo_empty_interval_us);
 
-	perf_print_counter(_transfer_perf);
 	perf_print_counter(_bad_register_perf);
 	perf_print_counter(_bad_transfer_perf);
 	perf_print_counter(_fifo_empty_perf);
 	perf_print_counter(_fifo_overflow_perf);
 	perf_print_counter(_fifo_reset_perf);
 	perf_print_counter(_drdy_interval_perf);
-
-	_px4_accel.print_status();
 }
 
 int BMI088_Accelerometer::probe()
@@ -288,7 +281,7 @@ void BMI088_Accelerometer::ConfigureAccel()
 
 void BMI088_Accelerometer::ConfigureSampleRate(int sample_rate)
 {
-	if (sample_rate == 0 || sample_rate > 800) {
+	if (sample_rate == 0) {
 		sample_rate = 800; // default to 800 Hz
 	}
 
@@ -459,17 +452,13 @@ bool BMI088_Accelerometer::FIFORead(const hrt_abstime &timestamp_sample, uint8_t
 	FIFOTransferBuffer buffer{};
 	const size_t transfer_size = math::min(samples * sizeof(FIFO::DATA) + 4, FIFO::SIZE);
 
-	perf_begin(_transfer_perf);
-
 	if (transfer((uint8_t *)&buffer, (uint8_t *)&buffer, transfer_size) != PX4_OK) {
-		perf_end(_transfer_perf);
 		perf_count(_bad_transfer_perf);
 		return false;
 	}
 
-	perf_end(_transfer_perf);
 
-	PX4Accelerometer::FIFOSample accel;
+	sensor_accel_fifo_s accel{};
 	accel.timestamp_sample = timestamp_sample;
 	accel.samples = 0;
 	accel.dt = FIFO_SAMPLE_DT;
