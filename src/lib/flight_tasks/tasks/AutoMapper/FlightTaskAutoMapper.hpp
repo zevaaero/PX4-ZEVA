@@ -42,6 +42,7 @@
 
 #include "FlightTaskAuto.hpp"
 #include "Sticks.hpp"
+#include "StickAccelerationXY.hpp"
 
 class FlightTaskAutoMapper : public FlightTaskAuto
 {
@@ -78,6 +79,9 @@ protected:
 
 private:
 	Sticks _sticks;
+	StickAccelerationXY _stick_acceleration_xy;
+	matrix::Vector3f _land_position;
+
 	void _reset(); /**< Resets member variables to current vehicle state */
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
