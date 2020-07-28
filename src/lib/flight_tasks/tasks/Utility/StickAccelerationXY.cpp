@@ -40,10 +40,23 @@
 #include <ecl/geo/geo.h>
 #include "Sticks.hpp"
 
+using namespace matrix;
+
 StickAccelerationXY::StickAccelerationXY(ModuleParams *parent) :
 	ModuleParams(parent)
 {
 	_brake_boost_filter.reset(1.f);
+	resetPosition();
+}
+
+void StickAccelerationXY::resetPosition()
+{
+	_position.setNaN();
+}
+
+void StickAccelerationXY::resetVelocity(const matrix::Vector2f &velocity)
+{
+	_velocity = velocity;
 }
 
 void StickAccelerationXY::resetAcceleration(const matrix::Vector2f &acceleration)
@@ -53,7 +66,7 @@ void StickAccelerationXY::resetAcceleration(const matrix::Vector2f &acceleration
 }
 
 void StickAccelerationXY::generateSetpoints(Vector2f stick_xy, const float yaw, const float yaw_sp, const Vector3f &pos,
-		const float dt, Vector3f &pos_sp, Vector3f &vel_sp, Vector3f &acc_sp)
+		const float dt)
 {
 	// maximum commanded acceleration and velocity
 	Vector2f acceleration_scale(_param_mpc_acc_hor.get(), _param_mpc_acc_hor.get());
@@ -64,21 +77,25 @@ void StickAccelerationXY::generateSetpoints(Vector2f stick_xy, const float yaw, 
 	// Map stick input to acceleration
 	Sticks::limitStickUnitLengthXY(stick_xy);
 	Sticks::rotateIntoHeadingFrameXY(stick_xy, yaw, yaw_sp);
-	Vector2f acceleration_xy = stick_xy.emult(acceleration_scale);
-	applyFeasibilityLimit(acceleration_xy, dt);
+	_acceleration = stick_xy.emult(acceleration_scale);
+	applyFeasibilityLimit(_acceleration, dt);
 
 	// Add drag to limit speed and brake again
-	acceleration_xy -= calculateDrag(acceleration_scale.edivide(velocity_scale), dt, stick_xy, vel_sp);
+	_acceleration -= calculateDrag(acceleration_scale.edivide(velocity_scale), dt, stick_xy, _velocity);
 
-	applyTiltLimit(acceleration_xy);
-	acc_sp.xy() = acceleration_xy;
+	applyTiltLimit(_acceleration);
 
 	// Generate velocity setpoint by forward integrating commanded acceleration
-	Vector2f velocity_xy(vel_sp);
-	velocity_xy += Vector2f(acc_sp.xy()) * dt;
-	vel_sp.xy() = velocity_xy;
+	_velocity += Vector2f(_acceleration) * dt;
 
-	lockPosition(vel_sp, pos, dt, pos_sp);
+	lockPosition(_velocity, pos, dt, _position);
+}
+
+void StickAccelerationXY::getSetpoints(Vector3f &pos_sp, Vector3f &vel_sp, Vector3f &acc_sp)
+{
+	pos_sp.xy() = _position;
+	vel_sp.xy() = _velocity;
+	acc_sp.xy() = _acceleration;
 }
 
 void StickAccelerationXY::applyFeasibilityLimit(Vector2f &acceleration, const float dt)
@@ -91,7 +108,7 @@ void StickAccelerationXY::applyFeasibilityLimit(Vector2f &acceleration, const fl
 }
 
 Vector2f StickAccelerationXY::calculateDrag(Vector2f drag_coefficient, const float dt, const Vector2f &stick_xy,
-		const Vector3f &vel_sp)
+		const Vector2f &vel_sp)
 {
 	_brake_boost_filter.setParameters(dt, .8f);
 
@@ -104,7 +121,7 @@ Vector2f StickAccelerationXY::calculateDrag(Vector2f drag_coefficient, const flo
 
 	drag_coefficient *= _brake_boost_filter.getState();
 
-	return drag_coefficient.emult(vel_sp.xy());
+	return drag_coefficient.emult(vel_sp);
 }
 
 void StickAccelerationXY::applyTiltLimit(Vector2f &acceleration)
@@ -118,20 +135,17 @@ void StickAccelerationXY::applyTiltLimit(Vector2f &acceleration)
 	}
 }
 
-void StickAccelerationXY::lockPosition(const Vector3f &vel_sp, const Vector3f &pos, const float dt, Vector3f &pos_sp)
+void StickAccelerationXY::lockPosition(const Vector2f &vel_sp, const Vector3f &pos, const float dt, Vector2f &pos_sp)
 {
-	if (Vector2f(vel_sp).norm_squared() < FLT_EPSILON) {
-		Vector2f position_xy(pos_sp);
-
-		if (!PX4_ISFINITE(position_xy(0))) {
-			position_xy = Vector2f(pos);
+	if (vel_sp.norm_squared() < FLT_EPSILON) {
+		if (!PX4_ISFINITE(pos_sp(0))) {
+			pos_sp = Vector2f(pos);
 		}
 
-		position_xy += Vector2f(vel_sp.xy()) * dt;
-		pos_sp.xy() = position_xy;
+		pos_sp += vel_sp * dt;
 
 	} else {
-		pos_sp.xy() = NAN;
+		pos_sp.setNaN();
 
 	}
 }
