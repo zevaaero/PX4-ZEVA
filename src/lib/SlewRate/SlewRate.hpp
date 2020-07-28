@@ -44,8 +44,6 @@
 #include <mathlib/mathlib.h>
 #include <matrix/math.hpp>
 
-using namespace matrix;
-
 template<typename Type>
 class SlewRate
 {
@@ -90,9 +88,9 @@ private:
 		return math::constrain(value, min, max);
 	}
 
-	Vector3f constrain(const Vector3f &value, const Vector3f &min, const Vector3f &max)
+	matrix::Vector3f constrain(const matrix::Vector3f &value, const matrix::Vector3f &min, const matrix::Vector3f &max)
 	{
-		Vector3f constrained;
+		matrix::Vector3f constrained;
 
 		for (int i = 0; i < 3; i++) {
 			constrained(i) = math::constrain(value(i), min(i), max(i));
