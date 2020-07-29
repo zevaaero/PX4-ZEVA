@@ -289,7 +289,6 @@ private:
 	uORB::Subscription	_actuator_armed_sub{ORB_ID(actuator_armed)};
 	uORB::Subscription	_control_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription	_parameter_update_sub{ORB_ID(parameter_update)};
-	uORB::Subscription	_vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription	_vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
 	uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription	_home_position_sub{ORB_ID(home_position)};
