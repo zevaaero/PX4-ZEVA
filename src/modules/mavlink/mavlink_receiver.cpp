@@ -80,6 +80,10 @@ MavlinkReceiver::~MavlinkReceiver()
 	delete _px4_baro;
 	delete _px4_gyro;
 	delete _px4_mag;
+
+	if (_mavlink->get_instance_id() == 0) {
+		_terrain_uploader.deinit();
+	}
 }
 
 MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
@@ -91,6 +95,12 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_parameters_manager(parent),
 	_mavlink_timesync(parent)
 {
+	// let the main instance initialize the terrain uploader, if enabled
+	if (_mavlink->get_instance_id() == 0 && _param_mav_terrain_en.get() > 0) {
+		if (!_terrain_uploader.init(_param_mav_terrain_en.get())) {
+			PX4_ERR("Terrain uploader init failed");
+		}
+	}
 }
 
 void
@@ -277,6 +287,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 
 	case MAVLINK_MSG_ID_GIMBAL_DEVICE_INFORMATION:
 		handle_message_gimbal_device_information(msg);
+		break;
+
+	case MAVLINK_MSG_ID_TERRAIN_DATA:
+		_terrain_uploader.handleTerrainData(msg);
 		break;
 
 	default:
@@ -2992,11 +3006,46 @@ MavlinkReceiver::Run()
 			}
 
 			_mavlink_log_handler.send(t);
+
+			update_terrain_uploader(t);
+
 			last_send_update = t;
 		}
 
 		if (_tune_publisher != nullptr) {
 			_tune_publisher->publish_next_tune(t);
+		}
+	}
+}
+
+
+void MavlinkReceiver::update_terrain_uploader(const hrt_abstime &now)
+{
+	_terrain_uploader.update(_mavlink->get_channel(), *_mavlink->get_mavlink_log_pub());
+
+	bool home_position_changed = false;
+
+	// let only the main mavlink instance listen for home position changes
+	if (_mavlink->get_instance_id() == 0 && _home_position_sub.updated()
+	    && now - _last_home_position_changed > 5_s) {
+		_last_home_position_changed = now;
+		home_position_changed = true;
+	}
+
+	if (_mission_manager.had_upload_transfer() || home_position_changed) {
+		actuator_armed_s armed{};
+		_actuator_armed_sub.copy(&armed);
+
+		if (!armed.armed && _terrain_uploader.valid()) {
+			home_position_s home_position{};
+			_home_position_sub.copy(&home_position);
+
+			double lat_sw, lon_sw, lat_ne, lon_ne;
+
+			if (_mission_manager.get_mission_area(home_position.lat, home_position.lon, home_position.valid_hpos,
+							      lat_sw, lon_sw, lat_ne, lon_ne)) {
+				_terrain_uploader.updateArea(lat_sw, lon_sw, lat_ne, lon_ne);
+			}
 		}
 	}
 }

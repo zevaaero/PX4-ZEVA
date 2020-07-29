@@ -45,6 +45,7 @@
 #include "mavlink_log_handler.h"
 #include "mavlink_mission.h"
 #include "mavlink_parameters.h"
+#include "mavlink_terrain.h"
 #include "mavlink_timesync.h"
 #include "tune_publisher.h"
 
@@ -215,6 +216,8 @@ private:
 
 	void schedule_tune(const char *tune);
 
+	void update_terrain_uploader(const hrt_abstime &now);
+
 	/**
 	 * @brief Updates the battery, optical flow, and flight ID subscribed parameters.
 	 */
@@ -227,6 +230,7 @@ private:
 	MavlinkMissionManager		_mission_manager;
 	MavlinkParametersManager	_parameters_manager;
 	MavlinkTimesync			_mavlink_timesync;
+	terrain::MavlinkTerrainUploader _terrain_uploader;
 
 	mavlink_status_t		_status{}; ///< receiver status, used for mavlink_parse_char()
 
@@ -288,6 +292,7 @@ private:
 	uORB::Subscription	_vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription	_vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
 	uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
+	uORB::Subscription	_home_position_sub{ORB_ID(home_position)};
 
 	// hil_sensor and hil_state_quaternion
 	enum SensorSource {
@@ -301,6 +306,8 @@ private:
 	PX4Barometer *_px4_baro{nullptr};
 	PX4Gyroscope *_px4_gyro{nullptr};
 	PX4Magnetometer *_px4_mag{nullptr};
+
+	hrt_abstime _last_home_position_changed{0};
 
 	static constexpr unsigned int	MOM_SWITCH_COUNT{8};
 	uint8_t				_mom_switch_pos[MOM_SWITCH_COUNT] {};
@@ -325,7 +332,8 @@ private:
 		(ParamFloat<px4::params::SENS_FLOW_MAXHGT>) _param_sens_flow_maxhgt,
 		(ParamFloat<px4::params::SENS_FLOW_MAXR>)   _param_sens_flow_maxr,
 		(ParamFloat<px4::params::SENS_FLOW_MINHGT>) _param_sens_flow_minhgt,
-		(ParamInt<px4::params::SENS_FLOW_ROT>)      _param_sens_flow_rot
+		(ParamInt<px4::params::SENS_FLOW_ROT>)      _param_sens_flow_rot,
+		(ParamInt<px4::params::MAV_TERRAIN_EN>)     _param_mav_terrain_en
 	);
 
 	// Disallow copy construction and move assignment.

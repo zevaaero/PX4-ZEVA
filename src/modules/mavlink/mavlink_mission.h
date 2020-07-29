@@ -91,6 +91,21 @@ public:
 
 	void check_active_mission(void);
 
+	/**
+	 * Get the rectangular area around the current mission, safe points and home postion if valid (south-west and
+	 * north-east corner), with a margin.
+	 * @return true on success, false on failure, or not enough points
+	 */
+	bool get_mission_area(double home_pos_lat, double home_pos_lon, bool home_pos_valid,
+			      double &lat_sw, double &lon_sw, double &lat_ne, double &lon_ne);
+
+	bool had_upload_transfer()
+	{
+		bool ret = _had_upload_transfer;
+		_had_upload_transfer = false;
+		return ret;
+	}
+
 private:
 	enum MAVLINK_WPM_STATES _state {MAVLINK_WPM_STATE_IDLE};	///< Current state
 	enum MAV_MISSION_TYPE _mission_type {MAV_MISSION_TYPE_MISSION};	///< mission type of current transmission (only one at a time possible)
@@ -101,6 +116,7 @@ private:
 	uint8_t			_reached_sent_count{0};			///< last time when the vehicle reached a waypoint
 
 	bool			_int_mode{false};			///< Use accurate int32 instead of float
+	bool			_had_upload_transfer{false};		///< If there was an upload transfer completed
 
 	unsigned		_filesystem_errcount{0};		///< File system error count
 

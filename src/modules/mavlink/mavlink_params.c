@@ -191,6 +191,31 @@ PARAM_DEFINE_INT32(MAV_ODOM_LP, 0);
 PARAM_DEFINE_INT32(MAV_RADIO_TOUT, 25);
 
 /**
+ * Enable Terrain Data upload
+ *
+ * If enabled, configures the terrain data grid spacing.
+ * The recommended value is 100m, or 50m on boards with enough RAM.
+ * Whenever the mission, home position or safe points change,
+ * terrain data is requested within a rectangular area that includes all of
+ * these points.
+ *
+ * This will then be used during RTL.
+ *
+ * Note:
+ * - this feature requres several KB of RAM.
+ * - latitudes beyond +-80 degrees are not supported.
+ *
+ * @value 0 Disabled
+ * @value 50 50m grid spacing
+ * @value 100 100m grid spacing
+ * @value 200 200m grid spacing
+ * @value 400 400m grid spacing
+ * @reboot_required true
+ * @group MAVLink
+ */
+PARAM_DEFINE_INT32(MAV_TERRAIN_EN, 0);
+
+/**
  * Enable forced Flow control
  *
  * TELEM2 on Skynode only.

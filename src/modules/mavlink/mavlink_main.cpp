@@ -1163,6 +1163,7 @@ Mavlink::send_autopilot_capabilities()
 		msg.capabilities |= MAV_PROTOCOL_CAPABILITY_MAVLINK2;
 		msg.capabilities |= MAV_PROTOCOL_CAPABILITY_MISSION_FENCE;
 		msg.capabilities |= MAV_PROTOCOL_CAPABILITY_MISSION_RALLY;
+		msg.capabilities |= MAV_PROTOCOL_CAPABILITY_TERRAIN;
 		msg.flight_sw_version = px4_firmware_version();
 		msg.middleware_sw_version = px4_firmware_version();
 		msg.os_sw_version = px4_os_version();
@@ -3054,6 +3055,7 @@ $ mavlink stream -u 14556 -s HIGHRES_IMU -r 50
 
 	PRINT_MODULE_USAGE_COMMAND_DESCR("status", "Print status for all instances");
 	PRINT_MODULE_USAGE_ARG("streams", "Print all enabled streams", true);
+	PRINT_MODULE_USAGE_COMMAND_DESCR("terrain_status", "Print terrain storage info");
 
 	PRINT_MODULE_USAGE_COMMAND_DESCR("stream", "Configure the sending rate of a stream for a running instance");
 #if defined(CONFIG_NET) || defined(__PX4_POSIX)
@@ -3089,6 +3091,10 @@ int mavlink_main(int argc, char *argv[])
 	} else if (!strcmp(argv[1], "status")) {
 		bool show_streams_status = argc > 2 && strcmp(argv[2], "streams") == 0;
 		return Mavlink::get_status_all_instances(show_streams_status);
+
+	} else if (!strcmp(argv[1], "terrain_status")) {
+		terrain::MavlinkTerrainUploader::printStatus();
+		return 0;
 
 	} else if (!strcmp(argv[1], "stream")) {
 		return Mavlink::stream_command(argc, argv);

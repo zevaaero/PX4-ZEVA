@@ -50,6 +50,7 @@
 #include <mathlib/mathlib.h>
 #include <matrix/math.hpp>
 #include <navigator/navigation.h>
+#include <navigator/mission_block.h>
 #include <uORB/topics/mission.h>
 #include <uORB/topics/mission_result.h>
 
@@ -967,6 +968,10 @@ MavlinkMissionManager::switch_to_idle_state()
 		PX4_DEBUG("unlocking geofence");
 	}
 
+	if (_state == MAVLINK_WPM_STATE_GETLIST) {
+		_had_upload_transfer = true;
+	}
+
 	_state = MAVLINK_WPM_STATE_IDLE;
 }
 
@@ -1673,4 +1678,88 @@ void MavlinkMissionManager::check_active_mission()
 		send_mission_count(_transfer_partner_sysid, _transfer_partner_compid, _count[MAV_MISSION_TYPE_MISSION],
 				   MAV_MISSION_TYPE_MISSION);
 	}
+}
+
+
+bool MavlinkMissionManager::get_mission_area(double home_pos_lat, double home_pos_lon, bool home_pos_valid,
+		double &lat_sw, double &lon_sw, double &lat_ne, double &lon_ne)
+{
+	lat_sw = 1e9;
+	lon_sw = 1e9;
+	lat_ne = -1e9;
+	lon_ne = -1e9;
+	int num_points = 0;
+
+	auto extend_area = [&lat_sw, &lon_sw, &lat_ne, &lon_ne](double lat, double lon) {
+		// handle wrap-around: move new point as close as possible to existing area
+		if (lat < lat_sw - 180. / 2.) { lat += 180.; }
+
+		if (lon < lon_sw - 360. / 2.) { lon += 360.; }
+
+		if (lat > lat_ne + 180. / 2.) { lat -= 180.; }
+
+		if (lon > lon_ne + 360. / 2.) { lon -= 360.; }
+
+		if (lat < lat_sw) { lat_sw = lat; }
+
+		if (lat > lat_ne) { lat_ne = lat; }
+
+		if (lon < lon_sw) { lon_sw = lon; }
+
+		if (lon > lon_ne) { lon_ne = lon; }
+	};
+
+	// mission items
+	for (size_t i = 0; i < _count[MAV_MISSION_TYPE_MISSION]; i++) {
+
+		struct mission_item_s mission_item;
+
+		if (dm_read(_dataman_id, i, &mission_item, sizeof(mission_item_s)) != sizeof(mission_item_s)) {
+			PX4_ERR("dm_read failed");
+			return false;
+		}
+
+		if (!MissionBlock::item_contains_position(mission_item)) {
+			continue;
+		}
+
+		extend_area(mission_item.lat, mission_item.lon);
+		++num_points;
+	}
+
+	// safe points
+	for (int current_seq = 1; current_seq <= _count[MAV_MISSION_TYPE_RALLY]; ++current_seq) {
+		mission_safe_point_s mission_safe_point;
+
+		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
+		    sizeof(mission_safe_point_s)) {
+			PX4_ERR("dm_read failed");
+			return false;
+		}
+
+		extend_area(mission_safe_point.lat, mission_safe_point.lon);
+		++num_points;
+	}
+
+	if (home_pos_valid) {
+		extend_area(home_pos_lat, home_pos_lon);
+		++num_points;
+	}
+
+	// add a margin
+	const float margin_m = 200; // margin around the area in meters
+
+	map_projection_reference_s ref;
+	map_projection_init(&ref, lat_sw, lon_sw);
+	double lat, lon;
+	map_projection_reproject(&ref, margin_m, margin_m, &lat, &lon);
+	double margin_lat = matrix::wrap(lat, -90., 90.) - lat_sw;
+	double margin_lon = matrix::wrap(lon, -180., 180.) - lon_sw;
+
+	lat_sw -= margin_lat;
+	lat_ne += margin_lat;
+	lon_sw -= margin_lon;
+	lon_ne += margin_lon;
+
+	return num_points > 1;
 }
