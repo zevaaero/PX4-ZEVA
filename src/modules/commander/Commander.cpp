@@ -2248,6 +2248,12 @@ Commander::run()
 						set_tune_override(TONE_PARACHUTE_RELEASE_TUNE);
 					}
 				}
+
+				if (status.failure_detector_status & vehicle_status_s::FAILURE_HIGH_WIND) {
+					main_state_transition(status, commander_state_s::MAIN_STATE_AUTO_RTL, status_flags, &_internal_state);
+					_status_changed = true;
+					mavlink_log_critical(&mavlink_log_pub, "Too high wind abort operation and RTL");
+				}
 			}
 		}
 

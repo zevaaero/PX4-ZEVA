@@ -56,6 +56,7 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/esc_status.h>
 #include <uORB/topics/pwm_input.h>
+#include <uORB/topics/wind_estimate.h>
 
 typedef enum {
 	FAILURE_NONE = vehicle_status_s::FAILURE_NONE,
@@ -63,7 +64,8 @@ typedef enum {
 	FAILURE_PITCH = vehicle_status_s::FAILURE_PITCH,
 	FAILURE_ALT = vehicle_status_s::FAILURE_ALT,
 	FAILURE_EXT = vehicle_status_s::FAILURE_EXT,
-	FAILURE_ARM_ESCS = vehicle_status_s::FAILURE_ARM_ESC
+	FAILURE_ARM_ESCS = vehicle_status_s::FAILURE_ARM_ESC,
+	FAILURE_HIGH_WIND = vehicle_status_s::FAILURE_HIGH_WIND
 } failure_detector_bitmak;
 
 using uORB::SubscriptionData;
@@ -81,6 +83,7 @@ private:
 	void updateAttitudeStatus();
 	void updateExternalAtsStatus();
 	void updateEscsStatus(const vehicle_status_s &vehicle_status);
+	void updateHighWindStatus();
 
 	uint8_t _status{FAILURE_NONE};
 
@@ -92,6 +95,7 @@ private:
 	uORB::Subscription _vehicule_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _esc_status_sub{ORB_ID(esc_status)};
 	uORB::Subscription _pwm_input_sub{ORB_ID(pwm_input)};
+	uORB::Subscription _wind_estimate_sub{ORB_ID(wind_estimate)};
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::FD_FAIL_P>) _param_fd_fail_p,
@@ -100,6 +104,7 @@ private:
 		(ParamFloat<px4::params::FD_FAIL_P_TTRI>) _param_fd_fail_p_ttri,
 		(ParamBool<px4::params::FD_EXT_ATS_EN>) _param_fd_ext_ats_en,
 		(ParamInt<px4::params::FD_EXT_ATS_TRIG>) _param_fd_ext_ats_trig,
-		(ParamInt<px4::params::FD_ESCS_EN>) _param_escs_en
+		(ParamInt<px4::params::FD_ESCS_EN>) _param_escs_en,
+		(ParamFloat<px4::params::FD_WIND_MAX>) _param_fd_wind_max
 	)
 };

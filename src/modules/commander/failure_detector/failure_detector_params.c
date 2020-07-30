@@ -141,3 +141,19 @@ PARAM_DEFINE_INT32(FD_EXT_ATS_TRIG, 1900);
  * @group Failure Detector
  */
 PARAM_DEFINE_INT32(FD_ESCS_EN, 1);
+
+/**
+ * Maximum wind speed threshold
+ *
+ * Wind speed threshold above which the emergency action for high wind is triggered
+ * and enforced as long as the threshold is exceeded.
+ *
+ * A negative value disables the feature.
+ *
+ * @min -1
+ * @max 12
+ * @decimal 1
+ * @increment 0.1
+ * @group Failure Detector
+ */
+PARAM_DEFINE_FLOAT(FD_WIND_MAX, 12.0f);

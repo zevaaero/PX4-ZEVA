@@ -66,6 +66,10 @@ bool FailureDetector::update(const vehicle_status_s &vehicle_status)
 		updateEscsStatus(vehicle_status);
 	}
 
+	if (_param_fd_wind_max.get() > FLT_EPSILON) {
+		updateHighWindStatus();
+	}
+
 	return _status != previous_status;
 }
 
@@ -172,5 +176,17 @@ void FailureDetector::updateEscsStatus(const vehicle_status_s &vehicle_status)
 		// reset ESC bitfield
 		_esc_failure_hysteresis.set_state_and_update(false, time_now);
 		_status &= ~FAILURE_ARM_ESCS;
+	}
+}
+
+void FailureDetector::updateHighWindStatus()
+{
+	wind_estimate_s wind_estimate;
+
+	if (_wind_estimate_sub.update(&wind_estimate)) {
+		const matrix::Vector2f wind(wind_estimate.windspeed_north, wind_estimate.windspeed_east);
+
+		const bool high_wind = wind.longerThan(_param_fd_wind_max.get());
+		_status = (_status & ~FAILURE_HIGH_WIND) | (high_wind * FAILURE_HIGH_WIND);
 	}
 }
