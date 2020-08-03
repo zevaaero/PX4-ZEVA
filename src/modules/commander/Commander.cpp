@@ -1807,12 +1807,11 @@ Commander::run()
 		if ((override_auto_mode || override_offboard_mode) && is_rotary_wing
 		    && !in_low_battery_failsafe && !_geofence_warning_action_on) {
 			// transition to previous state if sticks are touched
-			if ((_last_sp_man.timestamp != _sp_man.timestamp) &&
-			    ((fabsf(_sp_man.x - _last_sp_man.x) > _min_stick_change) ||
-			     (fabsf(_sp_man.y - _last_sp_man.y) > _min_stick_change) ||
-			     (fabsf(_sp_man.z - _last_sp_man.z) > _min_stick_change) ||
-			     (fabsf(_sp_man.r - _last_sp_man.r) > _min_stick_change))) {
-
+			if (hrt_elapsed_time(&_sp_man.timestamp) < 1_s && // don't use uninitialized or old messages
+			    ((fabsf(_sp_man.x) > _min_stick_change) ||
+			     (fabsf(_sp_man.y) > _min_stick_change) ||
+			     (fabsf(_sp_man.z - 0.5f) > _min_stick_change) ||
+			     (fabsf(_sp_man.r) > _min_stick_change))) {
 				// revert to position control in any case
 				main_state_transition(status, commander_state_s::MAIN_STATE_POSCTL, status_flags, &_internal_state);
 				mavlink_log_info(&mavlink_log_pub, "Pilot took over control using sticks");
