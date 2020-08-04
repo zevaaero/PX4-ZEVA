@@ -270,6 +270,8 @@ void Tailsitter::update_fw_state()
 	if (_params->diff_thrust == 1) {
 		_mc_roll_weight = 1.0f;
 	}
+
+	VtolType::set_alternate_motor_state(motor_state::DISABLED);
 }
 
 /**

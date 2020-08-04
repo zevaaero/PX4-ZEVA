@@ -305,10 +305,7 @@ void Standard::update_transition_state()
 
 		}
 
-		// in back transition we need to start the MC motors again
-		if (_motor_state != motor_state::ENABLED) {
-			_motor_state = set_motor_state(_motor_state, motor_state::ENABLED);
-		}
+		set_all_motor_state(motor_state::ENABLED);
 	}
 
 	mc_weight = math::constrain(mc_weight, 0.0f, 1.0f);
@@ -329,6 +326,8 @@ void Standard::update_mc_state()
 void Standard::update_fw_state()
 {
 	VtolType::update_fw_state();
+
+	VtolType::set_alternate_motor_state(motor_state::DISABLED);
 }
 
 /**

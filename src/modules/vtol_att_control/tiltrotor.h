@@ -104,5 +104,10 @@ private:
 	hrt_abstime _last_timestamp_disarmed{0}; /**< used for calculating time since arming */
 	bool _tilt_motors_for_startup{false};
 
+	void select_fixed_wing_motors();
+	float alternate_motors_throttle_adaption(float throttle_in);
+	float alternate_motors_elevator_trim(const float throttle_alternate);
+	bool _alternate_motor_on = false;
+
 };
 #endif
