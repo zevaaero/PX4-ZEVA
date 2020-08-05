@@ -68,6 +68,12 @@ private:
 		float tilt_fw;				/**< actuator value corresponding to fw tilt */
 		float tilt_spinup;			/**< actuator value corresponding to spinup tilt */
 		float front_trans_dur_p2;
+		float vt_thr_alter_on;
+		float vt_thr_alter_off;
+		float vt_thr_n_main;
+		float vt_thr_n_alter;
+		float vt_thr_alter_sc;
+		float vt_elev_comp_k;
 	} _params_tiltrotor;
 
 	struct {
@@ -76,6 +82,12 @@ private:
 		param_t tilt_fw;
 		param_t tilt_spinup;
 		param_t front_trans_dur_p2;
+		param_t vt_thr_alter_on;
+		param_t vt_thr_alter_off;
+		param_t vt_thr_n_main;
+		param_t vt_thr_n_alter;
+		param_t vt_thr_alter_sc;
+		param_t vt_elev_comp_k;
 	} _params_handles_tiltrotor;
 
 	enum class vtol_mode {

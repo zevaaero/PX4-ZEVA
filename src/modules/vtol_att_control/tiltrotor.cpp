@@ -64,6 +64,12 @@ Tiltrotor::Tiltrotor(VtolAttitudeControl *attc) :
 	_params_handles_tiltrotor.tilt_fw = param_find("VT_TILT_FW");
 	_params_handles_tiltrotor.tilt_spinup = param_find("VT_TILT_SPINUP");
 	_params_handles_tiltrotor.front_trans_dur_p2 = param_find("VT_TRANS_P2_DUR");
+	_params_handles_tiltrotor.vt_thr_alter_on = param_find("VT_THR_ALTER_ON");
+	_params_handles_tiltrotor.vt_thr_alter_off = param_find("VT_THR_ALTER_OFF");
+	_params_handles_tiltrotor.vt_thr_n_main = param_find("VT_THR_N_MAIN");
+	_params_handles_tiltrotor.vt_thr_n_alter = param_find("VT_THR_N_ALTER");
+	_params_handles_tiltrotor.vt_thr_alter_sc = param_find("VT_THR_ALTER_SC");
+	_params_handles_tiltrotor.vt_elev_comp_k = param_find("VT_ELEV_COMP_K");
 }
 
 void
@@ -90,6 +96,21 @@ Tiltrotor::parameters_update()
 	/* vtol front transition phase 2 duration */
 	param_get(_params_handles_tiltrotor.front_trans_dur_p2, &v);
 	_params_tiltrotor.front_trans_dur_p2 = v;
+
+	/* vtol alternative fixed-wing motor params */
+	param_get(_params_handles_tiltrotor.vt_thr_alter_on, &v);
+	_params_tiltrotor.vt_thr_alter_on = v;
+	param_get(_params_handles_tiltrotor.vt_thr_alter_off, &v);
+	_params_tiltrotor.vt_thr_alter_off = v;
+	param_get(_params_handles_tiltrotor.vt_thr_n_main, &v);
+	_params_tiltrotor.vt_thr_n_main = v;
+	param_get(_params_handles_tiltrotor.vt_thr_n_alter, &v);
+	_params_tiltrotor.vt_thr_n_alter = v;
+	param_get(_params_handles_tiltrotor.vt_thr_alter_sc, &v);
+	_params_tiltrotor.vt_thr_alter_sc = v;
+	param_get(_params_handles_tiltrotor.vt_elev_comp_k, &v);
+	_params_tiltrotor.vt_elev_comp_k = v;
+
 }
 
 void Tiltrotor::update_vtol_state()
@@ -264,6 +285,17 @@ void Tiltrotor::update_fw_state()
 {
 	VtolType::update_fw_state();
 
+	select_fixed_wing_motors(); // check if main or alternate motors should be used (based on throttle sp)
+
+	if (_alternate_motor_on) {
+		set_main_motor_state(motor_state::DISABLED);
+		set_alternate_motor_state(motor_state::ENABLED);
+
+	} else {
+		set_main_motor_state(motor_state::ENABLED);
+		set_alternate_motor_state(motor_state::DISABLED);
+	}
+
 	// make sure motors are tilted forward
 	_tilt_control = _params_tiltrotor.tilt_fw;
 }
@@ -430,8 +462,15 @@ void Tiltrotor::fill_actuator_outputs()
 		_actuators_mc_in->control[actuator_controls_s::INDEX_YAW] * _mc_yaw_weight;
 
 	if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
-		_actuators_out_0->control[actuator_controls_s::INDEX_THROTTLE] =
-			_actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
+
+		float throttle_fw = _actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
+
+		// if we're currently using the alternate motors, adapt the throttle to account for difference in thrust to main ones
+		if (_alternate_motor_on) {
+			throttle_fw = alternate_motors_throttle_adaption(throttle_fw);
+		}
+
+		_actuators_out_0->control[actuator_controls_s::INDEX_THROTTLE] = throttle_fw;
 
 		/* allow differential thrust if enabled */
 		if (_params->diff_thrust == 1) {
@@ -458,8 +497,17 @@ void Tiltrotor::fill_actuator_outputs()
 	} else {
 		_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] =
 			_actuators_fw_in->control[actuator_controls_s::INDEX_ROLL];
+
+		// use pitch trimming when alternate motors are used for fixed-wing flight
+		float pitch_trim_offset = 0.0f;
+
+		if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE && _alternate_motor_on) {
+			pitch_trim_offset = alternate_motors_elevator_trim(_actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE]);
+		}
+
 		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] =
-			_actuators_fw_in->control[actuator_controls_s::INDEX_PITCH];
+			pitch_trim_offset + _actuators_fw_in->control[actuator_controls_s::INDEX_PITCH];
+
 		_actuators_out_1->control[actuator_controls_s::INDEX_YAW] =
 			_actuators_fw_in->control[actuator_controls_s::INDEX_YAW];
 	}
@@ -481,4 +529,54 @@ float Tiltrotor::thrust_compensation_for_tilt()
 	// increase vertical thrust by 1/cos(tilt), limmit to [-1,0]
 	return math::constrain(_v_att_sp->thrust_body[2] / cosf(compensated_tilt * M_PI_2_F), -1.0f, 0.0f);
 
+}
+
+void Tiltrotor::select_fixed_wing_motors()
+{
+	// do nothing if one of the thresholds is set to a negative value
+	if (_params_tiltrotor.vt_thr_alter_on < 0.0f || _params_tiltrotor.vt_thr_alter_off < 0.0f) {
+		return;
+	}
+
+	/* selection with hysteresis: start using alternate when below threshold_alternate_on throttle,
+	and switch back to the main motors if above threshold_alternate_off throttle. */
+
+	const float throttle_sp = _actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
+
+	if (_alternate_motor_on) {
+		_alternate_motor_on = (throttle_sp < _params_tiltrotor.vt_thr_alter_off);
+
+	} else {
+		_alternate_motor_on = (throttle_sp < _params_tiltrotor.vt_thr_alter_on);
+	}
+}
+
+float Tiltrotor::alternate_motors_throttle_adaption(float throttle_in)
+{
+	const float vt_thr_n_main = _params_tiltrotor.vt_thr_n_main;
+	const float vt_thr_n_alter = _params_tiltrotor.vt_thr_n_alter;
+	const float vt_thr_alter_sc = _params_tiltrotor.vt_thr_alter_sc;
+
+	return (throttle_in - vt_thr_n_main) * vt_thr_alter_sc + vt_thr_n_alter;
+}
+
+float Tiltrotor::alternate_motors_elevator_trim(const float throttle_alternate)
+{
+	const float k_elev = _params_tiltrotor.vt_elev_comp_k;
+
+	float airspeed = 18.0f;
+	float rho = 1.2f;
+
+	if (PX4_ISFINITE(_airspeed_validated->equivalent_airspeed_m_s)) {
+		airspeed = _airspeed_validated->equivalent_airspeed_m_s;
+	}
+
+	if (PX4_ISFINITE(_vehicle_air_data->rho)) {
+		rho = _vehicle_air_data->rho;
+	}
+
+	const float dynamic_pressure = math::constrain(0.5f * airspeed * airspeed * rho, 250.0f, 350.0f);
+
+	const float delta_elev_trim = k_elev / dynamic_pressure * throttle_alternate;
+	return delta_elev_trim;
 }

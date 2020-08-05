@@ -402,6 +402,7 @@ VtolAttitudeControl::Run()
 		_airspeed_validated_sub.update(&_airspeed_validated);
 		_tecs_status_sub.update(&_tecs_status);
 		_land_detected_sub.update(&_land_detected);
+		_vehicle_air_data_sub.update(&_vehicle_air_data);
 		vehicle_cmd_poll();
 
 		// check if mc and fw sp were updated

@@ -69,6 +69,7 @@ VtolType::VtolType(VtolAttitudeControl *att_controller) :
 	_tecs_status = _attc->get_tecs_status();
 	_land_detected = _attc->get_land_detected();
 	_params = _attc->get_params();
+	_vehicle_air_data = _attc->get_vehicle_air_data();
 
 	for (auto &pwm_max : _max_mc_pwm_values.values) {
 		pwm_max = PWM_DEFAULT_MAX;
@@ -156,8 +157,6 @@ void VtolType::update_fw_state()
 	if (flag_idle_mc) {
 		flag_idle_mc = !set_idle_fw();
 	}
-
-	VtolType::set_alternate_motor_state(motor_state::DISABLED);
 
 	// copy virtual attitude setpoint to real attitude setpoint
 	memcpy(_v_att_sp, _fw_virtual_att_sp, sizeof(vehicle_attitude_setpoint_s));

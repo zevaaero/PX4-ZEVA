@@ -70,6 +70,7 @@
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/position_setpoint_triplet.h>
 #include <uORB/topics/tecs_status.h>
+#include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_command.h>
@@ -111,9 +112,10 @@ public:
 	struct actuator_controls_s 			*get_actuators_mc_in() {return &_actuators_mc_in;}
 	struct actuator_controls_s 			*get_actuators_out0() {return &_actuators_out_0;}
 	struct actuator_controls_s 			*get_actuators_out1() {return &_actuators_out_1;}
-	struct airspeed_validated_s 				*get_airspeed() {return &_airspeed_validated;}
+	struct airspeed_validated_s 			*get_airspeed() {return &_airspeed_validated;}
 	struct position_setpoint_triplet_s		*get_pos_sp_triplet() {return &_pos_sp_triplet;}
 	struct tecs_status_s 				*get_tecs_status() {return &_tecs_status;}
+	struct vehicle_air_data_s 			*get_vehicle_air_data() {return &_vehicle_air_data;}
 	struct vehicle_attitude_s 			*get_att() {return &_v_att;}
 	struct vehicle_attitude_setpoint_s		*get_att_sp() {return &_v_att_sp;}
 	struct vehicle_attitude_setpoint_s 		*get_fw_virtual_att_sp() {return &_fw_virtual_att_sp;}
@@ -147,6 +149,7 @@ private:
 	uORB::Subscription _v_control_mode_sub{ORB_ID(vehicle_control_mode)};	//vehicle control mode subscription
 	uORB::Subscription _vehicle_cmd_sub{ORB_ID(vehicle_command)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
+	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 
 	uORB::Publication<actuator_controls_s>		_actuators_0_pub{ORB_ID(actuator_controls_0)};		//input for the mixer (roll,pitch,yaw,thrust)
 	uORB::Publication<actuator_controls_s>		_actuators_1_pub{ORB_ID(actuator_controls_1)};
@@ -164,10 +167,11 @@ private:
 	actuator_controls_s			_actuators_out_0{};	//actuator controls going to the mc mixer
 	actuator_controls_s			_actuators_out_1{};	//actuator controls going to the fw mixer (used for elevons)
 
-	airspeed_validated_s 				_airspeed_validated{};			// airspeed
+	airspeed_validated_s 			_airspeed_validated{};			// airspeed
 	manual_control_setpoint_s		_manual_control_setpoint{}; //manual control setpoint
 	position_setpoint_triplet_s		_pos_sp_triplet{};
 	tecs_status_s				_tecs_status{};
+	vehicle_air_data_s 			_vehicle_air_data{};
 	vehicle_attitude_s			_v_att{};				//vehicle attitude
 	vehicle_command_s			_vehicle_cmd{};
 	vehicle_control_mode_s			_v_control_mode{};	//vehicle control mode
