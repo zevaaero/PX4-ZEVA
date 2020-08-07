@@ -15,6 +15,12 @@
             "vehicle": "standard_vtol",
             "test_filter": "[multicopter][vtol]",
             "timeout_min": 10
+        },
+        {
+            "model": "tiltrotor_tri",
+            "vehicle": "tiltrotor_tri",
+            "test_filter": "[multicopter][vtol]",
+            "timeout_min": 10
         }
     ]
 }
