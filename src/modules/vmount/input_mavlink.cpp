@@ -661,7 +661,8 @@ int InputMavlinkGimbalV2::update_impl(unsigned int timeout_ms, ControlData **con
 void InputMavlinkGimbalV2::_transform_lon_lat_to_angle(const double roi_lon, const double roi_lat,
 		const double roi_alt)
 {
-	vehicle_global_position_s vehicle_global_position;
+	vehicle_global_position_s vehicle_global_position{};
+	vehicle_local_position_s vehicle_local_position{};
 	_vehicle_global_position_sub.copy(&vehicle_global_position);
 	const double &vlat = vehicle_global_position.lat;
 	const double &vlon = vehicle_global_position.lon;
@@ -682,7 +683,7 @@ void InputMavlinkGimbalV2::_transform_lon_lat_to_angle(const double roi_lon, con
 	}
 
 	_control_data.type_data.angle.angles[2] = get_bearing_to_next_waypoint(vlat, vlon, roi_lat,
-			roi_lon) - vehicle_global_position.yaw;
+			roi_lon) - vehicle_local_position.heading;
 
 	// add offsets from VEHICLE_CMD_DO_SET_ROI_WPNEXT_OFFSET
 	_control_data.type_data.angle.angles[1] += _control_data.type_data.lonlat.pitch_angle_offset;
