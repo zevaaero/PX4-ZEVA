@@ -3,13 +3,11 @@ name: Custom Model SITL Tests
 on:
   push:
     branches:
-    - ''
-    #- 'develop'
-    #- 'release/*'
+    - 'develop'
+    - 'release/*'
   pull_request:
     branches:
-    - ''
-    #- '**'
+    - '**'
 
 jobs:
   build:
@@ -30,10 +28,12 @@ jobs:
       run: 'git config --global url."https://github.com/".insteadof git@github.com:'
     - name: get submodules
       run: 'git submodule update --init --recursive'
+
     - name: Download MAVSDK
       run: wget https://github.com/mavlink/MAVSDK/releases/download/v0.27.0/mavsdk_0.27.0_ubuntu18.04_amd64.deb
     - name: Install MAVSDK
       run: dpkg -i mavsdk_0.27.0_ubuntu18.04_amd64.deb
+
     #Clone model database
     - name: Clone model database
       run: |
@@ -41,6 +41,7 @@ jobs:
         cd $HOME/ci_gazebo_models && git submodule update --init --recursive
         source $HOME/ci_gazebo_models/setup.bash $HOME/ci_gazebo_models $GITHUB_WORKSPACE
       shell: bash
+
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       shell: cmake -P {0}
@@ -51,8 +52,8 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ~/.ccache
-        key: ${{matrix.config}}-ccache-sitl-tests-custom-${{steps.ccache_cache_timestamp.outputs.timestamp}}
-        restore-keys: ${{matrix.config}}-ccache-sitl-tests-custom-
+        key: sitl_tests-RelWithDebInfo-ccache-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+        restore-keys: sitl_tests-RelWithDebInfo-ccache-
     - name: setup ccache
       run: |
           mkdir -p ~/.ccache
@@ -62,11 +63,31 @@ jobs:
           echo "max_size = 400M" >> ~/.ccache/ccache.conf
           ccache -s
           ccache -z
-    - name: Build PX4 in SITL integration test mode
-      run: DONT_RUN=1 make px4_sitl PX4_CMAKE_BUILD_TYPE=Coverage gazebo mavsdk_tests
-    - name: ccache post-run
+    - name: check environment
+      env:
+        PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+      run: export
+    - name: Build PX4
+      env:
+        PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+      run: make px4_sitl_default
+    - name: ccache post-run px4/firmware
       run: ccache -s
+    - name: Build SITL Gazebo
+      env:
+        PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+      run: make px4_sitl_default sitl_gazebo
+    - name: ccache post-run sitl_gazebo
+      run: ccache -s
+    - name: Build MAVSDK tests
+      env:
+        PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+        DONT_RUN: 1
+      run: make px4_sitl_default gazebo mavsdk_tests
+    - name: ccache post-run mavsdk_tests
+      run: ccache -s
+
     - name: Run SITL tests
       env:
-        PX4_CMAKE_BUILD_TYPE: Coverage
-      run:  test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early $HOME/ci_gazebo_models/configs/sitl.json
+        PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
+      run: test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early $HOME/ci_gazebo_models/configs/sitl.json
