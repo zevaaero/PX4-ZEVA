@@ -155,7 +155,7 @@ private:
 	bool set_home_position();
 	bool set_home_position_alt_only();
 	void updateHomePositionYaw(float yaw);
-	void checkEkfResetCounters();
+	void checkEkfResetCounters(const vehicle_status_flags_s &vstatus_flags);
 
 	void update_control_mode();
 

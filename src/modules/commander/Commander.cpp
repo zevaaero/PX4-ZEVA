@@ -1220,13 +1220,15 @@ Commander::updateHomePositionYaw(float yaw)
 }
 
 void
-Commander::checkEkfResetCounters()
+Commander::checkEkfResetCounters(const vehicle_status_flags_s &vstatus_flags)
 {
 	if (_attitude_sub.get().quat_reset_counter != _quat_reset_counter) {
 		const float delta_psi = matrix::Eulerf(matrix::Quatf(_attitude_sub.get().delta_q_reset)).psi();
 
 		if (!_home_pub.get().manual_home) {
-			updateHomePositionYaw(matrix::wrap_pi(_home_pub.get().yaw + delta_psi));
+			if (vstatus_flags.condition_home_position_valid) {
+				updateHomePositionYaw(matrix::wrap_pi(_home_pub.get().yaw + delta_psi));
+			}
 		}
 
 		_quat_reset_counter = _attitude_sub.get().quat_reset_counter;
@@ -2194,7 +2196,7 @@ Commander::run()
 		/* Get current timestamp */
 		const hrt_abstime now = hrt_absolute_time();
 
-		checkEkfResetCounters();
+		checkEkfResetCounters(status_flags);
 
 		// automatically set or update home position
 		if (!_home_pub.get().manual_home) {
