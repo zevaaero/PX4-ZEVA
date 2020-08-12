@@ -140,9 +140,9 @@ MissionBlock::is_mission_item_reached()
 		float dist_xy = -1.0f;
 		float dist_z = -1.0f;
 
-		float mission_item_altitude_amsl = _mission_item.altitude_is_relative
-						   ? _mission_item.altitude + _navigator->get_home_position()->alt
-						   : _mission_item.altitude;
+		const float mission_item_altitude_amsl = _mission_item.altitude_is_relative
+				? _mission_item.altitude + _navigator->get_home_position()->alt
+				: _mission_item.altitude;
 
 		dist = get_distance_to_point_global_wgs84(_mission_item.lat, _mission_item.lon, mission_item_altitude_amsl,
 				_navigator->get_global_position()->lat,
@@ -402,18 +402,19 @@ MissionBlock::is_mission_item_reached()
 
 			/* enforce exit heading if in FW, the next wp is valid, the vehicle is currently loitering and either having force_heading set,
 			   or if loitering to achieve altitdue at a NAV_CMD_WAYPOINT */
-			bool enforce_exit_heading = _navigator->get_vstatus()->vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
-						    next_sp.valid &&
-						    curr_sp_new->type == position_setpoint_s::SETPOINT_TYPE_LOITER &&
-						    (_mission_item.force_heading || _mission_item.nav_cmd == NAV_CMD_WAYPOINT);
+			const bool enforce_exit_heading = _navigator->get_vstatus()->vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
+							  &&
+							  next_sp.valid &&
+							  curr_sp_new->type == position_setpoint_s::SETPOINT_TYPE_LOITER &&
+							  (_mission_item.force_heading || _mission_item.nav_cmd == NAV_CMD_WAYPOINT);
 
 			if (enforce_exit_heading) {
 				// set required yaw from bearing to the next mission item
 				_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
 						    _navigator->get_global_position()->lon,
 						    next_sp.lat, next_sp.lon);
-				float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
-				float yaw_err = wrap_pi(_mission_item.yaw - cog);
+				const float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
+				const float yaw_err = wrap_pi(_mission_item.yaw - cog);
 
 				if (abs(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
 					exit_heading_reached = true;

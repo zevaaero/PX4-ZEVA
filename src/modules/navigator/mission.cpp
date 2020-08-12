@@ -1143,8 +1143,8 @@ Mission::set_mission_items()
 		}
 
 	} else {
-		bool brake_for_hold = _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
-				      && get_time_inside(_mission_item) > FLT_EPSILON; //allow the vehicle to decelerate before reaching a wp with a hold time
+		const bool brake_for_hold = _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
+					    && get_time_inside(_mission_item) > FLT_EPSILON; //allow the vehicle to decelerate before reaching a wp with a hold time
 
 		if (_mission_item.autocontinue && !brake_for_hold) {
 			/* try to process next mission item */
