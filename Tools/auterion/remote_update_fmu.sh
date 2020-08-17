@@ -80,9 +80,7 @@ if [ -z $firmware_path ] && [ -z $config_path ]; then
 fi
 
 tar -C "$tmp_dir" --sort=name --owner=root:0 --group=root:0 --mtime='2019-01-01 00:00:00' -cvf $target_file_name $firmware_path $config_path
-ssh -p $ssh_port $ssh_user@$device "mount -o remount,rw /"
 scp -P $ssh_port "$target_file_name" $ssh_user@"$device":$target_dir
-ssh -p $ssh_port $ssh_user@$device "mount -o remount,ro /"
 popd &>/dev/null
 rm -rf "$tmp_dir"
 
