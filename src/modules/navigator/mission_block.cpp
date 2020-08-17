@@ -140,9 +140,7 @@ MissionBlock::is_mission_item_reached()
 		float dist_xy = -1.0f;
 		float dist_z = -1.0f;
 
-		const float mission_item_altitude_amsl = _mission_item.altitude_is_relative
-				? _mission_item.altitude + _navigator->get_home_position()->alt
-				: _mission_item.altitude;
+		const float mission_item_altitude_amsl = get_absolute_altitude_for_item(_mission_item);
 
 		dist = get_distance_to_point_global_wgs84(_mission_item.lat, _mission_item.lon, mission_item_altitude_amsl,
 				_navigator->get_global_position()->lat,
@@ -596,11 +594,8 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 	float dist = -1.0f;
 	float dist_xy = -1.0f;
 	float dist_z = -1.0f;
-	float mission_item_altitude_amsl = _mission_item.altitude_is_relative ?
-					   _mission_item.altitude + _navigator->get_home_position()->alt
-					   : _mission_item.altitude;
 
-	dist = get_distance_to_point_global_wgs84(_mission_item.lat, _mission_item.lon, mission_item_altitude_amsl,
+	dist = get_distance_to_point_global_wgs84(item.lat, item.lon, sp->alt,
 			_navigator->get_global_position()->lat,
 			_navigator->get_global_position()->lon,
 			_navigator->get_global_position()->alt,
