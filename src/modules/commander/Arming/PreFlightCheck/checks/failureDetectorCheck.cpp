@@ -68,6 +68,10 @@ bool PreFlightCheck::failureDetectorCheck(orb_advert_t *mavlink_log_pub, const v
 				message = "ESC";
 			}
 
+			if (status.failure_detector_status & vehicle_status_s::FAILURE_HIGH_WIND) {
+				message = "Wind";
+			}
+
 			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: %s failure detected", message);
 		}
 
