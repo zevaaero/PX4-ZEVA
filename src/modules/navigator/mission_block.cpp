@@ -305,7 +305,7 @@ MissionBlock::is_mission_item_reached()
 
 			if (curr_sp->type == position_setpoint_s::SETPOINT_TYPE_LOITER &&
 			    _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
-				mission_acceptance_radius = (fabsf(curr_sp->loiter_radius) * 1.2f);
+				mission_acceptance_radius = math::max(fabsf(curr_sp->loiter_radius) * 1.2f, 10.0f); //set 10m as minimum
 
 			} else {
 				mission_acceptance_radius = _navigator->get_acceptance_radius(_mission_item.acceptance_radius);
@@ -414,7 +414,7 @@ MissionBlock::is_mission_item_reached()
 				const float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
 				const float yaw_err = wrap_pi(_mission_item.yaw - cog);
 
-				if (abs(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
+				if (fabsf(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
 					exit_heading_reached = true;
 				}
 
