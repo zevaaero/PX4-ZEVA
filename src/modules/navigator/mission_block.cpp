@@ -407,12 +407,25 @@ MissionBlock::is_mission_item_reached()
 							  (_mission_item.force_heading || _mission_item.nav_cmd == NAV_CMD_WAYPOINT);
 
 			if (enforce_exit_heading) {
-				// set required yaw from bearing to the next mission item
-				_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
-						    _navigator->get_global_position()->lon,
-						    next_sp.lat, next_sp.lon);
-				const float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
-				const float yaw_err = wrap_pi(_mission_item.yaw - cog);
+
+
+				const float dist_current_next = get_distance_to_next_waypoint(curr_sp_new->lat, curr_sp_new->lon, next_sp.lat,
+								next_sp.lon);
+
+				float yaw_err = 0.0f;
+
+				if (dist_current_next >  1.2f * _navigator->get_loiter_radius()) {
+					// set required yaw from bearing to the next mission item
+					_mission_item.yaw = get_bearing_to_next_waypoint(_navigator->get_global_position()->lat,
+							    _navigator->get_global_position()->lon,
+							    next_sp.lat, next_sp.lon);
+					const float cog = atan2f(_navigator->get_local_position()->vy, _navigator->get_local_position()->vx);
+					yaw_err = wrap_pi(_mission_item.yaw - cog);
+
+
+
+				}
+
 
 				if (fabsf(yaw_err) < 0.1f) { //accept heading for exit if below 0.1 rad error (5.7deg)
 					exit_heading_reached = true;
