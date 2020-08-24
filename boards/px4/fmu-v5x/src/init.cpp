@@ -54,7 +54,9 @@
 #include <errno.h>
 
 #include <nuttx/config.h>
+extern "C" {
 #include <nuttx/board.h>
+}
 #include <nuttx/spi/spi.h>
 #include <nuttx/sdio.h>
 #include <nuttx/mmcsd.h>
@@ -211,7 +213,6 @@ stm32_boardinitialize(void)
  *   any failure to indicate the nature of the failure.
  *
  ****************************************************************************/
-
 
 __EXPORT int board_app_initialize(uintptr_t arg)
 {
