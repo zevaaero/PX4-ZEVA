@@ -22,6 +22,7 @@ jobs:
           px4_fmu-v5_fixedwing,
           px4_fmu-v5_multicopter,
           px4_fmu-v5_optimized,
+          px4_fmu-v5_rtps,
           px4_fmu-v5x_base_phy_DP83848C,
           px4_fmu-v5x_default,
           px4_fmu-v6x_default,
