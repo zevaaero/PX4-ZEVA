@@ -127,7 +127,7 @@ PARAM_DEFINE_FLOAT(MIS_DIST_WPS, 900);
  * @value 1 First Order Hold
  * @group Mission
  */
-PARAM_DEFINE_INT32(MIS_ALTMODE, 0);
+PARAM_DEFINE_INT32(MIS_ALTMODE, 1);
 
 /**
 * Enable yaw control of the mount. (Only affects multicopters and ROI mission items)
