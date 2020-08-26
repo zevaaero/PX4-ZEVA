@@ -191,3 +191,13 @@ PARAM_DEFINE_FLOAT(SENS_BOARD_Z_OFF, 0.0f);
  * @group Sensors
  */
 PARAM_DEFINE_INT32(SENS_EN_THERMAL, -1);
+
+/**
+ * Skynode board rotation updated
+ *
+ * @boolean
+ * @category system
+ * @group Sensors
+ */
+PARAM_DEFINE_INT32(SENS_SKN_ROT_U, 0);
+
