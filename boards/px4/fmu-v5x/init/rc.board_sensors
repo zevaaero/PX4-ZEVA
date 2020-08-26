@@ -13,17 +13,17 @@ then
 	#SKYNODE base fmu board orientation
 
 	# Internal SPI bus ICM-20602
-	icm20602 -R 12 -s start
+	icm20602 -R 8 -s start
 
 	# Internal SPI bus ISM300DLC
 	# ism330dlc -s start
 
 	# Internal SPI BMI088
-	bmi088 -A -R 6 -s start
-	bmi088 -G -R 6 -s start
+	bmi088 -A -R 2 -s start
+	bmi088 -G -R 2 -s start
 
 	# Internal magnetometer on I2c
-	bmm150 -I -R  2 start
+	bmm150 -I -R 6 start
 
 else
 	#FMUv5Xbase board orientation
