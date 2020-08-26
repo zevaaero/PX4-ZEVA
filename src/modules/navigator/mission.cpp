@@ -1388,7 +1388,7 @@ Mission::altitude_sp_foh_update()
 	float acc_rad = _navigator->get_acceptance_radius(_mission_item.acceptance_radius);
 
 	if (pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-		acc_rad = _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f);
+		acc_rad = math::max(_navigator->get_loiter_radius(), fabsf(_mission_item.loiter_radius)) * 1.2f;
 	}
 
 	/* Do not try to find a solution if the last waypoint is inside the acceptance radius of the current one */
