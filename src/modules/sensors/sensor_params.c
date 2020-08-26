@@ -191,7 +191,6 @@ PARAM_DEFINE_FLOAT(SENS_BOARD_Z_OFF, 0.0f);
  * @group Sensors
  */
 PARAM_DEFINE_INT32(SENS_EN_THERMAL, -1);
-
 /**
  * External I2C probe.
  *
@@ -202,3 +201,13 @@ PARAM_DEFINE_INT32(SENS_EN_THERMAL, -1);
  * @group Sensors
  */
 PARAM_DEFINE_INT32(SENS_EXT_I2C_PRB, 1);
+
+/**
+ * Skynode board rotation updated
+ *
+ * @boolean
+ * @category system
+ * @group Sensors
+ */
+PARAM_DEFINE_INT32(SENS_SKN_ROT_U, 0);
+
