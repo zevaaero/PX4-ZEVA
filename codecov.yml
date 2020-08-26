@@ -21,6 +21,9 @@ parsers:
 
 comment: false
 
+github_checks:
+    annotations: false
+
 ignore:
   - "src/examples"
   - "src/modules/attitude_estimator_q"
