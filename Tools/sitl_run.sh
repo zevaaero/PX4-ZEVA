@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 
 set -e
 
@@ -106,10 +107,15 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 		fi
 		SIM_PID=$!
 		if [ -f ${src_path}/Tools/auterion/gazebo_models/${model}/${model}.sdf ]; then
-			gz model --spawn-file="${src_path}/Tools/auterion/gazebo_models/${model}/${model}.sdf" --model-name=${model} -x 1.01 -y 0.98 -z 0.83
+			MODEL_PATH=${src_path}/Tools/auterion/gazebo_models/${model}/${model}.sdf
 		else
-			gz model --spawn-file="${src_path}/Tools/sitl_gazebo/models/${model}/${model}.sdf" --model-name=${model} -x 1.01 -y 0.98 -z 0.83
+			MODEL_PATH=${src_path}/Tools/sitl_gazebo/models/${model}/${model}.sdf
 		fi
+
+		while gz model --verbose --spawn-file="$MODEL_PATH" --model-name=${model} -x 1.01 -y 0.98 -z 0.83 2>&1 | grep -q "An instance of Gazebo is not running."; do
+			echo "gzserver not ready yet, trying again!"
+			sleep 1
+		done
 
 		if [[ -n "$HEADLESS" ]]; then
 			echo "not running gazebo gui"
