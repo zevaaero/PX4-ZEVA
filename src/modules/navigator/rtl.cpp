@@ -194,17 +194,12 @@ void RTL::find_RTL_destination()
 	// figure out how long the RTL will take
 	const vehicle_local_position_s &local_pos_s = *_navigator->get_local_position();
 
-	if (local_pos_s.xy_valid && local_pos_s.z_valid) {
+	if (local_pos_s.xy_valid && local_pos_s.z_valid && globallocalconverter_initialized()) {
 		matrix::Vector3f local_pos(local_pos_s.x, local_pos_s.y, local_pos_s.z);
 
-		matrix::Vector3f local_destination(0, 0, global_position.alt); // TODO
-
-		if (!map_projection_initialized(&_projection_reference)) {
-			map_projection_init(&_projection_reference, global_position.lat, global_position.lon);
-		}
-
-		map_projection_project(&_projection_reference, global_position.lat, global_position.lon, &local_destination(0),
-				       &local_destination(1));
+		matrix::Vector3f local_destination;
+		globallocalconverter_tolocal(_destination.lat, _destination.lon, _destination.alt,
+					     &local_destination(0), &local_destination(1), &local_destination(2));
 
 		float xy_speed, z_speed;
 		get_rtl_xy_z_speed(xy_speed, z_speed);
