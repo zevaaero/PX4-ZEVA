@@ -40,6 +40,7 @@ TEST(Navigator_and_RTL, compiles_woohoooo)
 
 	// Hacky-hack, don't use pub-sub, just set them directly in navigator. NB! This isn't the "real" API, they should
 	// be set via pub-sub otherwise this will be a constant drag on development
+	globallocalconverter_init(0, 0, 0, 0);
 	*n.get_home_position() = home_pos;
 	*n.get_global_position() = glob_pos;
 	*n.get_local_position() = local_pos;
