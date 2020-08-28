@@ -36,6 +36,22 @@ then
 fi
 unset BL_FILE
 
+#
+# External components flashing
+#
+
+if param compare COM_EXT_COMP_EN 2
+then
+	echo "-> Starting FAKE flasher - SUCCESS case"
+	update_checker fake_success
+fi
+
+if param compare COM_EXT_COMP_EN 3
+then
+	echo "-> Starting FAKE flasher - FAIL case"
+	update_checker fake_fail
+fi
+
 if [ $AUTOCNF = yes ]
 then
 

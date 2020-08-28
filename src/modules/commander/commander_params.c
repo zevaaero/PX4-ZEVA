@@ -963,3 +963,19 @@ PARAM_DEFINE_FLOAT(COM_LKDOWN_TKO, 3.0f);
  * @decimal 3
  */
 PARAM_DEFINE_FLOAT(COM_LL_DELAY, 15.0f);
+
+/**
+ * Enable external components update
+ *
+ * If enabled, the check will verify that the external components (e.g. ESCs, Smartbattery,...) have been successfully updated.
+ * The check looks for the "ext_component_updated" file on the SD card and parses it.
+ * The file can contain a "SUCCESS <return_code>" or "FAIL <error_code>", depending on the parsed result the system will
+ * allow/deny arming.
+ *
+ * @group Commander
+ * @value 0 Disabled
+ * @value 1 Enabled
+ * @value 2 Trigger fake success (update_checker)
+ * @value 3 Trigger fake fail (update_checker)
+ */
+PARAM_DEFINE_INT32(COM_EXT_COMP_EN, 0);

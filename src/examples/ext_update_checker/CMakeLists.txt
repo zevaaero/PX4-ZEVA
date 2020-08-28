@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2020 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,25 +30,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
-px4_add_library(PreFlightCheck
-	PreFlightCheck.cpp
-	checks/preArmCheck.cpp
-	checks/magnetometerCheck.cpp
-	checks/magConsistencyCheck.cpp
-	checks/accelerometerCheck.cpp
-	checks/gyroCheck.cpp
-	checks/baroCheck.cpp
-	checks/imuConsistencyCheck.cpp
-	checks/airspeedCheck.cpp
-	checks/rcCalibrationCheck.cpp
-	checks/powerCheck.cpp
-	checks/airframeCheck.cpp
-	checks/ekf2Check.cpp
-	checks/failureDetectorCheck.cpp
-	checks/manualControlCheck.cpp
-	checks/cpuResourceCheck.cpp
-	checks/externalUpdateCheck.cpp
-)
-target_include_directories(PreFlightCheck PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(PreFlightCheck PUBLIC ArmAuthorization HealthFlags)
+px4_add_module(
+	MODULE examples__ext_update_checker
+	MAIN update_checker
+	SRCS
+		update_checker.cpp
+	DEPENDS
+	)

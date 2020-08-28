@@ -78,6 +78,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 	bool failed = false;
 
+	failed = failed || !externalUpdateCheck(mavlink_log_pub, reportFailures);
 	failed = failed || !airframeCheck(mavlink_log_pub, status);
 
 	/* ---- MAG ---- */
