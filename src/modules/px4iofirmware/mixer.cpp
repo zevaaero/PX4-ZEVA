@@ -304,6 +304,11 @@ mixer_tick()
 			mixer_group.set_max_delta_out_once(delta_out_max);
 		}
 
+		if (REG_TO_BOOL(r_setup_slew_simplemix)) {
+			/*  set dt to be used in simple mixer for slew rate limiting */
+			mixer_group.set_dt_once(dt);
+		}
+
 		/* update parameter for mc thrust model if it updated */
 		if (update_mc_thrust_param) {
 			mixer_group.set_thrust_factor(REG_TO_FLOAT(r_setup_thr_fac));
@@ -655,6 +660,11 @@ mixer_set_failsafe()
 		float delta_out_max = 2.0f * 1000.0f * dt / (r_page_servo_control_max[0] - r_page_servo_control_min[0]) / REG_TO_FLOAT(
 					      r_setup_slew_max);
 		mixer_group.set_max_delta_out_once(delta_out_max);
+	}
+
+	if (REG_TO_BOOL(r_setup_slew_simplemix)) {
+		/*  set dt to be used in simple mixer for slew rate limiting */
+		mixer_group.set_dt_once(dt);
 	}
 
 	/* update parameter for mc thrust model if it updated */

@@ -33,3 +33,17 @@ PARAM_DEFINE_INT32(MC_AIRMODE, 0);
  * @group Mixer Output
  */
 PARAM_DEFINE_INT32(MOT_ORDERING, 0);
+
+/**
+ * Simple Mixer Slew Rate Enabled
+ *
+ * Set this to true to enable output slew rate limiting on actuators mixed via a simple mixer.
+ * Slew rate of indivitual actuators (resp. their rise time) can then be specified in mixer file.
+ *
+ * @value 0 Slew rate limiter disabled
+ * @value 1 Slew rate limiter enabled
+ *
+ * @group Mixer Output
+ * @boolean
+ */
+PARAM_DEFINE_INT32(MIX_SIMP_SLEW, 0);

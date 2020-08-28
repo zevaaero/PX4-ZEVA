@@ -1222,6 +1222,15 @@ PX4IO::task_main()
 					(void)io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_MOTOR_SLEW_MAX, FLOAT_TO_REG(param_val));
 				}
 
+				/* enable slew rate on simple mixer*/
+				parm_handle = param_find("MIX_SIMP_SLEW");
+
+				if (parm_handle != PARAM_INVALID) {
+					int32_t param_simple_mix_slew_en = 0;
+					param_get(parm_handle, &param_simple_mix_slew_en);
+					(void)io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_SIMPLE_MIX_SLEW, param_simple_mix_slew_en);
+				}
+
 				/* air-mode */
 				parm_handle = param_find("MC_AIRMODE");
 
