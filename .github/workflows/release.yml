@@ -1,0 +1,64 @@
+name: build-release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+   runs-on: ubuntu-latest
+   container: px4io/px4-dev-nuttx-bionic:2020-04-01
+   steps:
+    - uses: actions/checkout@v1
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
+    - name: Prepare ccache timestamp
+      id: ccache_cache_timestamp
+      shell: cmake -P {0}
+      run: |
+        string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+        message("::set-output name=timestamp::${current_date}")
+    - name: ccache cache files
+      uses: actions/cache@v2
+      with:
+        path: ~/.ccache
+        key: release-nuttx-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+        restore-keys: release-nuttx-
+    - name: setup ccache
+      run: |
+          mkdir -p ~/.ccache
+          echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
+          echo "compression = true" >> ~/.ccache/ccache.conf
+          echo "compression_level = 6" >> ~/.ccache/ccache.conf
+          echo "max_size = 400M" >> ~/.ccache/ccache.conf
+          ccache -s
+          ccache -z
+
+    - name: make all nuttx targets
+      run: |
+        make px4_fmu-v3_default
+        make px4_fmu-v4_default
+        make px4_fmu-v5_default
+        make px4_fmu-v5x_default
+        make px4_fmu-v5x_rtps
+
+    - name: build zip
+      run: zip nuttx-targets.zip build/*/*.elf build/*/*.map build/*/*.px4 build/*/*.bin
+
+    - name: Upload NuttX targets artifact
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url:  ${{ github.event.release.upload_url }}
+        asset_path: nuttx-targets.zip
+        asset_name: nuttx-targets.zip
+        asset_content_type: binary/octet-stream
