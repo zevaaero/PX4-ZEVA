@@ -270,16 +270,28 @@ void VtolType::check_quadchute_condition()
 		// fixed-wing maximum pitch angle
 		if (_params->fw_qc_max_pitch > 0) {
 
-			if (fabsf(euler.theta()) > fabsf(math::radians(_params->fw_qc_max_pitch))) {
+			const bool pitch_limit_exceeded = fabsf(euler.theta()) > fabsf(math::radians(_params->fw_qc_max_pitch));
+
+			if (pitch_limit_exceeded && !_pitch_limit_violation_reported) {
 				_attc->abort_front_transition("Maximum pitch angle exceeded");
+				_pitch_limit_violation_reported = true;
+
+			} else if (!pitch_limit_exceeded) {
+				_pitch_limit_violation_reported = false;
 			}
 		}
 
 		// fixed-wing maximum roll angle
 		if (_params->fw_qc_max_roll > 0) {
 
-			if (fabsf(euler.phi()) > fabsf(math::radians(_params->fw_qc_max_roll))) {
+			const bool roll_limit_exceeded = fabsf(euler.phi()) > fabsf(math::radians(_params->fw_qc_max_roll));
+
+			if (roll_limit_exceeded && !_roll_limit_violation_reported) {
 				_attc->abort_front_transition("Maximum roll angle exceeded");
+				_roll_limit_violation_reported = true;
+
+			} else if (!roll_limit_exceeded) {
+				_roll_limit_violation_reported = false;
 			}
 		}
 	}

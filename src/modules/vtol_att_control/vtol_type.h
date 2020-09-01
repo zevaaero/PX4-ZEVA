@@ -313,6 +313,8 @@ protected:
 
 private:
 
+	bool _pitch_limit_violation_reported{false};
+	bool _roll_limit_violation_reported{false};
 
 	/**
 	 * @brief      Stores the max pwm values given by the system.
