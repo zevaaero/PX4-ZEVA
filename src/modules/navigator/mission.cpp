@@ -1393,6 +1393,9 @@ Mission::altitude_sp_foh_update()
 
 	/* Do not try to find a solution if the last waypoint is inside the acceptance radius of the current one */
 	if (_distance_current_previous - acc_rad < FLT_EPSILON) {
+		// set the target altitude from the mission item to make sure we don't get stuck at an intermediate altitude
+		// because we might have already modified the altitude in a previous iteration
+		pos_sp_triplet->current.alt = get_absolute_altitude_for_item(_mission_item);
 		return;
 	}
 
