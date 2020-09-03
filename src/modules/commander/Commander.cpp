@@ -1625,11 +1625,12 @@ Commander::run()
 		if (_esc_status_sub.updated() || _esc_status_was_updated) {
 			/* ESCs status changed */
 			esc_status_s esc_status;
-			_esc_status_was_updated = true;
 
 			if (_esc_status_sub.copy(&esc_status)) {
 				esc_status_check(esc_status);
 			}
+
+			_esc_status_was_updated = true;
 		}
 
 		estimator_check(status_flags);
@@ -4392,7 +4393,7 @@ void Commander::esc_status_check(const esc_status_s &esc_status)
 
 	} else {
 
-		if (!status_flags.condition_escs_error) {
+		if (_esc_status_was_updated && !status_flags.condition_escs_error) {
 			mavlink_log_critical(&mavlink_log_pub, "ESCs telemetry timeout");
 		}
 
