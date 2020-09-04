@@ -124,6 +124,7 @@
 #include "calibration_messages.h"
 #include "calibration_routines.h"
 #include "commander_helper.h"
+#include "factory_calibration_storage.h"
 
 #include <px4_platform_common/defines.h>
 #include <px4_platform_common/posix.h>
@@ -231,6 +232,13 @@ int do_accel_calibration(orb_advert_t *mavlink_log_pub)
 	const Dcmf board_rotation = get_rot_matrix((enum Rotation)board_rotation_int);
 	const Dcmf board_rotation_t = board_rotation.transpose();
 
+	FactoryCalibrationStorage factory_storage;
+
+	if (factory_storage.open() != PX4_OK) {
+		calibration_log_critical(mavlink_log_pub, "ERROR: cannot open calibration storage");
+		return PX4_ERROR;
+	}
+
 	param_set_no_notification(param_find("CAL_ACC_PRIME"), &device_id_primary);
 
 	for (unsigned uorb_index = 0; uorb_index < MAX_ACCEL_SENS; uorb_index++) {
@@ -302,6 +310,10 @@ int do_accel_calibration(orb_advert_t *mavlink_log_pub)
 			sprintf(str, "CAL_ACC%u_ID", uorb_index);
 			param_reset(param_find(str));
 		}
+	}
+
+	if (res == PX4_OK && factory_storage.store() != PX4_OK) {
+		res = -1;
 	}
 
 	param_notify_changes();
