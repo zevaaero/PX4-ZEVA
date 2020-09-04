@@ -1026,7 +1026,7 @@ param_save_default()
 		goto do_exit;
 	}
 
-	res = param_export(fd, false);
+	res = param_export(fd, false, nullptr);
 
 	if (res != OK) {
 		PX4_ERR("failed to write parameters to file: %s", filename);
@@ -1123,7 +1123,7 @@ param_load_default_no_notify()
 }
 
 int
-param_export(int fd, bool only_unsaved)
+param_export(int fd, bool only_unsaved, param_filter_func filter)
 {
 	perf_begin(param_export_perf);
 
@@ -1161,6 +1161,10 @@ param_export(int fd, bool only_unsaved)
 		 * one hasn't, then skip it
 		 */
 		if (only_unsaved && !s->unsaved) {
+			continue;
+		}
+
+		if (filter && !filter(s->param)) {
 			continue;
 		}
 
