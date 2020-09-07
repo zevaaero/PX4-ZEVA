@@ -369,7 +369,7 @@ MissionBlock::is_mission_item_reached()
 
 			/* check course if defined only for rotary wing except takeoff */
 			float cog = (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) ?
-				    _navigator->get_local_position()->yaw :
+				    _navigator->get_local_position()->heading :
 				    atan2f(
 					    _navigator->get_local_position()->vy,
 					    _navigator->get_local_position()->vx
@@ -684,7 +684,7 @@ MissionBlock::set_takeoff_item(struct mission_item_s *item, float abs_altitude, 
 	/* use current position */
 	item->lat = _navigator->get_global_position()->lat;
 	item->lon = _navigator->get_global_position()->lon;
-	item->yaw = _navigator->get_local_position()->yaw;
+	item->yaw = _navigator->get_local_position()->heading;
 
 	item->altitude = abs_altitude;
 	item->altitude_is_relative = false;
@@ -714,7 +714,7 @@ MissionBlock::set_land_item(struct mission_item_s *item, bool at_current_locatio
 	if (at_current_location) {
 		item->lat = (double)NAN; //descend at current position
 		item->lon = (double)NAN; //descend at current position
-		item->yaw = _navigator->get_local_position()->yaw;
+		item->yaw = _navigator->get_local_position()->heading;
 
 	} else {
 		/* use home position */
@@ -753,7 +753,7 @@ MissionBlock::set_vtol_transition_item(struct mission_item_s *item, const uint8_
 {
 	item->nav_cmd = NAV_CMD_DO_VTOL_TRANSITION;
 	item->params[0] = (float) new_mode;
-	item->yaw = _navigator->get_local_position()->yaw;
+	item->yaw = _navigator->get_local_position()->heading;
 	item->autocontinue = true;
 }
 
@@ -794,5 +794,12 @@ MissionBlock::get_absolute_altitude_for_item(const mission_item_s &mission_item)
 
 	} else {
 		return mission_item.altitude;
+	}
+}
+
+void MissionBlock::handleEkfHeadingReset(float delta_heading)
+{
+	if (PX4_ISFINITE(_mission_item.yaw)) {
+		_mission_item.yaw = wrap_pi(_mission_item.yaw + delta_heading);
 	}
 }

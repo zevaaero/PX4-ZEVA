@@ -1170,7 +1170,7 @@ Commander::set_home_position()
 			home.y = lpos.y;
 			home.z = lpos.z;
 
-			home.yaw = lpos.yaw;
+			home.yaw = lpos.heading;
 
 			home.manual_home = false;
 

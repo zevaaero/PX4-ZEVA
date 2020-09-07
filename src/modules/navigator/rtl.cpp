@@ -184,7 +184,6 @@ RTL::rtl_type() const
 void
 RTL::on_activation()
 {
-
 	// output the correct message, depending on where the RTL destination is
 	switch (_destination.type) {
 	case RTL_DESTINATION_HOME:
@@ -282,7 +281,7 @@ RTL::set_rtl_item()
 			_mission_item.lon = gpos.lon;
 			_mission_item.altitude = _rtl_alt;
 			_mission_item.altitude_is_relative = false;
-			_mission_item.yaw = _navigator->get_local_position()->yaw;
+			_mission_item.yaw = _navigator->get_local_position()->heading;
 			_mission_item.acceptance_radius = _navigator->get_acceptance_radius();
 			_mission_item.time_inside = 0.0f;
 			_mission_item.autocontinue = true;

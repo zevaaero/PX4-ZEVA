@@ -73,6 +73,8 @@ public:
 	 */
 	virtual void on_active();
 
+	virtual void handleEkfHeadingReset(float delta_heading);
+
 protected:
 	Navigator *_navigator{nullptr};
 

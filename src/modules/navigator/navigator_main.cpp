@@ -342,7 +342,7 @@ Navigator::run()
 				position_setpoint_triplet_s *rep = get_takeoff_triplet();
 
 				// store current position as previous position and goal as next
-				rep->previous.yaw = get_local_position()->yaw;
+				rep->previous.yaw = get_local_position()->heading;
 				rep->previous.lat = get_global_position()->lat;
 				rep->previous.lon = get_global_position()->lon;
 				rep->previous.alt = get_global_position()->alt;
@@ -358,7 +358,7 @@ Navigator::run()
 					rep->previous.timestamp = hrt_absolute_time();
 
 				} else {
-					rep->current.yaw = get_local_position()->yaw;
+					rep->current.yaw = get_local_position()->heading;
 					rep->previous.valid = false;
 				}
 
@@ -789,6 +789,12 @@ Navigator::run()
 		/* iterate through navigation modes and set active/inactive for each */
 		for (unsigned int i = 0; i < NAVIGATOR_MODE_ARRAY_SIZE; i++) {
 			_navigation_mode_array[i]->run(_navigation_mode == _navigation_mode_array[i]);
+
+			// update mission item heading for all navigation modes if estimator performed a reset
+			if (_heading_reset_counter != _local_pos.heading_reset_counter) {
+				_navigation_mode_array[i]->handleEkfHeadingReset(_local_pos.delta_heading);
+				_heading_reset_counter = _local_pos.heading_reset_counter;
+			}
 		}
 
 		/* if nothing is running, set position setpoint triplet invalid once */

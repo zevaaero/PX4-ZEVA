@@ -99,3 +99,7 @@ void
 NavigatorMode::on_active()
 {
 }
+
+void NavigatorMode::handleEkfHeadingReset(float delta_heading)
+{
+}
