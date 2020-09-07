@@ -88,6 +88,8 @@ public:
 	 */
 	static bool item_contains_marker(const mission_item_s &item);
 
+	void handleEkfHeadingReset(float delta_heading) override;
+
 protected:
 	/**
 	 * Check if mission item has been reached

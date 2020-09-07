@@ -850,3 +850,10 @@ MissionBlock::get_absolute_altitude_for_item(const mission_item_s &mission_item)
 		return mission_item.altitude;
 	}
 }
+
+void MissionBlock::handleEkfHeadingReset(float delta_heading)
+{
+	if (PX4_ISFINITE(_mission_item.yaw)) {
+		_mission_item.yaw = wrap_pi(_mission_item.yaw + delta_heading);
+	}
+}
