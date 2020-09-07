@@ -78,15 +78,16 @@ Navigator::Navigator() :
 	ModuleParams(nullptr),
 	_loop_perf(perf_alloc(PC_ELAPSED, "navigator")),
 	_geofence(this),
-	_mission(this),
+	_mission(this, _terrain_follower),
 	_loiter(this),
 	_takeoff(this),
 	_land(this),
 	_precland(this),
-	_rtl(this),
+	_rtl(this, _terrain_follower),
 	_engineFailure(this),
 	_gpsFailure(this),
 	_follow_target(this)
+
 {
 	/* Create a list of our possible navigation types */
 	_navigation_mode_array[0] = &_mission;
@@ -113,12 +114,16 @@ Navigator::~Navigator()
 	perf_free(_loop_perf);
 	orb_unsubscribe(_local_pos_sub);
 	orb_unsubscribe(_vehicle_status_sub);
+
+	delete _terrain_provider;
 }
 
 void
 Navigator::params_update()
 {
 	updateParams();
+
+	_terrain_follower.updateParams();
 
 	if (_handle_back_trans_dec_mss != PARAM_INVALID) {
 		param_get(_handle_back_trans_dec_mss, &_param_back_trans_dec_mss);
@@ -144,6 +149,14 @@ Navigator::run()
 	}
 
 	params_update();
+
+	orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vstatus);
+
+	if (_param_tf_terrain_en.get() > 0 && _vstatus.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROVER) {
+		_terrain_provider = new terrain::TerrainProvider(_param_tf_terrain_en.get());
+		_terrain_follower.enable();
+		_terrain_follower.setTerrainProvider(_terrain_provider);
+	}
 
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[2] {};
@@ -944,6 +957,16 @@ Navigator::get_cruising_speed()
 	}
 }
 
+bool Navigator::getGroundSpeed(float &ground_speed)
+{
+	if (_local_pos.v_xy_valid) {
+		ground_speed = sqrtf(_local_pos.vx * _local_pos.vx + _local_pos.vy * _local_pos.vy);
+		return true;
+	}
+
+	return false;
+}
+
 void
 Navigator::set_cruising_speed(float speed)
 {
@@ -1346,6 +1369,24 @@ Navigator::set_mission_failure(const char *reason)
 		set_mission_result_updated();
 		mavlink_log_critical(&_mavlink_log_pub, "%s", reason);
 	}
+}
+
+void Navigator::setTerrainFollowerState()
+{
+	_terrain_follower.setHomeAltitude(get_home_position()->alt);
+	_terrain_follower.setCurrentPosition(matrix::Vector2<double>(get_global_position()->lat,
+					     get_global_position()->lon), get_global_position()->alt);
+
+	_terrain_follower.setLoiterRadius(get_loiter_radius());
+
+	float groundspeed;
+
+	if (getGroundSpeed(groundspeed)) {
+		_terrain_follower.setGroundSpeed(groundspeed);
+	}
+
+	_terrain_follower.setIsHoverCraft(get_vstatus()->vehicle_type ==
+					  vehicle_status_s::VEHICLE_TYPE_ROTARY_WING);
 }
 
 void

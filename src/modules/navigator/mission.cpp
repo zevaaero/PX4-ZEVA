@@ -59,9 +59,10 @@
 #include <uORB/topics/mission.h>
 #include <uORB/topics/mission_result.h>
 
-Mission::Mission(Navigator *navigator) :
+Mission::Mission(Navigator *navigator, TerrainFollowerWrapper &terrain_follower) :
 	MissionBlock(navigator),
-	ModuleParams(navigator)
+	ModuleParams(navigator),
+	_terrain_follower(terrain_follower)
 {
 }
 
@@ -164,6 +165,8 @@ Mission::on_activation()
 	// we already reset the mission items
 	_execution_mode_changed = false;
 
+	_terrain_follower.reset();
+	_navigator->setTerrainFollowerState();
 	set_mission_items();
 
 	// unpause triggering if it was paused
@@ -205,11 +208,26 @@ Mission::on_active()
 		}
 
 		_execution_mode_changed = false;
+		_terrain_follower.reset();
+		_navigator->setTerrainFollowerState();
 		set_mission_items();
 	}
 
-	/* lets check if we reached the current mission item */
-	if (_mission_type != MISSION_TYPE_NONE && is_mission_item_reached()) {
+	bool reload_mission_items = false;
+	const bool mission_item_reached = is_mission_item_reached();
+
+	_navigator->setTerrainFollowerState();
+
+	if (mission_item_reached || (hrt_absolute_time() - _time_last_terrain_checked > 1000000
+				     && !_terrain_follower.hasIntermediateMissionItem())) {
+
+		reload_mission_items = _terrain_follower.updateIntermediateMissionItem(mission_item_reached);
+		_time_last_terrain_checked = hrt_absolute_time();
+	}
+
+
+	/* lets check if we reached the current mission item or if the terrain follower wants to insert an intermediate item*/
+	if (_mission_type != MISSION_TYPE_NONE && (mission_item_reached || reload_mission_items))  {
 		/* If we just completed a takeoff which was inserted before the right waypoint,
 		   there is no need to report that we reached it because we didn't. */
 		if (_work_item_type != WORK_ITEM_TYPE_TAKEOFF) {
@@ -218,7 +236,11 @@ Mission::on_active()
 
 		if (_mission_item.autocontinue) {
 			/* switch to next waypoint if 'autocontinue' flag set */
-			advance_mission();
+
+			if (!reload_mission_items) {
+				advance_mission();
+			}
+
 			set_mission_items();
 		}
 
@@ -290,6 +312,9 @@ Mission::set_current_mission_index(uint16_t index)
 			_navigator->get_position_setpoint_triplet()->previous.valid = false;
 			_navigator->get_position_setpoint_triplet()->current.valid = false;
 			_navigator->get_position_setpoint_triplet()->next.valid = false;
+
+			_terrain_follower.reset();
+			_navigator->setTerrainFollowerState();
 			set_mission_items();
 		}
 
@@ -598,8 +623,16 @@ Mission::set_mission_items()
 
 	work_item_type new_work_item_type = WORK_ITEM_TYPE_DEFAULT;
 
-	if (prepare_mission_items(&_mission_item, &mission_item_next_position, &has_next_position_item,
-				  &mission_item_after_next_position, &has_after_next_position_item)) {
+	// get an intermediate mission item from the terrain follower if required
+	if (_terrain_follower.hasIntermediateMissionItem()) {
+		_mission_item = _terrain_follower.getIntermediateMissionItem();
+		mission_item_next_position = _terrain_follower.getCurrentMissionItem();
+		has_next_position_item = true;
+
+		// otherwise read the next item from the mission storage
+
+	} else if (prepare_mission_items(&_mission_item, &mission_item_next_position, &has_next_position_item,
+					 &mission_item_after_next_position, &has_after_next_position_item)) {
 		/* if mission type changed, notify */
 		if (_mission_type != MISSION_TYPE_MISSION) {
 			mavlink_log_info(_navigator->get_mavlink_log_pub(),
@@ -609,6 +642,11 @@ Mission::set_mission_items()
 		}
 
 		_mission_type = MISSION_TYPE_MISSION;
+
+		// give the terrain follower the current mission item if it contains a position
+		if (item_contains_position(_mission_item) && !_terrain_follower.isCurrentMissionItemValid()) {
+			_terrain_follower.setCurrentMissionItem(_mission_item);
+		}
 
 	} else {
 		/* no mission available or mission finished, switch to loiter */

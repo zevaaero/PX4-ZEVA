@@ -54,7 +54,7 @@ class TerrainProvider
 {
 public:
 	TerrainProvider(int grid_spacing_m);
-	~TerrainProvider();
+	virtual ~TerrainProvider();
 
 	/**
 	 * lookup altitude data. This method returns immediately, triggering a caching request if data is not
@@ -65,7 +65,7 @@ public:
 	 * @param alt_msl_m output altitude
 	 * @return true on success, false if not in cache / outside of data range
 	 */
-	bool lookup(double lat, double lon, float &alt_msl_m);
+	virtual bool lookup(double lat, double lon, float &alt_msl_m);
 private:
 	static constexpr int cache_size =
 		3; ///< number of cached items. Item size depends on grid_spacing, generally several KB

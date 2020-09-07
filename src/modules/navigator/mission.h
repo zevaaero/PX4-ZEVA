@@ -47,6 +47,7 @@
 #include "mission_block.h"
 #include "mission_feasibility_checker.h"
 #include "navigator_mode.h"
+#include "terrain_follower_wrapper.hpp"
 
 #include <float.h>
 
@@ -68,7 +69,7 @@ class Navigator;
 class Mission : public MissionBlock, public ModuleParams
 {
 public:
-	Mission(Navigator *navigator);
+	Mission(Navigator *navigator, TerrainFollowerWrapper &terrain_follower);
 	~Mission() override = default;
 
 	void on_inactive() override;
@@ -251,6 +252,9 @@ private:
 	mission_s		_mission {};
 
 	int32_t _current_mission_index{-1};
+
+	TerrainFollowerWrapper &_terrain_follower;
+	hrt_abstime _time_last_terrain_checked{0};
 
 	// track location of planned mission landing
 	bool	_land_start_available{false};

@@ -11,7 +11,7 @@
 TEST(Navigator_and_RTL, compiles_woohoooo)
 {
 	Navigator n;
-	RTL rtl(&n);
+	RTL rtl(&n, n.getTerrainFollower());
 
 
 	home_position_s home_pos{};

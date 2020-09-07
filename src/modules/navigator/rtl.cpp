@@ -51,9 +51,10 @@ static constexpr float DELAY_SIGMA = 0.01f;
 
 using namespace time_literals;
 
-RTL::RTL(Navigator *navigator) :
+RTL::RTL(Navigator *navigator, TerrainFollowerWrapper &terrain_follower) :
 	MissionBlock(navigator),
-	ModuleParams(navigator)
+	ModuleParams(navigator),
+	_terrain_follower(terrain_follower)
 {
 }
 
@@ -215,6 +216,8 @@ void RTL::find_RTL_destination()
 
 void RTL::on_activation()
 {
+	_terrain_follower.reset();
+	_navigator->setTerrainFollowerState();
 
 	// output the correct message, depending on where the RTL destination is
 	switch (_destination.type) {
@@ -258,14 +261,36 @@ void RTL::on_activation()
 		_rtl_state = RTL_STATE_RETURN;
 	}
 
-	set_rtl_item();
+	set_rtl_item(true);
 }
 
 void RTL::on_active()
 {
-	if (_rtl_state != RTL_STATE_LANDED && is_mission_item_reached()) {
-		advance_rtl();
-		set_rtl_item();
+	bool reload_mission_items = false;
+	bool mission_item_reached = is_mission_item_reached();
+
+	_navigator->setTerrainFollowerState();
+
+	if (mission_item_reached || (hrt_absolute_time() - _time_last_terrain_checked > 3 * 1000 * 1000
+				     && !_terrain_follower.hasIntermediateMissionItem())) {
+
+		reload_mission_items = _terrain_follower.updateIntermediateMissionItem(mission_item_reached);
+		_time_last_terrain_checked = hrt_absolute_time();
+	}
+
+	if (_rtl_state != RTL_STATE_LANDED && (mission_item_reached || reload_mission_items)) {
+
+		if (!reload_mission_items) {
+			advance_rtl();
+		}
+
+		if (_terrain_follower.hasIntermediateMissionItem()) {
+			set_intermediate_item();
+
+		} else {
+			const bool do_user_feedback = !reload_mission_items;
+			set_rtl_item(do_user_feedback);
+		}
 	}
 
 	if (_rtl_state == RTL_STATE_LAND && _param_rtl_pld_md.get() > 0) {
@@ -276,7 +301,32 @@ void RTL::on_active()
 	}
 }
 
-void RTL::set_rtl_item()
+void RTL::set_intermediate_item()
+{
+	_mission_item = _terrain_follower.getIntermediateMissionItem();
+	publishMissionItem();
+}
+
+void RTL::publishMissionItem()
+{
+	position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+
+	reset_mission_item_reached();
+
+	// Execute command if set
+	if (!item_contains_position(_mission_item)) {
+		issue_command(_mission_item);
+	}
+
+	// Convert mission item to current position setpoint and make it valid.
+	mission_apply_limitation(_mission_item);
+
+	if (mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current)) {
+		_navigator->set_position_setpoint_triplet_updated();
+	}
+}
+
+void RTL::set_rtl_item(bool do_user_feedback)
 {
 	// RTL_TYPE: mission landing.
 	// Landing using planned mission landing, fly to DO_LAND_START instead of returning _destination.
@@ -347,8 +397,10 @@ void RTL::set_rtl_item()
 			_mission_item.autocontinue = true;
 			_mission_item.origin = ORIGIN_ONBOARD;
 
-			mavlink_log_info(_navigator->get_mavlink_log_pub(), "RTL: return at %d m (%d m above destination)",
-					 (int)ceilf(_mission_item.altitude), (int)ceilf(_mission_item.altitude - _destination.alt));
+			if (do_user_feedback) {
+				mavlink_log_info(_navigator->get_mavlink_log_pub(), "RTL: return at %d m (%d m above destination)",
+						 (int)ceilf(_mission_item.altitude), (int)ceilf(_mission_item.altitude - _destination.alt));
+			}
 
 			break;
 		}
@@ -468,19 +520,12 @@ void RTL::set_rtl_item()
 		break;
 	}
 
-	reset_mission_item_reached();
-
-	// Execute command if set. This is required for commands like VTOL transition.
-	if (!item_contains_position(_mission_item)) {
-		issue_command(_mission_item);
+	// give the terrain follower the current mission item if it contains a position
+	if (item_contains_position(_mission_item) && !_terrain_follower.isCurrentMissionItemValid()) {
+		_terrain_follower.setCurrentMissionItem(_mission_item);
 	}
 
-	// Convert mission item to current position setpoint and make it valid.
-	mission_apply_limitation(_mission_item);
-
-	if (mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current)) {
-		_navigator->set_position_setpoint_triplet_updated();
-	}
+	publishMissionItem();
 }
 
 void RTL::advance_rtl()

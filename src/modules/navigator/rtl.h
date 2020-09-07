@@ -45,6 +45,7 @@
 
 #include "navigator_mode.h"
 #include "mission_block.h"
+#include "terrain_follower_wrapper.hpp"
 
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/home_position.h>
@@ -71,7 +72,7 @@ public:
 		RTL_DESTINATION_SAFE_POINT,
 	};
 
-	RTL(Navigator *navigator);
+	RTL(Navigator *navigator, TerrainFollowerWrapper &terrain_follower);
 
 	~RTL() = default;
 
@@ -95,7 +96,9 @@ private:
 	/**
 	 * Set the RTL item
 	 */
-	void set_rtl_item();
+	void set_rtl_item(bool do_user_feedback);
+
+	void set_intermediate_item();
 
 	/**
 	 * Move to next RTL item
@@ -104,6 +107,8 @@ private:
 
 
 	float calculate_return_alt_from_cone_half_angle(float cone_half_angle_deg);
+
+	void publishMissionItem();
 
 	enum RTLState {
 		RTL_STATE_NONE = 0,
@@ -139,9 +144,12 @@ private:
 	RTLPosition _destination{}; ///< the RTL position to fly to (typically the home position or a safe point)
 
 	hrt_abstime _destination_check_time{0};
+	hrt_abstime _time_last_terrain_checked{0};
 
 	float _rtl_alt{0.0f};	// AMSL altitude at which the vehicle should return to the home position
 	bool _rtl_alt_min{false};
+
+	TerrainFollowerWrapper &_terrain_follower;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::RTL_RETURN_ALT>) _param_rtl_return_alt,

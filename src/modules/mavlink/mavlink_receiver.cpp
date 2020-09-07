@@ -96,8 +96,8 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_mavlink_timesync(parent)
 {
 	// let the main instance initialize the terrain uploader, if enabled
-	if (_mavlink->get_instance_id() == 0 && _param_mav_terrain_en.get() > 0) {
-		if (!_terrain_uploader.init(_param_mav_terrain_en.get())) {
+	if (_mavlink->get_instance_id() == 0 && _param_tf_terrain_en.get() > 0) {
+		if (!_terrain_uploader.init(_param_tf_terrain_en.get())) {
 			PX4_ERR("Terrain uploader init failed");
 		}
 	}

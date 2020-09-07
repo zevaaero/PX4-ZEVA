@@ -56,6 +56,9 @@
 #include "navigation.h"
 
 #include "GeofenceBreachAvoidance/geofence_breach_avoidance.h"
+#include <lib/terrain/terrain_provider.h>
+
+#include "terrain_follower_wrapper.hpp"
 
 #include <lib/perf/perf_counter.h>
 #include <px4_platform_common/module.h>
@@ -159,6 +162,10 @@ public:
 	struct vehicle_local_position_s *get_local_position() { return &_local_pos; }
 	struct vehicle_status_s *get_vstatus() { return &_vstatus; }
 	PrecLand *get_precland() { return &_precland; } /**< allow others, e.g. Mission, to use the precision land block */
+
+	bool getGroundSpeed(float &ground_speed);	// return true if groundspeed is valid
+
+	terrain::TerrainProvider *getTerrainProvider() { return _terrain_provider; }
 
 	const vehicle_roi_s &get_vroi() { return _vroi; }
 	void reset_vroi() { _vroi = {}; }
@@ -270,6 +277,8 @@ public:
 
 	void 		set_mission_failure(const char *reason);
 
+	void 		setTerrainFollowerState();
+
 	// MISSION
 	bool		is_planned_mission() const { return _navigation_mode == &_mission; }
 	bool		on_mission_landing() { return _mission.landing(); }
@@ -279,6 +288,8 @@ public:
 	double 	get_mission_landing_lat() { return _mission.get_landing_lat(); }
 	double 	get_mission_landing_lon() { return _mission.get_landing_lon(); }
 	float 	get_mission_landing_alt() { return _mission.get_landing_alt(); }
+
+	TerrainFollowerWrapper &getTerrainFollower() { return _terrain_follower; }
 
 	// RTL
 	bool		mission_landing_required() { return _rtl.rtl_type() == RTL::RTL_LAND; }
@@ -320,7 +331,8 @@ private:
 		(ParamFloat<px4::params::MIS_TAKEOFF_ALT>) _param_mis_takeoff_alt,
 		(ParamBool<px4::params::MIS_TAKEOFF_REQ>) _param_mis_takeoff_req,
 		(ParamFloat<px4::params::MIS_YAW_TMT>) _param_mis_yaw_tmt,
-		(ParamFloat<px4::params::MIS_YAW_ERR>) _param_mis_yaw_err
+		(ParamFloat<px4::params::MIS_YAW_ERR>) _param_mis_yaw_err,
+		(ParamInt<px4::params::TF_TERRAIN_EN>) _param_tf_terrain_en
 	)
 
 	int		_local_pos_sub{-1};		/**< local position subscription */
@@ -370,6 +382,8 @@ private:
 	Geofence	_geofence;			/**< class that handles the geofence */
 	bool		_geofence_violation_warning_sent{false}; /**< prevents spaming to mavlink */
 	GeofenceBreachAvoidance _gf_breach_avoidance;
+	terrain::TerrainProvider *_terrain_provider{nullptr};
+	TerrainFollowerWrapper _terrain_follower;
 
 	bool		_can_loiter_at_sp{false};			/**< flags if current position SP can be used to loiter */
 	bool		_pos_sp_triplet_updated{false};		/**< flags if position SP triplet needs to be published */

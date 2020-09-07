@@ -32,6 +32,7 @@
 ############################################################################
 
 add_subdirectory(GeofenceBreachAvoidance)
+add_subdirectory(TerrainFollower)
 
 px4_add_module(
 	MODULE modules__navigator
@@ -51,12 +52,14 @@ px4_add_module(
 		enginefailure.cpp
 		gpsfailure.cpp
 		follow_target.cpp
+		terrain_follower_wrapper.cpp
 	DEPENDS
 		git_ecl
 		ecl_geo
 		landing_slope
 		geofence_breach_avoidance
 		motion_planning
+		terrain_follower
 	)
 
 px4_add_functional_gtest(SRC RangeRTLTest.cpp LINKLIBS modules__navigator modules__dataman)
