@@ -74,6 +74,7 @@ private:
 		float vt_thr_n_alter;
 		float vt_thr_alter_sc;
 		float vt_elev_comp_k;
+		float vt_elev_comp_offset;
 	} _params_tiltrotor;
 
 	struct {
@@ -88,6 +89,7 @@ private:
 		param_t vt_thr_n_alter;
 		param_t vt_thr_alter_sc;
 		param_t vt_elev_comp_k;
+		param_t vt_elev_comp_offset;
 	} _params_handles_tiltrotor;
 
 	enum class vtol_mode {
@@ -120,6 +122,8 @@ private:
 	float alternate_motors_throttle_adaption(float throttle_in);
 	float alternate_motors_elevator_trim(const float throttle_alternate);
 	bool _alternate_motor_on = false;
+	hrt_abstime _time_last_switch_to_alternate = 0;
+	hrt_abstime _last_time_above_threshold = 0;
 
 };
 #endif
