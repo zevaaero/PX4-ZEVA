@@ -162,7 +162,7 @@ PARAM_DEFINE_FLOAT(VT_THR_ALTER_SC, 1.0f);
 /**
  * Pitch actuator compensation when alternative motor is on.
  *
- * Pitch_actuator_offset = throttle_alt * comp_elev_k / p_dynamic
+ * Pitch_actuator_offset = VT_ELEV_COMP_OFF + throttle_alt * comp_elev_k / p_dynamic.
  *
  * @min 0.0
  * @max 500.0
@@ -171,3 +171,17 @@ PARAM_DEFINE_FLOAT(VT_THR_ALTER_SC, 1.0f);
  * @group VTOL Attitude Control
  */
 PARAM_DEFINE_FLOAT(VT_ELEV_COMP_K, 0.0f);
+
+
+/**
+ * Static offset added to the elevator control as part of the non-zero thrust line offset compensation for the alternate motor.
+ *
+ * Pitch_actuator_offset = VT_ELEV_COMP_OFF + throttle_alt * comp_elev_k / p_dynamic.
+ *
+ * @min -1
+ * @max 1
+ * @increment 0.1
+ * @decimal 1
+ * @group VTOL Attitude Control
+ */
+PARAM_DEFINE_FLOAT(VT_ELEV_COMP_OFF, 0.0f);
