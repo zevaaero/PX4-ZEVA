@@ -72,7 +72,6 @@ void LoggedTopics::add_default_topics()
 	add_topic("position_controller_status", 500);
 	add_topic("position_setpoint_triplet", 200);
 	add_topic("radio_status");
-	add_topic("rate_ctrl_status", 200);
 	add_topic("rpm", 500);
 	add_topic("safety", 1000);
 	add_topic("sensor_combined", 100);
@@ -104,6 +103,7 @@ void LoggedTopics::add_default_topics()
 	add_topic_multi("actuator_outputs", 100);
 	add_topic_multi("logger_status");
 	add_topic_multi("multirotor_motor_limits", 1000);
+	add_topic_multi("rate_ctrl_status", 200);
 	add_topic_multi("telemetry_status", 1000);
 	add_topic_multi("wind_estimate", 1000);
 
