@@ -200,3 +200,16 @@ PARAM_DEFINE_INT32(MAV_RADIO_TOUT, 25);
  * @group MAVLink
  */
 PARAM_DEFINE_INT32(MAV_FLOW_CONTROL, 1);
+
+/**
+ * Enable Protocol splitter and RTPS on TELEM2
+ *
+ * TELEM2 on Skynode only.
+ *
+ * @value 0 Disabled
+ * @value 1 Enabled
+ * @boolean
+ * @group MAVLink
+ * @reboot_required true
+ */
+PARAM_DEFINE_INT32(MAV_SKN_RTPS, 0);
