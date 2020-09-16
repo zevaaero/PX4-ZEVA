@@ -51,3 +51,6 @@
 [submodule "Tools/auterion/gazebo_models"]
 	path = Tools/auterion/gazebo_models
 	url = git@github.com:Auterion/auterion_gazebo_models.git
+[submodule "Tools/jsbsim_bridge"]
+	path = Tools/jsbsim_bridge
+	url = git@github.com:Auterion/px4-jsbsim-bridge.git
