@@ -694,11 +694,14 @@ MissionBlock::set_loiter_item(struct mission_item_s *item, float min_clearance)
 
 		struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
-		if (_navigator->get_can_loiter_at_sp() && pos_sp_triplet->current.valid) {
+		float loiter_radius = _navigator->get_loiter_radius();
+
+		if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 			/* use current position setpoint */
 			item->lat = pos_sp_triplet->current.lat;
 			item->lon = pos_sp_triplet->current.lon;
 			item->altitude = pos_sp_triplet->current.alt;
+			loiter_radius = pos_sp_triplet->current.loiter_radius;
 
 		} else {
 			/* use current position and use return altitude as clearance */
@@ -713,7 +716,7 @@ MissionBlock::set_loiter_item(struct mission_item_s *item, float min_clearance)
 
 		item->altitude_is_relative = false;
 		item->yaw = NAN;
-		item->loiter_radius = _navigator->get_loiter_radius();
+		item->loiter_radius = loiter_radius;
 		item->acceptance_radius = _navigator->get_acceptance_radius();
 		item->time_inside = 0.0f;
 		item->autocontinue = false;
