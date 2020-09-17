@@ -23,30 +23,31 @@ then
 		fi
 	fi
 
-	# Internal SPI bus ICM-20602
-	icm20602 -R 8 -s start
-
-	# Internal SPI bus ISM300DLC
-	# ism330dlc -s start
-
 	# Internal SPI BMI088
 	bmi088 -A -R 2 -s start
 	bmi088 -G -R 2 -s start
+
+	# Internal SPI bus ICM42688p
+	icm42688p -R 4 -s start
+
+	# Internal SPI bus ICM-20602 (hard-mounted)
+	icm20602 -R 8 -s start
 
 	# Internal magnetometer on I2c
 	bmm150 -I -R 6 start
 
 else
 	#FMUv5Xbase board orientation
-	# Internal SPI bus ICM-20602
-	icm20602 -R 10 -s start
-
-	# Internal SPI bus ISM300DLC
-	#ism330dlc -s start
 
 	# Internal SPI BMI088
 	bmi088 -A -R 4 -s start
 	bmi088 -G -R 4 -s start
+
+	# Internal SPI bus ICM42688p
+	icm42688p -R 6 -s start
+
+	# Internal SPI bus ICM-20602 (hard-mounted)
+	icm20602 -R 10 -s start
 
 	# Internal magnetometer on I2c
 	bmm150 -I start
