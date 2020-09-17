@@ -55,10 +55,16 @@ else
 fi
 
 # Possible internal Baro
-bmp388 -I -a 0x77 start
-if ver hwtypecmp V5X91
+
+# Disable startup of internal baros if param is set to false
+if param compare SENS_INT_BARO_EN 1
 then
-	bmp388 -X -b 2 start
-else
-	bmp388 -I start
+	bmp388 -I -a 0x77 start
+	if ver hwtypecmp V5X91
+	then
+		bmp388 -X -b 2 start
+	else
+		bmp388 -I start
+	fi
+
 fi
