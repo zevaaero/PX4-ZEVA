@@ -801,14 +801,19 @@ Navigator::run()
 
 		/* we have a new navigation mode: reset triplet */
 		if (_navigation_mode != navigation_mode_new) {
-			// We don't reset the triplet if we just did an auto-takeoff and are now
+			// We don't reset the triplet in the following two cases:
+			// 1)  if we just did an auto-takeoff and are now
 			// going to loiter. Otherwise, we lose the takeoff altitude and end up lower
 			// than where we wanted to go.
+			// 2) We switch to loiter and the current position setpoint already has a valid loiter point.
+			// In that case we can assume that the vehicle has already established a loiter and we don't need to set a new
+			// loiter position.
 			//
 			// FIXME: a better solution would be to add reset where they are needed and remove
 			//        this general reset here.
 			if (!(_navigation_mode == &_takeoff &&
-			      navigation_mode_new == &_loiter)) {
+			      navigation_mode_new == &_loiter) && !(navigation_mode_new == &_loiter && _pos_sp_triplet.current.valid
+					      && _pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LOITER)) {
 				reset_triplets();
 			}
 		}
