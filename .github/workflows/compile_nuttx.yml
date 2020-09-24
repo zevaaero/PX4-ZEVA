@@ -65,15 +65,15 @@ jobs:
 
     - name: make ${{matrix.config}}
       run: make ${{matrix.config}}
-    - name: Upload px4 binary
-      uses: actions/upload-artifact@v2
-      with:
-        name: nuttx-binaries
-        path: |
-          build/${{matrix.config}}/*.elf
-          build/${{matrix.config}}/*.map
-          build/${{matrix.config}}/*.px4
-          build/${{matrix.config}}/*.bin
+    #- name: Upload px4 binary
+      #uses: actions/upload-artifact@v2
+      #with:
+        #name: nuttx-binaries
+        #path: |
+          #build/${{matrix.config}}/*.elf
+          #build/${{matrix.config}}/*.map
+          #build/${{matrix.config}}/*.px4
+          #build/${{matrix.config}}/*.bin
     - name: make ${{matrix.config}} bloaty_compileunits
       run: make ${{matrix.config}} bloaty_compileunits || true
     - name: make ${{matrix.config}} bloaty_inlines
