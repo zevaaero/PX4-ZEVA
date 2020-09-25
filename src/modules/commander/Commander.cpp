@@ -54,6 +54,7 @@
 #include "commander_helper.h"
 #include "esc_calibration.h"
 #include "gyro_calibration.h"
+#include "level_calibration.h"
 #include "mag_calibration.h"
 #include "px4_custom_mode.h"
 #include "rc_calibration.h"
@@ -99,6 +100,8 @@ static orb_advert_t mavlink_log_pub = nullptr;
 /* flags */
 static volatile bool thread_should_exit = false;	/**< daemon exit flag */
 static volatile bool thread_running = false;		/**< daemon status flag */
+
+
 
 static struct vehicle_status_s status = {};
 static struct actuator_armed_s armed = {};
@@ -254,15 +257,27 @@ extern "C" __EXPORT int commander_main(int argc, char *argv[])
 				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
 
 			} else if (!strcmp(argv[2], "mag")) {
-				// magnetometer calibration: param2 = 1
-				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f);
+				if (argc > 3 && (strcmp(argv[3], "quick") == 0)) {
+					// magnetometer quick calibration: VEHICLE_CMD_FIXED_MAG_CAL_YAW
+					send_vehicle_command(vehicle_command_s::VEHICLE_CMD_FIXED_MAG_CAL_YAW);
+
+				} else {
+					// magnetometer calibration: param2 = 1
+					send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 0.f);
+				}
 
 			} else if (!strcmp(argv[2], "accel")) {
-				// accelerometer calibration: param5 = 1
-				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f);
+				if (argc > 3 && (strcmp(argv[3], "quick") == 0)) {
+					// accelerometer quick calibration: param5 = 3
+					send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 0.f, 0.f, 0.f, 0.f, 4.f, 0.f, 0.f);
+
+				} else {
+					// accelerometer calibration: param5 = 1
+					send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f);
+				}
 
 			} else if (!strcmp(argv[2], "level")) {
-				// board level calibration: param5 = 1
+				// board level calibration: param5 = 2
 				send_vehicle_command(vehicle_command_s::VEHICLE_CMD_PREFLIGHT_CALIBRATION, 0.f, 0.f, 0.f, 0.f, 2.f, 0.f, 0.f);
 
 			} else if (!strcmp(argv[2], "airspeed")) {
@@ -1101,6 +1116,8 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ROI_LOCATION:
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ROI_WPNEXT_OFFSET:
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ROI_NONE:
+	case vehicle_command_s::VEHICLE_CMD_FIXED_MAG_CAL_YAW:
+	case vehicle_command_s::VEHICLE_CMD_INJECT_FAILURE:
 		/* ignore commands that are handled by other parts of the system */
 		break;
 
@@ -1325,7 +1342,7 @@ Commander::run()
 	/* initialize low priority thread */
 	pthread_attr_t commander_low_prio_attr;
 	pthread_attr_init(&commander_low_prio_attr);
-	pthread_attr_setstacksize(&commander_low_prio_attr, PX4_STACK_ADJUSTED(3000));
+	pthread_attr_setstacksize(&commander_low_prio_attr, PX4_STACK_ADJUSTED(3304));
 
 #ifndef __PX4_QURT
 	// This is not supported by QURT (yet).
@@ -1473,8 +1490,6 @@ Commander::run()
 
 #endif // BOARD_HAS_POWER_CONTROL
 
-		_manual_control_setpoint_sub.update(&_manual_control_setpoint);
-
 		offboard_control_update();
 
 		if (_system_power_sub.updated()) {
@@ -1621,7 +1636,6 @@ Commander::run()
 		/* Update land detector */
 		if (_land_detector_sub.updated()) {
 			_was_landed = _land_detector.landed;
-			bool was_falling = _land_detector.freefall;
 			_land_detector_sub.copy(&_land_detector);
 
 			// Only take actions if armed
@@ -1640,12 +1654,6 @@ Commander::run()
 						_gpos_probation_time_us = _param_com_pos_fs_prob.get() * 1_s;
 						_lpos_probation_time_us = _param_com_pos_fs_prob.get() * 1_s;
 						_lvel_probation_time_us = _param_com_pos_fs_prob.get() * 1_s;
-					}
-				}
-
-				if (was_falling != _land_detector.freefall) {
-					if (_land_detector.freefall) {
-						mavlink_log_info(&mavlink_log_pub, "Freefall detected");
 					}
 				}
 			}
@@ -1674,7 +1682,15 @@ Commander::run()
 			}
 
 			// Auto disarm after 5 seconds if kill switch is engaged
-			_auto_disarm_killed.set_state_and_update(armed.manual_lockdown || armed.lockdown, hrt_absolute_time());
+			bool auto_disarm = armed.manual_lockdown;
+
+			// auto disarm if locked down to avoid user confusion
+			//  skipped in HITL where lockdown is enabled for safety
+			if (status.hil_state != vehicle_status_s::HIL_STATE_ON) {
+				auto_disarm |= armed.lockdown;
+			}
+
+			_auto_disarm_killed.set_state_and_update(auto_disarm, hrt_absolute_time());
 
 			if (_auto_disarm_killed.get_state()) {
 				if (armed.manual_lockdown) {
@@ -1768,6 +1784,10 @@ Commander::run()
 				}
 			}
 		}
+
+		// update manual_control_setpoint before geofence (which might check sticks or switches)
+		_manual_control_setpoint_sub.update(&_manual_control_setpoint);
+
 
 		/* start geofence result check */
 		_geofence_result_sub.update(&_geofence_result);
@@ -2108,12 +2128,16 @@ Commander::run()
 			/* no else case: do not change lockdown flag in unconfigured case */
 
 		} else {
-			if (!status_flags.rc_input_blocked && !status.rc_signal_lost && status_flags.rc_signal_found_once) {
-				mavlink_log_critical(&mavlink_log_pub, "Manual control lost");
-				status.rc_signal_lost = true;
-				_rc_signal_lost_timestamp = _manual_control_setpoint.timestamp;
-				set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_RCRECEIVER, true, true, false, status);
-				_status_changed = true;
+			// set RC lost
+			if (status_flags.rc_signal_found_once && !status.rc_signal_lost) {
+				// ignore RC lost during calibration
+				if (!status_flags.condition_calibration_enabled && !status_flags.rc_input_blocked) {
+					mavlink_log_critical(&mavlink_log_pub, "Manual control lost");
+					status.rc_signal_lost = true;
+					_rc_signal_lost_timestamp = _manual_control_setpoint.timestamp;
+					set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_RCRECEIVER, true, true, false, status);
+					_status_changed = true;
+				}
 			}
 		}
 
@@ -2200,9 +2224,14 @@ Commander::run()
 		/* handle commands last, as the system needs to be updated to handle them */
 		if (_cmd_sub.updated()) {
 			/* got command */
+			const unsigned last_generation = _cmd_sub.get_last_generation();
 			vehicle_command_s cmd;
 
 			if (_cmd_sub.copy(&cmd)) {
+				if (_cmd_sub.get_last_generation() != last_generation + 1) {
+					PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, _cmd_sub.get_last_generation());
+				}
+
 				if (handle_command(&status, cmd, &armed, _command_ack_pub)) {
 					_status_changed = true;
 				}
@@ -3514,6 +3543,11 @@ void *commander_low_prio_loop(void *arg)
 							answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED, command_ack_pub);
 							calib_ret = do_level_calibration(&mavlink_log_pub);
 
+						} else if ((int)(cmd.param5) == 4) {
+							// accelerometer quick calibration
+							answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED, command_ack_pub);
+							calib_ret = do_accel_calibration_quick(&mavlink_log_pub);
+
 						} else if ((int)(cmd.param6) == 1 || (int)(cmd.param6) == 2) {
 							// TODO: param6 == 1 is deprecated, but we still accept it for a while (feb 2017)
 							/* airspeed calibration */
@@ -3560,6 +3594,47 @@ void *commander_low_prio_loop(void *arg)
 										(cmd.from_external ? arm_disarm_reason_t::COMMAND_EXTERNAL : arm_disarm_reason_t::COMMAND_INTERNAL));
 
 						} else {
+							tune_negative(true);
+						}
+					}
+
+					break;
+				}
+
+			case vehicle_command_s::VEHICLE_CMD_FIXED_MAG_CAL_YAW: {
+					// Magnetometer quick calibration using world magnetic model and known heading
+					if ((status.arming_state == vehicle_status_s::ARMING_STATE_ARMED)
+					    || (status.arming_state == vehicle_status_s::ARMING_STATE_SHUTDOWN)
+					    || status_flags.condition_calibration_enabled) {
+
+						// reject if armed or shutting down
+						answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED, command_ack_pub);
+
+					} else {
+						// parameter 1: Yaw in degrees
+						// parameter 3: Latitude
+						// parameter 4: Longitude
+
+						// assume vehicle pointing north (0 degrees) if heading isn't specified
+						const float heading_radians = PX4_ISFINITE(cmd.param1) ? math::radians(roundf(cmd.param1)) : 0.f;
+
+						float latitude = NAN;
+						float longitude = NAN;
+
+						if (PX4_ISFINITE(cmd.param3) && PX4_ISFINITE(cmd.param4)) {
+							// invalid if both lat & lon are 0 (current mavlink spec)
+							if ((fabsf(cmd.param3) > 0) && (fabsf(cmd.param4) > 0)) {
+								latitude = cmd.param3;
+								longitude = cmd.param4;
+							}
+						}
+
+						if (do_mag_calibration_quick(&mavlink_log_pub, heading_radians, latitude, longitude) == PX4_OK) {
+							answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED, command_ack_pub);
+							tune_positive(true);
+
+						} else {
+							answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_FAILED, command_ack_pub);
 							tune_negative(true);
 						}
 					}
@@ -3719,11 +3794,10 @@ void Commander::mission_init()
 
 void Commander::data_link_check()
 {
-	if (_telemetry_status_sub.updated()) {
-
+	for (auto &telemetry_status :  _telemetry_status_subs) {
 		telemetry_status_s telemetry;
 
-		if (_telemetry_status_sub.copy(&telemetry)) {
+		if (telemetry_status.update(&telemetry)) {
 
 			// handle different radio types
 			switch (telemetry.type) {
@@ -3733,7 +3807,6 @@ void Commander::data_link_check()
 				break;
 
 			case telemetry_status_s::LINK_TYPE_IRIDIUM: {
-
 					iridiumsbd_status_s iridium_status;
 
 					if (_iridiumsbd_status_sub.update(&iridium_status)) {
@@ -3751,79 +3824,79 @@ void Commander::data_link_check()
 				}
 			}
 
-			// handle different remote types
-			switch (telemetry.remote_type) {
-			case telemetry_status_s::MAV_TYPE_GCS:
+			for (const auto &hb : telemetry.heartbeats) {
+				// handle different remote types
+				switch (hb.type) {
+				case telemetry_heartbeat_s::TYPE_GCS:
 
-				// Initial connection or recovery from data link lost
-				if (status.data_link_lost) {
-					if (telemetry.heartbeat_time > _datalink_last_heartbeat_gcs) {
-						status.data_link_lost = false;
-						_status_changed = true;
+					// Initial connection or recovery from data link lost
+					if (status.data_link_lost) {
+						if (hb.timestamp > _datalink_last_heartbeat_gcs) {
+							status.data_link_lost = false;
+							_status_changed = true;
 
-						if (!armed.armed && !status_flags.condition_calibration_enabled) {
-							// make sure to report preflight check failures to a connecting GCS
-							PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags,
-										       _arm_requirements.global_position, true, true, hrt_elapsed_time(&_boot_timestamp));
+							if (!armed.armed && !status_flags.condition_calibration_enabled) {
+								// make sure to report preflight check failures to a connecting GCS
+								PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags,
+											       _arm_requirements.global_position, true, true, hrt_elapsed_time(&_boot_timestamp));
+							}
+
+							if (_datalink_last_heartbeat_gcs != 0) {
+								mavlink_log_info(&mavlink_log_pub, "Data link regained");
+							}
+						}
+					}
+
+					// Only keep the very last heartbeat timestamp, so we don't get confused
+					// by multiple mavlink instances publishing different timestamps.
+					if (hb.timestamp > _datalink_last_heartbeat_gcs) {
+						_datalink_last_heartbeat_gcs = hb.timestamp;
+					}
+
+					break;
+
+				case telemetry_heartbeat_s::TYPE_ONBOARD_CONTROLLER:
+					if (_onboard_controller_lost) {
+						if (hb.timestamp > _datalink_last_heartbeat_onboard_controller) {
+							mavlink_log_info(&mavlink_log_pub, "Onboard controller regained");
+							_onboard_controller_lost = false;
+							_status_changed = true;
+						}
+					}
+
+					_datalink_last_heartbeat_onboard_controller = hb.timestamp;
+
+					if (hb.component_id == telemetry_heartbeat_s::COMP_ID_OBSTACLE_AVOIDANCE) {
+						if (hb.timestamp > _datalink_last_heartbeat_avoidance_system) {
+							_avoidance_system_status_change = (_datalink_last_status_avoidance_system != hb.state);
 						}
 
-						if (_datalink_last_heartbeat_gcs != 0) {
-							mavlink_log_info(&mavlink_log_pub, "Data link regained");
+						_datalink_last_heartbeat_avoidance_system = hb.timestamp;
+						_datalink_last_status_avoidance_system = hb.state;
+
+						if (_avoidance_system_lost) {
+							_status_changed = true;
+							_avoidance_system_lost = false;
+							status_flags.avoidance_system_valid = true;
 						}
 					}
-				}
 
-				// Only keep the very last heartbeat timestamp, so we don't get confused
-				// by multiple mavlink instances publishing different timestamps.
-				if (telemetry.heartbeat_time > _datalink_last_heartbeat_gcs) {
-					_datalink_last_heartbeat_gcs = telemetry.heartbeat_time;
-				}
+					if (hb.component_id == telemetry_heartbeat_s::COMP_ID_LOG) {
+						if (telemetry.timestamp > _datalink_last_heartbeat_logging_system) {
+							if (_logging_system_lost) {
+								mavlink_log_info(&mavlink_log_pub, "Logging system regained");
+								_logging_system_lost = false;
+							}
 
-				break;
-
-			case telemetry_status_s::MAV_TYPE_ONBOARD_CONTROLLER:
-
-				if (_onboard_controller_lost) {
-					if (telemetry.heartbeat_time > _datalink_last_heartbeat_onboard_controller) {
-						mavlink_log_info(&mavlink_log_pub, "Onboard controller regained");
-						_onboard_controller_lost = false;
-						_status_changed = true;
-					}
-
-				}
-
-				_datalink_last_heartbeat_onboard_controller = telemetry.heartbeat_time;
-
-				if (telemetry.remote_component_id == telemetry_status_s::COMPONENT_ID_LOG) {
-					if (telemetry.heartbeat_time > _datalink_last_heartbeat_logging_system) {
-						if (_logging_system_lost) {
-							mavlink_log_info(&mavlink_log_pub, "Logging system regained");
-							_logging_system_lost = false;
+							_status_changed = true;
+							status_flags.onboard_logging_system_valid = true;
 						}
 
-						_status_changed = true;
-						status_flags.onboard_logging_system_valid = true;
+						_datalink_last_heartbeat_logging_system = telemetry.timestamp;
 					}
 
-					_datalink_last_heartbeat_logging_system = telemetry.heartbeat_time;
+					break;
 				}
-
-				if (telemetry.remote_component_id == telemetry_status_s::COMPONENT_ID_OBSTACLE_AVOIDANCE) {
-					if (telemetry.heartbeat_time != _datalink_last_heartbeat_avoidance_system) {
-						_avoidance_system_status_change = _datalink_last_status_avoidance_system != telemetry.remote_system_status;
-					}
-
-					_datalink_last_heartbeat_avoidance_system = telemetry.heartbeat_time;
-					_datalink_last_status_avoidance_system = telemetry.remote_system_status;
-
-					if (_avoidance_system_lost) {
-						_status_changed = true;
-						_avoidance_system_lost = false;
-						status_flags.avoidance_system_valid = true;
-					}
-				}
-
-				break;
 			}
 		}
 	}
@@ -3831,7 +3904,7 @@ void Commander::data_link_check()
 
 	// GCS data link loss failsafe
 	if (!status.data_link_lost) {
-		if (_datalink_last_heartbeat_gcs != 0
+		if ((_datalink_last_heartbeat_gcs != 0)
 		    && hrt_elapsed_time(&_datalink_last_heartbeat_gcs) > (_param_com_dl_loss_t.get() * 1_s)) {
 
 			status.data_link_lost = true;
@@ -3870,26 +3943,27 @@ void Commander::data_link_check()
 		//if heartbeats stop
 		if (!_avoidance_system_lost && (_datalink_last_heartbeat_avoidance_system > 0)
 		    && (hrt_elapsed_time(&_datalink_last_heartbeat_avoidance_system) > 5_s)) {
+
 			_avoidance_system_lost = true;
 			status_flags.avoidance_system_valid = false;
 		}
 
 		//if status changed
 		if (_avoidance_system_status_change) {
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_BOOT) {
+			if (_datalink_last_status_avoidance_system == telemetry_heartbeat_s::STATE_BOOT) {
 				status_flags.avoidance_system_valid = false;
 			}
 
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_ACTIVE) {
+			if (_datalink_last_status_avoidance_system == telemetry_heartbeat_s::STATE_ACTIVE) {
 				status_flags.avoidance_system_valid = true;
 			}
 
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_CRITICAL) {
+			if (_datalink_last_status_avoidance_system == telemetry_heartbeat_s::STATE_CRITICAL) {
 				status_flags.avoidance_system_valid = false;
 				_status_changed = true;
 			}
 
-			if (_datalink_last_status_avoidance_system == telemetry_status_s::MAV_STATE_FLIGHT_TERMINATION) {
+			if (_datalink_last_status_avoidance_system == telemetry_heartbeat_s::STATE_FLIGHT_TERMINATION) {
 				status_flags.avoidance_system_valid = false;
 				_status_changed = true;
 			}
@@ -3914,14 +3988,13 @@ void Commander::data_link_check()
 
 void Commander::avoidance_check()
 {
+	for (auto &dist_sens_sub : _distance_sensor_subs) {
+		distance_sensor_s distance_sensor;
 
-	for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
-		if (_sub_distance_sensor[i].updated()) {
-			distance_sensor_s distance_sensor {};
-			_sub_distance_sensor[i].copy(&distance_sensor);
-
+		if (dist_sens_sub.update(&distance_sensor)) {
 			if ((distance_sensor.orientation != distance_sensor_s::ROTATION_DOWNWARD_FACING) &&
 			    (distance_sensor.orientation != distance_sensor_s::ROTATION_UPWARD_FACING)) {
+
 				_valid_distance_sensor_time_us = distance_sensor.timestamp;
 			}
 		}
@@ -3951,26 +4024,22 @@ void Commander::avoidance_check()
 
 void Commander::battery_status_check()
 {
-	bool battery_sub_updated = false;
+	// We need to update the status flag if ANY battery is updated, because the system source might have
+	// changed, or might be nothing (if there is no battery connected)
+	if (!_battery_status_subs.updated()) {
+		// Nothing has changed since the last time this function was called, so nothing needs to be done now.
+		return;
+	}
 
-	battery_status_s batteries[ORB_MULTI_MAX_INSTANCES];
+	battery_status_s batteries[_battery_status_subs.size()];
 	size_t num_connected_batteries = 0;
 
-	for (size_t i = 0; i < sizeof(_battery_subs) / sizeof(_battery_subs[0]); i++) {
-		// We need to update the status flag if ANY battery is updated, because the system source might have
-		// changed, or might be nothing (if there is no battery connected)
-		battery_sub_updated |= _battery_subs[i].updated();
-
-		if (_battery_subs[i].copy(&batteries[num_connected_batteries])) {
+	for (auto &battery_sub : _battery_status_subs) {
+		if (battery_sub.copy(&batteries[num_connected_batteries])) {
 			if (batteries[num_connected_batteries].connected) {
 				num_connected_batteries++;
 			}
 		}
-	}
-
-	if (!battery_sub_updated) {
-		// Nothing has changed since the last time this function was called, so nothing needs to be done now.
-		return;
 	}
 
 	// There are possibly multiple batteries, and we can't know which ones serve which purpose. So the safest
@@ -4350,6 +4419,7 @@ The commander module contains the state machine for mode switching and failsafe 
 #ifndef CONSTRAINED_FLASH
 	PRINT_MODULE_USAGE_COMMAND_DESCR("calibrate", "Run sensor calibration");
 	PRINT_MODULE_USAGE_ARG("mag|accel|gyro|level|esc|airspeed", "Calibration type", false);
+	PRINT_MODULE_USAGE_ARG("quick", "Quick calibration (accel only, not recommended)", false);
 	PRINT_MODULE_USAGE_COMMAND_DESCR("check", "Run preflight checks");
 	PRINT_MODULE_USAGE_COMMAND("arm");
 	PRINT_MODULE_USAGE_PARAM_FLAG('f', "Force arming (do not run preflight checks)", true);

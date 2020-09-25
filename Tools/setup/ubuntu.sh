@@ -11,8 +11,6 @@
 ## Not Installs:
 ## - FastRTPS and FastCDR
 
-set -e
-
 INSTALL_NUTTX="true"
 INSTALL_SIM="true"
 
@@ -53,15 +51,15 @@ fi
 
 
 # check ubuntu version
-# instructions for 16.04, 18.04, 20.04
 # otherwise warn and point to docker?
 UBUNTU_RELEASE="`lsb_release -rs`"
 
 if [[ "${UBUNTU_RELEASE}" == "14.04" ]]; then
-	echo "Ubuntu 14.04 unsupported, see docker px4io/px4-dev-base"
+	echo "Ubuntu 14.04 is no longer supported"
 	exit 1
 elif [[ "${UBUNTU_RELEASE}" == "16.04" ]]; then
-	echo "Ubuntu 16.04"
+	echo "Ubuntu 16.04 is no longer supported"
+	exit 1
 elif [[ "${UBUNTU_RELEASE}" == "18.04" ]]; then
 	echo "Ubuntu 18.04"
 elif [[ "${UBUNTU_RELEASE}" == "20.04" ]]; then
@@ -137,7 +135,8 @@ if [[ $INSTALL_NUTTX == "true" ]]; then
 	fi
 
 	# arm-none-eabi-gcc
-	NUTTX_GCC_VERSION="7-2017-q4-major"
+	NUTTX_GCC_VERSION="9-2020-q2-update"
+	NUTTX_GCC_VERSION_SHORT="9-2020q2"
 
 	source $HOME/.profile # load changed path for the case the script is reran before relogin
 	if [ $(which arm-none-eabi-gcc) ]; then
@@ -150,7 +149,7 @@ if [[ $INSTALL_NUTTX == "true" ]]; then
 
 	else
 		echo "Installing arm-none-eabi-gcc-${NUTTX_GCC_VERSION}";
-		wget -O /tmp/gcc-arm-none-eabi-${NUTTX_GCC_VERSION}-linux.tar.bz2 https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/7-2017q4/gcc-arm-none-eabi-${NUTTX_GCC_VERSION}-linux.tar.bz2 && \
+		wget -O /tmp/gcc-arm-none-eabi-${NUTTX_GCC_VERSION}-linux.tar.bz2 https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/${NUTTX_GCC_VERSION_SHORT}/gcc-arm-none-eabi-${NUTTX_GCC_VERSION}-x86_64-linux.tar.bz2 && \
 			sudo tar -jxf /tmp/gcc-arm-none-eabi-${NUTTX_GCC_VERSION}-linux.tar.bz2 -C /opt/;
 
 		# add arm-none-eabi-gcc to user's PATH
@@ -175,20 +174,29 @@ if [[ $INSTALL_SIM == "true" ]]; then
 		bc \
 		;
 
-	# Java 8 (jmavsim or fastrtps)
+	if [[ "${UBUNTU_RELEASE}" == "18.04" ]]; then
+		java_version=11
+	elif [[ "${UBUNTU_RELEASE}" == "20.04" ]]; then
+		java_version=14
+	else
+		java_version=14
+	fi
+	# Java (jmavsim or fastrtps)
 	sudo DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
 		ant \
-		openjdk-8-jre \
-		openjdk-8-jdk \
+		openjdk-$java_version-jre \
+		openjdk-$java_version-jdk \
+		libvecmath-java \
 		;
 
-	# Set Java 8 as default
-	sudo update-alternatives --set java $(update-alternatives --list java | grep "java-8")
+	# Set Java 11 as default
+	sudo update-alternatives --set java $(update-alternatives --list java | grep "java-$java_version")
 
 	# Gazebo
 	sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
 	wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
 	sudo DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
+		dmidecode \
 		gazebo9 \
 		gstreamer1.0-plugins-bad \
 		gstreamer1.0-plugins-base \

@@ -69,7 +69,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             }
           }
@@ -143,7 +143,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -216,7 +216,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -290,7 +290,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -365,7 +365,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -440,7 +440,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -513,7 +513,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -588,7 +588,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -661,7 +661,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -740,7 +740,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -813,80 +813,7 @@ pipeline {
                 }
               }
               options {
-                timeout(time: 60, unit: 'MINUTES')
-              }
-            } // stage test
-          }
-        }
-
-        stage("mro_ctrl-zero-f7_default") {
-          stages {
-            stage("build mro_ctrl-zero-f7_default") {
-              agent {
-                docker {
-                  image 'px4io/px4-dev-nuttx-bionic:2020-04-01'
-                  args '-e CCACHE_BASEDIR=$WORKSPACE -v ${CCACHE_DIR}:${CCACHE_DIR}:rw'
-                }
-              }
-              steps {
-                sh 'export'
-                sh 'make distclean'
-                sh 'ccache -s'
-                sh 'git fetch --tags'
-                sh 'make mro_ctrl-zero-f7_default'
-                sh 'make sizes'
-                sh 'ccache -s'
-                stash includes: 'build/mro_ctrl-zero-f7_default/mro_ctrl-zero-f7_default.elf', name: 'mro_ctrl-zero-f7_default'
-              }
-              post {
-                always {
-                    sh 'make distclean'
-                }
-              }
-            } // stage build
-            stage("test") {
-              agent {
-                label 'mro_ctrl-zero-f7'
-              }
-              stages {
-                stage("flash") {
-                  steps {
-                    sh 'export'
-                    sh 'find /dev/serial'
-                    unstash 'mro_ctrl-zero-f7_default'
-                    // flash board and watch bootup
-                    sh './platforms/nuttx/Debug/upload_jlink_gdb.sh build/mro_ctrl-zero-f7_default/mro_ctrl-zero-f7_default.elf'
-                    sh './Tools/HIL/monitor_firmware_upload.py --device `find /dev/serial -name *usb-FTDI_*` --baudrate 57600'
-                  }
-                }
-                // stage("configure") {
-                //   steps {
-                //     // configure
-                //     sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "param set CBRK_BUZZER 782097"'  // disable buzzer
-                //     sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "param set SYS_AUTOSTART 4001"'  // generic multicopter
-                //     sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "param save"'
-                //     sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "reboot"'                        // reboot to apply
-                //   }
-                // }
-                // stage("status") {
-                //   steps {
-                //     statusFTDI()
-                //   }
-                // }
-                // stage("tests") {
-                //   steps {
-                //     // run tests
-                //     sh './Tools/HIL/run_tests.py --device `find /dev/serial -name *usb-FTDI_*` || true' // ignore failures for now (flaky console on test rack)
-                //   }
-                // }
-                // stage("reset") {
-                //   steps {
-                //     cleanupFTDI();
-                //   }
-                // }
-              }
-              options {
-                timeout(time: 60, unit: 'MINUTES')
+                timeout(time: 90, unit: 'MINUTES')
               }
             } // stage test
           }
@@ -901,7 +828,7 @@ pipeline {
   }
   options {
     buildDiscarder(logRotator(numToKeepStr: '20', artifactDaysToKeepStr: '40'))
-    timeout(time: 60, unit: 'MINUTES')
+    timeout(time: 90, unit: 'MINUTES')
   }
 }
 
@@ -912,8 +839,10 @@ void statusFTDI() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "adc test"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "commander check"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "commander status"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "commander calibrate accel quick; sleep 2; param show CAL_ACC*"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "commander calibrate gyro; sleep 2; param show CAL_GYRO*"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "commander calibrate level; sleep 2; param show SENS_BOARD*"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "commander calibrate mag quick; sleep 2; param show CAL_MAG*"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "dataman status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "df"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "dmesg"'
@@ -922,6 +851,9 @@ void statusFTDI() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "gps status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener adc_report"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener battery_status"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener cpuload"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener estimator_sensor"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener estimator_sensor_bias"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener logger_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener sensor_accel"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener sensor_accel_fifo"'
@@ -930,12 +862,17 @@ void statusFTDI() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener sensor_gyro"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener sensor_gyro_fifo"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener sensor_mag"'
-  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener servorail_status"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener sensors_status_imu"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener px4io_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener system_power"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_air_data"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_angular_acceleration"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_angular_velocity"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_attitude"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_imu"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_imu_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_local_position"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener vehicle_magnetometer"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "logger status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "ls /"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "ls /dev"'
@@ -959,7 +896,7 @@ void statusFTDI() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "px4io status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "sd_bench -r 2"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "sensors status"'
-  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "top once"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "listener cpuload; top once; listener cpuload"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "uorb status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "uorb top -1 -a"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-FTDI_*` --cmd "ver all"'
@@ -975,8 +912,10 @@ void statusSEGGER() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "adc test"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "commander check"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "commander status"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "commander calibrate accel quick; sleep 2; param show CAL_ACC*"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "commander calibrate gyro; sleep 2; param show CAL_GYRO*"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "commander calibrate level; sleep 2; param show SENS_BOARD*"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "commander calibrate mag quick; sleep 2; param show CAL_MAG*"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "dataman status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "df -h"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "dmesg"'
@@ -985,6 +924,9 @@ void statusSEGGER() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "gps status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener adc_report"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener battery_status"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener cpuload"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener estimator_sensor_bias"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener estimator_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener logger_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener sensor_accel"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener sensor_accel_fifo"'
@@ -993,12 +935,17 @@ void statusSEGGER() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener sensor_gyro"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener sensor_gyro_fifo"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener sensor_mag"'
-  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener servorail_status"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener sensors_status_imu"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener px4io_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener system_power"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_air_data"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_angular_acceleration"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_angular_velocity"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_attitude"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_imu"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_imu_status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_local_position"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener vehicle_magnetometer"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "logger status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "ls /"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "ls /dev"'
@@ -1022,7 +969,7 @@ void statusSEGGER() {
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "px4io status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "sd_bench -r 2"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "sensors status"'
-  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "top once"'
+  sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "listener cpuload; top once; listener cpuload"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "uorb status"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "uorb top -1 -a"'
   sh './Tools/HIL/run_nsh_cmd.py --device `find /dev/serial -name *usb-SEGGER_*` --cmd "ver all"'

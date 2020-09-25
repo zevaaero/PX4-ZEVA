@@ -47,7 +47,7 @@ FlightTaskManualAcceleration::FlightTaskManualAcceleration() :
 	_stick_acceleration_xy(this)
 {};
 
-bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s last_setpoint)
+bool FlightTaskManualAcceleration::activate(const vehicle_local_position_setpoint_s &last_setpoint)
 {
 	bool ret = FlightTaskManualAltitudeSmoothVel::activate(last_setpoint);
 

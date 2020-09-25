@@ -49,7 +49,7 @@ class FlightTaskAutoMapper : public FlightTaskAuto
 public:
 	FlightTaskAutoMapper();
 	virtual ~FlightTaskAutoMapper() = default;
-	bool activate(vehicle_local_position_setpoint_s last_setpoint) override;
+	bool activate(const vehicle_local_position_setpoint_s &last_setpoint) override;
 	bool update() override;
 
 protected:
@@ -81,7 +81,6 @@ private:
 	Sticks _sticks;
 	StickAccelerationXY _stick_acceleration_xy;
 	matrix::Vector3f _land_position;
-
 	void _reset(); /**< Resets member variables to current vehicle state */
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */

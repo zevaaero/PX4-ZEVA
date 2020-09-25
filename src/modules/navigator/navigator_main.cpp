@@ -232,8 +232,13 @@ Navigator::run()
 		_home_pos_sub.update(&_home_pos);
 
 		if (_vehicle_command_sub.updated()) {
+			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
 			vehicle_command_s cmd{};
 			_vehicle_command_sub.copy(&cmd);
+
+			if (_vehicle_command_sub.get_last_generation() != last_generation + 1) {
+				PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, _vehicle_command_sub.get_last_generation());
+			}
 
 			if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_GO_AROUND) {
 
@@ -1028,7 +1033,7 @@ Navigator::get_cruising_throttle()
 		return _mission_throttle;
 
 	} else {
-		return -1.0f;
+		return NAN;
 	}
 }
 
