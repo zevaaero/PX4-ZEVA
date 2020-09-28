@@ -131,8 +131,8 @@ FixedwingPositionControl::parameters_update()
 	if ((_param_fw_airspd_max.get() < _param_fw_airspd_min.get()) ||
 	    (_param_fw_airspd_max.get() < 5.0f) ||
 	    (_param_fw_airspd_min.get() > 100.0f) ||
-	    (_param_fw_airspd_trim.get() < _param_fw_airspd_min.get()) ||
-	    (_param_fw_airspd_trim.get() > _param_fw_airspd_max.get())) {
+	    (_param_fw_airspd_cruise.get() < _param_fw_airspd_min.get()) ||
+	    (_param_fw_airspd_cruise.get() > _param_fw_airspd_max.get())) {
 
 		mavlink_log_critical(&_mavlink_log_pub, "Airspeed parameters invalid");
 
@@ -252,13 +252,13 @@ FixedwingPositionControl::get_demanded_airspeed()
 	if (_manual_control_setpoint_airspeed < 0.5f) {
 		// lower half of throttle is min to trim airspeed
 		altctrl_airspeed = _param_fw_airspd_min.get() +
-				   (_param_fw_airspd_trim.get() - _param_fw_airspd_min.get()) *
+				   (_param_fw_airspd_cruise.get() - _param_fw_airspd_min.get()) *
 				   _manual_control_setpoint_airspeed * 2;
 
 	} else {
 		// upper half of throttle is trim to max airspeed
-		altctrl_airspeed = _param_fw_airspd_trim.get() +
-				   (_param_fw_airspd_max.get() - _param_fw_airspd_trim.get()) *
+		altctrl_airspeed = _param_fw_airspd_cruise.get() +
+				   (_param_fw_airspd_max.get() - _param_fw_airspd_cruise.get()) *
 				   (_manual_control_setpoint_airspeed * 2 - 1);
 	}
 
@@ -698,7 +698,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		_att_sp.pitch_reset_integral = false;
 		_att_sp.yaw_reset_integral = false;
 
-		float mission_airspeed = _param_fw_airspd_trim.get();
+		float mission_airspeed = _param_fw_airspd_cruise.get();
 
 		if (PX4_ISFINITE(pos_sp_curr.cruising_speed) &&
 		    pos_sp_curr.cruising_speed > 0.1f) {
@@ -1215,7 +1215,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2f
 			if (_param_fw_clmbout_diff.get() > 0.0f && altitude_error > _param_fw_clmbout_diff.get()) {
 				/* enforce a minimum of 10 degrees pitch up on takeoff, or take parameter */
 				tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-							   _param_fw_airspd_trim.get(),
+							   _param_fw_airspd_cruise.get(),
 							   radians(_param_fw_p_lim_min.get()),
 							   radians(takeoff_pitch_max_deg),
 							   _param_fw_thr_min.get(),
@@ -1230,7 +1230,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2f
 
 			} else {
 				tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-							   calculate_target_airspeed(_param_fw_airspd_trim.get(), ground_speed),
+							   calculate_target_airspeed(_param_fw_airspd_cruise.get(), ground_speed),
 							   radians(_param_fw_p_lim_min.get()),
 							   radians(_param_fw_p_lim_max.get()),
 							   _param_fw_thr_min.get(),

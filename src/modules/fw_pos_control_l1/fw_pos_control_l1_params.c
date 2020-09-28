@@ -418,10 +418,9 @@ PARAM_DEFINE_FLOAT(FW_LND_THRTC_SC, 1.0f);
 
 
 /**
- * Minimum Airspeed
+ * Minimum airspeed setpoint
  *
- * If the airspeed falls below this value, the TECS controller will try to
- * increase airspeed more aggressively.
+ * The minimum airpseed that can be set via sticks or position setpoints.
  *
  * @unit m/s
  * @min 0.0
@@ -433,10 +432,9 @@ PARAM_DEFINE_FLOAT(FW_LND_THRTC_SC, 1.0f);
 PARAM_DEFINE_FLOAT(FW_AIRSPD_MIN, 10.0f);
 
 /**
- * Maximum Airspeed
+ * Maximum airspeed setpoint
  *
- * If the airspeed is above this value, the TECS controller will try to decrease
- * airspeed more aggressively.
+ * The maximum airpseed that can be set via sticks or position setpoints.
  *
  * @unit m/s
  * @min 0.0
@@ -448,9 +446,9 @@ PARAM_DEFINE_FLOAT(FW_AIRSPD_MIN, 10.0f);
 PARAM_DEFINE_FLOAT(FW_AIRSPD_MAX, 20.0f);
 
 /**
- * Cruise Airspeed
+ * Cruise airspeed setpoint
  *
- * The fixed wing controller tries to fly at this airspeed.
+ * The default cruise airspeed setpoint if level and no other airspeed setpoint is provided.
  *
  * @unit m/s
  * @min 0.0
@@ -459,7 +457,7 @@ PARAM_DEFINE_FLOAT(FW_AIRSPD_MAX, 20.0f);
  * @increment 0.5
  * @group FW TECS
  */
-PARAM_DEFINE_FLOAT(FW_AIRSPD_TRIM, 15.0f);
+PARAM_DEFINE_FLOAT(FW_AIRSPD_CRUISE, 15.0f);
 
 /**
  * Maximum climb rate

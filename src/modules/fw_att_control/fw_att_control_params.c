@@ -553,6 +553,21 @@ PARAM_DEFINE_INT32(FW_ARSP_MODE, 0);
 PARAM_DEFINE_INT32(FW_ARSP_SCALE_EN, 1);
 
 /**
+ * Trim airspeed
+ *
+ * The (calibrated) airspeed around which the airspeed scaling is applied
+ * (scaling = FW_AIRSPD_TRIM / calibrated_airspeed).
+ *
+ * @unit m/s
+ * @min 0.0
+ * @max 40
+ * @decimal 1
+ * @increment 0.5
+ * @group FW Attitude Control
+ */
+PARAM_DEFINE_FLOAT(FW_AIRSPD_TRIM, 15.0f);
+
+/**
  * Manual roll scale
  *
  * Scale factor applied to the desired roll actuator command in full manual mode. This parameter allows
