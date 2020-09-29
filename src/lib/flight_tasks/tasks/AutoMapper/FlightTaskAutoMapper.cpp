@@ -146,12 +146,41 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 		_stick_acceleration_xy.resetPosition(); // don't fall back to the last internal land position state
 	}
 
+	// save the first time that the vehicle is below the mpc_land_alt1, such that we can limit the landing duration if required
+	if (_dist_to_ground > _param_mpc_land_alt1.get()) {
+		_below_alt1_prev = false;
+
+	} else {
+		if (!_below_alt1_prev) {
+			_time_first_below_alt1 = hrt_absolute_time();
+			_below_alt1_prev = true;
+		}
+	}
+
 	// User input assisted landing
 	if (_param_mpc_land_rc_help.get()
 	    && (_dist_to_ground < _param_mpc_land_alt1.get())
 	    && _sticks.checkAndSetStickInputs(_time_stamp_current)) {
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		land_speed *= (1 + _sticks.getPositionExpo()(2));
+
+		// constrain landing duration if MPC_LAND_MAX_DUR is set to a positive value
+		if (_param_mpc_land_max_dur.get() > FLT_EPSILON) {
+			const float time_landing_elapsed = hrt_elapsed_time(&_time_first_below_alt1) * 1e-6f;
+			const float time_remaining = _param_mpc_land_max_dur.get() - time_landing_elapsed;
+
+			// current land speed average (descended altitude divided by duration)
+			const float v_avg_cur = (_param_mpc_land_alt1.get() - _dist_to_ground) / math::max(time_landing_elapsed, 0.01f);
+
+			// minimal land speed to meet time limit
+			const float v_avg_min = _dist_to_ground / math::max(time_remaining, 0.01f);
+
+			// check if we currently (in average) descend slower than we should to meet max land duration
+			if (v_avg_cur < v_avg_min) {
+				// constrain to be between minimal land speed to meet time limit and max double land speed
+				land_speed = math::constrain(land_speed, v_avg_min, 2.f * _param_mpc_land_speed.get());
+			}
+		}
 
 		_stick_acceleration_xy.generateSetpoints(_sticks.getPositionExpo().slice<2, 1>(0, 0), _yaw, _yaw_setpoint, _position,
 				_deltatime);
