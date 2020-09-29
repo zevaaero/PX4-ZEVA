@@ -221,9 +221,23 @@ class GzmodelspawnRunner(Runner):
                     workspace_dir + "/Tools/sitl_gazebo/models"}
         self.add_to_env_if_set("DISPLAY")
         self.cmd = "gz"
-        self.args = ["model", "--spawn-file", workspace_dir +
-                     "/Tools/sitl_gazebo/models/" +
-                     self.model + "/" + self.model + ".sdf",
+
+        if os.path.isfile(workspace_dir +
+                          "/Tools/sitl_gazebo/models/" +
+                          self.model + "/" + self.model + ".sdf"):
+            model_path = workspace_dir + \
+                "/Tools/sitl_gazebo/models/" + \
+                self.model + "/" + self.model + ".sdf"
+        elif os.path.isfile(workspace_dir +
+                            "/Tools/sitl_gazebo/models/" +
+                            self.model + "/" + self.model + "-gen.sdf"):
+            model_path = workspace_dir + \
+                "/Tools/sitl_gazebo/models/" + \
+                self.model + "/" + self.model + "-gen.sdf"
+        else:
+            raise Exception("Model not found")
+
+        self.args = ["model", "--spawn-file", model_path,
                      "--model-name", self.model,
                      "-x", "1.01", "-y", "0.98", "-z", "0.83"]
 
