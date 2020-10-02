@@ -33,6 +33,8 @@
 
 px4_add_romfs_files(
 	10016_iris
+	10017_quadrotor_x
+	10018_hexarotor_x
 	10020_if750a
 	10020_if750a.post
 	10030_px4vision
@@ -61,6 +63,9 @@ px4_add_romfs_files(
 	1040_standard_vtol
 	1041_tailsitter
 	1042_tiltrotor
+	1043_tiltrotor_tri
+	1044_standard_vtol_gimbal
+	1044_standard_vtol_gimbal.post
 	1060_rover
 	1061_r1_rover
 	1062_tf-r1
