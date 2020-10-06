@@ -151,27 +151,6 @@ MissionBlock::is_mission_item_reached()
 				_navigator->get_global_position()->alt,
 				&dist_xy, &dist_z);
 
-		/* FW special case for NAV_CMD_WAYPOINT to achieve altitude via loiter */
-		if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
-		    (_mission_item.nav_cmd == NAV_CMD_WAYPOINT)) {
-
-			struct position_setpoint_s *curr_sp = &_navigator->get_position_setpoint_triplet()->current;
-
-			/* close to waypoint, but altitude error greater than twice acceptance */
-			if ((dist >= 0.0f)
-			    && (dist_z > 2 * _navigator->get_altitude_acceptance_radius())
-			    && (dist_xy < 1.2f * _navigator->get_loiter_radius())) {
-
-				/* SETPOINT_TYPE_POSITION -> SETPOINT_TYPE_LOITER */
-				if (curr_sp->type == position_setpoint_s::SETPOINT_TYPE_POSITION) {
-					curr_sp->type = position_setpoint_s::SETPOINT_TYPE_LOITER;
-					curr_sp->loiter_radius = _navigator->get_loiter_radius();
-					curr_sp->loiter_direction = 1;
-					_navigator->set_position_setpoint_triplet_updated();
-				}
-			}
-		}
-
 		if ((_mission_item.nav_cmd == NAV_CMD_TAKEOFF || _mission_item.nav_cmd == NAV_CMD_VTOL_TAKEOFF)
 		    && _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 
@@ -213,6 +192,7 @@ MissionBlock::is_mission_item_reached()
 		} else if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
 			   (_mission_item.nav_cmd == NAV_CMD_LOITER_UNLIMITED ||
 			    _mission_item.nav_cmd == NAV_CMD_LOITER_TIME_LIMIT)) {
+
 			/* Loiter mission item on a non rotary wing: the aircraft is going to circle the
 			 * coordinates with a radius equal to the loiter_radius field. It is not flying
 			 * through the waypoint center.
@@ -667,7 +647,7 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 	case NAV_CMD_LOITER_TO_ALT:
 
 		// initially use current altitude, and switch to mission item altitude once in loiter position
-		if (_navigator->get_loiter_min_alt() > 0.0f) { // ignore _param_loiter_min_alt if smaller than 0 (-1)
+		if (_navigator->get_loiter_min_alt() > 0.f) { // ignore _param_loiter_min_alt if smaller than 0 (-1)
 			sp->alt = math::max(_navigator->get_global_position()->alt,
 					    _navigator->get_home_position()->alt + _navigator->get_loiter_min_alt());
 
@@ -677,6 +657,8 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 
 	// fall through
 	case NAV_CMD_LOITER_TIME_LIMIT:
+
+	// FALLTHROUGH
 	case NAV_CMD_LOITER_UNLIMITED:
 
 		/* if in FW, set to LOITER type once close to loiter wp, otherwise set type POSITION */
