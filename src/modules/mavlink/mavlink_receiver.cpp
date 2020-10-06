@@ -2136,7 +2136,10 @@ MavlinkReceiver::handle_message_heartbeat(mavlink_message_t *msg)
 				_mavlink->unlock_telemetry_status();
 
 			} else {
-				PX4_ERR("no telemetry heartbeat slots available");
+				if (!_telemetry_error_printed) {
+					PX4_ERR("no telemetry heartbeat slots available (sysid=%i compid=%i type=%i)", msg->sysid, msg->compid, hb.type);
+					_telemetry_error_printed = true;
+				}
 			}
 		}
 	}

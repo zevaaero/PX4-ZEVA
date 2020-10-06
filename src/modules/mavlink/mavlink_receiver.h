@@ -318,6 +318,8 @@ private:
 	float				_hil_local_alt0{0.0f};
 	bool				_hil_local_proj_inited{false};
 
+	bool				_telemetry_error_printed{false};
+
 	hrt_abstime			_last_utm_global_pos_com{0};
 
 	// Allocated if needed.

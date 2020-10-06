@@ -6,7 +6,7 @@ uint8 LINK_TYPE_IRIDIUM	= 4
 
 uint64 timestamp			# time since system start (microseconds)
 
-telemetry_heartbeat[4] heartbeats
+telemetry_heartbeat[5] heartbeats
 
 uint8 type				#  type of the radio hardware (LINK_TYPE_*)
 
