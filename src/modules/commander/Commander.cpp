@@ -4312,7 +4312,8 @@ Commander::offboard_control_update()
 
 void Commander::esc_status_check(const esc_status_s &esc_status)
 {
-	if ((esc_status.esc_count > 0) && (hrt_elapsed_time(&esc_status.timestamp) < 500_ms)) {
+	if ((esc_status.esc_count > 0) && (hrt_elapsed_time(&esc_status.timestamp) < 700_ms)) {
+		// Some DShot ESCs are unresponsive for ~550ms during their initialization, so we use a timeout higher than that
 
 		char esc_fail_msg[50];
 		esc_fail_msg[0] = '\0';
