@@ -16,7 +16,7 @@ px4_add_board(
 		TEL2:/dev/ttyS2
 		TEL4:/dev/ttyS3
 	DRIVERS
-		adc
+		adc/board_adc
 		#barometer # all available barometer drivers
 		barometer/ms5611
 		#batt_smbus
@@ -53,6 +53,7 @@ px4_add_board(
 		px4io
 		rc_input
 		#roboclaw
+		#rpm
 		safety_button
 		#tap_esc
 		telemetry # all available telemetry drivers
@@ -95,6 +96,7 @@ px4_add_board(
 		dmesg
 		dumpfile
 		esc_calib
+		gpio
 		hardfault_log
 		i2cdetect
 		led_control
@@ -117,6 +119,7 @@ px4_add_board(
 		ver
 		work_queue
 	EXAMPLES
+		#fake_magnetometer
 		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		#hello
 		#hwtest # Hardware test

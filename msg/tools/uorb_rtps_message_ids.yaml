@@ -144,11 +144,11 @@ rtps:
     id: 67
   - msg: sensor_mag
     id: 68
-  - msg: sensor_preflight
+  - msg: sensors_status_imu
     id: 69
   - msg: sensor_selection
     id: 70
-  - msg: servorail_status
+  - msg: px4io_status
     id: 71
   - msg: subsystem_info
     id: 72
@@ -277,20 +277,26 @@ rtps:
     id: 131
   - msg: yaw_estimator_status
     id: 132
-  - msg: gimbal_device_attitude_status
+  - msg: telemetry_heartbeat
     id: 133
-  - msg: gimbal_device_information
+  - msg: sensor_preflight_mag
     id: 134
-  - msg: gimbal_device_set_attitude
+  - msg: estimator_states
     id: 135
-  - msg: gimbal_manager_information
+  - msg: gimbal_device_attitude_status
     id: 136
-  - msg: gimbal_manager_set_attitude
+  - msg: gimbal_device_information
     id: 137
-  - msg: gimbal_manager_status
+  - msg: gimbal_device_set_attitude
     id: 138
-  - msg: rtl_flight_time
+  - msg: gimbal_manager_information
     id: 139
+  - msg: gimbal_manager_set_attitude
+    id: 140
+  - msg: gimbal_manager_status
+    id: 141
+  - msg: rtl_flight_time
+    id: 142
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150
