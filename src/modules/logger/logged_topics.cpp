@@ -48,7 +48,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("actuator_controls_0", 100);
 	add_topic("actuator_controls_1", 100);
 	add_topic("airspeed", 1000);
-	add_topic("airspeed_validated", 1000);
+	add_topic("airspeed_validated", 200);
 	add_topic("camera_capture");
 	add_topic("camera_trigger");
 	add_topic("camera_trigger_secondary");
@@ -78,6 +78,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("px4io_status");
 	add_topic("radio_status");
 	add_topic("rpm", 500);
+	add_topic("rtl_flight_time", 1000);
 	add_topic("safety");
 	add_topic("sensor_combined");
 	add_topic("sensor_correction");

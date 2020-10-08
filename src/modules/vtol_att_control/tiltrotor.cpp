@@ -70,6 +70,7 @@ Tiltrotor::Tiltrotor(VtolAttitudeControl *attc) :
 	_params_handles_tiltrotor.vt_thr_n_alter = param_find("VT_THR_N_ALTER");
 	_params_handles_tiltrotor.vt_thr_alter_sc = param_find("VT_THR_ALTER_SC");
 	_params_handles_tiltrotor.vt_elev_comp_k = param_find("VT_ELEV_COMP_K");
+	_params_handles_tiltrotor.vt_elev_comp_offset = param_find("VT_ELEV_COMP_OFF");
 }
 
 void
@@ -110,6 +111,8 @@ Tiltrotor::parameters_update()
 	_params_tiltrotor.vt_thr_alter_sc = v;
 	param_get(_params_handles_tiltrotor.vt_elev_comp_k, &v);
 	_params_tiltrotor.vt_elev_comp_k = v;
+	param_get(_params_handles_tiltrotor.vt_elev_comp_offset, &v);
+	_params_tiltrotor.vt_elev_comp_offset = v;
 
 }
 
@@ -172,14 +175,14 @@ void Tiltrotor::update_vtol_state()
 
 				float time_since_trans_start = (float)(hrt_absolute_time() - _vtol_schedule.transition_start) * 1e-6f;
 
-				const bool airspeed_triggers_transition = PX4_ISFINITE(_airspeed_validated->equivalent_airspeed_m_s)
+				const bool airspeed_triggers_transition = PX4_ISFINITE(_airspeed_validated->calibrated_airspeed_m_s)
 						&& !_params->airspeed_disabled;
 
 				bool transition_to_p2 = false;
 
 				if (time_since_trans_start > _params->front_trans_time_min) {
 					if (airspeed_triggers_transition) {
-						transition_to_p2 = _airspeed_validated->equivalent_airspeed_m_s >= _params->transition_airspeed;
+						transition_to_p2 = _airspeed_validated->calibrated_airspeed_m_s >= _params->transition_airspeed;
 
 					} else {
 						transition_to_p2 = _tilt_control >= _params_tiltrotor.tilt_transition &&
@@ -238,6 +241,8 @@ void Tiltrotor::update_vtol_state()
 void Tiltrotor::update_mc_state()
 {
 	VtolType::update_mc_state();
+
+	_alternate_motor_on = false;
 
 	/*Motor spin up: define the first second after arming as motor spin up time, during which
 	* the tilt is set to the value of VT_TILT_SPINUP. This allowes the user to set a spin up
@@ -333,19 +338,19 @@ void Tiltrotor::update_transition_state()
 		_mc_yaw_weight = 1.0f;
 
 		// reduce MC controls once the plane has picked up speed
-		if (!_params->airspeed_disabled && PX4_ISFINITE(_airspeed_validated->equivalent_airspeed_m_s) &&
-		    _airspeed_validated->equivalent_airspeed_m_s > ARSP_YAW_CTRL_DISABLE) {
+		if (!_params->airspeed_disabled && PX4_ISFINITE(_airspeed_validated->calibrated_airspeed_m_s) &&
+		    _airspeed_validated->calibrated_airspeed_m_s > ARSP_YAW_CTRL_DISABLE) {
 			_mc_yaw_weight = 0.0f;
 		}
 
-		if (!_params->airspeed_disabled && PX4_ISFINITE(_airspeed_validated->equivalent_airspeed_m_s) &&
-		    _airspeed_validated->equivalent_airspeed_m_s >= _params->airspeed_blend) {
-			_mc_roll_weight = 1.0f - (_airspeed_validated->equivalent_airspeed_m_s - _params->airspeed_blend) /
+		if (!_params->airspeed_disabled && PX4_ISFINITE(_airspeed_validated->calibrated_airspeed_m_s) &&
+		    _airspeed_validated->calibrated_airspeed_m_s >= _params->airspeed_blend) {
+			_mc_roll_weight = 1.0f - (_airspeed_validated->calibrated_airspeed_m_s - _params->airspeed_blend) /
 					  (_params->transition_airspeed - _params->airspeed_blend);
 		}
 
 		// without airspeed do timed weight changes
-		if ((_params->airspeed_disabled || !PX4_ISFINITE(_airspeed_validated->equivalent_airspeed_m_s)) &&
+		if ((_params->airspeed_disabled || !PX4_ISFINITE(_airspeed_validated->calibrated_airspeed_m_s)) &&
 		    time_since_trans_start > _params->front_trans_time_min) {
 			_mc_roll_weight = 1.0f - (time_since_trans_start - _params->front_trans_time_min) /
 					  (_params->front_trans_time_openloop - _params->front_trans_time_min);
@@ -429,6 +434,9 @@ void Tiltrotor::update_transition_state()
 		q_sp.copyTo(_v_att_sp->q_d);
 	}
 
+	_last_time_above_threshold = hrt_absolute_time();
+	_alternate_motor_on = false;
+
 	const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 	q_sp.copyTo(_v_att_sp->q_d);
 
@@ -461,9 +469,9 @@ void Tiltrotor::fill_actuator_outputs()
 	_actuators_out_0->control[actuator_controls_s::INDEX_YAW] =
 		_actuators_mc_in->control[actuator_controls_s::INDEX_YAW] * _mc_yaw_weight;
 
-	if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
+	float throttle_fw = _actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
 
-		float throttle_fw = _actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
+	if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
 
 		// if we're currently using the alternate motors, adapt the throttle to account for difference in thrust to main ones
 		if (_alternate_motor_on) {
@@ -502,7 +510,7 @@ void Tiltrotor::fill_actuator_outputs()
 		float pitch_trim_offset = 0.0f;
 
 		if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE && _alternate_motor_on) {
-			pitch_trim_offset = alternate_motors_elevator_trim(_actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE]);
+			pitch_trim_offset = alternate_motors_elevator_trim(throttle_fw);
 		}
 
 		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] =
@@ -543,11 +551,24 @@ void Tiltrotor::select_fixed_wing_motors()
 
 	const float throttle_sp = _actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
 
+	// do not switch main-->alternate if less than a certain time has elapsed since the last switch
+	const float min_time_below_threshold = 10.0f;
+
 	if (_alternate_motor_on) {
 		_alternate_motor_on = (throttle_sp < _params_tiltrotor.vt_thr_alter_off);
 
 	} else {
-		_alternate_motor_on = (throttle_sp < _params_tiltrotor.vt_thr_alter_on);
+
+		// reset counter if throttle is above threshold
+		if (throttle_sp > _params_tiltrotor.vt_thr_alter_on) {
+			_last_time_above_threshold = hrt_absolute_time();
+		}
+
+		// enable rear motor
+		if (hrt_elapsed_time(&_last_time_above_threshold) * 1e-6f > min_time_below_threshold) {
+			_alternate_motor_on = true;
+			_time_last_switch_to_alternate = hrt_absolute_time(); //save the time of the main-->alternate switch
+		}
 	}
 }
 
@@ -564,19 +585,24 @@ float Tiltrotor::alternate_motors_elevator_trim(const float throttle_alternate)
 {
 	const float k_elev = _params_tiltrotor.vt_elev_comp_k;
 
-	float airspeed = 18.0f;
+	float airspeed = 17.0f;
 	float rho = 1.2f;
 
-	if (PX4_ISFINITE(_airspeed_validated->equivalent_airspeed_m_s)) {
-		airspeed = _airspeed_validated->equivalent_airspeed_m_s;
+	if (PX4_ISFINITE(_airspeed_validated->calibrated_airspeed_m_s)) {
+		airspeed = _airspeed_validated->calibrated_airspeed_m_s;
 	}
 
 	if (PX4_ISFINITE(_vehicle_air_data->rho)) {
 		rho = _vehicle_air_data->rho;
 	}
 
-	const float dynamic_pressure = math::constrain(0.5f * airspeed * airspeed * rho, 250.0f, 350.0f);
+	const float dynamic_pressure = math::constrain(0.5f * airspeed * airspeed * rho, 120.0f, 250.0f);
 
-	const float delta_elev_trim = k_elev / dynamic_pressure * throttle_alternate;
-	return delta_elev_trim;
+	const float offset = _params_tiltrotor.vt_elev_comp_offset;
+	const float time_blend = 0.5f; // the trim offset is blended in this amount of time after main-->alternate switch
+	const float time_since_switch = hrt_elapsed_time(&_time_last_switch_to_alternate) * 1e-6f;
+
+	const float offset_blended = math::constrain(time_since_switch * offset / time_blend, offset, 0.0f);
+
+	return offset_blended + k_elev / dynamic_pressure * throttle_alternate;
 }

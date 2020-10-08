@@ -979,3 +979,15 @@ PARAM_DEFINE_FLOAT(COM_LL_DELAY, 15.0f);
  * @value 3 Trigger fake fail (update_checker)
  */
 PARAM_DEFINE_INT32(COM_EXT_COMP_EN, 0);
+
+/**
+* Enable preflight check for maximal allowed airspeed when arming.
+*
+* Deny arming if the current airspeed measurement is greater than half the stall speed (ASPD_STALL).
+* Excessive airspeed measurements on ground are either caused by wind or bad airspeed calibration.
+*
+* @group Commander
+* @value 0 Disabled
+* @value 1 Enabled
+*/
+PARAM_DEFINE_FLOAT(COM_ARM_ARSP_EN, 1);
