@@ -279,6 +279,10 @@ public:
 
 	void 		setTerrainFollowerState();
 
+	void 		setMissionLandingInProgress(bool in_progress) { _mission_landing_in_progress = in_progress; }
+
+	bool 		getMissionLandingInProgress() { return _mission_landing_in_progress; }
+
 	// MISSION
 	bool		is_planned_mission() const { return _navigation_mode == &_mission; }
 	bool		on_mission_landing() { return _mission.landing(); }
@@ -411,6 +415,9 @@ private:
 	float _mission_cruising_speed_mc{-1.0f};
 	float _mission_cruising_speed_fw{-1.0f};
 	float _mission_throttle{-1.0f};
+
+	bool _mission_landing_in_progress{false};	// this flag gets set if the mission is currently executing on a landing pattern
+	// if mission mode is inactive, this flag will be cleared after 2 seconds
 
 	// update subscriptions
 	void		params_update();
