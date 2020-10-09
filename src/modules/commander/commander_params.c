@@ -572,7 +572,7 @@ PARAM_DEFINE_FLOAT(COM_ARM_EKF_GB, 0.0011f);
  * Maximum accelerometer inconsistency between IMU units that will allow arming
  *
  * @group Commander
- * @unit m/s/s
+ * @unit m/s^2
  * @min 0.1
  * @max 1.0
  * @decimal 2
@@ -601,7 +601,7 @@ PARAM_DEFINE_FLOAT(COM_ARM_IMU_GYR, 0.25f);
  * @min 3
  * @max 180
  */
-PARAM_DEFINE_INT32(COM_ARM_MAG_ANG, 30);
+PARAM_DEFINE_INT32(COM_ARM_MAG_ANG, 45);
 
 /**
  * Enable mag strength preflight check
@@ -681,7 +681,7 @@ PARAM_DEFINE_INT32(COM_POSCTL_NAVL, 0);
  *
  * Default value: (10 << 0 | 1000 << 8 | 0 << 24) = 256010
  * - authorizer system id = 10
- * - authentication method parameter = 10000msec of timeout
+ * - authentication method parameter = 1000 msec of timeout
  * - authentication method = during arm
  * @group Commander
  */
@@ -703,7 +703,7 @@ PARAM_DEFINE_INT32(COM_ARM_AUTH_REQ, 0);
  * This sets number of seconds that the position checks need to be failed before the failsafe will activate.
  * The default value has been optimised for rotary wing applications. For fixed wing applications, a larger value between 5 and 10 should be used.
  *
- * @unit sec
+ * @unit s
  * @reboot_required true
  * @group Commander
  * @min 1
@@ -720,7 +720,7 @@ PARAM_DEFINE_INT32(COM_POS_FS_DELAY, 1);
  * If position checks are failing, the probation delay will increase by COM_POS_FS_GAIN seconds for every lapsed second up to a maximum of 100 seconds.
  * The default value has been optimised for rotary wing applications. For fixed wing applications, a value of 1 should be used.
  *
- * @unit sec
+ * @unit s
  * @reboot_required true
  * @group Commander
  * @min 1
@@ -979,3 +979,15 @@ PARAM_DEFINE_FLOAT(COM_LL_DELAY, 15.0f);
  * @value 3 Trigger fake fail (update_checker)
  */
 PARAM_DEFINE_INT32(COM_EXT_COMP_EN, 0);
+
+/**
+* Enable preflight check for maximal allowed airspeed when arming.
+*
+* Deny arming if the current airspeed measurement is greater than half the stall speed (ASPD_STALL).
+* Excessive airspeed measurements on ground are either caused by wind or bad airspeed calibration.
+*
+* @group Commander
+* @value 0 Disabled
+* @value 1 Enabled
+*/
+PARAM_DEFINE_FLOAT(COM_ARM_ARSP_EN, 1);

@@ -48,7 +48,7 @@ FlightTaskAuto::FlightTaskAuto() :
 
 }
 
-bool FlightTaskAuto::activate(vehicle_local_position_setpoint_s last_setpoint)
+bool FlightTaskAuto::activate(const vehicle_local_position_setpoint_s &last_setpoint)
 {
 	bool ret = FlightTask::activate(last_setpoint);
 	_position_setpoint = _position;
@@ -299,7 +299,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 	State previous_state = _current_state;
 	_current_state = _getCurrentState();
 
-	if (triplet_update || (_current_state != previous_state)) {
+	if (triplet_update || (_current_state != previous_state) || _current_state == State::offtrack) {
 		_updateInternalWaypoints();
 		_mission_gear = _sub_triplet_setpoint.get().current.landing_gear;
 	}
