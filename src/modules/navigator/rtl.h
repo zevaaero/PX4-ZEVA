@@ -92,6 +92,10 @@ public:
 	void get_rtl_xy_z_speed(float &xy, float &z);
 	matrix::Vector2f get_wind();
 
+	void setInitialClimbDone(bool done) { _initial_climb_done = done; }
+
+	bool initialClimbDone() { return _initial_climb_done; }
+
 private:
 	/**
 	 * Set the RTL item
@@ -148,6 +152,7 @@ private:
 
 	float _rtl_alt{0.0f};	// AMSL altitude at which the vehicle should return to the home position
 	bool _rtl_alt_min{false};
+	bool _initial_climb_done{false};	// this flag is set to true if RTL is active and we are past the climb state
 
 	TerrainFollowerWrapper &_terrain_follower;
 
