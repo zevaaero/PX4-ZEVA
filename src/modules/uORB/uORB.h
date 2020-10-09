@@ -60,7 +60,12 @@ typedef const struct orb_metadata *orb_id_t;
 /**
  * Maximum number of multi topic instances
  */
+
+#if defined(__PX4_POSIX)
+#define ORB_MULTI_MAX_INSTANCES	5 // Required for now because we have 5 mavlink instances.
+#else
 #define ORB_MULTI_MAX_INSTANCES	4 // This must be < 10 (because it's the last char of the node path)
+#endif
 
 /**
  * Topic priority.
