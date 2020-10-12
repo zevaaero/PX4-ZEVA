@@ -316,6 +316,8 @@ MissionBlock::is_mission_item_reached()
 				mission_acceptance_radius = _navigator->get_acceptance_radius();
 			}
 
+			float alt_acc_rad_m = _navigator->get_altitude_acceptance_radius();
+
 			/* for vtol back transition calculate acceptance radius based on time and ground speed */
 			if (_mission_item.vtol_back_transition
 			    && _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
@@ -331,10 +333,14 @@ MissionBlock::is_mission_item_reached()
 
 				}
 
+				// do not care for altitude when approaching the backtransition point. Not accepting the waypoint causes
+				// the vehicle to perform a sharp turn after passing the land waypoint and this causes worse unexected behavior
+				alt_acc_rad_m = INFINITY;
+
 			}
 
 			if (dist_xy >= 0.0f && dist_xy <= mission_acceptance_radius
-			    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
+			    && dist_z <= alt_acc_rad_m) {
 				_waypoint_position_reached = true;
 			}
 		}
