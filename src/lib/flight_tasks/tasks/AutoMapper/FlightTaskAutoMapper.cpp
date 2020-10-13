@@ -165,7 +165,7 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 		land_speed *= (1 + _sticks.getPositionExpo()(2));
 
 		// constrain landing duration if MPC_LAND_MAX_DUR is set to a positive value
-		if (_param_mpc_land_max_dur.get() > FLT_EPSILON) {
+		if (_param_mpc_land_max_dur.get() > 0) {
 			const float time_landing_elapsed = hrt_elapsed_time(&_timestamp_first_below_alt1) * 1e-6f;
 			const float time_remaining = _param_mpc_land_max_dur.get() - time_landing_elapsed;
 

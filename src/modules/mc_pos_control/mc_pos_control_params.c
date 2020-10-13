@@ -380,15 +380,13 @@ PARAM_DEFINE_INT32(MPC_LAND_RC_HELP, 0);
  * Land duration timer starts when MPC_LAND_ALT1 is reached.
  * The land speed is adapted to up to twice MPC_LAND_SPEED if this
  * max duration constraint can't be met otherwise.
- * Set to 0 to disable land duration time constraint.
+ * Set a negative value to disable land duration time constraint.
  *
- * @min 0
- * @max 100
  * @unit m/s
  * @decimal 1
  * @group Multicopter Position Control
  */
-PARAM_DEFINE_FLOAT(MPC_LAND_MAX_DUR, 0.0f);
+PARAM_DEFINE_FLOAT(MPC_LAND_MAX_DUR, -1.0f);
 
 /**
  * Takeoff climb rate
