@@ -86,6 +86,5 @@ private:
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
 
-	hrt_abstime _time_first_below_alt1 = 0;
-	bool _below_alt1_prev = false;
+	hrt_abstime _timestamp_first_below_alt1{0};
 };

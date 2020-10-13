@@ -121,6 +121,7 @@ void FlightTaskAutoMapper::_reset()
 	// Set setpoints equal current state.
 	_velocity_setpoint = _velocity;
 	_position_setpoint = _position;
+	_timestamp_first_below_alt1 = 0;
 }
 
 void FlightTaskAutoMapper::_prepareIdleSetpoints()
@@ -147,26 +148,25 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 	}
 
 	// save the first time that the vehicle is below the mpc_land_alt1, such that we can limit the landing duration if required
-	if (_dist_to_ground > _param_mpc_land_alt1.get()) {
-		_below_alt1_prev = false;
+	const bool below_alt1 = _dist_to_ground < _param_mpc_land_alt1.get();
+
+	if (below_alt1) {
+		if (_timestamp_first_below_alt1 == 0) {
+			_timestamp_first_below_alt1 = hrt_absolute_time();
+		}
 
 	} else {
-		if (!_below_alt1_prev) {
-			_time_first_below_alt1 = hrt_absolute_time();
-			_below_alt1_prev = true;
-		}
+		_timestamp_first_below_alt1 = 0;
 	}
 
 	// User input assisted landing
-	if (_param_mpc_land_rc_help.get()
-	    && (_dist_to_ground < _param_mpc_land_alt1.get())
-	    && _sticks.checkAndSetStickInputs(_time_stamp_current)) {
+	if (_param_mpc_land_rc_help.get() && below_alt1 && _sticks.checkAndSetStickInputs(_time_stamp_current)) {
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		land_speed *= (1 + _sticks.getPositionExpo()(2));
 
 		// constrain landing duration if MPC_LAND_MAX_DUR is set to a positive value
 		if (_param_mpc_land_max_dur.get() > FLT_EPSILON) {
-			const float time_landing_elapsed = hrt_elapsed_time(&_time_first_below_alt1) * 1e-6f;
+			const float time_landing_elapsed = hrt_elapsed_time(&_timestamp_first_below_alt1) * 1e-6f;
 			const float time_remaining = _param_mpc_land_max_dur.get() - time_landing_elapsed;
 
 			// current land speed average (descended altitude divided by duration)
