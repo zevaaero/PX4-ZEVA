@@ -157,6 +157,7 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 
 	} else {
 		_timestamp_first_below_alt1 = 0;
+		_landing_forced_notified = false;
 	}
 
 	// User input assisted landing
@@ -179,6 +180,12 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 			if (v_avg_cur < v_avg_min) {
 				// constrain to be between minimal land speed to meet time limit and max double land speed
 				land_speed = math::constrain(land_speed, v_avg_min, 2.f * _param_mpc_land_speed.get());
+
+				if (!_landing_forced_notified) {
+					orb_advert_t mavlink_log_pub{nullptr};
+					mavlink_log_info(&mavlink_log_pub, "Maximum landing duration reached, descending.");
+					_landing_forced_notified = true;
+				}
 			}
 		}
 

@@ -43,6 +43,8 @@
 #include "FlightTaskAuto.hpp"
 #include "Sticks.hpp"
 #include "StickAccelerationXY.hpp"
+#include <systemlib/mavlink_log.h>
+#include <uORB/topics/mavlink_log.h>
 
 class FlightTaskAutoMapper : public FlightTaskAuto
 {
@@ -87,4 +89,6 @@ private:
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
 
 	hrt_abstime _timestamp_first_below_alt1{0};
+	orb_advert_t 	_mavlink_log_pub {nullptr};
+	bool _landing_forced_notified = false; /**< Set to true when user has been notified about forced landing */
 };
