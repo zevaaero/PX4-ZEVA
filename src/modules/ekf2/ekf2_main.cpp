@@ -281,7 +281,7 @@ private:
 	uORB::PublicationData<vehicle_global_position_s>	_vehicle_global_position_pub{ORB_ID(vehicle_global_position)};
 	uORB::PublicationData<vehicle_local_position_s>		_vehicle_local_position_pub{ORB_ID(vehicle_local_position)};
 	uORB::PublicationData<vehicle_odometry_s>		_vehicle_visual_odometry_aligned_pub{ORB_ID(vehicle_visual_odometry_aligned)};
-	uORB::PublicationMulti<wind_estimate_s>			_wind_pub{ORB_ID(wind_estimate)};
+	uORB::PublicationMulti<wind_estimate_s> 		_wind_pub[1] {ORB_ID(wind_estimate)}; ///< wind estimates can also be published by other modules
 
 	Ekf _ekf;
 
@@ -1871,7 +1871,7 @@ void Ekf2::publish_wind_estimate(const hrt_abstime &timestamp)
 		wind_estimate.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
 		wind_estimate.source = wind_estimate_s::SOURCE_EKF;
 
-		_wind_pub.publish(wind_estimate);
+		_wind_pub[0].publish(wind_estimate);
 	}
 }
 
