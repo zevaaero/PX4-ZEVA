@@ -878,6 +878,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 						map_projection_init(&ref_pos, local_pos.ref_lat, local_pos.ref_lon);
 						map_projection_project(&ref_pos, lat, lon, &home.x, &home.y);
 						home.z = -(alt - local_pos.ref_alt);
+						home.valid_lpos = true;
 
 						/* mark home position as set */
 						status_flags.condition_home_position_valid = _home_pub.update(home);
@@ -1208,49 +1209,119 @@ bool
 Commander::set_home_position()
 {
 	// Need global and local position fix to be able to set home
-	if (status_flags.condition_global_position_valid && status_flags.condition_local_position_valid) {
+	// but already set the home position in local coordinates if available
+	// in case the global position is only valid after takeoff
+	if (status_flags.condition_local_position_valid) {
+
+		// Set home position in local coordinates
+		const vehicle_local_position_s &lpos = _local_position_sub.get();
+		_heading_reset_counter = lpos.heading_reset_counter;
+
+		home_position_s home{};
+		home.timestamp = hrt_absolute_time();
+		home.manual_home = false;
+		fillLocalHomePos(home, lpos);
+
+		if (status_flags.condition_global_position_valid) {
+
+			const vehicle_global_position_s &gpos = _global_position_sub.get();
+
+			// Ensure that the GPS accuracy is good enough for intializing home
+			if (isGPosGoodForInitializingHomePos(gpos)) {
+				fillGlobalHomePos(home, gpos);
+				setHomePosValid();
+			}
+		}
+
+		_home_pub.update(home);
+	}
+
+	return status_flags.condition_home_position_valid;
+}
+
+bool
+Commander::set_in_air_home_position()
+{
+	if (status_flags.condition_local_position_valid
+	    && status_flags.condition_global_position_valid) {
 
 		const vehicle_global_position_s &gpos = _global_position_sub.get();
+		home_position_s home{};
 
 		// Ensure that the GPS accuracy is good enough for intializing home
-		if ((gpos.eph <= _param_com_home_h_t.get()) && (gpos.epv <= _param_com_home_v_t.get())) {
-
+		if (isGPosGoodForInitializingHomePos(gpos)) {
+			home = _home_pub.get();
+			home.timestamp = hrt_absolute_time();
 			const vehicle_local_position_s &lpos = _local_position_sub.get();
 
-			// Set home position
-			home_position_s home{};
+			if (_home_pub.get().valid_lpos) {
+				// Back-compute lon, lat and alt of home position given the home
+				// and current positions in local frame
+				map_projection_reference_s ref_pos;
+				double home_lat;
+				double home_lon;
+				map_projection_init(&ref_pos, gpos.lat, gpos.lon);
+				map_projection_reproject(&ref_pos, home.x - lpos.x, home.y - lpos.y, &home_lat, &home_lon);
+				const float home_alt = gpos.alt + home.z;
+				fillGlobalHomePos(home, home_lat, home_lon, home_alt);
 
-			home.timestamp = hrt_absolute_time();
-
-			home.lat = gpos.lat;
-			home.lon = gpos.lon;
-			home.valid_hpos = true;
-
-			home.alt = gpos.alt;
-			home.valid_alt = true;
-
-			home.x = lpos.x;
-			home.y = lpos.y;
-			home.z = lpos.z;
-
-			home.yaw = lpos.heading;
-			_heading_reset_counter = lpos.heading_reset_counter;
-
-			home.manual_home = false;
-
-			// play tune first time we initialize HOME
-			if (!status_flags.condition_home_position_valid) {
-				tune_home_set(true);
+			} else {
+				// Home position in local frame is unknowm, set
+				// home as current position
+				fillLocalHomePos(home, lpos);
+				fillGlobalHomePos(home, gpos);
 			}
 
-			// mark home position as set
-			status_flags.condition_home_position_valid = _home_pub.update(home);
-
-			return status_flags.condition_home_position_valid;
+			setHomePosValid();
+			_home_pub.update(home);
 		}
 	}
 
-	return false;
+	return status_flags.condition_home_position_valid;
+}
+
+bool
+Commander::isGPosGoodForInitializingHomePos(const vehicle_global_position_s &gpos) const
+{
+	return (gpos.eph <= _param_com_home_h_t.get())
+	       && (gpos.epv <= _param_com_home_v_t.get());
+}
+
+void
+Commander::fillLocalHomePos(home_position_s &home, const vehicle_local_position_s &lpos) const
+{
+	home.x = lpos.x;
+	home.y = lpos.y;
+	home.z = lpos.z;
+	home.valid_lpos = true;
+
+	home.yaw = lpos.heading;
+}
+
+void Commander::fillGlobalHomePos(home_position_s &home, const vehicle_global_position_s &gpos) const
+{
+	fillGlobalHomePos(home, gpos.lat, gpos.lon, gpos.alt);
+}
+
+void Commander::fillGlobalHomePos(home_position_s &home, double lat, double lon, float alt) const
+{
+	home.lat = lat;
+	home.lon = lon;
+	home.valid_hpos = true;
+
+	home.alt = alt;
+	home.valid_alt = true;
+}
+
+void Commander::setHomePosValid()
+{
+	// play tune first time we initialize HOME
+	if (!status_flags.condition_home_position_valid) {
+		tune_home_set(true);
+	}
+
+	// mark home position as set
+	status_flags.condition_home_position_valid = true;
 }
 
 bool
@@ -2314,14 +2385,18 @@ Commander::run()
 
 			// set the home position when taking off, but only if we were previously disarmed
 			// and at least 500 ms from commander start spent to avoid setting home on in-air restart
-			if (_should_set_home_on_takeoff && _was_landed && !_land_detector.landed &&
+			if (_should_set_home_on_takeoff && !_land_detector.landed &&
 			    (hrt_elapsed_time(&_boot_timestamp) > INAIR_RESTART_HOLDOFF_INTERVAL)) {
-				_should_set_home_on_takeoff = false;
-				set_home_position();
+				if (_was_landed) {
+					_should_set_home_on_takeoff = !set_home_position();
+
+				} else {
+					_should_set_home_on_takeoff = !set_in_air_home_position();
+				}
 			}
 
 			if (!armed.armed) {
-				if (status_flags.condition_home_position_valid) {
+				if (_home_pub.get().valid_lpos) {
 					if (_land_detector.landed && local_position.xy_valid && local_position.z_valid) {
 						/* distance from home */
 						float home_dist_xy = -1.0f;
