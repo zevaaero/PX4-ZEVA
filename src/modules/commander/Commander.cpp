@@ -2394,7 +2394,7 @@ Commander::run()
 				if (_was_landed) {
 					_should_set_home_on_takeoff = !set_home_position();
 
-				} else {
+				} else if (_param_com_home_in_air.get()) {
 					_should_set_home_on_takeoff = !set_in_air_home_position();
 				}
 			}
