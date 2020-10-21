@@ -369,8 +369,24 @@ PARAM_DEFINE_FLOAT(MPC_LAND_VEL_XY, 10.0f);
  * @max 1
  * @value 0 Fixed descent speed of MPC_LAND_SPEED
  * @value 1 User assisted descent speed
+ * @group Multicopter Position Control
  */
 PARAM_DEFINE_INT32(MPC_LAND_RC_HELP, 0);
+
+/**
+ * Maximum land duration when RC help is enabled.
+ *
+ * Limit the landing duration in case of landing with RC help.
+ * Land duration timer starts when MPC_LAND_ALT1 is reached.
+ * The land speed is adapted to up to twice MPC_LAND_SPEED if this
+ * max duration constraint can't be met otherwise.
+ * Set a negative value to disable land duration time constraint.
+ *
+ * @unit m/s
+ * @decimal 1
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_FLOAT(MPC_LAND_MAX_DUR, -1.0f);
 
 /**
  * Takeoff climb rate

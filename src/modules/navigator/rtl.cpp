@@ -80,6 +80,10 @@ void RTL::find_RTL_destination()
 		return;
 	}
 
+	if (!_navigator->home_position_valid()) {
+		return;
+	}
+
 	_destination_check_time = hrt_absolute_time();
 
 	// get home position:
@@ -133,7 +137,7 @@ void RTL::find_RTL_destination()
 	}
 
 	// compare to safe landing positions
-	mission_safe_point_s closest_safe_point {} ;
+	mission_safe_point_s closest_safe_point {};
 	mission_stats_entry_s stats;
 	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
 	int num_safe_points = 0;
@@ -193,26 +197,22 @@ void RTL::find_RTL_destination()
 	}
 
 	// figure out how long the RTL will take
-	const vehicle_local_position_s &local_pos_s = *_navigator->get_local_position();
+	float rtl_xy_speed, rtl_z_speed;
+	get_rtl_xy_z_speed(rtl_xy_speed, rtl_z_speed);
 
-	if (local_pos_s.xy_valid && local_pos_s.z_valid && globallocalconverter_initialized()) {
-		matrix::Vector3f local_pos(local_pos_s.x, local_pos_s.y, local_pos_s.z);
+	matrix::Vector3f to_destination_vec;
+	get_vector_to_next_waypoint(global_position.lat, global_position.lon, _destination.lat, _destination.lon,
+				    &to_destination_vec(0), &to_destination_vec(1));
+	to_destination_vec(2) = _destination.alt - global_position.alt;
 
-		matrix::Vector3f local_destination;
-		globallocalconverter_tolocal(_destination.lat, _destination.lon, _destination.alt,
-					     &local_destination(0), &local_destination(1), &local_destination(2));
+	float time_to_home_s = time_to_home(to_destination_vec, get_wind(), rtl_xy_speed, rtl_z_speed);
 
-		float xy_speed, z_speed;
-		get_rtl_xy_z_speed(xy_speed, z_speed);
-		float time_to_home_s = time_to_home(local_pos, local_destination, get_wind(), xy_speed, z_speed);
-
-		float rtl_flight_time_ratio = time_to_home_s / (60 * _param_rtl_flt_time.get());
-		rtl_flight_time_s rtl_flight_time;
-		rtl_flight_time.timestamp = hrt_absolute_time();
-		rtl_flight_time.rtl_limit_fraction = rtl_flight_time_ratio;
-		rtl_flight_time.rtl_time_s = time_to_home_s;
-		_rtl_flight_time_pub.publish(rtl_flight_time);
-	}
+	float rtl_flight_time_ratio = time_to_home_s / (60 * _param_rtl_flt_time.get());
+	rtl_flight_time_s rtl_flight_time{};
+	rtl_flight_time.timestamp = hrt_absolute_time();
+	rtl_flight_time.rtl_limit_fraction = rtl_flight_time_ratio;
+	rtl_flight_time.rtl_time_s = time_to_home_s;
+	_rtl_flight_time_pub.publish(rtl_flight_time);
 }
 
 void RTL::on_activation()
@@ -678,16 +678,21 @@ void RTL::get_rtl_xy_z_speed(float &xy, float &z)
 matrix::Vector2f RTL::get_wind()
 {
 	_wind_estimate_sub.update();
-	matrix::Vector2f wind(_wind_estimate_sub.get().windspeed_north, _wind_estimate_sub.get().windspeed_east);
+	matrix::Vector2f wind;
+
+	if (hrt_absolute_time() - _wind_estimate_sub.get().timestamp < 1_s) {
+		wind(0) = _wind_estimate_sub.get().windspeed_north;
+		wind(1) = _wind_estimate_sub.get().windspeed_east;
+	}
+
 	return wind;
 }
 
-float time_to_home(const matrix::Vector3f &vehicle_local_pos,
-		   const matrix::Vector3f &rtl_point_local_pos,
+float time_to_home(const matrix::Vector3f &to_home_vec,
 		   const matrix::Vector2f &wind_velocity, float vehicle_speed_m_s, float vehicle_descent_speed_m_s)
 {
-	const matrix::Vector2f to_home = (rtl_point_local_pos - vehicle_local_pos).xy();
-	const float alt_change = rtl_point_local_pos(2) - vehicle_local_pos(2);
+	const matrix::Vector2f to_home = to_home_vec.xy();
+	const float alt_change = to_home_vec(2);
 	const matrix::Vector2f to_home_dir = to_home.unit_or_zero();
 	const float dist_to_home = to_home.norm();
 
@@ -703,6 +708,7 @@ float time_to_home(const matrix::Vector3f &vehicle_local_pos,
 	}
 
 	// assume horizontal and vertical motions happen serially, so their time adds
-	const float time_to_home = dist_to_home / cruise_speed + fabsf(alt_change) / vehicle_descent_speed_m_s;
-	return time_to_home;
+	float horiz = dist_to_home / cruise_speed;
+	float descent = fabsf(alt_change) / vehicle_descent_speed_m_s;
+	return horiz + descent;
 }

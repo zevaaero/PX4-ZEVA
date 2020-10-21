@@ -43,6 +43,8 @@
 #include "FlightTaskAuto.hpp"
 #include "Sticks.hpp"
 #include "StickAccelerationXY.hpp"
+#include <systemlib/mavlink_log.h>
+#include <uORB/topics/mavlink_log.h>
 
 class FlightTaskAutoMapper : public FlightTaskAuto
 {
@@ -68,6 +70,7 @@ protected:
 					(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed,
 					(ParamFloat<px4::params::MPC_TILTMAX_LND>) _param_mpc_tiltmax_lnd,
 					(ParamInt<px4::params::MPC_LAND_RC_HELP>) _param_mpc_land_rc_help,
+					(ParamFloat<px4::params::MPC_LAND_MAX_DUR>) _param_mpc_land_max_dur,
 					(ParamFloat<px4::params::MPC_LAND_ALT1>)
 					_param_mpc_land_alt1, // altitude at which speed limit downwards reaches maximum speed
 					(ParamFloat<px4::params::MPC_LAND_ALT2>)
@@ -84,4 +87,7 @@ private:
 	void _reset(); /**< Resets member variables to current vehicle state */
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
+
+	hrt_abstime _timestamp_first_below_alt1{0};
+	bool _landing_forced_notified = false; /**< Set to true when user has been notified about forced landing */
 };
