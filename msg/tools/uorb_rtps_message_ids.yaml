@@ -301,6 +301,8 @@ rtps:
     id: 143
   - msg: baro_bias_estimate
     id: 144
+  - msg: estimator_optical_flow_vel
+    id: 145
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150

@@ -62,6 +62,7 @@
 #include <uORB/topics/ekf_gps_drift.h>
 #include <uORB/topics/ekf_gps_position.h>
 #include <uORB/topics/estimator_innovations.h>
+#include <uORB/topics/estimator_optical_flow_vel.h>
 #include <uORB/topics/estimator_sensor_bias.h>
 #include <uORB/topics/estimator_states.h>
 #include <uORB/topics/estimator_status.h>
@@ -136,6 +137,7 @@ private:
 	void publish_wind_estimate(const hrt_abstime &timestamp);
 	void publish_yaw_estimator_status(const hrt_abstime &timestamp);
 	void publish_baro_bias_estimate(const hrt_abstime &timestamp);
+	void publish_estimator_optical_flow_vel(const hrt_abstime &timestamp);
 
 	/*
 	 * Update the internal state estimate for a blended GPS solution that is a weighted average of the phsyical
@@ -235,6 +237,8 @@ private:
 	bool new_ev_data_received = false;
 	vehicle_odometry_s _ev_odom{};
 
+	bool _new_optical_flow_data_received{false};
+
 	uORB::Subscription _airdata_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _airspeed_sub{ORB_ID(airspeed)};
 	uORB::Subscription _ev_odom_sub{ORB_ID(vehicle_visual_odometry)};
@@ -270,6 +274,7 @@ private:
 	uORB::Publication<estimator_innovations_s>		_estimator_innovation_test_ratios_pub{ORB_ID(estimator_innovation_test_ratios)};
 	uORB::Publication<estimator_innovations_s>		_estimator_innovation_variances_pub{ORB_ID(estimator_innovation_variances)};
 	uORB::Publication<estimator_innovations_s>		_estimator_innovations_pub{ORB_ID(estimator_innovations)};
+	uORB::Publication<estimator_optical_flow_vel_s>		_estimator_optical_flow_vel_pub{ORB_ID(estimator_optical_flow_vel)};
 	uORB::Publication<estimator_sensor_bias_s>		_estimator_sensor_bias_pub{ORB_ID(estimator_sensor_bias)};
 	uORB::Publication<estimator_states_s>			_estimator_states_pub{ORB_ID(estimator_states)};
 	uORB::PublicationData<estimator_status_s>		_estimator_status_pub{ORB_ID(estimator_status)};
