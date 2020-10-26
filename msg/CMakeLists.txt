@@ -177,6 +177,7 @@ set(msg_files
 	wheel_encoders.msg
 	wind_estimate.msg
 	yaw_estimator_status.msg
+	baro_bias_estimate.msg
 )
 
 set(deprecated_msgs

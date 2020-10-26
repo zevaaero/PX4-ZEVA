@@ -82,6 +82,7 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/wind_estimate.h>
 #include <uORB/topics/yaw_estimator_status.h>
+#include <uORB/topics/baro_bias_estimate.h>
 
 #include "Utility/PreFlightChecker.hpp"
 
@@ -134,6 +135,7 @@ private:
 	void publish_attitude(const hrt_abstime &timestamp);
 	void publish_wind_estimate(const hrt_abstime &timestamp);
 	void publish_yaw_estimator_status(const hrt_abstime &timestamp);
+	void publish_baro_bias_estimate(const hrt_abstime &timestamp);
 
 	/*
 	 * Update the internal state estimate for a blended GPS solution that is a weighted average of the phsyical
@@ -278,6 +280,7 @@ private:
 	uORB::PublicationData<vehicle_local_position_s>		_vehicle_local_position_pub{ORB_ID(vehicle_local_position)};
 	uORB::PublicationData<vehicle_odometry_s>		_vehicle_visual_odometry_aligned_pub{ORB_ID(vehicle_visual_odometry_aligned)};
 	uORB::PublicationMulti<wind_estimate_s>			_wind_pub{ORB_ID(wind_estimate)};
+	uORB::Publication<baro_bias_estimate_s>			_baro_bias_estimate_pub{ORB_ID(baro_bias_estimate)};
 
 	Ekf _ekf;
 

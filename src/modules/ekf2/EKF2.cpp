@@ -171,6 +171,7 @@ EKF2::EKF2(bool replay_mode):
 	_vehicle_visual_odometry_aligned_pub.advertise();
 	_wind_pub.advertise();
 	_yaw_est_pub.advertise();
+	_baro_bias_estimate_pub.advertise();
 }
 
 EKF2::~EKF2()
@@ -1177,6 +1178,8 @@ void EKF2::Run()
 
 			publish_yaw_estimator_status(now);
 
+			publish_baro_bias_estimate(now);
+
 			if (!_mag_decl_saved && (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_STANDBY)) {
 				_mag_decl_saved = update_mag_decl(_param_ekf2_mag_decl);
 			}
@@ -1401,6 +1404,21 @@ void EKF2::publish_wind_estimate(const hrt_abstime &timestamp)
 
 		_wind_pub.publish(wind_estimate);
 	}
+}
+
+void EKF2::publish_baro_bias_estimate(const hrt_abstime &timestamp)
+{
+
+	baro_bias_estimate_s bbe{};
+	bbe.timestamp = timestamp;
+	bbe.timestamp_sample = timestamp;
+	bbe.baro_device_id = _estimator_status_pub.get().baro_device_id;
+	_ekf.getBaroBiasEstimatorStatus(bbe.bias,
+					bbe.bias_var,
+					bbe.innov,
+					bbe.innov_var,
+					bbe.innov_test_ratio);
+	_baro_bias_estimate_pub.publish(bbe);
 }
 
 bool EKF2::blend_gps_data()

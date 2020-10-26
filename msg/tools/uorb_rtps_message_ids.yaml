@@ -299,6 +299,8 @@ rtps:
     id: 142
   - msg: navigator_mission_item
     id: 143
+  - msg: baro_bias_estimate
+    id: 144
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150
