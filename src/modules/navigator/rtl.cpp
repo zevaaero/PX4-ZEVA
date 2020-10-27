@@ -111,10 +111,28 @@ void RTL::find_RTL_destination()
 
 	_destination.type = RTL_DESTINATION_HOME;
 
+	const bool vtol_in_rw_mode = _navigator->get_vstatus()->is_vtol
+				     && _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING;
+
+
 	// consider the mission landing if not RTL_HOME type set
 	if (rtl_type() != RTL_HOME && _navigator->get_mission_start_land_available()) {
-		double mission_landing_lat = _navigator->get_mission_landing_lat();
-		double mission_landing_lon = _navigator->get_mission_landing_lon();
+		double mission_landing_lat;
+		double mission_landing_lon;
+		float mission_landing_alt;
+		RTLDestinationType destination_type = RTL_DESTINATION_MISSION_LANDING;
+
+		if (vtol_in_rw_mode) {
+			mission_landing_lat = _navigator->get_mission_landing_lat();
+			mission_landing_lon = _navigator->get_mission_landing_lon();
+			mission_landing_alt = _navigator->get_mission_landing_alt();
+			destination_type = RTL_DESTINATION_HOME;
+
+		} else {
+			mission_landing_lat = _navigator->get_mission_landing_start_lat();
+			mission_landing_lon = _navigator->get_mission_landing_start_lon();
+			mission_landing_alt = _navigator->get_mission_landing_start_alt();
+		}
 
 		// compare home position to landing position to decide which is closer
 		dlat = mission_landing_lat - global_position.lat;
@@ -124,10 +142,11 @@ void RTL::find_RTL_destination()
 		// set destination to mission landing if closest or in RTL_LAND or RTL_MISSION (so not in RTL_CLOSEST)
 		if (dist_squared < min_dist_squared || rtl_type() != RTL_CLOSEST) {
 			min_dist_squared = dist_squared;
-			_destination.lat = _navigator->get_mission_landing_lat();
-			_destination.lon = _navigator->get_mission_landing_lon();
-			_destination.alt = _navigator->get_mission_landing_alt();
-			_destination.type = RTL_DESTINATION_MISSION_LANDING;
+			_destination.lat = mission_landing_lat;
+			_destination.lon = mission_landing_lon;
+			_destination.alt = mission_landing_alt;
+			_destination.type = destination_type;
+
 
 		}
 	}
@@ -218,6 +237,10 @@ void RTL::find_RTL_destination()
 
 void RTL::on_activation()
 {
+
+	_deny_mission_landing = _navigator->get_vstatus()->is_vtol
+				&& _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING;
+
 	_terrain_follower.reset();
 	_navigator->setTerrainFollowerState();
 
@@ -235,8 +258,6 @@ void RTL::on_activation()
 		mavlink_log_info(_navigator->get_mavlink_log_pub(), "RTL: landing at safe landing point.");
 		break;
 	}
-
-
 
 	const vehicle_global_position_s &global_position = *_navigator->get_global_position();
 
@@ -386,7 +407,6 @@ void RTL::set_rtl_item(bool do_user_feedback)
 		}
 
 	case RTL_STATE_RETURN: {
-
 			// Don't change altitude.
 			_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
 			_mission_item.lat = _destination.lat;
