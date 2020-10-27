@@ -96,6 +96,8 @@ public:
 
 	bool getClimbAndReturnDone() { return _climb_and_return_done; }
 
+	bool denyMissionLanding() { return _deny_mission_landing; }
+
 private:
 	/**
 	 * Set the RTL item
@@ -153,6 +155,7 @@ private:
 	float _rtl_alt{0.0f};	// AMSL altitude at which the vehicle should return to the home position
 	bool _rtl_alt_min{false};
 	bool _climb_and_return_done{false};	// this flag is set to true if RTL is active and we are past the climb state and return state
+	bool _deny_mission_landing{false};
 
 	TerrainFollowerWrapper &_terrain_follower;
 
