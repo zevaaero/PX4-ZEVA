@@ -255,16 +255,21 @@ else
 	#
 	# Set parameters and env variables for selected AUTOSTART.
 	#
+	set AUTOSTART_PATH /etc/init.d/rc.autostart
 	if ! param compare SYS_AUTOSTART 0
 	then
 		if param greater SYS_AUTOSTART 1000000
 		then
 			# Use external startup file
-			sh /etc/init.d/rc.autostart_ext
-		else
-			sh /etc/init.d/rc.autostart
+			if [ -d "/fs/microsd" ]; then
+				set AUTOSTART_PATH /etc/init.d/rc.autostart_ext
+			else
+				echo "ERROR [init] SD card not mounted - trying to load airframe from ROMFS"
+			fi
 		fi
+		sh $AUTOSTART_PATH
 	fi
+	unset AUTOSTART_PATH
 
 	#
 	# Override parameters from user configuration file.
