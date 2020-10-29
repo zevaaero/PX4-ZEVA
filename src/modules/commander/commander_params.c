@@ -991,3 +991,17 @@ PARAM_DEFINE_INT32(COM_EXT_COMP_EN, 0);
 * @value 1 Enabled
 */
 PARAM_DEFINE_FLOAT(COM_ARM_ARSP_EN, 1);
+
+/**
+ * Enable FMU SD card detection check
+ *
+ * This check will detect if the FMU SD card is missing.
+ * Depending on the value of the parameter, the check can be
+ * disabled, warn only or deny arming.
+ *
+ * @group Commander
+ * @value 0 Disabled
+ * @value 1 Warning only
+ * @value 2 Enforce SD card presence
+ */
+PARAM_DEFINE_INT32(COM_ARM_SDCARD, 1);

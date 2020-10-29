@@ -80,6 +80,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 	failed = failed || !externalUpdateCheck(mavlink_log_pub, reportFailures);
 	failed = failed || !airframeCheck(mavlink_log_pub, status);
+	failed = failed || !sdcardCheck(mavlink_log_pub, reportFailures);
 
 	/* ---- MAG ---- */
 	if (checkSensors) {
