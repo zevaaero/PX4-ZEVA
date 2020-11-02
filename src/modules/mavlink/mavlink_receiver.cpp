@@ -579,6 +579,16 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 		send_ack = true;
 
+	} else if (cmd_mavlink.command == MAV_CMD_WAYPOINT_USER_1) {
+		vehicle_command_s custom_action_cmd = vehicle_command;
+		custom_action_cmd.target_system = 1;
+		custom_action_cmd.target_component = MAV_COMP_ID_PATHPLANNER;
+		custom_action_cmd.from_external = false;
+
+		_cmd_pub.publish(custom_action_cmd);
+
+		send_ack = true;
+
 	} else {
 
 		send_ack = false;
