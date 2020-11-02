@@ -56,7 +56,7 @@ static constexpr unsigned max_mandatory_baro_count = 1;
 static constexpr unsigned max_optional_baro_count = 1;
 
 bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &status,
-				    vehicle_status_flags_s &status_flags, const bool checkGNSS, bool reportFailures, const bool prearm,
+				    vehicle_status_flags_s &status_flags, bool reportFailures, const bool prearm,
 				    const hrt_abstime &time_since_boot)
 {
 	const bool hil_enabled = (status.hil_state == vehicle_status_s::HIL_STATE_ON);
@@ -294,12 +294,20 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 	}
 
 	if (estimator_type == 2) {
-		// don't report ekf failures for the first 10 seconds to allow time for the filter to start
-		bool report_ekf_fail = (time_since_boot > 10_s);
+		bool ekf_healthy = false;
 
-		if (!ekf2Check(mavlink_log_pub, status, false, reportFailures && report_ekf_fail, checkGNSS)) {
-			failed = true;
+		// don't report ekf failures for the first 10 seconds to allow time for the filter to start
+		if (time_since_boot > 10_s) {
+
+			ekf_healthy = ekf2Check(mavlink_log_pub, status, false, reportFailures);
+
+			set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, true, ekf_healthy, status);
+
+		} else {
+			set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, false, false, status);
 		}
+
+		failed |= !ekf_healthy;
 	}
 
 	/* ---- Failure Detector ---- */

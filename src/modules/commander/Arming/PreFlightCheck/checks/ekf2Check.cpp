@@ -42,14 +42,16 @@
 #include <uORB/topics/subsystem_info.h>
 
 bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_status, const bool optional,
-			       const bool report_fail, const bool enforce_gps_required)
+			       const bool report_fail)
 {
 	bool success = true; // start with a pass and change to a fail if any test fails
-	bool ahrs_present = true;
 	float test_limit = 1.0f; // pass limit re-used for each test
 
 	int32_t mag_strength_check_enabled = 1;
 	param_get(param_find("COM_ARM_MAG_STR"), &mag_strength_check_enabled);
+
+	int32_t arm_without_gps = 0;
+	param_get(param_find("COM_ARM_WO_GPS"), &arm_without_gps);
 
 	bool gps_success = true;
 	bool gps_present = true;
@@ -60,7 +62,7 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 	const estimator_status_s &status = status_sub.get();
 
 	if (status.timestamp == 0) {
-		ahrs_present = false;
+		success = false;
 		goto out;
 	}
 
@@ -180,7 +182,7 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 	}
 
 	// If GPS aiding is required, declare fault condition if the required GPS quality checks are failing
-	if (enforce_gps_required || report_fail) {
+	{
 		const bool ekf_gps_fusion = status.control_mode_flags & (1 << estimator_status_s::CS_GPS);
 		const bool ekf_gps_check_fail = status.gps_check_fail_flags > 0;
 
@@ -234,7 +236,7 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 				}
 
 				if (message) {
-					if (enforce_gps_required) {
+					if (!arm_without_gps) {
 						mavlink_log_critical(mavlink_log_pub, message, " Fail");
 
 					} else {
@@ -244,18 +246,14 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 			}
 
 			gps_success = false;
+			set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_GPS, gps_present, !arm_without_gps, gps_success, vehicle_status);
 
-			if (enforce_gps_required) {
+			if (!arm_without_gps) {
 				success = false;
 				goto out;
 			}
 		}
 	}
-
 out:
-	//PX4_INFO("AHRS CHECK: %s", (success && ahrs_present) ? "OK" : "FAIL");
-	set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, ahrs_present, true, success && ahrs_present, vehicle_status);
-	set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_GPS, gps_present, enforce_gps_required, gps_success, vehicle_status);
-
 	return success;
 }

@@ -287,7 +287,7 @@ extern "C" __EXPORT int commander_main(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "check")) {
-		bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, status, status_flags, true, true, true, 30_s);
+		bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, status, status_flags, true, true, 30_s);
 		PX4_INFO("Preflight check: %s", preflight_check_res ? "OK" : "FAILED");
 
 		bool prearm_check_res = PreFlightCheck::preArmCheck(nullptr, status_flags, safety_s{},
@@ -1347,7 +1347,7 @@ Commander::run()
 	arm_auth_init(&mavlink_log_pub, &status.system_id);
 
 	// run preflight immediately to find all relevant parameters, but don't report
-	PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, _arm_requirements.global_position, false, true,
+	PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, false, true,
 				       hrt_elapsed_time(&_boot_timestamp));
 
 	while (!should_exit()) {
@@ -2413,7 +2413,8 @@ Commander::run()
 
 			// Evaluate current prearm status
 			if (!armed.armed && !status_flags.condition_calibration_enabled) {
-				bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, status, status_flags, true, false, true, 30_s);
+				bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, status, status_flags, false, true,
+							   hrt_elapsed_time(&_boot_timestamp));
 				bool prearm_check_res = PreFlightCheck::preArmCheck(nullptr, status_flags, _safety, _arm_requirements, status, false);
 				set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_PREARM_CHECK, true, true, (preflight_check_res
 						 && prearm_check_res), status);
@@ -3548,7 +3549,7 @@ void *commander_low_prio_loop(void *arg)
 							tune_positive(true);
 
 							// time since boot not relevant here
-							if (PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, false, false, true, 30_s)) {
+							if (PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, false, true, 30_s)) {
 
 								status_flags.condition_system_sensors_initialized = true;
 							}
@@ -3764,8 +3765,7 @@ void Commander::data_link_check()
 
 						if (!armed.armed && !status_flags.condition_calibration_enabled) {
 							// make sure to report preflight check failures to a connecting GCS
-							PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags,
-										       _arm_requirements.global_position, true, true, hrt_elapsed_time(&_boot_timestamp));
+							PreFlightCheck::preflightCheck(&mavlink_log_pub, status, status_flags, true, true, hrt_elapsed_time(&_boot_timestamp));
 						}
 
 						if (_datalink_last_heartbeat_gcs != 0) {
@@ -4066,9 +4066,10 @@ void Commander::battery_status_check()
 		// The connected batteries must match the required ones
 		&& (math::countSetBits(_last_connected_batteries) >= battery_required_count)
 		// No currently-connected batteries have any voltage warning
-		&& (_battery_warning == battery_status_s::BATTERY_WARNING_NONE)
+		&& (_battery_warning < battery_status_s::BATTERY_WARNING_CRITICAL)
 		// No currently-connected batteries have any fault
 		&& (!battery_has_fault);
+
 
 	// execute battery failsafe if the state has gotten worse while we are armed
 	if (battery_warning_level_increased_while_armed) {
