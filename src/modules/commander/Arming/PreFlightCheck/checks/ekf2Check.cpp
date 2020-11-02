@@ -43,10 +43,9 @@
 #include <uORB/topics/subsystem_info.h>
 
 bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_status, const bool optional,
-			       const bool report_fail, const bool enforce_gps_required)
+			       const bool report_fail)
 {
 	bool success = true; // start with a pass and change to a fail if any test fails
-	bool ahrs_present = true;
 	float test_limit = 1.0f; // pass limit re-used for each test
 
 	int32_t mag_strength_check_enabled = 1;
@@ -64,7 +63,7 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 	const estimator_status_s &status = status_sub.get();
 
 	if (status.timestamp == 0) {
-		ahrs_present = false;
+		success = false;
 		goto out;
 	}
 
@@ -150,7 +149,7 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 	}
 
 	// If GPS aiding is required, declare fault condition if the required GPS quality checks are failing
-	if (enforce_gps_required || report_fail) {
+	{
 		const bool ekf_gps_fusion = status.control_mode_flags & (1 << estimator_status_s::CS_GPS);
 		const bool ekf_gps_check_fail = status.gps_check_fail_flags > 0;
 
@@ -232,6 +231,7 @@ bool PreFlightCheck::ekf2CheckStates(orb_advert_t *mavlink_log_pub, const bool r
 	// Get estimator states data if available and exit with a fail recorded if not
 	uORB::Subscription states_sub{ORB_ID(estimator_states)};
 	estimator_states_s states;
+	bool success = true;
 
 	if (states_sub.copy(&states)) {
 
@@ -252,7 +252,7 @@ bool PreFlightCheck::ekf2CheckStates(orb_advert_t *mavlink_log_pub, const bool r
 					mavlink_log_critical(mavlink_log_pub, "Preflight Fail: High Accelerometer Bias");
 				}
 
-				return false;
+				success = false;
 			}
 		}
 
@@ -267,7 +267,7 @@ bool PreFlightCheck::ekf2CheckStates(orb_advert_t *mavlink_log_pub, const bool r
 				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: High Gyro Bias");
 			}
 
-			return false;
+			success = false;
 		}
 	}
 
