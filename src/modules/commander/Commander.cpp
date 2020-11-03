@@ -3916,7 +3916,7 @@ void Commander::data_link_check()
 void Commander::avoidance_check()
 {
 
-	for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+	for (unsigned i = 0; i < NUM_DISTANCE_SENSORS; i++) {
 		if (_sub_distance_sensor[i].updated()) {
 			distance_sensor_s distance_sensor {};
 			_sub_distance_sensor[i].copy(&distance_sensor);

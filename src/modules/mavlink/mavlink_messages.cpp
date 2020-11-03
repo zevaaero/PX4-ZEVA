@@ -564,7 +564,8 @@ public:
 private:
 	uORB::Subscription _status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _cpuload_sub{ORB_ID(cpuload)};
-	uORB::Subscription _battery_status_sub[ORB_MULTI_MAX_INSTANCES] {
+	static constexpr unsigned NUM_BATTERIES {4};
+	uORB::Subscription _battery_status_sub[NUM_BATTERIES] {
 		{ORB_ID(battery_status), 0}, {ORB_ID(battery_status), 1}, {ORB_ID(battery_status), 2}, {ORB_ID(battery_status), 3}
 	};
 
@@ -685,7 +686,8 @@ public:
 	}
 
 private:
-	uORB::Subscription _battery_status_sub[ORB_MULTI_MAX_INSTANCES] {
+	static constexpr unsigned NUM_BATTERIES {4};
+	uORB::Subscription _battery_status_sub[NUM_BATTERIES] {
 		{ORB_ID(battery_status), 0}, {ORB_ID(battery_status), 1}, {ORB_ID(battery_status), 2}, {ORB_ID(battery_status), 3}
 	};
 
@@ -702,7 +704,7 @@ protected:
 	{
 		bool updated = false;
 
-		for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+		for (unsigned i = 0; i < NUM_BATTERIES; i++) {
 			battery_status_s battery_status;
 
 			if (_battery_status_sub[i].update(&battery_status)) {

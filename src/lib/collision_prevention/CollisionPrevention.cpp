@@ -200,7 +200,7 @@ CollisionPrevention::_updateObstacleMap()
 	_sub_vehicle_attitude.update();
 
 	// add distance sensor data
-	for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+	for (unsigned i = 0; i < NUM_DISTANCE_SENSORS; i++) {
 
 		// if a new distance sensor message has arrived
 		if (_sub_distance_sensor[i].updated()) {

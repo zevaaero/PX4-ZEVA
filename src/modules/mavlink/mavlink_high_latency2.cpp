@@ -230,7 +230,7 @@ bool MavlinkStreamHighLatency2::write_battery_status(mavlink_high_latency2_t *ms
 	struct battery_status_s battery;
 	bool updated = false;
 
-	for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+	for (unsigned i = 0; i < NUM_BATTERIES; i++) {
 		if (_batteries[i].subscription.update(&battery)) {
 			updated = true;
 			_batteries[i].connected = battery.connected;
