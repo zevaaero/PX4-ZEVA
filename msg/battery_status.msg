@@ -28,8 +28,8 @@ uint8 id                # ID number of a battery. Should be unique and consisten
 float32[10] voltage_cell_v   # Battery individual cell voltages
 float32 max_cell_voltage_delta   # Max difference between individual cell voltages
 
-bool is_powering_off		# Power off event imminent indication, false if unknown
-
+bool is_powering_off			# Power off event imminent indication, false if unknown
+bool is_required			# Set if the battery is explicitly required before arming
 
 uint8 BATTERY_WARNING_NONE = 0       # no battery low voltage warning active
 uint8 BATTERY_WARNING_LOW = 1        # warning of low voltage
@@ -37,4 +37,18 @@ uint8 BATTERY_WARNING_CRITICAL = 2   # critical voltage, return / abort immediat
 uint8 BATTERY_WARNING_EMERGENCY = 3   # immediate landing required
 uint8 BATTERY_WARNING_FAILED = 4   # the battery has failed completely
 
-uint8 warning    # current battery warning
+uint8 BATTERY_FAULT_DEEP_DISCHARGE = 1 # Battery has deep discharged
+uint8 BATTERY_FAULT_SPIKES = 2 # Voltage spikes
+uint8 BATTERY_FAULT_CELL_FAIL= 4 # One or more cells have failed
+uint8 BATTERY_FAULT_OVER_CURRENT = 8 # Over-current
+uint8 BATTERY_FAULT_OVER_TEMPERATURE = 16 # Over-temperature
+uint8 BATTERY_FAULT_UNDER_TEMPERATURE = 32 # Under-temperature fault
+uint8 BATTERY_FAULT_INCOMPATIBLE_VOLTAGE = 64 # Vehicle voltage is not compatible with battery one
+
+uint8 faults # Smart battery supply status/fault flags (bitmask) for health indication.
+uint8 warning    # Current battery warning
+uint8 mode # Battery mode. Note, the normal operation mode
+
+uint8 BATTERY_MODE_UNKNOWN = 0 # Battery does not support a mode, or if it does, is operational
+uint8 BATTERY_MODE_AUTO_DISCHARGING = 1 # Battery is auto discharging (towards storage level)
+uint8 BATTERY_MODE_HOT_SWAP = 2 # Battery in hot-swap mode

@@ -147,4 +147,17 @@ const T gradual(const T &value, const T &x_low, const T &x_high, const T &y_low,
 	}
 }
 
+template<typename T>
+int countSetBits(T n)
+{
+	int count = 0;
+
+	while (n) {
+		count += n & 1;
+		n >>= 1;
+	}
+
+	return count;
+}
+
 } /* namespace math */
