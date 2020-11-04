@@ -2235,6 +2235,7 @@ public:
 
 private:
 	uORB::Subscription _trigger_sub{ORB_ID(camera_trigger)};
+	int _sequence {1};
 
 	/* do not allow top copying this class */
 	MavlinkStreamCameraTrigger(MavlinkStreamCameraTrigger &) = delete;
@@ -2264,7 +2265,7 @@ protected:
 				vcmd.param1 = 0.0f; // all cameras
 				vcmd.param2 = 0.0f; // duration 0 because only taking one picture
 				vcmd.param3 = 1.0f; // only take one
-				vcmd.param4 = NAN;
+				vcmd.param4 = (float)_sequence++;
 				vcmd.param5 = (double)NAN;
 				vcmd.param6 = (double)NAN;
 				vcmd.param7 = NAN;
