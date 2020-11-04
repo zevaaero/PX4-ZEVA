@@ -183,3 +183,12 @@ TEST(FunctionsTest, gradual3)
 				 0.f, .5f, 1.5f,
 				 1.f, 2.f, 3.f), 3.f);
 }
+
+TEST(FunctionsTest, countSetBits)
+{
+	EXPECT_EQ(countSetBits(255), 8);
+	EXPECT_EQ(countSetBits(65535), 16);
+	EXPECT_EQ(countSetBits(0), 0);
+	EXPECT_EQ(countSetBits(0xffffffffu), 32);
+	EXPECT_EQ(countSetBits(754323), 9);
+}

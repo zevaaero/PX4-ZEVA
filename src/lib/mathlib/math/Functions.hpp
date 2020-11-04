@@ -172,4 +172,22 @@ const T gradual3(const T &value,
 	}
 }
 
+/*
+ * This function calculates the Hamming weight, i.e. counts the number of bits that are set
+ * in a given integer.
+ */
+
+template<typename T>
+int countSetBits(T n)
+{
+	int count = 0;
+
+	while (n) {
+		count += n & 1;
+		n >>= 1;
+	}
+
+	return count;
+}
+
 } /* namespace math */

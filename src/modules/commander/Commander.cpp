@@ -4032,21 +4032,13 @@ void Commander::battery_status_check()
 		return;
 	}
 
-	battery_status_s batteries[_battery_status_subs.size()];
-	size_t num_connected_batteries = 0;
-
-	for (auto &battery_sub : _battery_status_subs) {
-		if (battery_sub.copy(&batteries[num_connected_batteries])) {
-			if (batteries[num_connected_batteries].connected) {
-				num_connected_batteries++;
-			}
-		}
-	}
+	int battery_required_count{0};
 
 	// There are possibly multiple batteries, and we can't know which ones serve which purpose. So the safest
 	// option is to check if ANY of them have a warning, and specifically find which one has the most
 	// urgent warning.
 	uint8_t worst_warning = battery_status_s::BATTERY_WARNING_NONE;
+	bool battery_has_fault = false;
 	// To make sure that all connected batteries are being regularly reported, we check which one has the
 	// oldest timestamp.
 	hrt_abstime oldest_update = hrt_absolute_time();
@@ -4054,25 +4046,49 @@ void Commander::battery_status_check()
 	_battery_current = 0.0f;
 	float battery_level = 0.0f;
 
+	for (auto &battery_sub : _battery_status_subs) {
+		int index = battery_sub.get_instance();
+		battery_status_s battery;
 
-	// Only iterate over connected batteries. We don't care if a disconnected battery is not regularly publishing.
-	for (size_t i = 0; i < num_connected_batteries; i++) {
-		if (batteries[i].warning > worst_warning) {
-			worst_warning = batteries[i].warning;
+		if (!battery_sub.copy(&battery)) {
+			continue;
 		}
 
-		if (hrt_elapsed_time(&batteries[i].timestamp) > hrt_elapsed_time(&oldest_update)) {
-			oldest_update = batteries[i].timestamp;
+		if (battery.is_required) {
+			battery_required_count++;
 		}
 
-		// Sum up current from all batteries.
-		_battery_current += batteries[i].current_filtered_a;
+		if (armed.armed && (_last_connected_batteries & (1 << index)) && !battery.connected) {
+			mavlink_log_critical(&mavlink_log_pub, "Battery %d disconnected!", index + 1);
+		}
 
-		// average levels from all batteries
-		battery_level += batteries[i].remaining;
+		if (battery.connected) {
+			_last_connected_batteries |= 1 << index;
+
+			if (battery.warning > worst_warning) {
+				worst_warning = battery.warning;
+			}
+
+			if (battery.timestamp < oldest_update) {
+				oldest_update = battery.timestamp;
+			}
+
+			if (battery.faults > 0) {
+				battery_has_fault = true;
+			}
+
+			// Sum up current from all batteries.
+			_battery_current += battery.current_filtered_a;
+
+			// average levels from all batteries
+			battery_level += battery.remaining;
+
+		} else {
+			_last_connected_batteries &= ~(1 << index);
+		}
 	}
 
-	battery_level /= num_connected_batteries;
+	battery_level /=  math::countSetBits(_last_connected_batteries);
 
 	_rtl_flight_time_sub.update();
 	float battery_usage_to_home = 0;
@@ -4117,14 +4133,15 @@ void Commander::battery_status_check()
 		_battery_warning = worst_warning;
 	}
 
-
 	status_flags.condition_battery_healthy =
 		// All connected batteries are regularly being published
 		(hrt_elapsed_time(&oldest_update) < 5_s)
-		// There is at least one connected battery (in any slot)
-		&& (num_connected_batteries > 0)
-		// No currently-connected batteries have any warning
-		&& (_battery_warning == battery_status_s::BATTERY_WARNING_NONE);
+		// The connected batteries must match the required ones
+		&& (math::countSetBits(_last_connected_batteries) >= battery_required_count)
+		// No currently-connected batteries have any voltage warning
+		&& (_battery_warning == battery_status_s::BATTERY_WARNING_NONE)
+		// No currently-connected batteries have any fault
+		&& (!battery_has_fault);
 
 	// execute battery failsafe if the state has gotten worse while we are armed
 	if (battery_warning_level_increased_while_armed) {
