@@ -44,6 +44,7 @@ px4_add_board(
 		mc_pos_control
 		mc_rate_control
 		navigator
+		pid_autotune_angular_rate
 		rc_update
 		replay
 		rover_pos_control
