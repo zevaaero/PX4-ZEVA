@@ -58,6 +58,7 @@
 
 // subscriptions
 #include <uORB/Subscription.hpp>
+#include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/battery_status.h>
@@ -395,18 +396,6 @@ private:
 
 	// Subscriptions
 	uORB::Subscription					_actuator_controls_sub{ORB_ID_VEHICLE_ATTITUDE_CONTROLS};
-#if BOARD_NUMBER_BRICKS > 1
-	uORB::Subscription					_battery_subs[ORB_MULTI_MAX_INSTANCES] {
-		uORB::Subscription(ORB_ID(battery_status), 0),
-		uORB::Subscription(ORB_ID(battery_status), 1),
-		uORB::Subscription(ORB_ID(battery_status), 2),
-		uORB::Subscription(ORB_ID(battery_status), 3),
-	};
-#else
-	uORB::Subscription					_battery_subs[1] {
-		uORB::Subscription(ORB_ID(battery_status), 0)
-	};
-#endif
 	uORB::Subscription					_cmd_sub {ORB_ID(vehicle_command)};
 	uORB::Subscription					_cpuload_sub{ORB_ID(cpuload)};
 	static constexpr unsigned NUM_DISTANCE_SENSORS		{4};
@@ -423,6 +412,7 @@ private:
 	uORB::Subscription					_telemetry_status_sub{ORB_ID(telemetry_status)};
 	uORB::Subscription					_vehicle_acceleration_sub{ORB_ID(vehicle_acceleration)};
 	uORB::Subscription					_vtol_vehicle_status_sub{ORB_ID(vtol_vehicle_status)};
+	uORB::SubscriptionMultiArray<battery_status_s>          _battery_status_subs{ORB_ID::battery_status};
 
 #if defined(BOARD_HAS_POWER_CONTROL)
 	uORB::Subscription					_power_button_state_sub {ORB_ID(power_button_state)};

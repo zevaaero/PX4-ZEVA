@@ -61,6 +61,7 @@
 #include <math.h>
 
 #include <uORB/Subscription.hpp>
+#include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/actuator_outputs.h>
@@ -564,10 +565,7 @@ public:
 private:
 	uORB::Subscription _status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _cpuload_sub{ORB_ID(cpuload)};
-	static constexpr unsigned NUM_BATTERIES {4};
-	uORB::Subscription _battery_status_sub[NUM_BATTERIES] {
-		{ORB_ID(battery_status), 0}, {ORB_ID(battery_status), 1}, {ORB_ID(battery_status), 2}, {ORB_ID(battery_status), 3}
-	};
+	uORB::SubscriptionMultiArray<battery_status_s> _battery_status_subs{ORB_ID::battery_status};
 
 	/* do not allow top copying this class */
 	MavlinkStreamSysStatus(MavlinkStreamSysStatus &) = delete;
@@ -580,15 +578,7 @@ protected:
 
 	bool send(const hrt_abstime t) override
 	{
-		bool updated_battery = false;
-
-		for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
-			if (_battery_status_sub[i].updated()) {
-				updated_battery = true;
-			}
-		}
-
-		if (_status_sub.updated() || _cpuload_sub.updated() || updated_battery) {
+		if (_status_sub.updated() || _cpuload_sub.updated() || _battery_status_subs.updated()) {
 			vehicle_status_s status{};
 			_status_sub.copy(&status);
 
@@ -597,13 +587,13 @@ protected:
 
 			battery_status_s battery_status[ORB_MULTI_MAX_INSTANCES] {};
 
-			for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
-				_battery_status_sub[i].copy(&battery_status[i]);
+			for (int i = 0; i < _battery_status_subs.size(); i++) {
+				_battery_status_subs[i].copy(&battery_status[i]);
 			}
 
 			int lowest_battery_index = 0;
 
-			for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+			for (int i = 0; i < _battery_status_subs.size(); i++) {
 				if (battery_status[i].connected && (battery_status[i].remaining < battery_status[lowest_battery_index].remaining)) {
 					lowest_battery_index = i;
 				}
@@ -674,22 +664,12 @@ public:
 
 	unsigned get_size() override
 	{
-		unsigned total_size = 0;
-
-		for (int i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
-			if (_battery_status_sub[i].advertised()) {
-				total_size += MAVLINK_MSG_ID_BATTERY_STATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
-			}
-		}
-
-		return total_size;
+		static constexpr unsigned size_per_battery = MAVLINK_MSG_ID_BATTERY_STATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+		return size_per_battery * _battery_status_subs.advertised_count();
 	}
 
 private:
-	static constexpr unsigned NUM_BATTERIES {4};
-	uORB::Subscription _battery_status_sub[NUM_BATTERIES] {
-		{ORB_ID(battery_status), 0}, {ORB_ID(battery_status), 1}, {ORB_ID(battery_status), 2}, {ORB_ID(battery_status), 3}
-	};
+	uORB::SubscriptionMultiArray<battery_status_s> _battery_status_subs{ORB_ID::battery_status};
 
 	/* do not allow top copying this class */
 	MavlinkStreamBatteryStatus(MavlinkStreamSysStatus &) = delete;
@@ -704,10 +684,10 @@ protected:
 	{
 		bool updated = false;
 
-		for (unsigned i = 0; i < NUM_BATTERIES; i++) {
+		for (auto &battery_sub : _battery_status_subs) {
 			battery_status_s battery_status;
 
-			if (_battery_status_sub[i].update(&battery_status)) {
+			if (battery_sub.update(&battery_status)) {
 				/* battery status message with higher resolution */
 				mavlink_battery_status_t bat_msg{};
 				// TODO: Determine how to better map between battery ID within the firmware and in MAVLink
@@ -771,7 +751,6 @@ protected:
 
 				updated = true;
 			}
-
 		}
 
 		return updated;

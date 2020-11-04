@@ -3952,26 +3952,22 @@ void Commander::avoidance_check()
 
 void Commander::battery_status_check()
 {
-	bool battery_sub_updated = false;
+	// We need to update the status flag if ANY battery is updated, because the system source might have
+	// changed, or might be nothing (if there is no battery connected)
+	if (!_battery_status_subs.updated()) {
+		// Nothing has changed since the last time this function was called, so nothing needs to be done now.
+		return;
+	}
 
-	battery_status_s batteries[ORB_MULTI_MAX_INSTANCES];
+	battery_status_s batteries[_battery_status_subs.size()];
 	size_t num_connected_batteries = 0;
 
-	for (size_t i = 0; i < sizeof(_battery_subs) / sizeof(_battery_subs[0]); i++) {
-		// We need to update the status flag if ANY battery is updated, because the system source might have
-		// changed, or might be nothing (if there is no battery connected)
-		battery_sub_updated |= _battery_subs[i].updated();
-
-		if (_battery_subs[i].copy(&batteries[num_connected_batteries])) {
+	for (auto &battery_sub : _battery_status_subs) {
+		if (battery_sub.copy(&batteries[num_connected_batteries])) {
 			if (batteries[num_connected_batteries].connected) {
 				num_connected_batteries++;
 			}
 		}
-	}
-
-	if (!battery_sub_updated) {
-		// Nothing has changed since the last time this function was called, so nothing needs to be done now.
-		return;
 	}
 
 	// There are possibly multiple batteries, and we can't know which ones serve which purpose. So the safest
