@@ -34,7 +34,6 @@
 px4_add_library(SystemIdentification
 	system_identification.cpp
 	system_identification.hpp
-	arx_rls.cpp
 	arx_rls.hpp
 )
 

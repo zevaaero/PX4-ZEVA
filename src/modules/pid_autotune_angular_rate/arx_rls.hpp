@@ -58,15 +58,83 @@
 #pragma once
 
 #include <matrix/matrix/math.hpp>
-#include <ecl/geo/geo.h>
-#include <mathlib/mathlib.h>
 
 template<size_t N, size_t M, size_t D>
 class ArxRls final
 {
 public:
-	ArxRls() = default;
+	ArxRls()
+	{
+		static_assert(N > 0);
+		static_assert(M >= 0);
+		static_assert(D >= 0);
+
+		for (size_t i = 0; i < (N + M + 1); i++) {
+			_P(i, i) = 10e3f;
+		}
+	}
+
 	~ArxRls() = default;
 
+	void setForgettingFactor(float time_constant, float dt) { _lambda = 1.f - dt / time_constant; }
+	void setForgettingFactor(float lambda) { _lambda = lambda; }
+
+	/*
+	 * return the vector of estimated parameters
+	 * [a_1 .. a_n b_0 .. b_m]'
+	 */
+	const matrix::Vector < float, N + M + 1 > &getCoefficients() const { return _theta_hat; }
+
+	void update(float u, float y)
+	{
+		addInputOutput(u, y);
+		const matrix::Vector < float, N + M + 1 > phi = constructDesignVector();
+		const matrix::Matrix < float, 1, N + M + 1 > phi_t = phi.transpose();
+
+		_P = (_P - _P * phi * phi_t * _P / (_lambda + (phi_t * _P * phi)(0, 0))) / _lambda;
+		_theta_hat = _theta_hat + _P * phi * (_y[N] - (phi_t * _theta_hat)(0, 0));
+	}
+
 private:
+	void addInputOutput(float u, float y)
+	{
+		shiftRegisters();
+		_u[M + D] = u;
+		_y[N] = y;
+	}
+
+	void shiftRegisters()
+	{
+		for (size_t i = 0; i < N; i++) {
+			_y[i] = _y[i + 1];
+		}
+
+		for (size_t i = 0; i < (M + D); i++) {
+			_u[i] = _u[i + 1];
+		}
+	}
+
+	matrix::Vector < float, N + M + 1 > constructDesignVector() const
+	{
+		matrix::Vector < float, N + M + 1 > phi;
+
+		for (size_t i = 0; i < N; i++) {
+			phi(i) = -_y[N - i - 1];
+		}
+
+		int j = 0;
+
+		for (size_t i = N; i < (N + M + 1); i++) {
+			phi(i) = _u[M - j];
+			j++;
+		}
+
+		return phi;
+	}
+
+	matrix::SquareMatrix < float, N + M + 1 > _P;
+	matrix::Vector < float, N + M + 1 > _theta_hat;
+	float _u[M + D + 1] {};
+	float _y[N + 1] {};
+	float _lambda{1.f};
 };

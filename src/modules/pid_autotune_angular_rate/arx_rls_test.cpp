@@ -46,16 +46,18 @@ using namespace matrix;
 class ArxRlsTest : public ::testing::Test
 {
 public:
-	ArxRlsTest()
-	{
-	}
-
-private:
-	ArxRls<2, 2, 1> _rls;
-	static constexpr float _dt = 0.02f;
+	ArxRlsTest() {};
 };
 
-TEST_F(ArxRlsTest, registerShift)
+TEST_F(ArxRlsTest, test211)
 {
-	EXPECT_TRUE(true);
+	ArxRls<2, 1, 1> _rls;
+	_rls.update(1, 2);
+	_rls.update(3, 4);
+	_rls.update(5, 6);
+	const Vector<float, 4> coefficients = _rls.getCoefficients();
+	float data_check[] = {-1.79f, 0.97f, 0.42f, -0.48f};
+	const Vector<float, 4> coefficients_check(data_check);
+	float eps = 1e-2;
+	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
 }
