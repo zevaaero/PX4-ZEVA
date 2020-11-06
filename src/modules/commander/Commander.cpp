@@ -4063,9 +4063,34 @@ void Commander::battery_status_check()
 			battery_required_count++;
 		}
 
-		if (armed.armed && (_last_connected_batteries & (1 << index)) && !battery.connected) {
-			mavlink_log_critical(&mavlink_log_pub, "Battery %d disconnected!", index + 1);
+		if (armed.armed) {
+
+			if ((_last_connected_batteries & (1 << index)) && !battery.connected) {
+				mavlink_log_critical(&mavlink_log_pub, "Battery %d disconnected!", index + 1);
+			}
+
+			if ((battery.mode > 0) && (battery.mode != _last_battery_mode[index])) {
+				const char *mode_text = nullptr;
+
+				switch (battery.mode) {
+				case (battery_status_s::BATTERY_MODE_AUTO_DISCHARGING):
+					mode_text = "auto discharging";
+					break;
+
+				case (battery_status_s::BATTERY_MODE_HOT_SWAP):
+					mode_text = "hot swap";
+					break;
+
+				default:
+					mode_text = "unknown";
+					break;
+				}
+
+				mavlink_log_critical(&mavlink_log_pub, "Battery %d is in %s mode!", index + 1, mode_text);
+			}
 		}
+
+		_last_battery_mode[index] = battery.mode;
 
 		if (battery.connected) {
 			_last_connected_batteries |= 1 << index;
@@ -4080,7 +4105,40 @@ void Commander::battery_status_check()
 
 			if (battery.faults > 0) {
 				battery_has_fault = true;
+
+				if (battery.faults != _last_battery_fault[index]) {
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_DEEP_DISCHARGE) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: deep discharge fault!", index + 1);
+					}
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_SPIKES) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: voltage spikes fault!", index + 1);
+					}
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_CELL_FAIL) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: one or more cells have a fault!", index + 1);
+					}
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_OVER_CURRENT) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: over current fault!", index + 1);
+					}
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_OVER_TEMPERATURE) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: over temperature fault!", index + 1);
+					}
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_UNDER_TEMPERATURE) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: under temperature fault!", index + 1);
+					}
+
+					if (battery.faults & battery_status_s::BATTERY_FAULT_INCOMPATIBLE_VOLTAGE) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d: charge state too different from the other batteries!", index + 1);
+					}
+				}
 			}
+
+			_last_battery_fault[index] = battery.faults;
 
 			// Sum up current from all batteries.
 			_battery_current += battery.current_filtered_a;
