@@ -34,7 +34,12 @@
 #include "../PreFlightCheck.hpp"
 #include <lib/parameters/param.h>
 #include <systemlib/mavlink_log.h>
+#ifdef __PX4_DARWIN
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
 #include <sys/statfs.h>
+#endif
 
 bool PreFlightCheck::sdcardCheck(orb_advert_t *mavlink_log_pub, const bool report_fail)
 {
