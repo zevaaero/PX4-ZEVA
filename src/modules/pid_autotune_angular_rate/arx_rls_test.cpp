@@ -56,8 +56,24 @@ TEST_F(ArxRlsTest, test211)
 	_rls.update(3, 4);
 	_rls.update(5, 6);
 	const Vector<float, 4> coefficients = _rls.getCoefficients();
-	float data_check[] = {-1.79f, 0.97f, 0.42f, -0.48f};
+	float data_check[] = {-1.79f, 0.97f, 0.42f, -0.48f}; // generated from Python script
 	const Vector<float, 4> coefficients_check(data_check);
 	float eps = 1e-2;
 	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
+}
+
+TEST_F(ArxRlsTest, test221)
+{
+	ArxRls<2, 2, 1> _rls;
+	_rls.update(1, 2);
+	_rls.update(3, 4);
+	_rls.update(5, 6);
+	_rls.update(7, 8);
+	const Vector<float, 5> coefficients = _rls.getCoefficients();
+	float data_check[] = {-1.81, 1.06f, 0.38f, -0.27f, 0.26f};
+	const Vector<float, 5> coefficients_check(data_check);
+	float eps = 1e-2;
+	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
+	coefficients.print();
+	coefficients_check.print();
 }
