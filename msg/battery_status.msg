@@ -1,4 +1,6 @@
 uint64 timestamp			# time since system start (microseconds)
+uint8 CONNECTED_BATTERIES_MAX = 4 # The number of max supported batteries
+
 float32 voltage_v			# Battery voltage in volts, 0 if unknown
 float32 voltage_filtered_v	# Battery voltage in volts, filtered, 0 if unknown
 float32 current_a			# Battery current in amperes, -1 if unknown
@@ -38,6 +40,8 @@ uint8 BATTERY_WARNING_LOW = 1		# warning of low voltage
 uint8 BATTERY_WARNING_CRITICAL = 2	# critical voltage, return / abort immediately
 uint8 BATTERY_WARNING_EMERGENCY = 3	# immediate landing required
 uint8 BATTERY_WARNING_FAILED = 4	# the battery has failed completely
+uint8 BATTERY_STATE_UNHEALTHY = 6 # Battery is diagnosed to be defective or an error occurred, usage is discouraged / prohibited. Possible causes (faults) are listed in faults field.
+uint8 BATTERY_STATE_CHARGING = 7 # Battery is charging
 
 uint8 BATTERY_FAULT_DEEP_DISCHARGE = 1 # Battery has deep discharged
 uint8 BATTERY_FAULT_SPIKES = 2 # Voltage spikes
