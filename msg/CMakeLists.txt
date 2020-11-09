@@ -103,6 +103,7 @@ set(msg_files
 	orb_test_medium.msg
 	orbit_status.msg
 	parameter_update.msg
+	pid_autotune_angular_rate_status.msg
 	ping.msg
 	position_controller_landing_status.msg
 	position_controller_status.msg

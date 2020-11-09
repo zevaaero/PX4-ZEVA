@@ -49,7 +49,9 @@
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionCallback.hpp>
+#include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/pid_autotune_angular_rate_status.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
 
 #include "system_identification.hpp"
@@ -81,13 +83,16 @@ private:
 
 	void reset();
 
-	SystemIdentification _sys_id;
+	SystemIdentification _sys_id_x;
 
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
+	uORB::Subscription _actuator_controls_sub{ORB_ID(actuator_controls_0)};
+	uORB::Publication<pid_autotune_angular_rate_status_s> _pid_autotune_angular_rate_status_pub{ORB_ID(pid_autotune_angular_rate_status)};
 
 	hrt_abstime _last_run{0};
+	hrt_abstime _last_publish{0};
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 

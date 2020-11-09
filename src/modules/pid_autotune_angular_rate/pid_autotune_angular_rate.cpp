@@ -42,6 +42,7 @@
 #include <mathlib/mathlib.h>
 
 using namespace matrix;
+using namespace time_literals;
 
 PidAutotuneAngularRate::PidAutotuneAngularRate() :
 	ModuleParams(nullptr),
@@ -100,16 +101,36 @@ void PidAutotuneAngularRate::Run()
 
 	perf_begin(_cycle_perf);
 
-	/* vehicle_angular_velocity_s angular_velocity; */
-	/* _vehicle_angular_velocity_sub.copy(&angular_velocity); */
+	vehicle_angular_velocity_s angular_velocity;
+	_vehicle_angular_velocity_sub.copy(&angular_velocity);
 
-	/* const hrt_abstime now = angular_velocity.timestamp_sample; */
+	if (_param_atune_start.get()) {
+		actuator_controls_s controls;
+		_actuator_controls_sub.copy(&controls);
 
-	/* // Guard against too small (< 0.125ms) and too large (> 20ms) dt's. */
-	/* const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f); */
-	/* _last_run = now; */
+		const hrt_abstime now = angular_velocity.timestamp_sample;
 
-	/* const Vector3f rates{angular_velocity.xyz}; */
+		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
+		const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
+		_last_run = now;
+
+		_sys_id_x.setLpfCutoffFrequency(1 / dt, 30.f);
+		_sys_id_x.setHpfCutoffFrequency(1 / dt, .5f);
+		_sys_id_x.setForgettingFactor(60.f, dt);
+
+		_sys_id_x.update(controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
+
+		if (hrt_elapsed_time(&_last_publish) > 100_ms) {
+			const Vector<float, 5> coeff = _sys_id_x.getCoefficients();
+			const Vector<float, 5> coeff_var = _sys_id_x.getVariances();
+			pid_autotune_angular_rate_status_s status{};
+			status.timestamp = now;
+			coeff.copyTo(status.coeff);
+			coeff_var.copyTo(status.coeff_var);
+			_pid_autotune_angular_rate_status_pub.publish(status);
+			_last_publish = now;
+		}
+	}
 
 	perf_end(_cycle_perf);
 }

@@ -84,6 +84,7 @@ public:
 	 * [a_1 .. a_n b_0 .. b_m]'
 	 */
 	const matrix::Vector < float, N + M + 1 > &getCoefficients() const { return _theta_hat; }
+	const matrix::Vector < float, N + M + 1 > getVariances() const { return _P.diag(); }
 
 	void update(float u, float y)
 	{

@@ -75,6 +75,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("offboard_control_mode", 100);
 	add_topic("onboard_computer_status", 10);
 	add_topic("onboard_computer_status", 10);
+	add_topic("pid_autotune_angular_rate_status");
 	add_topic("position_controller_status", 500);
 	add_topic("position_setpoint_triplet", 200);
 	add_topic("px4io_status");

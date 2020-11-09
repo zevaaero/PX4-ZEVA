@@ -41,6 +41,8 @@
 
 #include <matrix/matrix/math.hpp>
 #include <mathlib/mathlib.h>
+#include <mathlib/math/filter/LowPassFilter2p.hpp>
+#include <px4_platform_common/defines.h>
 
 #include "arx_rls.hpp"
 
@@ -50,5 +52,25 @@ public:
 	SystemIdentification() = default;
 	~SystemIdentification() = default;
 
+	void update(float u, float y);
+	const matrix::Vector<float, 5> &getCoefficients() const { return _rls.getCoefficients(); }
+	const matrix::Vector<float, 5> getVariances() const { return _rls.getVariances(); }
+
+	void setLpfCutoffFrequency(float sample_freq, float cutoff) { _u_lpf.set_cutoff_frequency(sample_freq, cutoff); }
+	void setHpfCutoffFrequency(float sample_freq, float cutoff) { _alpha_hpf = sample_freq / (sample_freq + 2.f * M_PI_F * cutoff); }
+
+	void setForgettingFactor(float time_constant, float dt) { _rls.setForgettingFactor(time_constant, dt); }
+
 private:
+	ArxRls<2, 2, 1> _rls;
+	math::LowPassFilter2p _u_lpf{400.f, 30.f};
+	//math::LowPassFilter2p u_lpf; // measurements are already filtered
+
+	//TODO: replace by HighPassFilter class
+	float _alpha_hpf{0.f};
+	float _u_hpf{0.f};
+	float _y_hpf{0.f};
+
+	float _u_prev{0.f};
+	float _y_prev{0.f};
 };
