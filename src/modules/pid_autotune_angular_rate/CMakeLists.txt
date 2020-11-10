@@ -53,3 +53,4 @@ px4_add_module(
 )
 
 px4_add_unit_gtest(SRC arx_rls_test.cpp LINKLIBS SystemIdentification)
+px4_add_unit_gtest(SRC pid_design_test.cpp)
