@@ -164,8 +164,15 @@ void FailureDetector::updateEscsStatus(const vehicle_status_s &vehicle_status)
 		if (_esc_status_sub.update(&esc_status)) {
 			int all_escs_armed = (1 << esc_status.esc_count) - 1;
 
+			bool is_motor_stuck = false;
+
+			for (uint8_t i = 0; i < esc_status.esc_count; i++) {
+				is_motor_stuck = is_motor_stuck || (esc_status.esc[i].failures > esc_report_s::FAILURE_MOTOR_STUCK_MASK);
+			}
+
 			_esc_failure_hysteresis.set_hysteresis_time_from(false, 300_ms);
-			_esc_failure_hysteresis.set_state_and_update(all_escs_armed != esc_status.esc_armed_flags, time_now);
+			_esc_failure_hysteresis.set_state_and_update((all_escs_armed != esc_status.esc_armed_flags)
+					|| is_motor_stuck, time_now);
 
 			if (_esc_failure_hysteresis.get_state()) {
 				_status |= FAILURE_ARM_ESCS;
