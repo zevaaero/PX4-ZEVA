@@ -85,13 +85,21 @@ private:
 
 	void reset();
 
-	SystemIdentification _sys_id_x;
+	void updateStateMachine(const matrix::Vector<float, 5> &coeff_var, hrt_abstime now);
+	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold);
 
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
 	uORB::Subscription _actuator_controls_sub{ORB_ID(actuator_controls_0)};
 	uORB::Publication<pid_autotune_angular_rate_status_s> _pid_autotune_angular_rate_status_pub{ORB_ID(pid_autotune_angular_rate_status)};
+
+	SystemIdentification _sys_id;
+
+	enum class axis {roll, pitch, wait_2_s, idle} _axis{axis::idle};
+	hrt_abstime _state_start_time{0};
+	uint8_t _steps_counter{0};
+	int8_t _signal_sign{0};
 
 	hrt_abstime _last_run{0};
 	hrt_abstime _last_publish{0};

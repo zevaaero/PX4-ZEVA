@@ -69,9 +69,7 @@ public:
 		static_assert(M >= 0);
 		static_assert(D >= 0);
 
-		for (size_t i = 0; i < (N + M + 1); i++) {
-			_P(i, i) = 10e3f;
-		}
+		reset();
 	}
 
 	~ArxRls() = default;
@@ -85,6 +83,26 @@ public:
 	 */
 	const matrix::Vector < float, N + M + 1 > &getCoefficients() const { return _theta_hat; }
 	const matrix::Vector < float, N + M + 1 > getVariances() const { return _P.diag(); }
+
+	void reset()
+	{
+		/* _P.uncorrelateCovarianceSetVariance<N + M + 1>(0, 10e3f); // does not work */
+		_P.setZero();
+
+		for (size_t i = 0; i < (N + M + 1); i++) {
+			_P(i, i) = 10e3f;
+		}
+
+		_theta_hat.setZero();
+
+		for (size_t i = 0; i < M + D + 1; i++) {
+			_u[i] = 0.f;
+		}
+
+		for (size_t i = 0; i < N + 1; i++) {
+			_y[i] = 0.f;
+		}
+	}
 
 	void update(float u, float y)
 	{

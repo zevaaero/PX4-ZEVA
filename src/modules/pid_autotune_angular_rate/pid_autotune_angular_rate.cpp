@@ -112,19 +112,77 @@ void PidAutotuneAngularRate::Run()
 		const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
 		_last_run = now;
 
-		_sys_id_x.setLpfCutoffFrequency(1 / dt, 30.f);
-		_sys_id_x.setHpfCutoffFrequency(1 / dt, .5f);
-		_sys_id_x.setForgettingFactor(60.f, dt);
+		const float loop_frequency = 1.f / dt;
+		_sys_id.setLpfCutoffFrequency(loop_frequency, 30.f); // TODO: use IMU_GYRO_CUTOFF
+		_sys_id.setHpfCutoffFrequency(loop_frequency, .5f);
+		_sys_id.setForgettingFactor(60.f, dt);
 
-		_sys_id_x.update(controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
+		switch (_axis) {
+		default:
+
+		// fallthrough
+		case axis::wait_2_s:
+
+		// fallthrough
+		case axis::idle:
+			break;
+
+		case axis::roll:
+			_sys_id.update(controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
+			break;
+
+		case axis::pitch:
+			_sys_id.update(controls.control[actuator_controls_s::INDEX_PITCH], angular_velocity.xyz[1]);
+			break;
+		}
 
 		if (hrt_elapsed_time(&_last_publish) > 100_ms) {
-			const Vector<float, 5> coeff = _sys_id_x.getCoefficients();
-			const Vector<float, 5> coeff_var = _sys_id_x.getVariances();
+			const Vector<float, 5> coeff = _sys_id.getCoefficients();
+			const Vector<float, 5> coeff_var = _sys_id.getVariances();
+
+			updateStateMachine(coeff_var, now);
+
+			if (hrt_elapsed_time(&_state_start_time) > 20_s) {
+				// TODO: add sticks abort
+				_param_atune_start.set(false);
+				_param_atune_start.commit();
+				_axis = axis::idle;
+			}
+
+			if (_steps_counter > 10) {
+				_signal_sign = (_signal_sign >= 0) ? -1 : 1;
+				_steps_counter = 0;
+			}
+
+			_steps_counter++;
+
+			const float signal = float(_signal_sign) * _param_atune_sysid_amp.get();
+
+			Vector3f rate_ff{};
+
+			switch (_axis) {
+			default:
+
+			// fallthrough
+			case axis::idle:
+
+			// fallthrough
+			case axis::wait_2_s:
+				break;
+
+			case axis::roll:
+				rate_ff(0) = signal;
+				break;
+
+			case axis::pitch:
+				rate_ff(1) = signal;
+				break;
+			}
 
 			const Vector3f num(coeff(2), coeff(3), coeff(4));
 			const Vector3f den(1.f, coeff(0), coeff(1));
 			const Vector3f kid = pid_design::computePidGmvc(num, den, dt);
+
 			pid_autotune_angular_rate_status_s status{};
 			status.timestamp = now;
 			coeff.copyTo(status.coeff);
@@ -132,12 +190,73 @@ void PidAutotuneAngularRate::Run()
 			status.kc = kid(0);
 			status.ki = kid(1);
 			status.kd = kid(2);
+			rate_ff.copyTo(status.rate_ff);
 			_pid_autotune_angular_rate_status_pub.publish(status);
 			_last_publish = now;
 		}
 	}
 
 	perf_end(_cycle_perf);
+}
+
+void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_var, hrt_abstime now)
+{
+	// when identifying an axis, check if the estimate has converged
+	constexpr float converged_thr = 0.2f;
+
+	switch (_axis) {
+	case axis::roll:
+		if (areAllSmallerThan(coeff_var, converged_thr)) {
+			// wait for the drone to stabilize
+			_axis = axis::wait_2_s;
+			_state_start_time = now;
+			// first step needs to be shorter to keep the drone centered
+			_steps_counter = 5;
+
+		}
+
+		break;
+
+	case axis::wait_2_s:
+		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
+			_axis = axis::pitch;
+			_state_start_time = now;
+			_sys_id.reset();
+			_signal_sign = 1;
+		}
+
+		break;
+
+	case axis::pitch:
+		if (areAllSmallerThan(coeff_var, converged_thr)) {
+			//stop
+			_param_atune_start.set(false);
+			_param_atune_start.commit();
+			_axis = axis::idle;
+			_state_start_time = now;
+		}
+
+		break;
+
+	default:
+	case axis::idle:
+		_axis = axis::roll;
+		_state_start_time = now;
+		_sys_id.reset();
+		// first step needs to be shorter to keep the drone centered
+		_steps_counter = 5;
+		_signal_sign = 1;
+		break;
+	}
+}
+
+bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float threshold)
+{
+	return (vect(0) < threshold)
+	       && (vect(1) < threshold)
+	       && (vect(2) < threshold)
+	       && (vect(3) < threshold)
+	       && (vect(4) < threshold);
 }
 
 int PidAutotuneAngularRate::task_spawn(int argc, char *argv[])

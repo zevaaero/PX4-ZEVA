@@ -52,6 +52,7 @@ public:
 	SystemIdentification() = default;
 	~SystemIdentification() = default;
 
+	void reset();
 	void update(float u, float y);
 	const matrix::Vector<float, 5> &getCoefficients() const { return _rls.getCoefficients(); }
 	const matrix::Vector<float, 5> getVariances() const { return _rls.getVariances(); }
