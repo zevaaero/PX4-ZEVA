@@ -53,8 +53,10 @@
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/pid_autotune_angular_rate_status.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
+#include <mathlib/mathlib.h>
 
 #include "system_identification.hpp"
+#include "pid_design.hpp"
 
 class PidAutotuneAngularRate : public ModuleBase<PidAutotuneAngularRate>, public ModuleParams,
 	public px4::WorkItem

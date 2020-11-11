@@ -39,8 +39,6 @@
 
 #include "pid_autotune_angular_rate.hpp"
 
-#include <mathlib/mathlib.h>
-
 using namespace matrix;
 using namespace time_literals;
 
@@ -123,10 +121,17 @@ void PidAutotuneAngularRate::Run()
 		if (hrt_elapsed_time(&_last_publish) > 100_ms) {
 			const Vector<float, 5> coeff = _sys_id_x.getCoefficients();
 			const Vector<float, 5> coeff_var = _sys_id_x.getVariances();
+
+			const Vector3f num(coeff(2), coeff(3), coeff(4));
+			const Vector3f den(1.f, coeff(0), coeff(1));
+			const Vector3f kid = pid_design::computePidGmvc(num, den, dt);
 			pid_autotune_angular_rate_status_s status{};
 			status.timestamp = now;
 			coeff.copyTo(status.coeff);
 			coeff_var.copyTo(status.coeff_var);
+			status.kc = kid(0);
+			status.ki = kid(1);
+			status.kd = kid(2);
 			_pid_autotune_angular_rate_status_pub.publish(status);
 			_last_publish = now;
 		}
