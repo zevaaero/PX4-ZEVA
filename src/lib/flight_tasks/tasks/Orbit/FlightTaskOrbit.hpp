@@ -41,12 +41,12 @@
 
 #pragma once
 
-#include "FlightTaskManualAltitudeSmooth.hpp"
+#include "FlightTaskManualAltitudeSmoothVel.hpp"
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/topics/orbit_status.h>
 #include <StraightLine.hpp>
 
-class FlightTaskOrbit : public FlightTaskManualAltitudeSmooth
+class FlightTaskOrbit : public FlightTaskManualAltitudeSmoothVel
 {
 public:
 	FlightTaskOrbit();

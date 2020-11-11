@@ -32,8 +32,6 @@
 ############################################################################
 
 px4_add_library(FlightTaskUtility
-	ManualSmoothingZ.cpp
-	ManualSmoothingXY.cpp
 	StraightLine.cpp
 	ManualVelocitySmoothingXY.cpp
 	ManualVelocitySmoothingZ.cpp
