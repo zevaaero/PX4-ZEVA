@@ -37,7 +37,6 @@ add_subdirectory(TerrainFollower)
 px4_add_module(
 	MODULE modules__navigator
 	MAIN navigator
-	STACK_MAIN 2100
 	SRCS
 		navigator_main.cpp
 		navigator_mode.cpp
