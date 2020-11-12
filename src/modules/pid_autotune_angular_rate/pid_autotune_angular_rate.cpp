@@ -142,7 +142,7 @@ void PidAutotuneAngularRate::Run()
 
 			updateStateMachine(coeff_var, now);
 
-			const Vector3f rate_ff = getIdentificationSignal();
+			const Vector3f rate_sp = getIdentificationSignal();
 
 			const Vector3f num(coeff(2), coeff(3), coeff(4));
 			const Vector3f den(1.f, coeff(0), coeff(1));
@@ -155,7 +155,7 @@ void PidAutotuneAngularRate::Run()
 			status.kc = kid(0);
 			status.ki = kid(1);
 			status.kd = kid(2);
-			rate_ff.copyTo(status.rate_ff);
+			rate_sp.copyTo(status.rate_sp);
 			_pid_autotune_angular_rate_status_pub.publish(status);
 			_last_publish = now;
 		}
@@ -250,7 +250,7 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 
 	const float signal = float(_signal_sign) * _param_atune_sysid_amp.get();
 
-	Vector3f rate_ff{};
+	Vector3f rate_sp{};
 
 	switch (_state) {
 	default:
@@ -263,15 +263,15 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 		break;
 
 	case state::roll:
-		rate_ff(0) = signal;
+		rate_sp(0) = signal;
 		break;
 
 	case state::pitch:
-		rate_ff(1) = signal;
+		rate_sp(1) = signal;
 		break;
 	}
 
-	return rate_ff;
+	return rate_sp;
 }
 
 int PidAutotuneAngularRate::task_spawn(int argc, char *argv[])

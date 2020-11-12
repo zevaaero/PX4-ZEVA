@@ -8,4 +8,4 @@ float32 kc
 float32 ki
 float32 kd
 
-float32[3] rate_ff
+float32[3] rate_sp
