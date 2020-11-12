@@ -117,21 +117,21 @@ void PidAutotuneAngularRate::Run()
 		_sys_id.setHpfCutoffFrequency(loop_frequency, .5f);
 		_sys_id.setForgettingFactor(60.f, dt);
 
-		switch (_axis) {
+		switch (_state) {
 		default:
 
 		// fallthrough
-		case axis::wait_2_s:
+		case state::wait_2_s:
 
 		// fallthrough
-		case axis::idle:
+		case state::idle:
 			break;
 
-		case axis::roll:
+		case state::roll:
 			_sys_id.update(controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
 			break;
 
-		case axis::pitch:
+		case state::pitch:
 			_sys_id.update(controls.control[actuator_controls_s::INDEX_PITCH], angular_velocity.xyz[1]);
 			break;
 		}
@@ -159,6 +159,9 @@ void PidAutotuneAngularRate::Run()
 			_pid_autotune_angular_rate_status_pub.publish(status);
 			_last_publish = now;
 		}
+
+	} else {
+		_state = state::idle;
 	}
 
 	perf_end(_cycle_perf);
@@ -169,11 +172,11 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	// when identifying an axis, check if the estimate has converged
 	constexpr float converged_thr = 0.2f;
 
-	switch (_axis) {
-	case axis::roll:
+	switch (_state) {
+	case state::roll:
 		if (areAllSmallerThan(coeff_var, converged_thr)) {
 			// wait for the drone to stabilize
-			_axis = axis::wait_2_s;
+			_state = state::wait_2_s;
 			_state_start_time = now;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
@@ -182,9 +185,9 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 
 		break;
 
-	case axis::wait_2_s:
+	case state::wait_2_s:
 		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
-			_axis = axis::pitch;
+			_state = state::pitch;
 			_state_start_time = now;
 			_sys_id.reset();
 			_signal_sign = 1;
@@ -192,20 +195,20 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 
 		break;
 
-	case axis::pitch:
+	case state::pitch:
 		if (areAllSmallerThan(coeff_var, converged_thr)) {
 			//stop
 			_param_atune_start.set(false);
 			_param_atune_start.commit();
-			_axis = axis::idle;
+			_state = state::idle;
 			_state_start_time = now;
 		}
 
 		break;
 
 	default:
-	case axis::idle:
-		_axis = axis::roll;
+	case state::idle:
+		_state = state::roll;
 		_state_start_time = now;
 		_sys_id.reset();
 		// first step needs to be shorter to keep the drone centered
@@ -224,7 +227,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	    || (fabsf(manual_control_setpoint.y) > 0.05f)) {
 		_param_atune_start.set(false);
 		_param_atune_start.commit();
-		_axis = axis::idle;
+		_state = state::idle;
 	}
 }
 
@@ -250,21 +253,21 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 
 	Vector3f rate_ff{};
 
-	switch (_axis) {
+	switch (_state) {
 	default:
 
 	// fallthrough
-	case axis::idle:
+	case state::idle:
 
 	// fallthrough
-	case axis::wait_2_s:
+	case state::wait_2_s:
 		break;
 
-	case axis::roll:
+	case state::roll:
 		rate_ff(0) = signal;
 		break;
 
-	case axis::pitch:
+	case state::pitch:
 		rate_ff(1) = signal;
 		break;
 	}

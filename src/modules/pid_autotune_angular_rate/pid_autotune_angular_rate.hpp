@@ -100,7 +100,7 @@ private:
 
 	SystemIdentification _sys_id;
 
-	enum class axis {roll, pitch, wait_2_s, idle} _axis{axis::idle};
+	enum class state {roll, pitch, wait_2_s, idle} _state{state::idle};
 	hrt_abstime _state_start_time{0};
 	uint8_t _steps_counter{0};
 	int8_t _signal_sign{0};
