@@ -50,12 +50,13 @@ void SystemIdentification::reset()
 
 void SystemIdentification::update(float u, float y)
 {
-	const float u_lpf = _u_lpf.apply(u);
+	/* const float u_lpf = _u_lpf.apply(u); */
+	float u_lpf = u;
 	_u_hpf = _alpha_hpf * _u_hpf + _alpha_hpf * (u_lpf - _u_prev);
 	_y_hpf = _alpha_hpf * _y_hpf + _alpha_hpf * (y - _y_prev);
 
 	_rls.update(_u_hpf, _y_hpf);
 
-	_u_prev = u;
+	_u_prev = u_lpf;
 	_y_prev = y;
 }

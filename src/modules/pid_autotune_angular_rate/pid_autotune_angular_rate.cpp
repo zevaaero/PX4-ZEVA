@@ -157,6 +157,7 @@ void PidAutotuneAngularRate::Run()
 			status.kd = kid(2);
 			rate_sp.copyTo(status.rate_sp);
 			_pid_autotune_angular_rate_status_pub.publish(status);
+
 			_last_publish = now;
 		}
 
@@ -170,7 +171,7 @@ void PidAutotuneAngularRate::Run()
 void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_var, hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
-	constexpr float converged_thr = 0.2f;
+	constexpr float converged_thr = 1.f;
 
 	switch (_state) {
 	case state::roll:
@@ -178,8 +179,6 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			// wait for the drone to stabilize
 			_state = state::wait_2_s;
 			_state_start_time = now;
-			// first step needs to be shorter to keep the drone centered
-			_steps_counter = 5;
 		}
 
 		break;
@@ -190,6 +189,9 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			_state_start_time = now;
 			_sys_id.reset();
 			_signal_sign = 1;
+			// first step needs to be shorter to keep the drone centered
+			_steps_counter = 5;
+			_max_steps = 10;
 		}
 
 		break;
@@ -212,6 +214,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		_sys_id.reset();
 		// first step needs to be shorter to keep the drone centered
 		_steps_counter = 5;
+		_max_steps = 10;
 		_signal_sign = 1;
 		break;
 	}
@@ -241,9 +244,16 @@ bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float thre
 
 const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 {
-	if (_steps_counter > 10) {
+	if (_steps_counter > _max_steps) {
 		_signal_sign = (_signal_sign >= 0) ? -1 : 1;
 		_steps_counter = 0;
+
+		if (_max_steps > 1) {
+			_max_steps--;
+
+		} else {
+			_max_steps = 5;
+		}
 	}
 
 	_steps_counter++;

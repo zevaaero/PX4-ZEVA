@@ -61,6 +61,8 @@ public:
 	void setHpfCutoffFrequency(float sample_freq, float cutoff) { _alpha_hpf = sample_freq / (sample_freq + 2.f * M_PI_F * cutoff); }
 
 	void setForgettingFactor(float time_constant, float dt) { _rls.setForgettingFactor(time_constant, dt); }
+	float getFilteredInputData() const { return _u_hpf; }
+	float getFilteredOutputData() const { return _y_hpf; }
 
 private:
 	ArxRls<2, 2, 1> _rls;

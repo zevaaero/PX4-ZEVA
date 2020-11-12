@@ -103,6 +103,7 @@ private:
 	enum class state {roll, pitch, wait_2_s, idle} _state{state::idle};
 	hrt_abstime _state_start_time{0};
 	uint8_t _steps_counter{0};
+	uint8_t _max_steps{5};
 	int8_t _signal_sign{0};
 
 	hrt_abstime _last_run{0};
