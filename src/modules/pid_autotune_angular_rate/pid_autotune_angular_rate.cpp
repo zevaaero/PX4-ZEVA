@@ -142,35 +142,7 @@ void PidAutotuneAngularRate::Run()
 
 			updateStateMachine(coeff_var, now);
 
-			if (_steps_counter > 10) {
-				_signal_sign = (_signal_sign >= 0) ? -1 : 1;
-				_steps_counter = 0;
-			}
-
-			_steps_counter++;
-
-			const float signal = float(_signal_sign) * _param_atune_sysid_amp.get();
-
-			Vector3f rate_ff{};
-
-			switch (_axis) {
-			default:
-
-			// fallthrough
-			case axis::idle:
-
-			// fallthrough
-			case axis::wait_2_s:
-				break;
-
-			case axis::roll:
-				rate_ff(0) = signal;
-				break;
-
-			case axis::pitch:
-				rate_ff(1) = signal;
-				break;
-			}
+			const Vector3f rate_ff = getIdentificationSignal();
 
 			const Vector3f num(coeff(2), coeff(3), coeff(4));
 			const Vector3f den(1.f, coeff(0), coeff(1));
@@ -263,6 +235,41 @@ bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float thre
 	       && (vect(2) < threshold)
 	       && (vect(3) < threshold)
 	       && (vect(4) < threshold);
+}
+
+const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
+{
+	if (_steps_counter > 10) {
+		_signal_sign = (_signal_sign >= 0) ? -1 : 1;
+		_steps_counter = 0;
+	}
+
+	_steps_counter++;
+
+	const float signal = float(_signal_sign) * _param_atune_sysid_amp.get();
+
+	Vector3f rate_ff{};
+
+	switch (_axis) {
+	default:
+
+	// fallthrough
+	case axis::idle:
+
+	// fallthrough
+	case axis::wait_2_s:
+		break;
+
+	case axis::roll:
+		rate_ff(0) = signal;
+		break;
+
+	case axis::pitch:
+		rate_ff(1) = signal;
+		break;
+	}
+
+	return rate_ff;
 }
 
 int PidAutotuneAngularRate::task_spawn(int argc, char *argv[])

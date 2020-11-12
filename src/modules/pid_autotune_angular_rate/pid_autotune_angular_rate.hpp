@@ -89,6 +89,8 @@ private:
 	void updateStateMachine(const matrix::Vector<float, 5> &coeff_var, hrt_abstime now);
 	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold);
 
+	const matrix::Vector3f getIdentificationSignal();
+
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
