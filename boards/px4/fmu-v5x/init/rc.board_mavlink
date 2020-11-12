@@ -13,28 +13,9 @@ then
 	if param compare MAV_SKN_RTPS 1
 	then
 		protocol_splitter start /dev/ttyS4
-
-		# flow control: early boards had incorrect flow control wiring
-		# so it cannot be force enabled. The parameter can be removed once
-		# the boards are replaced.
-		if param compare MAV_FLOW_CONTROL 1
-		then
-			mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard -x -z
-			micrortps_client start -d /dev/rtps -b 3000000 -h
-		else
-			mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard -x
-			micrortps_client start -d /dev/rtps -b 3000000
-		fi
-
+		mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard -x -z
+		micrortps_client start -d /dev/rtps -b 3000000 -h
 	else
-		# flow control: early boards had incorrect flow control wiring
-		# so it cannot be force enabled. The parameter can be removed once
-		# the boards are replaced.
-		if param compare MAV_FLOW_CONTROL 1
-		then
-			mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x -z
-		else
-			mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x
-		fi
+		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x -z
 	fi
 fi

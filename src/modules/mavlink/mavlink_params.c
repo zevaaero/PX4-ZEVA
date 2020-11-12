@@ -191,17 +191,6 @@ PARAM_DEFINE_INT32(MAV_ODOM_LP, 0);
 PARAM_DEFINE_INT32(MAV_RADIO_TOUT, 25);
 
 /**
- * Enable forced Flow control
- *
- * TELEM2 on Skynode only.
- *
- * @value 0 Disabled
- * @value 1 Enabled
- * @group MAVLink
- */
-PARAM_DEFINE_INT32(MAV_FLOW_CONTROL, 1);
-
-/**
  * Enable Protocol splitter and RTPS on TELEM2
  *
  * TELEM2 on Skynode only.
