@@ -334,6 +334,12 @@ MulticopterAttitudeControl::Run()
 				}
 			}
 
+			pid_autotune_angular_rate_status_s pid_autotune{};
+
+			if (_pid_autotune_angular_rate_status_sub.copy(&pid_autotune)) {
+				rates_sp += Vector3f(pid_autotune.rate_sp);
+			}
+
 			// publish rate setpoint
 			vehicle_rates_setpoint_s v_rates_sp{};
 			v_rates_sp.roll = rates_sp(0);
