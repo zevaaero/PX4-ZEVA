@@ -57,8 +57,8 @@ PidAutotuneAngularRate::~PidAutotuneAngularRate()
 
 bool PidAutotuneAngularRate::init()
 {
-	if (!_vehicle_angular_velocity_sub.registerCallback()) {
-		PX4_ERR("vehicle_angular_velocity callback registration failed!");
+	if (!_actuator_controls_sub.registerCallback()) {
+		PX4_ERR("actuator_controls callback registration failed!");
 		return false;
 	}
 
@@ -77,13 +77,13 @@ void PidAutotuneAngularRate::updateParams()
 void PidAutotuneAngularRate::Run()
 {
 	if (should_exit()) {
-		_vehicle_angular_velocity_sub.unregisterCallback();
+		_actuator_controls_sub.unregisterCallback();
 		exit_and_cleanup();
 		return;
 	}
 
-	// new gyro data needed every iteration
-	if (!_vehicle_angular_velocity_sub.updated()) {
+	// new control data needed every iteration
+	if (!_actuator_controls_sub.updated()) {
 		return;
 	}
 
@@ -99,12 +99,12 @@ void PidAutotuneAngularRate::Run()
 
 	perf_begin(_cycle_perf);
 
-	vehicle_angular_velocity_s angular_velocity;
-	_vehicle_angular_velocity_sub.copy(&angular_velocity);
+	actuator_controls_s controls;
+	_actuator_controls_sub.copy(&controls);
 
 	if (_param_atune_start.get()) {
-		actuator_controls_s controls;
-		_actuator_controls_sub.copy(&controls);
+		vehicle_angular_velocity_s angular_velocity;
+		_vehicle_angular_velocity_sub.copy(&angular_velocity);
 
 		const hrt_abstime now = angular_velocity.timestamp_sample;
 
@@ -180,7 +180,6 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			_state_start_time = now;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
-
 		}
 
 		break;
