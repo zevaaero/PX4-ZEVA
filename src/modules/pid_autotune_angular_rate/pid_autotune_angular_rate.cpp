@@ -142,13 +142,6 @@ void PidAutotuneAngularRate::Run()
 
 			updateStateMachine(coeff_var, now);
 
-			if (hrt_elapsed_time(&_state_start_time) > 20_s) {
-				// TODO: add sticks abort
-				_param_atune_start.set(false);
-				_param_atune_start.commit();
-				_axis = axis::idle;
-			}
-
 			if (_steps_counter > 10) {
 				_signal_sign = (_signal_sign >= 0) ? -1 : 1;
 				_steps_counter = 0;
@@ -247,6 +240,19 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		_steps_counter = 5;
 		_signal_sign = 1;
 		break;
+	}
+
+	// In case of convergence timeout or pilot intervention,
+	// the identification sequence is aborted immediately
+	manual_control_setpoint_s manual_control_setpoint{};
+	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
+
+	if (hrt_elapsed_time(&_state_start_time) > 20_s
+	    || (fabsf(manual_control_setpoint.x) > 0.05f)
+	    || (fabsf(manual_control_setpoint.y) > 0.05f)) {
+		_param_atune_start.set(false);
+		_param_atune_start.commit();
+		_axis = axis::idle;
 	}
 }
 
