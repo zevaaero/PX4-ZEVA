@@ -203,6 +203,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			_param_atune_start.commit();
 			_state = state::idle;
 			_state_start_time = now;
+			mavlink_log_critical(&_mavlink_log_pub, "Success");
 		}
 
 		break;
@@ -230,6 +231,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		_param_atune_start.set(false);
 		_param_atune_start.commit();
 		_state = state::idle;
+		mavlink_log_critical(&_mavlink_log_pub, "Aborted");
 	}
 }
 

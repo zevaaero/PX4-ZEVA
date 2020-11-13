@@ -46,6 +46,7 @@
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/posix.h>
 #include <px4_platform_common/px4_work_queue/WorkItem.hpp>
+#include <systemlib/mavlink_log.h>
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionCallback.hpp>
@@ -90,6 +91,8 @@ private:
 	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold);
 
 	const matrix::Vector3f getIdentificationSignal();
+
+	orb_advert_t _mavlink_log_pub{nullptr};	/**< Mavlink log uORB handle */
 
 	uORB::SubscriptionCallbackWorkItem _actuator_controls_sub{this, ORB_ID(actuator_controls_0)};
 
