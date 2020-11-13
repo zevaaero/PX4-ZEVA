@@ -64,8 +64,8 @@ namespace pid_design
 * Reference:
 * T.Yamatoto, K.Fujii and M.Kaneda, Design and implementation of a self-tuning pid controller, 1998
 */
-const matrix::Vector3f computePidGmvc(const matrix::Vector3f &num, const matrix::Vector3f &den, float dt,
-				      float sigma = 0.1f, float delta = 1.f, float lbda = 0.5f)
+inline matrix::Vector3f computePidGmvc(const matrix::Vector3f &num, const matrix::Vector3f &den, float dt,
+				       float sigma = 0.1f, float delta = 1.f, float lbda = 0.5f)
 {
 	sigma = math::constrain(sigma, 0.01f, 1.f);
 	delta = math::constrain(delta, 0.f, 1.f);
