@@ -90,7 +90,7 @@ inline matrix::Vector3f computePidGmvc(const matrix::Vector3f &num, const matrix
 	// Translate to PID gains
 	const float nu = lbda + (e1 + 1.f) * (b0 + b1 + b2);
 
-	if (abs(nu) < FLT_EPSILON) {
+	if (fabsf(nu) < FLT_EPSILON) {
 		return matrix::Vector3f();
 	}
 
