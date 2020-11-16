@@ -128,11 +128,14 @@ FixedwingPositionControl::parameters_update()
 	landing_status_publish();
 
 	// sanity check parameters
-	if ((_param_fw_airspd_max.get() < _param_fw_airspd_min.get()) ||
-	    (_param_fw_airspd_max.get() < 5.0f) ||
-	    (_param_fw_airspd_min.get() > 100.0f) ||
-	    (_param_fw_airspd_cruise.get() < _param_fw_airspd_min.get()) ||
-	    (_param_fw_airspd_cruise.get() > _param_fw_airspd_max.get())) {
+	if (_param_fw_airspd_max.get() < _param_fw_airspd_min.get() ||
+	    _param_fw_airspd_max.get() < 5.0f ||
+	    _param_fw_airspd_min.get() > 100.0f ||
+	    _param_fw_airspd_cruise.get() < _param_fw_airspd_min.get() ||
+	    _param_fw_airspd_cruise.get() > _param_fw_airspd_max.get() ||
+	    _param_fw_airspd_stall.get() > _param_fw_airspd_min.get() ||
+	    (_param_fw_wind_thld_h.get() < _param_fw_wind_thld_l.get() &&
+	     _param_fw_wind_thld_h.get() > FLT_EPSILON && _param_fw_wind_thld_l.get() > FLT_EPSILON)) {
 
 		mavlink_log_critical(&_mavlink_log_pub, "Airspeed parameters invalid");
 
@@ -224,7 +227,7 @@ FixedwingPositionControl::manual_control_setpoint_poll()
 	if (hrt_elapsed_time(&_manual_control_setpoint.timestamp) > 1_s) {
 		_manual_control_setpoint_altitude = 0.f;
 		_manual_control_setpoint_airspeed = 0.5f;
-}
+	}
 }
 
 
@@ -249,11 +252,77 @@ FixedwingPositionControl::vehicle_attitude_poll()
 	}
 }
 
+void
+FixedwingPositionControl::update_wind_mode()
+{
+	/* If the corresponding wind threshold values are set, the wind state will change if these values are
+	 * passed for a certain amount of time. The wind state is then used to increase airspeed (high wind),
+	 * resp. decrease (low wind). It takes longer to move to a lower wind state than to a higher,
+	 * as in general higher airspeed is safer. */
+
+	wind_estimate_s wind_estimate;
+
+	if (_wind_estimate_sub.update(&wind_estimate)) {
+		const matrix::Vector2f wind(wind_estimate.windspeed_north, wind_estimate.windspeed_east);
+		FW_WIND_MODE fw_wind_mode_detected(FW_WIND_MODE_NORMAL);
+
+		if (_param_fw_wind_thld_h.get() > FLT_EPSILON && wind.length() > _param_fw_wind_thld_h.get()) {
+			fw_wind_mode_detected = FW_WIND_MODE_HIGH;
+
+		} else if (_param_fw_wind_thld_l.get() > FLT_EPSILON && wind.length() < _param_fw_wind_thld_l.get()) {
+			fw_wind_mode_detected = FW_WIND_MODE_LOW;
+		}
+
+		if (fw_wind_mode_detected != _fw_wind_mode_detected_prev) {
+			_first_time_current_mode_detected = hrt_absolute_time();
+		}
+
+		const float min_time_detection_mode_down = 60.0f; // min time to switch to lower wind state
+		const float time_since_new_mode_detected = hrt_elapsed_time(&_first_time_current_mode_detected) * 1e-6f;
+
+		// immediately switch to higher wind mode after detection, but require minimum time within lower wind to switch to lower mode
+		if (fw_wind_mode_detected > _fw_wind_mode_current) {
+			_fw_wind_mode_current = fw_wind_mode_detected;
+
+		} else if (fw_wind_mode_detected < _fw_wind_mode_current
+			   && time_since_new_mode_detected > min_time_detection_mode_down) {
+			_fw_wind_mode_current = fw_wind_mode_detected;
+		}
+
+		_fw_wind_mode_detected_prev = fw_wind_mode_detected;
+	}
+}
+
 float
 FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
 		const Vector2f &ground_speed)
 {
 	float airspeed_setpoint = _param_fw_airspd_cruise.get();
+
+	// Adapt cruise airspeed setpoint based on wind estimate
+	bool do_wind_based_airspeed_scaling = (_param_fw_wind_thld_h.get() > FLT_EPSILON
+					       || _param_fw_wind_thld_l.get() > FLT_EPSILON);
+
+	if (do_wind_based_airspeed_scaling) {
+		FixedwingPositionControl::update_wind_mode();
+
+		switch (_fw_wind_mode_current) {
+		case FW_WIND_MODE_HIGH:
+			airspeed_setpoint += _param_fw_wind_arsp_of.get();
+			break;
+
+		case FW_WIND_MODE_LOW:
+			airspeed_setpoint -= _param_fw_wind_arsp_of.get();
+			break;
+
+		default:
+			break;
+		}
+
+	} else {
+		_fw_wind_mode_current = FW_WIND_MODE_NORMAL;
+		_fw_wind_mode_detected_prev = FW_WIND_MODE_NORMAL;
+	}
 
 	// Adapt cruise airspeed setpoint if given from other source (e.g. position setpoint)
 	if (PX4_ISFINITE(pos_sp_cru_airspeed) && pos_sp_cru_airspeed > 0.1f) {
@@ -263,19 +332,20 @@ FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, c
 		   (_param_fw_pos_stk_conf.get() & STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT)) {
 		// No airspeed setpoint is given through position setpoint. The FW_POS_STK_CONF parameter defines if the use of
 		// stick input for airspeed setpoint change in manual mode is enabled.
+		// The airspeed setpoint from the sticks overwrites wind-based airspeed adaptions.
 
-	if (_manual_control_setpoint_airspeed < 0.5f) {
+		if (_manual_control_setpoint_airspeed < 0.5f) {
 			// lower half of throttle is min to cruise airspeed
 			airspeed_setpoint = _param_fw_airspd_min.get() +
-				   (_param_fw_airspd_cruise.get() - _param_fw_airspd_min.get()) *
-				   _manual_control_setpoint_airspeed * 2;
+					    (_param_fw_airspd_cruise.get() - _param_fw_airspd_min.get()) *
+					    _manual_control_setpoint_airspeed * 2;
 
-	} else {
-		// upper half of throttle is trim to max airspeed
+		} else {
+			// upper half of throttle is cruise to max airspeed
 			airspeed_setpoint = _param_fw_airspd_cruise.get() +
-				   (_param_fw_airspd_max.get() - _param_fw_airspd_cruise.get()) *
-				   (_manual_control_setpoint_airspeed * 2 - 1);
-	}
+					    (_param_fw_airspd_max.get() - _param_fw_airspd_cruise.get()) *
+					    (_manual_control_setpoint_airspeed * 2 - 1);
+		}
 
 	}
 
@@ -297,7 +367,7 @@ FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, c
 		if (ground_speed_body < _param_fw_gnd_spd_min.get()) {
 			airspeed_setpoint += max(_param_fw_gnd_spd_min.get() - ground_speed_body, 0.0f);
 		}
-		}
+	}
 
 	// Constrain cruise airspeed to be in valid and safe range
 

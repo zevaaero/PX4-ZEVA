@@ -87,6 +87,7 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/wind_estimate.h>
 #include <uORB/uORB.h>
 #include <vtol_att_control/vtol_type.h>
 
@@ -160,6 +161,7 @@ private:
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};		///< vehicle command subscription
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};	///< vehicle land detected subscription
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};			///< vehicle status subscription
+	uORB::Subscription _wind_estimate_sub{ORB_ID(wind_estimate)};
 	uORB::SubscriptionData<vehicle_angular_velocity_s>	_vehicle_rates_sub{ORB_ID(vehicle_angular_velocity)};
 
 	uORB::Publication<vehicle_attitude_setpoint_s>		_attitude_sp_pub;
@@ -272,6 +274,16 @@ private:
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER};		///< used to check the mode in the last control loop iteration. Use to check if the last iteration was in the same mode.
 
+	hrt_abstime _first_time_current_mode_detected{0};		///< last time in normal wind mode
+
+	enum FW_WIND_MODE {
+		FW_WIND_MODE_LOW,
+		FW_WIND_MODE_NORMAL,
+		FW_WIND_MODE_HIGH,
+	} _fw_wind_mode_current{FW_WIND_MODE_NORMAL};		///< used to make wind-based airspeed setpoint adaptions
+
+	FW_WIND_MODE _fw_wind_mode_detected_prev{FW_WIND_MODE_NORMAL};
+
 	param_t _param_handle_airspeed_trans{PARAM_INVALID};
 	float _param_airspeed_trans{NAN};
 
@@ -350,6 +362,7 @@ private:
 
 	float		get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
 			const Vector2f &ground_speed);
+	void		update_wind_mode();
 
 	/**
 	 * Handle incoming vehicle commands
@@ -373,6 +386,10 @@ private:
 		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,
 		(ParamFloat<px4::params::FW_AIRSPD_MIN>) _param_fw_airspd_min,
 		(ParamFloat<px4::params::FW_AIRSPD_CRUISE>) _param_fw_airspd_cruise,
+
+		(ParamFloat<px4::params::FW_WIND_THLD_H>) _param_fw_wind_thld_h,
+		(ParamFloat<px4::params::FW_WIND_THLD_L>) _param_fw_wind_thld_l,
+		(ParamFloat<px4::params::FW_WIND_ARSP_OF>) _param_fw_wind_arsp_of,
 
 		(ParamFloat<px4::params::FW_CLMBOUT_DIFF>) _param_fw_clmbout_diff,
 
