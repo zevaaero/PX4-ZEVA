@@ -153,7 +153,7 @@ private:
 	void handle_message_debug_vect(mavlink_message_t *msg);
 	void handle_message_distance_sensor(mavlink_message_t *msg);
 	void handle_message_follow_target(mavlink_message_t *msg);
-	void handle_message_gps_global_origin(mavlink_message_t *msg);
+	void handle_message_set_gps_global_origin(mavlink_message_t *msg);
 	void handle_message_gps_rtcm_data(mavlink_message_t *msg);
 	void handle_message_heartbeat(mavlink_message_t *msg);
 	void handle_message_hil_gps(mavlink_message_t *msg);
