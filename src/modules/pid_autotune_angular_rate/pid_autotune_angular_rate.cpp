@@ -114,7 +114,7 @@ void PidAutotuneAngularRate::Run()
 
 		const float loop_frequency = 1.f / dt;
 		_sys_id.setLpfCutoffFrequency(loop_frequency, 30.f); // TODO: use IMU_GYRO_CUTOFF
-		_sys_id.setHpfCutoffFrequency(loop_frequency, .5f);
+		_sys_id.setHpfCutoffFrequency(loop_frequency, .05f);
 		_sys_id.setForgettingFactor(60.f, dt);
 
 		switch (_state) {
