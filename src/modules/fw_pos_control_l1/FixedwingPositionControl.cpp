@@ -210,15 +210,21 @@ FixedwingPositionControl::manual_control_setpoint_poll()
 	_manual_control_setpoint_sub.update(&_manual_control_setpoint);
 
 	_manual_control_setpoint_altitude = _manual_control_setpoint.x;
-	_manual_control_setpoint_airspeed = _manual_control_setpoint.z;
+	_manual_control_setpoint_airspeed = _manual_control_setpoint.z; // _manual_control_setpoint.z range = [0,1]
 
-	if (_param_fw_posctl_inv_st.get()) {
+	if (_param_fw_pos_stk_conf.get() & STICK_CONFIG_SWAP_STICKS_BIT) {
 		/* Alternate stick allocation (similar concept as for multirotor systems:
 		 * demanding up/down with the throttle stick, and move faster/break with the pitch one.
 		 */
 		_manual_control_setpoint_altitude = -(_manual_control_setpoint.z * 2.f - 1.f);
 		_manual_control_setpoint_airspeed = _manual_control_setpoint.x / 2.f + 0.5f;
 	}
+
+	// send neutral setpoints if no update for 1 s
+	if (hrt_elapsed_time(&_manual_control_setpoint.timestamp) > 1_s) {
+		_manual_control_setpoint_altitude = 0.f;
+		_manual_control_setpoint_airspeed = 0.5f;
+}
 }
 
 
@@ -244,54 +250,36 @@ FixedwingPositionControl::vehicle_attitude_poll()
 }
 
 float
-FixedwingPositionControl::get_demanded_airspeed()
+FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
+		const Vector2f &ground_speed)
 {
-	float altctrl_airspeed = 0;
+	float airspeed_setpoint = _param_fw_airspd_cruise.get();
 
-	// neutral throttle corresponds to trim airspeed
+	// Adapt cruise airspeed setpoint if given from other source (e.g. position setpoint)
+	if (PX4_ISFINITE(pos_sp_cru_airspeed) && pos_sp_cru_airspeed > 0.1f) {
+		airspeed_setpoint = constrain(pos_sp_cru_airspeed, _param_fw_airspd_min.get(), _param_fw_airspd_max.get());
+
+	} else if (!_control_mode.flag_control_offboard_enabled && !_control_mode.flag_control_auto_enabled &&
+		   (_param_fw_pos_stk_conf.get() & STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT)) {
+		// No airspeed setpoint is given through position setpoint. The FW_POS_STK_CONF parameter defines if the use of
+		// stick input for airspeed setpoint change in manual mode is enabled.
+
 	if (_manual_control_setpoint_airspeed < 0.5f) {
-		// lower half of throttle is min to trim airspeed
-		altctrl_airspeed = _param_fw_airspd_min.get() +
+			// lower half of throttle is min to cruise airspeed
+			airspeed_setpoint = _param_fw_airspd_min.get() +
 				   (_param_fw_airspd_cruise.get() - _param_fw_airspd_min.get()) *
 				   _manual_control_setpoint_airspeed * 2;
 
 	} else {
 		// upper half of throttle is trim to max airspeed
-		altctrl_airspeed = _param_fw_airspd_cruise.get() +
+			airspeed_setpoint = _param_fw_airspd_cruise.get() +
 				   (_param_fw_airspd_max.get() - _param_fw_airspd_cruise.get()) *
 				   (_manual_control_setpoint_airspeed * 2 - 1);
 	}
 
-	return altctrl_airspeed;
-}
-
-float
-FixedwingPositionControl::calculate_target_airspeed(float airspeed_demand, const Vector2f &ground_speed)
-{
-	/*
-	 * Calculate accelerated stall airspeed factor from commanded bank angle and use it to increase minimum airspeed.
-	 *
-	 *  We don't know the stall speed of the aircraft, but assuming user defined
-	 *  minimum airspeed (FW_AIRSPD_MIN) is slightly larger than stall speed
-	 *  this is close enough.
-	 *
-	 * increase lift vector to balance additional weight in bank
-	 *  cos(bank angle) = W/L = 1/n
-	 *   n is the load factor
-	 *
-	 * lift is proportional to airspeed^2 so the increase in stall speed is
-	 *  Vsacc = Vs * sqrt(n)
-	 *
-	 */
-	float adjusted_min_airspeed = _param_fw_airspd_min.get();
-
-	if (_airspeed_valid && PX4_ISFINITE(_att_sp.roll_body)) {
-
-		adjusted_min_airspeed = constrain(_param_fw_airspd_min.get() / sqrtf(cosf(_att_sp.roll_body)),
-						  _param_fw_airspd_min.get(), _param_fw_airspd_max.get());
 	}
 
-	// groundspeed undershoot
+	// Adapt cruise airspeed when otherwise the min groundspeed couldn't be maintained
 	if (!_l1_control.circle_mode()) {
 
 		// rotate ground speed vector with current attitude
@@ -303,16 +291,34 @@ FixedwingPositionControl::calculate_target_airspeed(float airspeed_demand, const
 		/*
 		 * This error value ensures that a plane (as long as its throttle capability is
 		 * not exceeded) travels towards a waypoint (and is not pushed more and more away
-		 * by wind). Not countering this would lead to a fly-away.
+		 * by wind). Not countering this would lead to a fly-away. Only non-zero in presence
+		 * of sufficient wind. "minimum ground speed undershoot".
 		 */
 		if (ground_speed_body < _param_fw_gnd_spd_min.get()) {
-			airspeed_demand += max(_param_fw_gnd_spd_min.get() - ground_speed_body, 0.0f);
+			airspeed_setpoint += max(_param_fw_gnd_spd_min.get() - ground_speed_body, 0.0f);
 		}
+		}
+
+	// Constrain cruise airspeed to be in valid and safe range
+
+	/*
+	 * Calculate accelerated stall airspeed factor from commanded bank angle and use it to increase minimum airspeed.
+	 *
+	 * Increase lift vector to balance additional weight in bank
+	 * cos(bank angle) = W/L = 1/n, n is the load factor
+	 *
+	 * lift is proportional to airspeed^2 so the increase in stall speed is Vsacc = Vs * sqrt(n)
+	 */
+
+	float adjusted_min_airspeed = _param_fw_airspd_min.get();
+
+	if (_airspeed_valid && PX4_ISFINITE(_att_sp.roll_body)) {
+
+		adjusted_min_airspeed = constrain(_param_fw_airspd_stall.get() / sqrtf(cosf(_att_sp.roll_body)),
+						  _param_fw_airspd_min.get(), _param_fw_airspd_max.get());
 	}
 
-	// add minimum ground speed undershoot (only non-zero in presence of sufficient wind)
-	// sanity check: limit to range
-	return constrain(airspeed_demand, adjusted_min_airspeed, _param_fw_airspd_max.get());
+	return constrain(airspeed_setpoint, adjusted_min_airspeed, _param_fw_airspd_max.get());
 }
 
 void
@@ -698,14 +704,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		_att_sp.pitch_reset_integral = false;
 		_att_sp.yaw_reset_integral = false;
 
-		float mission_airspeed = _param_fw_airspd_cruise.get();
-
-		if (PX4_ISFINITE(pos_sp_curr.cruising_speed) &&
-		    pos_sp_curr.cruising_speed > 0.1f) {
-
-			mission_airspeed = pos_sp_curr.cruising_speed;
-		}
-
 		float mission_throttle = _param_fw_thr_cruise.get();
 
 		if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
@@ -741,8 +739,14 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				tecs_fw_mission_throttle = mission_throttle;
 			}
 
+			float adapted_mission_airspeed = 0.0f;
+
+			if (PX4_ISFINITE(pos_sp_curr.cruising_speed) && pos_sp_curr.cruising_speed > 0.1f) {
+				adapted_mission_airspeed = pos_sp_curr.cruising_speed;
+			}
+
 			tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-						   calculate_target_airspeed(mission_airspeed, ground_speed),
+						   get_cruise_airspeed_setpoint(now, adapted_mission_airspeed, ground_speed),
 						   radians(_param_fw_p_lim_min.get()) - radians(_param_fw_psp_off.get()),
 						   radians(_param_fw_p_lim_max.get()) - radians(_param_fw_psp_off.get()),
 						   tecs_fw_thr_min,
@@ -770,14 +774,21 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_att_sp.yaw_body = _l1_control.nav_bearing();
 
 			float alt_sp = pos_sp_curr.alt;
+			float adapted_mission_airspeed = 0.0f;
+
+			if (PX4_ISFINITE(pos_sp_curr.cruising_speed) && pos_sp_curr.cruising_speed > 0.1f) {
+				adapted_mission_airspeed = pos_sp_curr.cruising_speed;
+			}
 
 			if (pos_sp_next.type == position_setpoint_s::SETPOINT_TYPE_LAND && pos_sp_next.valid
 			    && _l1_control.circle_mode() && _param_fw_lnd_earlycfg.get()) {
 				// We're in a loiter directly before a landing WP. Enable our landing configuration (flaps,
 				// landing airspeed and potentially tighter altitude control) already such that we don't
 				// have to do this switch (which can cause significant altitude errors) close to the ground.
+
 				_tecs.set_height_error_time_constant(_param_fw_thrtc_sc.get() * _param_fw_t_h_error_tc.get());
-				mission_airspeed = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
+				adapted_mission_airspeed = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
+
 				_att_sp.apply_flaps = true;
 			}
 
@@ -818,7 +829,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 
 			tecs_update_pitch_throttle(now, alt_sp,
-						   calculate_target_airspeed(mission_airspeed, ground_speed),
+						   get_cruise_airspeed_setpoint(now, adapted_mission_airspeed, ground_speed),
 						   radians(_param_fw_p_lim_min.get()) - radians(_param_fw_psp_off.get()),
 						   radians(_param_fw_p_lim_max.get()) - radians(_param_fw_psp_off.get()),
 						   tecs_fw_thr_min,
@@ -869,8 +880,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		_control_mode_current = FW_POSCTRL_MODE_POSITION;
 
-		float altctrl_airspeed = get_demanded_airspeed();
-
 		/* update desired altitude based on user pitch stick input */
 		bool climbout_requested = update_desired_altitude(dt);
 
@@ -888,7 +897,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		}
 
 		tecs_update_pitch_throttle(now, _hold_alt,
-					   altctrl_airspeed,
+					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
@@ -970,9 +979,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		_control_mode_current = FW_POSCTRL_MODE_ALTITUDE;
 
-		/* Get demanded airspeed */
-		float altctrl_airspeed = get_demanded_airspeed();
-
 		/* update desired altitude based on user pitch stick input */
 		bool climbout_requested = update_desired_altitude(dt);
 
@@ -990,7 +996,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		}
 
 		tecs_update_pitch_throttle(now, _hold_alt,
-					   altctrl_airspeed,
+					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
@@ -1144,7 +1150,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2f
 		const float takeoff_pitch_max_deg = _runway_takeoff.getMaxPitch(_param_fw_p_lim_max.get());
 
 		tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-					   calculate_target_airspeed(_runway_takeoff.getMinAirspeedScaling() * _param_fw_airspd_min.get(), ground_speed),
+					   get_cruise_airspeed_setpoint(now, _runway_takeoff.getMinAirspeedScaling() * _param_fw_airspd_min.get(), ground_speed),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(takeoff_pitch_max_deg),
 					   _param_fw_thr_min.get(),
@@ -1230,7 +1236,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2f
 
 			} else {
 				tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-							   calculate_target_airspeed(_param_fw_airspd_cruise.get(), ground_speed),
+							   get_cruise_airspeed_setpoint(now, _param_fw_airspd_cruise.get(), ground_speed),
 							   radians(_param_fw_p_lim_min.get()),
 							   radians(_param_fw_p_lim_max.get()),
 							   _param_fw_thr_min.get(),
@@ -1445,7 +1451,7 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2f
 		const float throttle_land = _param_fw_thr_min.get() + (_param_fw_thr_max.get() - _param_fw_thr_min.get()) * 0.1f;
 
 		tecs_update_pitch_throttle(now, terrain_alt + flare_curve_alt_rel,
-					   calculate_target_airspeed(airspeed_land, ground_speed),
+					   get_cruise_airspeed_setpoint(now, airspeed_land, ground_speed),
 					   radians(_param_fw_lnd_fl_pmin.get()),
 					   radians(_param_fw_lnd_fl_pmax.get()),
 					   0.0f,
@@ -1513,7 +1519,7 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2f
 		const float airspeed_approach = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
 
 		tecs_update_pitch_throttle(now, altitude_desired,
-					   calculate_target_airspeed(airspeed_approach, ground_speed),
+					   get_cruise_airspeed_setpoint(now, airspeed_approach, ground_speed),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),

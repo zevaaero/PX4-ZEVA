@@ -275,6 +275,12 @@ private:
 	param_t _param_handle_airspeed_trans{PARAM_INVALID};
 	float _param_airspeed_trans{NAN};
 
+	enum StickConfig {
+		STICK_CONFIG_SWAP_STICKS_BIT = (1 << 0),
+		STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT = (1 << 1)
+	};
+
+
 	// Update our local parameter cache.
 	int		parameters_update();
 
@@ -342,8 +348,8 @@ private:
 	float		get_tecs_pitch();
 	float		get_tecs_thrust();
 
-	float		get_demanded_airspeed();
-	float		calculate_target_airspeed(float airspeed_demand, const Vector2f &ground_speed);
+	float		get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
+			const Vector2f &ground_speed);
 
 	/**
 	 * Handle incoming vehicle commands
@@ -417,7 +423,7 @@ private:
 		(ParamFloat<px4::params::FW_THR_MIN>) _param_fw_thr_min,
 		(ParamFloat<px4::params::FW_THR_SLEW_MAX>) _param_fw_thr_slew_max,
 
-		(ParamBool<px4::params::FW_POSCTL_INV_ST>) _param_fw_posctl_inv_st,
+		(ParamInt<px4::params::FW_POS_STK_CONF>) _param_fw_pos_stk_conf,
 
 		// external parameters
 		(ParamInt<px4::params::FW_ARSP_MODE>) _param_fw_arsp_mode,
@@ -427,7 +433,9 @@ private:
 		(ParamFloat<px4::params::FW_MAN_P_MAX>) _param_fw_man_p_max,
 		(ParamFloat<px4::params::FW_MAN_R_MAX>) _param_fw_man_r_max,
 
-		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad
+		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad,
+
+		(ParamFloat<px4::params::ASPD_STALL>) _param_fw_airspd_stall
 
 	)
 
