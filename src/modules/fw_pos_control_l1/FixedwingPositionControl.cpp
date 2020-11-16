@@ -562,7 +562,7 @@ FixedwingPositionControl::get_terrain_altitude_takeoff(float takeoff_alt)
 	return takeoff_alt;
 }
 
-bool
+void
 FixedwingPositionControl::update_desired_altitude(float dt)
 {
 	/*
@@ -577,9 +577,6 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 	 * due to the deadband
 	 */
 	const float factor = 1.0f - deadBand;
-
-	/* Climbout mode sets maximum throttle and pitch up */
-	bool climbout_mode = false;
 
 	/*
 	 * Reset the hold altitude to the current altitude if the uncertainty
@@ -609,7 +606,6 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 		float pitch = -(_manual_control_setpoint_altitude + deadBand) / factor;
 		_hold_alt += (_param_fw_t_clmb_max.get() * dt) * pitch;
 		_was_in_deadband = false;
-		climbout_mode = (pitch > MANUAL_THROTTLE_CLIMBOUT_THRESH);
 
 	} else if (!_was_in_deadband) {
 		/* store altitude at which manual.x was inside deadBand
@@ -626,7 +622,6 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 		}
 	}
 
-	return climbout_mode;
 }
 
 bool
@@ -951,7 +946,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		_control_mode_current = FW_POSCTRL_MODE_POSITION;
 
 		/* update desired altitude based on user pitch stick input */
-		bool climbout_requested = update_desired_altitude(dt);
+		update_desired_altitude(dt);
 
 		// if we assume that user is taking off then help by demanding altitude setpoint well above ground
 		// and set limit to pitch angle to prevent steering into ground
@@ -973,8 +968,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_thr_min.get(),
 					   throttle_max,
 					   _param_fw_thr_cruise.get(),
-					   climbout_requested,
-					   climbout_requested ? radians(10.0f) : pitch_limit_min,
+					   false,
+					   pitch_limit_min,
 					   tecs_status_s::TECS_MODE_NORMAL);
 
 		/* heading control */
@@ -1050,7 +1045,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		_control_mode_current = FW_POSCTRL_MODE_ALTITUDE;
 
 		/* update desired altitude based on user pitch stick input */
-		bool climbout_requested = update_desired_altitude(dt);
+		update_desired_altitude(dt);
 
 		// if we assume that user is taking off then help by demanding altitude setpoint well above ground
 		// and set limit to pitch angle to prevent steering into ground
@@ -1072,8 +1067,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_thr_min.get(),
 					   throttle_max,
 					   _param_fw_thr_cruise.get(),
-					   climbout_requested,
-					   climbout_requested ? radians(10.0f) : pitch_limit_min,
+					   false,
+					   pitch_limit_min,
 					   tecs_status_s::TECS_MODE_NORMAL);
 
 		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
