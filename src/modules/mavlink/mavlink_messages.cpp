@@ -127,6 +127,8 @@
 using matrix::Vector3f;
 using matrix::wrap_2pi;
 
+#include "streams/GPS_GLOBAL_ORIGIN.hpp"
+
 static uint16_t cm_uint16_from_m_float(float m)
 {
 	if (m < 0.0f) {
@@ -5905,6 +5907,9 @@ static const StreamListItem streams_list[] = {
 	create_stream_list_item<MavlinkStreamAttitude>(),
 	create_stream_list_item<MavlinkStreamAttitudeQuaternion>(),
 	create_stream_list_item<MavlinkStreamVFRHUD>(),
+#if defined(GPS_GLOBAL_ORIGIN_HPP)
+	create_stream_list_item<MavlinkStreamGpsGlobalOrigin>(),
+#endif // GPS_GLOBAL_ORIGIN_HPP
 	create_stream_list_item<MavlinkStreamGPSRawInt>(),
 	create_stream_list_item<MavlinkStreamGPS2Raw>(),
 	create_stream_list_item<MavlinkStreamSystemTime>(),
