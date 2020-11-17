@@ -106,7 +106,7 @@ void OutputBase::_set_angle_setpoints(const ControlData *control_data)
 	case ControlData::Type::Angle:
 
 		{
-			matrix::Quatf q();
+			matrix::Quatf q;
 
 			for (int i = 0; i < 3; ++i) {
 				switch (control_data->type_data.angle.frames[i]) {
