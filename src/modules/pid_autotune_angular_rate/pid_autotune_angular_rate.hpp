@@ -87,6 +87,8 @@ private:
 
 	void reset();
 
+	void checkFilters();
+
 	void updateStateMachine(const matrix::Vector<float, 5> &coeff_var, hrt_abstime now);
 	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold);
 
@@ -112,10 +114,15 @@ private:
 	hrt_abstime _last_run{0};
 	hrt_abstime _last_publish{0};
 
+	float _interval_sum{0.f};
+	float _interval_count{0.f};
+	float _filter_sample_rate{1.f / 800.f};
+
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 
 	DEFINE_PARAMETERS(
 		(ParamBool<px4::params::ATUNE_START>) _param_atune_start,
-		(ParamFloat<px4::params::ATUNE_SYSID_AMP>) _param_atune_sysid_amp
+		(ParamFloat<px4::params::ATUNE_SYSID_AMP>) _param_atune_sysid_amp,
+		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff
 	)
 };

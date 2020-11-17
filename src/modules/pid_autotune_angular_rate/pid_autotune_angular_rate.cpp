@@ -48,6 +48,9 @@ PidAutotuneAngularRate::PidAutotuneAngularRate() :
 {
 	updateParams();
 	reset();
+	_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
+	_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
+	_sys_id.setForgettingFactor(60.f, 1.f / _filter_sample_rate);
 }
 
 PidAutotuneAngularRate::~PidAutotuneAngularRate()
@@ -102,21 +105,29 @@ void PidAutotuneAngularRate::Run()
 	actuator_controls_s controls;
 	_actuator_controls_sub.copy(&controls);
 
+	vehicle_angular_velocity_s angular_velocity;
+	_vehicle_angular_velocity_sub.copy(&angular_velocity);
+
+	const hrt_abstime now = controls.timestamp_sample;
+
+	// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
+	const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
+
+	// collect sample interval average for filters
+	if (_last_run > 0) {
+		_interval_sum += dt;
+		_interval_count++;
+
+	} else {
+		_interval_sum = 0.f;
+		_interval_count = 0.f;
+	}
+
+	_last_run = now;
+
+	checkFilters();
+
 	if (_param_atune_start.get()) {
-		vehicle_angular_velocity_s angular_velocity;
-		_vehicle_angular_velocity_sub.copy(&angular_velocity);
-
-		const hrt_abstime now = angular_velocity.timestamp_sample;
-
-		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
-		const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
-		_last_run = now;
-
-		const float loop_frequency = 1.f / dt;
-		_sys_id.setLpfCutoffFrequency(loop_frequency, 30.f); // TODO: use IMU_GYRO_CUTOFF
-		_sys_id.setHpfCutoffFrequency(loop_frequency, .05f);
-		_sys_id.setForgettingFactor(60.f, dt);
-
 		switch (_state) {
 		default:
 
@@ -136,7 +147,7 @@ void PidAutotuneAngularRate::Run()
 			break;
 		}
 
-		if (hrt_elapsed_time(&_last_publish) > 100_ms) {
+		if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
 			const Vector<float, 5> coeff = _sys_id.getCoefficients();
 			const Vector<float, 5> coeff_var = _sys_id.getVariances();
 
@@ -171,10 +182,33 @@ void PidAutotuneAngularRate::Run()
 	perf_end(_cycle_perf);
 }
 
+void PidAutotuneAngularRate::checkFilters()
+{
+	if (_interval_count > 1000) {
+		// calculate sensor update rate
+		const float sample_interval_avg = _interval_sum / _interval_count;
+		const float update_rate_hz = 1.f / sample_interval_avg;
+
+		// check if sample rate error is greater than 1%
+		bool reset_filters = false;
+
+		if ((fabsf(update_rate_hz - _filter_sample_rate) / _filter_sample_rate) > 0.01f) {
+			reset_filters = true;
+		}
+
+		if (reset_filters) {
+			_filter_sample_rate = update_rate_hz;
+			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
+			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
+			_sys_id.setForgettingFactor(60.f, sample_interval_avg);
+		}
+	}
+}
+
 void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_var, hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
-	constexpr float converged_thr = 1.f;
+	constexpr float converged_thr = 50.f;
 
 	switch (_state) {
 	case state::roll:
