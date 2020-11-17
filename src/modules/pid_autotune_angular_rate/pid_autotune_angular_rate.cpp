@@ -157,7 +157,7 @@ void PidAutotuneAngularRate::Run()
 
 			const Vector3f num(coeff(2), coeff(3), coeff(4));
 			const Vector3f den(1.f, coeff(0), coeff(1));
-			const Vector3f kid = pid_design::computePidGmvc(num, den, dt);
+			const Vector3f kid = pid_design::computePidGmvc(num, den, dt, 0.08f, 0.f, 0.4f);
 
 			pid_autotune_angular_rate_status_s status{};
 			status.timestamp = now;
