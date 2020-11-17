@@ -152,6 +152,9 @@ void PidAutotuneAngularRate::Run()
 			status.timestamp = now;
 			coeff.copyTo(status.coeff);
 			coeff_var.copyTo(status.coeff_var);
+			status.innov = _sys_id.getInnovation();
+			status.u_filt = _sys_id.getFilteredInputData();
+			status.y_filt = _sys_id.getFilteredOutputData();
 			status.kc = kid(0);
 			status.ki = kid(1);
 			status.kd = kid(2);

@@ -56,6 +56,7 @@ public:
 	void update(float u, float y);
 	const matrix::Vector<float, 5> &getCoefficients() const { return _rls.getCoefficients(); }
 	const matrix::Vector<float, 5> getVariances() const { return _rls.getVariances(); }
+	float getInnovation() const { return _rls.getInnovation(); }
 
 	void setLpfCutoffFrequency(float sample_freq, float cutoff) { _u_lpf.set_cutoff_frequency(sample_freq, cutoff); }
 	void setHpfCutoffFrequency(float sample_freq, float cutoff) { _alpha_hpf = sample_freq / (sample_freq + 2.f * M_PI_F * cutoff); }

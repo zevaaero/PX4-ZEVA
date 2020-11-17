@@ -83,6 +83,7 @@ public:
 	 */
 	const matrix::Vector < float, N + M + 1 > &getCoefficients() const { return _theta_hat; }
 	const matrix::Vector < float, N + M + 1 > getVariances() const { return _P.diag(); }
+	float getInnovation() const { return _innovation; }
 
 	void reset()
 	{
@@ -111,7 +112,8 @@ public:
 		const matrix::Matrix < float, 1, N + M + 1 > phi_t = phi.transpose();
 
 		_P = (_P - _P * phi * phi_t * _P / (_lambda + (phi_t * _P * phi)(0, 0))) / _lambda;
-		_theta_hat = _theta_hat + _P * phi * (_y[N] - (phi_t * _theta_hat)(0, 0));
+		_innovation = _y[N] - (phi_t * _theta_hat)(0, 0);
+		_theta_hat = _theta_hat + _P * phi * _innovation;
 	}
 
 private:
@@ -153,6 +155,7 @@ private:
 
 	matrix::SquareMatrix < float, N + M + 1 > _P;
 	matrix::Vector < float, N + M + 1 > _theta_hat;
+	float _innovation{};
 	float _u[M + D + 1] {};
 	float _y[N + 1] {};
 	float _lambda{1.f};
