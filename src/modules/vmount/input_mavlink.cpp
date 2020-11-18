@@ -134,9 +134,6 @@ int InputMavlinkROI::update_impl(unsigned int timeout_ms, ControlData **control_
 				_cur_roi_mode = vehicle_roi.mode;
 
 			} else if (vehicle_roi.mode == vehicle_roi_s::ROI_LOCATION) {
-				// If no valid altitude aas
-				_control_data.type_data.lonlat.pitch_fixed_angle = -10.f;
-
 				control_data_set_lon_lat(vehicle_roi.lon, vehicle_roi.lat, vehicle_roi.alt);
 
 				*control_data = &_control_data;
@@ -578,10 +575,6 @@ int InputMavlinkGimbalV2::update_impl(unsigned int timeout_ms, ControlData **con
 					_cur_roi_mode = vehicle_roi.mode;
 
 				} else if (vehicle_roi.mode == vehicle_roi_s::ROI_LOCATION) {
-
-					// Use altitude and not a fixed angle
-					_control_data.type_data.lonlat.pitch_fixed_angle = -10.f;
-
 					control_data_set_lon_lat(vehicle_roi.lon, vehicle_roi.lat, vehicle_roi.alt);
 
 					*control_data = &_control_data;

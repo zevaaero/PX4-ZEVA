@@ -115,7 +115,7 @@ protected:
 
 	const ControlData *_cur_control_data = nullptr;
 
-	float _q[4] = { NAN, NAN, NAN, NAN }; ///< can be NAN if not specifically set
+	float _q_setpoint[4] = { NAN, NAN, NAN, NAN }; ///< can be NAN if not specifically set
 	float _angle_velocity[3] = { NAN, NAN, NAN }; //< [rad/s], can be NAN if not specifically set
 
 	bool _stabilize[3] = { false, false, false };

@@ -106,8 +106,6 @@ void OutputBase::_set_angle_setpoints(const ControlData *control_data)
 	case ControlData::Type::Angle:
 
 		{
-			matrix::Quatf q;
-
 			for (int i = 0; i < 3; ++i) {
 				switch (control_data->type_data.angle.frames[i]) {
 				case ControlData::TypeData::TypeAngle::Frame::AngularRate:
@@ -126,7 +124,7 @@ void OutputBase::_set_angle_setpoints(const ControlData *control_data)
 			}
 
 			for (int i = 0; i < 4; ++i) {
-				_q[i] = control_data->type_data.angle.q[i];
+				_q_setpoint[i] = control_data->type_data.angle.q[i];
 			}
 		}
 
@@ -137,10 +135,10 @@ void OutputBase::_set_angle_setpoints(const ControlData *control_data)
 		break;
 
 	case ControlData::Type::Neutral:
-		_q[0] = 1.f;
-		_q[1] = 0.f;
-		_q[2] = 0.f;
-		_q[3] = 0.f;
+		_q_setpoint[0] = 1.f;
+		_q_setpoint[1] = 0.f;
+		_q_setpoint[2] = 0.f;
+		_q_setpoint[3] = 0.f;
 		_angle_velocity[0] = NAN;
 		_angle_velocity[1] = NAN;
 		_angle_velocity[2] = NAN;
@@ -191,10 +189,7 @@ void OutputBase::_handle_position_update(bool force_update)
 	pitch += _cur_control_data->type_data.lonlat.pitch_angle_offset;
 	yaw += _cur_control_data->type_data.lonlat.yaw_angle_offset;
 
-	// make sure yaw is wrapped correctly for the output
-	yaw = wrap_pi(yaw);
-
-	matrix::Quatf(matrix::Eulerf(roll, pitch, yaw)).copyTo(_q);
+	matrix::Quatf(matrix::Eulerf(roll, pitch, yaw)).copyTo(_q_setpoint);
 
 	_angle_velocity[0] = NAN;
 	_angle_velocity[1] = NAN;
@@ -224,7 +219,7 @@ void OutputBase::_calculate_angle_output(const hrt_abstime &t)
 
 	float dt = (t - _last_update) / 1.e6f;
 
-	matrix::Eulerf euler_gimbal = matrix::Quatf(_q);
+	matrix::Eulerf euler_gimbal = matrix::Quatf(_q_setpoint);
 
 	for (int i = 0; i < 3; ++i) {
 
