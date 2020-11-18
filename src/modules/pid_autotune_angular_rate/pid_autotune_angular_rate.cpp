@@ -139,16 +139,20 @@ void PidAutotuneAngularRate::Run()
 			break;
 
 		case state::roll:
-			_sys_id.update(controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
+			_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
 			break;
 
 		case state::pitch:
-			_sys_id.update(controls.control[actuator_controls_s::INDEX_PITCH], angular_velocity.xyz[1]);
+			_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_PITCH], angular_velocity.xyz[1]);
 			break;
 		}
 
 		if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
-			const Vector<float, 5> coeff = _sys_id.getCoefficients();
+			Vector<float, 5> coeff = _sys_id.getCoefficients();
+			coeff(2) *= _input_scale;
+			coeff(3) *= _input_scale;
+			coeff(4) *= _input_scale;
+
 			const Vector<float, 5> coeff_var = _sys_id.getVariances();
 
 			updateStateMachine(coeff_var, now);
@@ -225,6 +229,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			_state = state::pitch;
 			_state_start_time = now;
 			_sys_id.reset();
+			_input_scale = 1.f / (_param_mc_pitchrate_p.get() * _param_mc_pitchrate_k.get());
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
@@ -254,6 +259,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		_steps_counter = 5;
 		_max_steps = 10;
 		_signal_sign = 1;
+		_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
 		break;
 	}
 

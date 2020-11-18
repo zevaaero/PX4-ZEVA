@@ -111,6 +111,13 @@ private:
 	uint8_t _max_steps{5};
 	int8_t _signal_sign{0};
 
+	/**
+	 * Scale factor applied to the input data to have the same input/output range
+	 * When input and output scales are a lot different, some elements of the covariance
+	 * matrix will collapse much faster than other ones, creating an ill-conditionned matrix
+	 */
+	float _input_scale{1.f};
+
 	hrt_abstime _last_run{0};
 	hrt_abstime _last_publish{0};
 
@@ -123,6 +130,12 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamBool<px4::params::ATUNE_START>) _param_atune_start,
 		(ParamFloat<px4::params::ATUNE_SYSID_AMP>) _param_atune_sysid_amp,
-		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff
+
+		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,
+
+		(ParamFloat<px4::params::MC_ROLLRATE_P>) _param_mc_rollrate_p,
+		(ParamFloat<px4::params::MC_ROLLRATE_K>) _param_mc_rollrate_k,
+		(ParamFloat<px4::params::MC_PITCHRATE_P>) _param_mc_pitchrate_p,
+		(ParamFloat<px4::params::MC_PITCHRATE_K>) _param_mc_pitchrate_k
 	)
 };
