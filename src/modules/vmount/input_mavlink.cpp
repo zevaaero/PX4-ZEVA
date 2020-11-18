@@ -54,8 +54,6 @@
 #include <math.h>
 #include <matrix/matrix/math.hpp>
 
-using matrix::wrap_pi;
-
 namespace vmount
 {
 
