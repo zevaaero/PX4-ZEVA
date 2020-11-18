@@ -132,7 +132,7 @@ void PidAutotuneAngularRate::Run()
 		default:
 
 		// fallthrough
-		case state::wait_2_s:
+		case state::roll_pause:
 
 		// fallthrough
 		case state::idle:
@@ -174,6 +174,7 @@ void PidAutotuneAngularRate::Run()
 			status.ki = kid(1);
 			status.kd = kid(2);
 			rate_sp.copyTo(status.rate_sp);
+			status.state = static_cast<int>(_state);
 			_pid_autotune_angular_rate_status_pub.publish(status);
 
 			_last_publish = now;
@@ -219,13 +220,13 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		if (areAllSmallerThan(coeff_var, converged_thr)
 		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
 			// wait for the drone to stabilize
-			_state = state::wait_2_s;
+			_state = state::roll_pause;
 			_state_start_time = now;
 		}
 
 		break;
 
-	case state::wait_2_s:
+	case state::roll_pause:
 		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
 			_state = state::pitch;
 			_state_start_time = now;
@@ -250,6 +251,19 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			mavlink_log_critical(&_mavlink_log_pub, "Success");
 		}
 
+		break;
+
+	case state::pitch_pause:
+
+	// fallthrough
+	case state::yaw:
+
+	// fallthrough
+	case state::yaw_pause:
+
+	// fallthrough
+	case state::verification:
+		_state = state::idle;
 		break;
 
 	default:
@@ -316,7 +330,19 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 	case state::idle:
 
 	// fallthrough
-	case state::wait_2_s:
+	case state::roll_pause:
+
+	// fallthrough
+	case state::pitch_pause:
+
+	// fallthrough
+	case state::yaw:
+
+	// fallthrough
+	case state::yaw_pause:
+
+	// fallthrough
+	case state::verification:
 		break;
 
 	case state::roll:
