@@ -212,11 +212,12 @@ void PidAutotuneAngularRate::checkFilters()
 void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_var, hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
-	constexpr float converged_thr = 50.f;
+	constexpr float converged_thr = 5.f;
 
 	switch (_state) {
 	case state::roll:
-		if (areAllSmallerThan(coeff_var, converged_thr)) {
+		if (areAllSmallerThan(coeff_var, converged_thr)
+		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
 			// wait for the drone to stabilize
 			_state = state::wait_2_s;
 			_state_start_time = now;
@@ -239,7 +240,8 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		break;
 
 	case state::pitch:
-		if (areAllSmallerThan(coeff_var, converged_thr)) {
+		if (areAllSmallerThan(coeff_var, converged_thr)
+		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
 			//stop
 			_param_atune_start.set(false);
 			_param_atune_start.commit();
