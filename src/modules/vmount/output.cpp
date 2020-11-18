@@ -102,6 +102,10 @@ void OutputBase::_set_angle_setpoints(const ControlData *control_data)
 {
 	_cur_control_data = control_data;
 
+	for (int i = 0; i < 3; ++i) {
+		_stabilize[i] = control_data->stabilize_axis[i];
+	}
+
 	switch (control_data->type) {
 	case ControlData::Type::Angle:
 
