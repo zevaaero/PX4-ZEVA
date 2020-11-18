@@ -84,6 +84,7 @@
 #include <uORB/topics/offboard_control_mode.h>
 #include <uORB/topics/onboard_computer_status.h>
 #include <uORB/topics/optical_flow.h>
+#include <uORB/topics/pid_autotune_angular_rate_status.h>
 #include <uORB/topics/ping.h>
 #include <uORB/topics/position_setpoint_triplet.h>
 #include <uORB/topics/radio_status.h>
@@ -124,7 +125,7 @@ public:
 
 private:
 
-	void acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result);
+	void acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result, uint8_t progress);
 
 	/**
 	 * Common method to handle both mavlink command types. T is one of mavlink_command_int_t or mavlink_command_long_t.
@@ -295,6 +296,7 @@ private:
 	uORB::Subscription	_vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
 	uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription	_home_position_sub{ORB_ID(home_position)};
+	uORB::Subscription	_pid_autotune_angular_sub{ORB_ID(pid_autotune_angular_rate_status)};
 
 	// hil_sensor and hil_state_quaternion
 	enum SensorSource {
@@ -337,7 +339,8 @@ private:
 		(ParamFloat<px4::params::SENS_FLOW_MAXR>)   _param_sens_flow_maxr,
 		(ParamFloat<px4::params::SENS_FLOW_MINHGT>) _param_sens_flow_minhgt,
 		(ParamInt<px4::params::SENS_FLOW_ROT>)      _param_sens_flow_rot,
-		(ParamInt<px4::params::TF_TERRAIN_EN>)     _param_tf_terrain_en
+		(ParamInt<px4::params::TF_TERRAIN_EN>)     _param_tf_terrain_en,
+		(ParamBool<px4::params::ATUNE_START>)      _param_atune_start
 	);
 
 	// Disallow copy construction and move assignment.

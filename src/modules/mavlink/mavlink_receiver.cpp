@@ -104,7 +104,7 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 }
 
 void
-MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result)
+MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result, uint8_t progress)
 {
 	vehicle_command_ack_s command_ack{};
 
@@ -113,6 +113,7 @@ MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, ui
 	command_ack.result = result;
 	command_ack.target_system = sysid;
 	command_ack.target_component = compid;
+	command_ack.result_param1 = progress;
 
 	_cmd_ack_pub.publish(command_ack);
 }
@@ -437,6 +438,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 	bool target_ok = evaluate_target_ok(cmd_mavlink.command, cmd_mavlink.target_system, cmd_mavlink.target_component);
 	bool send_ack = true;
 	uint8_t result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
+	uint8_t progress = 0; // TODO: should be 255, 0 for backwards compatibility
 
 	if (!target_ok) {
 		// No acknowledgement for mavlink commands targeting other systems or other components in our system.
@@ -508,6 +510,51 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 			send_ack = true;
 		}
 
+	} else if (cmd_mavlink.command == MAV_CMD_DO_AUTOTUNE_ENABLE) {
+		pid_autotune_angular_rate_status_s status{};
+		_pid_autotune_angular_sub.copy(&status);
+
+		// if not busy enable via the parameter
+		if (status.state == pid_autotune_angular_rate_status_s::STATE_INIT) {
+			_param_atune_start.set(true);
+		}
+
+		// most are in progress
+		result = vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS;
+
+		switch (status.state) {
+		case pid_autotune_angular_rate_status_s::STATE_INIT:
+			progress = 0;
+			break;
+
+		case pid_autotune_angular_rate_status_s::STATE_ROLL:
+		case pid_autotune_angular_rate_status_s::STATE_ROLL_PAUSE:
+			progress = 20;
+			break;
+
+		case pid_autotune_angular_rate_status_s::STATE_PITCH:
+		case pid_autotune_angular_rate_status_s::STATE_PITCH_PAUSE:
+			progress = 40;
+			break;
+
+		case pid_autotune_angular_rate_status_s::STATE_YAW:
+		case pid_autotune_angular_rate_status_s::STATE_YAW_PAUSE:
+			progress = 60;
+			break;
+
+		case pid_autotune_angular_rate_status_s::STATE_VERIFICATION:
+			progress = 80;
+			break;
+
+		case pid_autotune_angular_rate_status_s::STATE_COMPLETE:
+			progress = 100;
+			// ack it properly with an ACCEPTED once we're done
+			result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
+			break;
+		}
+
+		send_ack = true;
+
 	} else {
 
 		send_ack = false;
@@ -544,7 +591,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 	}
 
 	if (send_ack) {
-		acknowledge(msg->sysid, msg->compid, cmd_mavlink.command, result);
+		acknowledge(msg->sysid, msg->compid, cmd_mavlink.command, result, progress);
 	}
 }
 
