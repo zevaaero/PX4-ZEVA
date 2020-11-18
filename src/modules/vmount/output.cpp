@@ -239,10 +239,12 @@ void OutputBase::_calculate_angle_output(const hrt_abstime &t)
 			_angle_outputs[i] -= euler_vehicle(i);
 		}
 
-		//bring angles into proper range [-pi, pi]
-		while (_angle_outputs[i] > M_PI_F) { _angle_outputs[i] -= 2.f * M_PI_F; }
+		if (PX4_ISFINITE(_angle_outputs[i])) {
+			//bring angles into proper range [-pi, pi]
+			while (_angle_outputs[i] > M_PI_F) { _angle_outputs[i] -= 2.f * M_PI_F; }
 
-		while (_angle_outputs[i] < -M_PI_F) { _angle_outputs[i] += 2.f * M_PI_F; }
+			while (_angle_outputs[i] < -M_PI_F) { _angle_outputs[i] += 2.f * M_PI_F; }
+		}
 	}
 }
 
