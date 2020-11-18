@@ -51,8 +51,6 @@
 #include <mathlib/mathlib.h>
 #include <matrix/math.hpp>
 
-using matrix::wrap_pi;
-
 namespace vmount
 {
 
@@ -241,9 +239,7 @@ void OutputBase::_calculate_angle_output(const hrt_abstime &t)
 
 		if (PX4_ISFINITE(_angle_outputs[i])) {
 			//bring angles into proper range [-pi, pi]
-			while (_angle_outputs[i] > M_PI_F) { _angle_outputs[i] -= 2.f * M_PI_F; }
-
-			while (_angle_outputs[i] < -M_PI_F) { _angle_outputs[i] += 2.f * M_PI_F; }
+			_angle_outputs[i] = matrix::wrap_pi(_angle_outputs[i]);
 		}
 	}
 }
