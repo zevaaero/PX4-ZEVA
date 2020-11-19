@@ -552,6 +552,11 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 			// ack it properly with an ACCEPTED once we're done
 			result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
 			break;
+
+		case pid_autotune_angular_rate_status_s::STATE_FAIL:
+			progress = 0;
+			result = vehicle_command_ack_s::VEHICLE_RESULT_FAILED;
+			break;
 		}
 
 		send_ack = true;

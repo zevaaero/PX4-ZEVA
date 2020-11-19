@@ -265,6 +265,9 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		break;
 
 	case state::complete:
+
+	// fallthrough
+	case state::fail:
 		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
 			_state = state::idle;
 			_param_atune_start.set(false);
@@ -294,9 +297,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	if (hrt_elapsed_time(&_state_start_time) > 20_s
 	    || (fabsf(manual_control_setpoint.x) > 0.05f)
 	    || (fabsf(manual_control_setpoint.y) > 0.05f)) {
-		_param_atune_start.set(false);
-		_param_atune_start.commit();
-		_state = state::idle;
+		_state = state::fail;
 	}
 }
 

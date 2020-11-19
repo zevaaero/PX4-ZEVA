@@ -102,7 +102,7 @@ private:
 
 	SystemIdentification _sys_id;
 
-	enum class state {idle, roll, roll_pause, pitch, pitch_pause, yaw, yaw_pause, verification, complete} _state{state::idle};
+	enum class state {idle, roll, roll_pause, pitch, pitch_pause, yaw, yaw_pause, verification, complete, fail} _state{state::idle};
 	hrt_abstime _state_start_time{0};
 	uint8_t _steps_counter{0};
 	uint8_t _max_steps{5};

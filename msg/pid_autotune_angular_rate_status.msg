@@ -23,5 +23,6 @@ uint8 STATE_YAW = 5
 uint8 STATE_YAW_PAUSE = 6
 uint8 STATE_VERIFICATION = 7
 uint8 STATE_COMPLETE = 8
+uint8 STATE_FAIL = 9
 
 uint8 state
