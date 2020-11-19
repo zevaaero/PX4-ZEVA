@@ -515,7 +515,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		_pid_autotune_angular_sub.copy(&status);
 
 		// if not busy enable via the parameter
-		if (status.state == pid_autotune_angular_rate_status_s::STATE_INIT) {
+		if (status.state == pid_autotune_angular_rate_status_s::STATE_IDLE) {
 			_param_atune_start.set(true);
 			_param_atune_start.commit();
 		}
@@ -524,7 +524,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		result = vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS;
 
 		switch (status.state) {
-		case pid_autotune_angular_rate_status_s::STATE_INIT:
+		case pid_autotune_angular_rate_status_s::STATE_IDLE:
 			progress = 0;
 			break;
 

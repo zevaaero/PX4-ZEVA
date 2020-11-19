@@ -244,11 +244,8 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		if (areAllSmallerThan(coeff_var, converged_thr)
 		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
 			//stop
-			_param_atune_start.set(false);
-			_param_atune_start.commit();
-			_state = state::idle;
+			_state = state::verification;
 			_state_start_time = now;
-			mavlink_log_critical(&_mavlink_log_pub, "Success");
 		}
 
 		break;
@@ -263,7 +260,18 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 
 	// fallthrough
 	case state::verification:
-		_state = state::idle;
+		_state = state::complete;
+		_state_start_time = now;
+		mavlink_log_critical(&_mavlink_log_pub, "Success");
+		break;
+
+	case state::complete:
+		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
+			_state = state::idle;
+			_param_atune_start.set(false);
+			_param_atune_start.commit();
+		}
+
 		break;
 
 	default:

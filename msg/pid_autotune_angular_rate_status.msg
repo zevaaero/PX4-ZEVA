@@ -14,7 +14,7 @@ float32[3] rate_sp
 float32 u_filt
 float32 y_filt
 
-uint8 STATE_INIT = 0
+uint8 STATE_IDLE = 0
 uint8 STATE_ROLL = 1
 uint8 STATE_ROLL_PAUSE = 2
 uint8 STATE_PITCH = 3
