@@ -22,7 +22,7 @@ uint16 capacity				# actual capacity of the battery
 uint16 cycle_count			# number of discharge cycles the battery has experienced
 uint16 run_time_to_empty	# predicted remaining battery capacity based on the present rate of discharge in min
 uint16 average_time_to_empty	# predicted remaining battery capacity based on the average rate of discharge in min
-uint16 serial_number		# serial number of the battery pack
+char[16] serial_number      #serial number of the battery pack in ASCII characters
 uint16 manufacture_date		# manufacture date, part of serial number of the battery pack
 uint16 state_of_health		# state of health. FullChargeCapacity/DesignCapacity.
 uint16 max_error			# max error, expected margin of error in % in the state-of-charge calculation with a range of 1 to 100%

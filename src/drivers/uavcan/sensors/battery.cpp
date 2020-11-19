@@ -92,7 +92,8 @@ UavcanBatteryBridge::battery_sub_cb(const uavcan::ReceivedDataStructure<uavcan::
 	// battery.cycle_count = msg.;
 	// battery.run_time_to_empty = msg.;
 	// battery.average_time_to_empty = msg.;
-	battery.serial_number = msg.model_instance_id;
+	itoa(msg.model_instance_id, battery.serial_number, 10);
+
 	battery.id = msg.getSrcNodeID().get();
 
 	// battery.voltage_cell_v[0] = msg.;

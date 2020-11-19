@@ -839,7 +839,7 @@ protected:
 			battery_status_s battery_status;
 
 			if (battery_sub.update(&battery_status)) {
-				if (battery_status.serial_number == 0) {
+				if (atoi(battery_status.serial_number) == 0) {
 					//This is not smart battery
 					continue;
 				}
@@ -850,7 +850,7 @@ protected:
 				msg.capacity_full_specification = battery_status.capacity;
 				msg.capacity_full = (int32_t)((float)(battery_status.state_of_health * battery_status.capacity) / 100.f);
 				msg.cycle_count = battery_status.cycle_count;
-				msg.serial_number = battery_status.serial_number + (battery_status.manufacture_date << 16);
+				msg.serial_number = atoi(battery_status.serial_number) + (battery_status.manufacture_date << 16);
 				//msg.device_name = ??
 				msg.weight = -1;
 				msg.discharge_minimum_voltage = -1;
