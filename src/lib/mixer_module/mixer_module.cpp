@@ -368,9 +368,7 @@ bool MixingOutput::update()
 		updateOutputSlewrateMultirotorMixer();
 	}
 
-	if (_param_simp_mix_slew.get()) {
-		updateOutputSlewrateSimplemixer(); // update dt for output slew rate in simple mixer
-	}
+	updateOutputSlewrateSimplemixer(); // update dt for output slew rate in simple mixer
 
 	unsigned n_updates = 0;
 

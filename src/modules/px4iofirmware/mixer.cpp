@@ -304,10 +304,8 @@ mixer_tick()
 			mixer_group.set_max_delta_out_once(delta_out_max);
 		}
 
-		if (REG_TO_BOOL(r_setup_slew_simplemix)) {
-			/*  set dt to be used in simple mixer for slew rate limiting */
-			mixer_group.set_dt_once(dt);
-		}
+		/*  set dt to be used in simple mixer for slew rate limiting */
+		mixer_group.set_dt_once(dt);
 
 		/* update parameter for mc thrust model if it updated */
 		if (update_mc_thrust_param) {
@@ -662,10 +660,8 @@ mixer_set_failsafe()
 		mixer_group.set_max_delta_out_once(delta_out_max);
 	}
 
-	if (REG_TO_BOOL(r_setup_slew_simplemix)) {
-		/*  set dt to be used in simple mixer for slew rate limiting */
-		mixer_group.set_dt_once(dt);
-	}
+	/*  set dt to be used in simple mixer for slew rate limiting */
+	mixer_group.set_dt_once(dt);
 
 	/* update parameter for mc thrust model if it updated */
 	if (update_mc_thrust_param) {

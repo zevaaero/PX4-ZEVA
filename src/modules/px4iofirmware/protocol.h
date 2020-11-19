@@ -243,8 +243,6 @@ enum {							/* DSM bind states */
 
 #define PX4IO_P_SETUP_ENABLE_FLIGHTTERMINATION	28	/**< flight termination; false if the circuit breaker (CBRK_FLIGHTTERM) is set */
 
-#define PX4IO_P_SETUP_SIMPLE_MIX_SLEW		29	/**< enable slew rate on simple mix outputs */
-
 #define PX4IO_THERMAL_IGNORE			UINT16_MAX
 #define PX4IO_THERMAL_OFF			0
 #define PX4IO_THERMAL_FULL			10000

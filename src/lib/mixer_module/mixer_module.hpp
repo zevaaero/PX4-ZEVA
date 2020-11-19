@@ -278,8 +278,7 @@ private:
 		(ParamInt<px4::params::MC_AIRMODE>) _param_mc_airmode,   ///< multicopter air-mode
 		(ParamFloat<px4::params::MOT_SLEW_MAX>) _param_mot_slew_max,
 		(ParamFloat<px4::params::THR_MDL_FAC>) _param_thr_mdl_fac, ///< thrust to motor control signal modelling factor
-		(ParamInt<px4::params::MOT_ORDERING>) _param_mot_ordering,
-		(ParamBool<px4::params::MIX_SIMP_SLEW>) _param_simp_mix_slew  //> simple mixer slew rate enabled
+		(ParamInt<px4::params::MOT_ORDERING>) _param_mot_ordering
 
 	)
 };
