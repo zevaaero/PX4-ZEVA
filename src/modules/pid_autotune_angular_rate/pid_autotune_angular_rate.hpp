@@ -54,6 +54,7 @@
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/pid_autotune_angular_rate_status.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
+#include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
 
 #include "system_identification.hpp"
@@ -89,7 +90,10 @@ private:
 	void checkFilters();
 
 	void updateStateMachine(const matrix::Vector<float, 5> &coeff_var, hrt_abstime now);
-	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold);
+	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold) const;
+	void copyGains();
+	bool areGainsGood() const;
+	void saveGainsToParams();
 
 	const matrix::Vector3f getIdentificationSignal();
 
@@ -97,8 +101,9 @@ private:
 
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
 	uORB::Subscription _vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)};
+	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
-	uORB::Publication<pid_autotune_angular_rate_status_s> _pid_autotune_angular_rate_status_pub{ORB_ID(pid_autotune_angular_rate_status)};
+	uORB::PublicationData<pid_autotune_angular_rate_status_s> _pid_autotune_angular_rate_status_pub{ORB_ID(pid_autotune_angular_rate_status)};
 
 	SystemIdentification _sys_id;
 
@@ -107,6 +112,13 @@ private:
 	uint8_t _steps_counter{0};
 	uint8_t _max_steps{5};
 	int8_t _signal_sign{0};
+
+	bool _armed{false};
+
+	matrix::Vector3f _kid{};
+	matrix::Vector3f _rate_k{};
+	matrix::Vector3f _rate_i{};
+	matrix::Vector3f _rate_d{};
 
 	/**
 	 * Scale factor applied to the input data to have the same input/output range
@@ -132,7 +144,11 @@ private:
 
 		(ParamFloat<px4::params::MC_ROLLRATE_P>) _param_mc_rollrate_p,
 		(ParamFloat<px4::params::MC_ROLLRATE_K>) _param_mc_rollrate_k,
+		(ParamFloat<px4::params::MC_ROLLRATE_I>) _param_mc_rollrate_i,
+		(ParamFloat<px4::params::MC_ROLLRATE_D>) _param_mc_rollrate_d,
 		(ParamFloat<px4::params::MC_PITCHRATE_P>) _param_mc_pitchrate_p,
-		(ParamFloat<px4::params::MC_PITCHRATE_K>) _param_mc_pitchrate_k
+		(ParamFloat<px4::params::MC_PITCHRATE_K>) _param_mc_pitchrate_k,
+		(ParamFloat<px4::params::MC_PITCHRATE_I>) _param_mc_pitchrate_i,
+		(ParamFloat<px4::params::MC_PITCHRATE_D>) _param_mc_pitchrate_d
 	)
 };

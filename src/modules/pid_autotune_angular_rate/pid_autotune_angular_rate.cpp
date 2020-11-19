@@ -100,6 +100,14 @@ void PidAutotuneAngularRate::Run()
 		updateParams();
 	}
 
+	if (_vehicle_status_sub.updated()) {
+		vehicle_status_s vehicle_status;
+
+		if (_vehicle_status_sub.copy(&vehicle_status)) {
+			_armed = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
+		}
+	}
+
 	perf_begin(_cycle_perf);
 
 	actuator_controls_s controls;
@@ -161,7 +169,7 @@ void PidAutotuneAngularRate::Run()
 
 			const Vector3f num(coeff(2), coeff(3), coeff(4));
 			const Vector3f den(1.f, coeff(0), coeff(1));
-			const Vector3f kid = pid_design::computePidGmvc(num, den, dt, 0.08f, 0.f, 0.4f);
+			_kid = pid_design::computePidGmvc(num, den, dt, 0.08f, 0.f, 0.4f);
 
 			pid_autotune_angular_rate_status_s status{};
 			status.timestamp = now;
@@ -170,9 +178,9 @@ void PidAutotuneAngularRate::Run()
 			status.innov = _sys_id.getInnovation();
 			status.u_filt = _sys_id.getFilteredInputData();
 			status.y_filt = _sys_id.getFilteredOutputData();
-			status.kc = kid(0);
-			status.ki = kid(1);
-			status.kd = kid(2);
+			status.kc = _kid(0);
+			status.ki = _kid(1);
+			status.kd = _kid(2);
 			rate_sp.copyTo(status.rate_sp);
 			status.state = static_cast<int>(_state);
 			_pid_autotune_angular_rate_status_pub.publish(status);
@@ -219,6 +227,8 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	case state::roll:
 		if (areAllSmallerThan(coeff_var, converged_thr)
 		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
+			copyGains();
+
 			// wait for the drone to stabilize
 			_state = state::roll_pause;
 			_state_start_time = now;
@@ -243,7 +253,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	case state::pitch:
 		if (areAllSmallerThan(coeff_var, converged_thr)
 		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
-			//stop
+			copyGains();
 			_state = state::verification;
 			_state_start_time = now;
 		}
@@ -260,11 +270,22 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 
 	// fallthrough
 	case state::verification:
-		_state = state::complete;
+		_state = areGainsGood()
+			 ? state::complete
+			 : state::fail;
+
 		_state_start_time = now;
 		break;
 
 	case state::complete:
+		if (!_armed) {
+			saveGainsToParams();
+			_state = state::idle;
+			_param_atune_start.set(false);
+			_param_atune_start.commit();
+		}
+
+		break;
 
 	// fallthrough
 	case state::fail:
@@ -294,20 +315,79 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	manual_control_setpoint_s manual_control_setpoint{};
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
-	if (hrt_elapsed_time(&_state_start_time) > 20_s
-	    || (fabsf(manual_control_setpoint.x) > 0.05f)
-	    || (fabsf(manual_control_setpoint.y) > 0.05f)) {
+	if (_state != state::complete
+	    && ((hrt_elapsed_time(&_state_start_time) > 20_s)
+		|| (fabsf(manual_control_setpoint.x) > 0.05f)
+		|| (fabsf(manual_control_setpoint.y) > 0.05f))) {
 		_state = state::fail;
 	}
 }
 
-bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float threshold)
+bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float threshold) const
 {
 	return (vect(0) < threshold)
 	       && (vect(1) < threshold)
 	       && (vect(2) < threshold)
 	       && (vect(3) < threshold)
 	       && (vect(4) < threshold);
+}
+
+void PidAutotuneAngularRate::copyGains()
+{
+	int index = -1;
+
+	switch (_state) {
+	default:
+		break;
+
+	case state::roll:
+		index = 0;
+
+		break;
+
+	case state::pitch:
+		index = 1;
+		break;
+	}
+
+	if ((index >= 0) && (index <= 2)) {
+		_rate_k(index) = _kid(0);
+		_rate_i(index) = _kid(1);
+		_rate_d(index) = _kid(2);
+	}
+}
+
+bool PidAutotuneAngularRate::areGainsGood() const
+{
+	// TODO: check yaw gains as well
+	return _rate_k(0) > 0.f && _rate_k(1) > 0.f // && _rate_k(2) > 0.f
+	       && _rate_i(0) > 0.f && _rate_i(1) > 0.f // && _rate_i(2) > 0.f
+	       && _rate_d(0) > 0.f && _rate_d(1) > 0.f; //&& _rate_d(2) > 0.f;
+}
+
+void PidAutotuneAngularRate::saveGainsToParams()
+{
+	_param_mc_rollrate_p.set(1.f);
+	_param_mc_rollrate_k.set(_rate_k(0));
+	_param_mc_rollrate_i.set(_rate_i(0));
+	_param_mc_rollrate_d.set(_rate_d(0));
+	_param_mc_rollrate_k.commit_no_notification();
+	_param_mc_rollrate_i.commit_no_notification();
+	_param_mc_rollrate_d.commit_no_notification();
+
+	_param_mc_pitchrate_p.set(1.f);
+	_param_mc_pitchrate_k.set(_rate_k(1));
+	_param_mc_pitchrate_i.set(_rate_i(1));
+	_param_mc_pitchrate_d.set(_rate_d(1));
+	_param_mc_pitchrate_k.commit_no_notification();
+	_param_mc_pitchrate_i.commit_no_notification();
+	_param_mc_pitchrate_d.commit();
+
+	//TODO: save yawrate gains
+	/* _param_mc_yawrate_p.set(1.f); */
+	/* _param_mc_yawrate_k.set(_rate_k(2)); */
+	/* _param_mc_yawrate_i.set(_rate_i(2)); */
+	/* _param_mc_yawrate_d.set(_rate_d(2)); */
 }
 
 const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
