@@ -210,6 +210,8 @@ private:
 
 	perf_counter_t _cycle_perf;
 
+	uint8_t _last_vehicle_nav_state{0};
+
 	/**
 	 * Update our local parameter cache.
 	 * Parameter update can be forced when argument is true.
@@ -726,6 +728,11 @@ MulticopterPositionControl::start_flight_task()
 		return;
 	}
 
+	// Switch to clean new task when mode switches e.g. to reset state when switching between auto modes
+	if (_last_vehicle_nav_state != _vehicle_status.nav_state) {
+		_flight_tasks.switchTask(FlightTaskIndex::None);
+	}
+
 	if (_vehicle_status.in_transition_mode) {
 		should_disable_task = false;
 		FlightTaskError error = _flight_tasks.switchTask(FlightTaskIndex::Transition);
@@ -921,6 +928,8 @@ MulticopterPositionControl::start_flight_task()
 	} else if (should_disable_task) {
 		_flight_tasks.switchTask(FlightTaskIndex::None);
 	}
+
+	_last_vehicle_nav_state = _vehicle_status.nav_state;
 }
 
 void
