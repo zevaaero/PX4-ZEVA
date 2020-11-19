@@ -153,11 +153,11 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 	if (below_alt1) {
 		if (_timestamp_first_below_alt1 == 0) {
 			_timestamp_first_below_alt1 = hrt_absolute_time();
+			_landing_forced_notified = false;
 		}
 
 	} else {
 		_timestamp_first_below_alt1 = 0;
-		_landing_forced_notified = false;
 	}
 
 	// User input assisted landing
