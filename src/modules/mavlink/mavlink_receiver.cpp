@@ -517,6 +517,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		// if not busy enable via the parameter
 		if (status.state == pid_autotune_angular_rate_status_s::STATE_INIT) {
 			_param_atune_start.set(true);
+			_param_atune_start.commit();
 		}
 
 		// most are in progress
