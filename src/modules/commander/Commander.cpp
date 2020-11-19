@@ -1895,10 +1895,15 @@ Commander::run()
 		    && !in_low_battery_failsafe && !_geofence_warning_action_on) {
 			const float minimum_stick_deflection = 0.01f * _param_com_rc_stick_ov.get();
 
+			const bool rpy_deflected = (fabsf(_manual_control_setpoint.x) > minimum_stick_deflection) ||
+						   (fabsf(_manual_control_setpoint.y) > minimum_stick_deflection)
+						   || (fabsf(_manual_control_setpoint.r) > minimum_stick_deflection);
+			const bool throttle_deflected = fabsf(_manual_control_setpoint.z - 0.5f) * 2.f > minimum_stick_deflection;
+			const bool use_throttle = !(_param_rc_override.get() & OVERRIDE_IGNORE_THROTTLE_BIT);
+
 			// transition to previous state if sticks are touched
 			if (hrt_elapsed_time(&_manual_control_setpoint.timestamp) < 1_s && // don't use uninitialized or old messages
-			    ((fabsf(_manual_control_setpoint.x) > minimum_stick_deflection) ||
-			     (fabsf(_manual_control_setpoint.y) > minimum_stick_deflection))) {
+			    (rpy_deflected || (use_throttle && throttle_deflected))) {
 				// revert to position control in any case
 				main_state_transition(status, commander_state_s::MAIN_STATE_POSCTL, status_flags, &_internal_state);
 				mavlink_log_info(&mavlink_log_pub, "Pilot took over control using sticks");
