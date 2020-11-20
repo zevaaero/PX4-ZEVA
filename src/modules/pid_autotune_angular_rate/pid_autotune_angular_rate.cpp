@@ -379,6 +379,7 @@ void PidAutotuneAngularRate::saveGainsToParams()
 	_param_mc_rollrate_k.set(_rate_k(0));
 	_param_mc_rollrate_i.set(_rate_i(0));
 	_param_mc_rollrate_d.set(_rate_d(0));
+	_param_mc_rollrate_p.commit_no_notification();
 	_param_mc_rollrate_k.commit_no_notification();
 	_param_mc_rollrate_i.commit_no_notification();
 	_param_mc_rollrate_d.commit_no_notification();
@@ -387,6 +388,7 @@ void PidAutotuneAngularRate::saveGainsToParams()
 	_param_mc_pitchrate_k.set(_rate_k(1));
 	_param_mc_pitchrate_i.set(_rate_i(1));
 	_param_mc_pitchrate_d.set(_rate_d(1));
+	_param_mc_pitchrate_p.commit_no_notification();
 	_param_mc_pitchrate_k.commit_no_notification();
 	_param_mc_pitchrate_i.commit_no_notification();
 	_param_mc_pitchrate_d.commit();
