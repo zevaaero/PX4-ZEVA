@@ -139,6 +139,7 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamBool<px4::params::ATUNE_START>) _param_atune_start,
 		(ParamFloat<px4::params::ATUNE_SYSID_AMP>) _param_atune_sysid_amp,
+		(ParamInt<px4::params::ATUNE_APPLY>) _param_atune_apply,
 
 		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,
 

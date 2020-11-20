@@ -67,3 +67,21 @@ PARAM_DEFINE_INT32(ATUNE_START, 0);
  * @group PID Autotune Angular Rate
  */
 PARAM_DEFINE_FLOAT(ATUNE_SYSID_AMP, 1.0);
+
+/**
+ * Controls when to apply the new PID gains
+ *
+ * After the auto-tuning sequence is completed,
+ * a new set of gains is available and can be applied
+ * immediately or after landing.
+ *
+ * WARNING Applying the gains in air is dangerous as there is no
+ * guarantee that those new gains will be able to stabilize
+ * the drone properly.
+ *
+ * @value 0 Do not apply the new gains (logging only)
+ * @value 1 Apply the new gains after disarm
+ * @value 2 WARNING Apply the new gains in air
+ * @group Multicopter Position Control
+ */
+PARAM_DEFINE_INT32(ATUNE_APPLY, 1);

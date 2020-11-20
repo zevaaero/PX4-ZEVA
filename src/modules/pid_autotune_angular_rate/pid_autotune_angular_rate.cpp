@@ -278,11 +278,19 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		break;
 
 	case state::complete:
-		if (!_armed) {
-			saveGainsToParams();
-			_state = state::idle;
-			_param_atune_start.set(false);
-			_param_atune_start.commit();
+		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
+			if (((_param_atune_apply.get() == 1) && !_armed)
+			    || (_param_atune_apply.get() == 2)) {
+				saveGainsToParams();
+				_state = state::idle;
+				_param_atune_start.set(false);
+				_param_atune_start.commit();
+
+			} else if (_param_atune_apply.get() == 0) {
+				_state = state::idle;
+				_param_atune_start.set(false);
+				_param_atune_start.commit();
+			}
 		}
 
 		break;
