@@ -831,12 +831,12 @@ Navigator::run()
 			// update mission item heading for all navigation modes if estimator performed a reset
 			if (_heading_reset_counter != _local_pos.heading_reset_counter) {
 				_navigation_mode_array[i]->handleEkfHeadingReset(_local_pos.delta_heading);
-				_heading_reset_counter = _local_pos.heading_reset_counter;
 			}
 
 			_navigation_mode_array[i]->run(_navigation_mode == _navigation_mode_array[i]);
-
 		}
+
+		_heading_reset_counter = _local_pos.heading_reset_counter;
 
 		/* if nothing is running, set position setpoint triplet invalid once */
 		if (_navigation_mode == nullptr && !_pos_sp_triplet_published_invalid_once) {
