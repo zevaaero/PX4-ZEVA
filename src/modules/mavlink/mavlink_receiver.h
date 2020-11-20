@@ -339,8 +339,7 @@ private:
 		(ParamFloat<px4::params::SENS_FLOW_MAXR>)   _param_sens_flow_maxr,
 		(ParamFloat<px4::params::SENS_FLOW_MINHGT>) _param_sens_flow_minhgt,
 		(ParamInt<px4::params::SENS_FLOW_ROT>)      _param_sens_flow_rot,
-		(ParamInt<px4::params::TF_TERRAIN_EN>)     _param_tf_terrain_en,
-		(ParamBool<px4::params::ATUNE_START>)      _param_atune_start
+		(ParamInt<px4::params::TF_TERRAIN_EN>)     _param_tf_terrain_en
 	);
 
 	// Disallow copy construction and move assignment.

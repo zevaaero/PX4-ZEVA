@@ -511,52 +511,67 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		}
 
 	} else if (cmd_mavlink.command == MAV_CMD_DO_AUTOTUNE_ENABLE) {
+
+		bool has_module = true;
 		pid_autotune_angular_rate_status_s status{};
 		_pid_autotune_angular_sub.copy(&status);
 
 		// if not busy enable via the parameter
 		if (status.state == pid_autotune_angular_rate_status_s::STATE_IDLE) {
-			_param_atune_start.set(true);
-			_param_atune_start.commit();
+			param_t atune_start = param_find("ATUNE_START");
+
+			if (atune_start == PARAM_INVALID) {
+				has_module = false;
+
+			} else {
+				bool start = true;
+				param_set(atune_start, &start);
+			}
 		}
 
-		// most are in progress
-		result = vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS;
+		if (has_module) {
 
-		switch (status.state) {
-		case pid_autotune_angular_rate_status_s::STATE_IDLE:
-			progress = 0;
-			break;
+			// most are in progress
+			result = vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS;
 
-		case pid_autotune_angular_rate_status_s::STATE_ROLL:
-		case pid_autotune_angular_rate_status_s::STATE_ROLL_PAUSE:
-			progress = 20;
-			break;
+			switch (status.state) {
+			case pid_autotune_angular_rate_status_s::STATE_IDLE:
+				progress = 0;
+				break;
 
-		case pid_autotune_angular_rate_status_s::STATE_PITCH:
-		case pid_autotune_angular_rate_status_s::STATE_PITCH_PAUSE:
-			progress = 40;
-			break;
+			case pid_autotune_angular_rate_status_s::STATE_ROLL:
+			case pid_autotune_angular_rate_status_s::STATE_ROLL_PAUSE:
+				progress = 20;
+				break;
 
-		case pid_autotune_angular_rate_status_s::STATE_YAW:
-		case pid_autotune_angular_rate_status_s::STATE_YAW_PAUSE:
-			progress = 60;
-			break;
+			case pid_autotune_angular_rate_status_s::STATE_PITCH:
+			case pid_autotune_angular_rate_status_s::STATE_PITCH_PAUSE:
+				progress = 40;
+				break;
 
-		case pid_autotune_angular_rate_status_s::STATE_VERIFICATION:
-			progress = 80;
-			break;
+			case pid_autotune_angular_rate_status_s::STATE_YAW:
+			case pid_autotune_angular_rate_status_s::STATE_YAW_PAUSE:
+				progress = 60;
+				break;
 
-		case pid_autotune_angular_rate_status_s::STATE_COMPLETE:
-			progress = 100;
-			// ack it properly with an ACCEPTED once we're done
-			result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
-			break;
+			case pid_autotune_angular_rate_status_s::STATE_VERIFICATION:
+				progress = 80;
+				break;
 
-		case pid_autotune_angular_rate_status_s::STATE_FAIL:
-			progress = 0;
-			result = vehicle_command_ack_s::VEHICLE_RESULT_FAILED;
-			break;
+			case pid_autotune_angular_rate_status_s::STATE_COMPLETE:
+				progress = 100;
+				// ack it properly with an ACCEPTED once we're done
+				result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
+				break;
+
+			case pid_autotune_angular_rate_status_s::STATE_FAIL:
+				progress = 0;
+				result = vehicle_command_ack_s::VEHICLE_RESULT_FAILED;
+				break;
+			}
+
+		} else {
+			result = vehicle_command_ack_s::VEHICLE_RESULT_UNSUPPORTED;
 		}
 
 		send_ack = true;
