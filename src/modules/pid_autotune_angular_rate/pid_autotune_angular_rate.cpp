@@ -221,7 +221,7 @@ void PidAutotuneAngularRate::checkFilters()
 void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_var, hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
-	constexpr float converged_thr = 5.f;
+	const float converged_thr = 2.f * _input_scale;
 
 	switch (_state) {
 	case state::roll:
