@@ -39,7 +39,8 @@ fi
 
 if [ $AUTOCNF = yes ]
 then
-
+	# Probe for LW20/c by default
+	param set SENS_EN_SF1XX 6
 fi
 
 set LOGGER_BUF 64
