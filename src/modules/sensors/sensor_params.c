@@ -216,15 +216,6 @@ PARAM_DEFINE_INT32(SENS_EXT_I2C_PRB, 1);
 PARAM_DEFINE_INT32(SENS_IMU_MODE, 1);
 
 /**
- * Skynode board rotation updated
- *
- * @boolean
- * @category system
- * @group Sensors
- */
-PARAM_DEFINE_INT32(SENS_SKN_ROT_U, 0);
-
-/**
  * Enable internal barometers
  *
  * For systems with an external barometer, this should be set to false to make sure that the external is used.

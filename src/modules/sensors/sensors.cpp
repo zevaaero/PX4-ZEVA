@@ -707,115 +707,6 @@ int Sensors::print_status()
 
 int Sensors::custom_command(int argc, char *argv[])
 {
-	if (!strcmp(argv[0], "skynode-rotation-update")) {
-		int32_t rotation = 0;
-		param_t rotation_handle = param_find("SENS_BOARD_ROT");
-		param_get(rotation_handle, &rotation);
-		PX4_INFO("existing rotation: %i", rotation);
-
-		// rotate by yaw 180
-		switch (rotation) {
-		case 0: rotation = 4; break;
-
-		case 1: rotation = 5; break;
-
-		case 2: rotation = 6; break;
-
-		case 3: rotation = 7; break;
-
-		case 4: rotation = 0; break;
-
-		case 5: rotation = 1; break;
-
-		case 6: rotation = 2; break;
-
-		case 7: rotation = 3; break;
-
-		case 8: rotation = 12; break;
-
-		case 9: rotation = 13; break;
-
-		case 10: rotation = 14; break;
-
-		case 11: rotation = 15; break;
-
-		case 12: rotation = 8; break;
-
-		case 13: rotation = 9; break;
-
-		case 14: rotation = 10; break;
-
-		case 15: rotation = 11; break;
-
-		case 16: rotation = 32; break;
-
-		case 20: rotation = 41; break;
-
-		case 24: rotation = 43; break;
-
-		case 25: rotation = 34; break;
-
-		case 26: rotation = 27; break;
-
-		case 27: rotation = 26; break;
-
-		case 28: rotation = 30; break;
-
-		case 29: rotation = 24; break;
-
-		case 30: rotation = 28; break;
-
-		case 31: rotation = 20; break;
-
-		case 32: rotation = 16; break;
-
-		case 33: rotation = 35; break;
-
-		case 34: rotation = 25; break;
-
-		case 35: rotation = 33; break;
-
-		case 41: rotation = 20; break;
-
-		case 43: rotation = 24; break;
-			// (very exotic ones are left out)
-		}
-
-		PX4_INFO("new rotation: %i", rotation);
-
-		// reset calibration
-		int32_t id = 0;
-		int result = param_set_no_notification(param_find("CAL_ACC0_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_ACC1_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_ACC2_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_GYRO0_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_GYRO1_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_GYRO2_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_MAG0_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_MAG1_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_MAG2_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_MAG3_ID"), &id);
-		result |= param_set_no_notification(param_find("CAL_ACC_PRIME"), &id);
-		result |= param_set_no_notification(param_find("CAL_GYRO_PRIME"), &id);
-		result |= param_set_no_notification(param_find("CAL_MAG_PRIME"), &id);
-
-		result |= param_set_no_notification(param_find("TC_A0_ID"), &id);
-		result |= param_set_no_notification(param_find("TC_G0_ID"), &id);
-		result |= param_set_no_notification(param_find("TC_A1_ID"), &id);
-		result |= param_set_no_notification(param_find("TC_G1_ID"), &id);
-		result |= param_set_no_notification(param_find("TC_A2_ID"), &id);
-		result |= param_set_no_notification(param_find("TC_G2_ID"), &id);
-
-		result |= param_set(rotation_handle, &rotation);
-
-		if (result != 0) {
-			PX4_ERR("param update failed (%i)", result);
-			return -1;
-		}
-
-		return 0;
-	}
-
 	return print_usage("unknown command");
 }
 
@@ -849,7 +740,6 @@ It runs in its own thread and polls on the currently selected gyro topic.
 	PRINT_MODULE_USAGE_NAME("sensors", "system");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAM_FLAG('h', "Start in HIL mode", true);
-	PRINT_MODULE_USAGE_COMMAND("skynode-rotation-update");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
 	return 0;
