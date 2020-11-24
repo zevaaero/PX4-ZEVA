@@ -102,13 +102,15 @@ void PidAutotuneAngularRate::Run()
 		}
 	}
 
-	perf_begin(_cycle_perf);
-
 	actuator_controls_s controls;
-	_actuator_controls_sub.copy(&controls);
-
 	vehicle_angular_velocity_s angular_velocity;
-	_vehicle_angular_velocity_sub.copy(&angular_velocity);
+
+	if (!_actuator_controls_sub.copy(&controls)
+	    || !_vehicle_angular_velocity_sub.copy(&angular_velocity)) {
+		return;
+	}
+
+	perf_begin(_cycle_perf);
 
 	const hrt_abstime now = controls.timestamp_sample;
 
