@@ -222,7 +222,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	switch (_state) {
 	case state::roll:
 		if (areAllSmallerThan(coeff_var, converged_thr)
-		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
+		    && ((now - _state_start_time) > 5_s)) {
 			copyGains();
 
 			// wait for the drone to stabilize
@@ -233,7 +233,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		break;
 
 	case state::roll_pause:
-		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
+		if ((now - _state_start_time) > 2_s) {
 			_state = state::pitch;
 			_state_start_time = now;
 			_sys_id.reset();
@@ -248,7 +248,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 
 	case state::pitch:
 		if (areAllSmallerThan(coeff_var, converged_thr)
-		    && (hrt_elapsed_time(&_state_start_time) > 5_s)) {
+		    && ((now - _state_start_time) > 5_s)) {
 			copyGains();
 			_state = state::verification;
 			_state_start_time = now;
@@ -274,7 +274,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		break;
 
 	case state::complete:
-		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
+		if ((now - _state_start_time) > 2_s) {
 			if (((_param_atune_apply.get() == 1) && !_armed)
 			    || (_param_atune_apply.get() == 2)) {
 				saveGainsToParams();
@@ -293,7 +293,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 
 	// fallthrough
 	case state::fail:
-		if (hrt_elapsed_time(&_state_start_time) > 2_s) {
+		if ((now - _state_start_time) > 2_s) {
 			_state = state::idle;
 			_param_atune_start.set(false);
 			_param_atune_start.commit();
@@ -320,7 +320,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
 	if (_state != state::complete
-	    && ((hrt_elapsed_time(&_state_start_time) > 20_s)
+	    && (((now - _state_start_time) > 20_s)
 		|| (fabsf(manual_control_setpoint.x) > 0.05f)
 		|| (fabsf(manual_control_setpoint.y) > 0.05f))) {
 		_state = state::fail;
