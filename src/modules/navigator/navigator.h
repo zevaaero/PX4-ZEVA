@@ -321,6 +321,7 @@ public:
 
 	void		acquire_gimbal_control();
 	void		release_gimbal_control();
+	void 		set_gimbal_neutral();
 
 private:
 	DEFINE_PARAMETERS(
