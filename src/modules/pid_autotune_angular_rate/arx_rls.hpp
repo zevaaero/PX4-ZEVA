@@ -65,9 +65,7 @@ class ArxRls final
 public:
 	ArxRls()
 	{
-		static_assert(N > 0, "The transfer function needs to have at least one pole");
-		static_assert(M >= 0, "The order of the numerator cannot be negative");
-		static_assert(D >= 0, "The delay cannot be negative");
+		static_assert(N >= M, "The transfer function needs to be proper");
 
 		reset();
 	}
