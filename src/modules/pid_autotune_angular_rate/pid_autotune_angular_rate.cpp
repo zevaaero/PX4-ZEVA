@@ -497,7 +497,7 @@ int PidAutotuneAngularRate::print_usage(const char *reason)
 
 )DESCR_STR");
 
-	PRINT_MODULE_USAGE_NAME("pid_autotune_angular_rate", "estimator");
+	PRINT_MODULE_USAGE_NAME("pid_autotune_angular_rate", "autotune");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
