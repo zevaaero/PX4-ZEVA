@@ -354,7 +354,7 @@ void PidAutotuneAngularRate::copyGains()
 		break;
 	}
 
-	if ((index >= 0) && (index <= 2)) {
+	if (index >= 0) {
 		_rate_k(index) = _kid(0);
 		_rate_i(index) = _kid(1);
 		_rate_d(index) = _kid(2);
