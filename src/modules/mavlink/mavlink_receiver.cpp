@@ -514,10 +514,10 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 		bool has_module = true;
 		pid_autotune_angular_rate_status_s status{};
+		_pid_autotune_angular_sub.copy(&status);
 
 		// if not busy enable via the parameter
-		if (_pid_autotune_angular_sub.copy(&status)
-		    && status.state == pid_autotune_angular_rate_status_s::STATE_IDLE) {
+		if (status.state == pid_autotune_angular_rate_status_s::STATE_IDLE) {
 			param_t atune_start = param_find("ATUNE_START");
 
 			if (atune_start == PARAM_INVALID) {
@@ -536,6 +536,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 			switch (status.state) {
 			case pid_autotune_angular_rate_status_s::STATE_IDLE:
+			case pid_autotune_angular_rate_status_s::STATE_INIT:
 				progress = 0;
 				break;
 

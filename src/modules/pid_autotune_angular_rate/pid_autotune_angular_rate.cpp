@@ -47,9 +47,6 @@ PidAutotuneAngularRate::PidAutotuneAngularRate() :
 	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
 {
 	reset();
-	_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
-	_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
-	_sys_id.setForgettingFactor(60.f, 1.f / _filter_sample_rate);
 }
 
 PidAutotuneAngularRate::~PidAutotuneAngularRate()
@@ -59,8 +56,8 @@ PidAutotuneAngularRate::~PidAutotuneAngularRate()
 
 bool PidAutotuneAngularRate::init()
 {
-	if (!_actuator_controls_sub.registerCallback()) {
-		PX4_ERR("actuator_controls callback registration failed!");
+	if (!_parameter_update_sub.registerCallback()) {
+		PX4_ERR("parameter_update callback registration failed!");
 		return false;
 	}
 
@@ -74,13 +71,9 @@ void PidAutotuneAngularRate::reset()
 void PidAutotuneAngularRate::Run()
 {
 	if (should_exit()) {
+		_parameter_update_sub.unregisterCallback();
 		_actuator_controls_sub.unregisterCallback();
 		exit_and_cleanup();
-		return;
-	}
-
-	// new control data needed every iteration
-	if (!_actuator_controls_sub.updated()) {
 		return;
 	}
 
@@ -92,6 +85,13 @@ void PidAutotuneAngularRate::Run()
 
 		// update parameters from storage
 		updateParams();
+		updateStateMachine(hrt_absolute_time());
+	}
+
+	// new control data needed every iteration
+	if (_state == state::idle
+	    || !_actuator_controls_sub.updated()) {
+		return;
 	}
 
 	if (_vehicle_status_sub.updated()) {
@@ -112,7 +112,7 @@ void PidAutotuneAngularRate::Run()
 
 	perf_begin(_cycle_perf);
 
-	const hrt_abstime now = controls.timestamp_sample;
+	const hrt_abstime now = hrt_absolute_time();
 
 	// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
 	const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
@@ -131,61 +131,45 @@ void PidAutotuneAngularRate::Run()
 
 	checkFilters();
 
-	if (_param_atune_start.get()) {
-		switch (_state) {
-		default:
+	if (_state == state::roll) {
+		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_ROLL],
+			       angular_velocity.xyz[0]);
 
-		// fallthrough
-		case state::roll_pause:
+	} else if (_state == state::pitch) {
+		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_PITCH],
+			       angular_velocity.xyz[1]);
+	}
 
-		// fallthrough
-		case state::idle:
-			break;
+	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
+		updateStateMachine(now);
 
-		case state::roll:
-			_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_ROLL], angular_velocity.xyz[0]);
-			break;
+		Vector<float, 5> coeff = _sys_id.getCoefficients();
+		coeff(2) *= _input_scale;
+		coeff(3) *= _input_scale;
+		coeff(4) *= _input_scale;
 
-		case state::pitch:
-			_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_PITCH], angular_velocity.xyz[1]);
-			break;
-		}
+		const Vector3f num(coeff(2), coeff(3), coeff(4));
+		const Vector3f den(1.f, coeff(0), coeff(1));
+		_kid = pid_design::computePidGmvc(num, den, dt, 0.08f, 0.f, 0.4f);
 
-		if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
-			Vector<float, 5> coeff = _sys_id.getCoefficients();
-			coeff(2) *= _input_scale;
-			coeff(3) *= _input_scale;
-			coeff(4) *= _input_scale;
+		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
+		const Vector3f rate_sp = getIdentificationSignal();
 
-			const Vector<float, 5> coeff_var = _sys_id.getVariances();
+		pid_autotune_angular_rate_status_s status{};
+		status.timestamp = now;
+		coeff.copyTo(status.coeff);
+		coeff_var.copyTo(status.coeff_var);
+		status.innov = _sys_id.getInnovation();
+		status.u_filt = _sys_id.getFilteredInputData();
+		status.y_filt = _sys_id.getFilteredOutputData();
+		status.kc = _kid(0);
+		status.ki = _kid(1);
+		status.kd = _kid(2);
+		rate_sp.copyTo(status.rate_sp);
+		status.state = static_cast<int>(_state);
+		_pid_autotune_angular_rate_status_pub.publish(status);
 
-			updateStateMachine(coeff_var, now);
-
-			const Vector3f rate_sp = getIdentificationSignal();
-
-			const Vector3f num(coeff(2), coeff(3), coeff(4));
-			const Vector3f den(1.f, coeff(0), coeff(1));
-			_kid = pid_design::computePidGmvc(num, den, dt, 0.08f, 0.f, 0.4f);
-
-			pid_autotune_angular_rate_status_s status{};
-			status.timestamp = now;
-			coeff.copyTo(status.coeff);
-			coeff_var.copyTo(status.coeff_var);
-			status.innov = _sys_id.getInnovation();
-			status.u_filt = _sys_id.getFilteredInputData();
-			status.y_filt = _sys_id.getFilteredOutputData();
-			status.kc = _kid(0);
-			status.ki = _kid(1);
-			status.kd = _kid(2);
-			rate_sp.copyTo(status.rate_sp);
-			status.state = static_cast<int>(_state);
-			_pid_autotune_angular_rate_status_pub.publish(status);
-
-			_last_publish = now;
-		}
-
-	} else {
-		_state = state::idle;
+		_last_publish = now;
 	}
 
 	perf_end(_cycle_perf);
@@ -206,6 +190,7 @@ void PidAutotuneAngularRate::checkFilters()
 		}
 
 		if (reset_filters) {
+			_are_filters_initialized = true;
 			_filter_sample_rate = update_rate_hz;
 			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
 			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
@@ -214,16 +199,48 @@ void PidAutotuneAngularRate::checkFilters()
 	}
 }
 
-void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_var, hrt_abstime now)
+void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
 	const float converged_thr = 2.f * _input_scale;
 
 	switch (_state) {
+	default:
+
+	// fallthrough
+	case state::idle:
+
+		if (_param_atune_start.get()) {
+			if (registerActuatorControlsCallback()) {
+				_state = state::init;
+
+			} else {
+				_state = state::fail;
+			}
+
+			_state_start_time = now;
+		}
+
+		break;
+
+	case state::init:
+		if (_are_filters_initialized) {
+			_state = state::roll;
+			_state_start_time = now;
+			_sys_id.reset();
+			// first step needs to be shorter to keep the drone centered
+			_steps_counter = 5;
+			_max_steps = 10;
+			_signal_sign = 1;
+			_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
+		}
+
+		break;
+
 	case state::roll:
-		if (areAllSmallerThan(coeff_var, converged_thr)
+		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
-			copyGains();
+			copyGains(0);
 
 			// wait for the drone to stabilize
 			_state = state::roll_pause;
@@ -247,9 +264,9 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 		break;
 
 	case state::pitch:
-		if (areAllSmallerThan(coeff_var, converged_thr)
+		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
-			copyGains();
+			copyGains(1);
 			_state = state::verification;
 			_state_start_time = now;
 		}
@@ -279,38 +296,22 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 			    || (_param_atune_apply.get() == 2)) {
 				saveGainsToParams();
 				_state = state::idle;
-				_param_atune_start.set(false);
-				_param_atune_start.commit();
+				stopAutotune();
 
 			} else if (_param_atune_apply.get() == 0) {
 				_state = state::idle;
-				_param_atune_start.set(false);
-				_param_atune_start.commit();
+				stopAutotune();
 			}
 		}
 
 		break;
 
-	// fallthrough
 	case state::fail:
 		if ((now - _state_start_time) > 2_s) {
 			_state = state::idle;
-			_param_atune_start.set(false);
-			_param_atune_start.commit();
+			stopAutotune();
 		}
 
-		break;
-
-	default:
-	case state::idle:
-		_state = state::roll;
-		_state_start_time = now;
-		_sys_id.reset();
-		// first step needs to be shorter to keep the drone centered
-		_steps_counter = 5;
-		_max_steps = 10;
-		_signal_sign = 1;
-		_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
 		break;
 	}
 
@@ -320,6 +321,7 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
 	if (_state != state::complete
+	    && _state != state::idle
 	    && (((now - _state_start_time) > 20_s)
 		|| (fabsf(manual_control_setpoint.x) > 0.05f)
 		|| (fabsf(manual_control_setpoint.y) > 0.05f))) {
@@ -327,7 +329,17 @@ void PidAutotuneAngularRate::updateStateMachine(const Vector<float, 5> &coeff_va
 	}
 }
 
-bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float threshold) const
+bool PidAutotuneAngularRate::registerActuatorControlsCallback()
+{
+	if (!_actuator_controls_sub.registerCallback()) {
+		PX4_ERR("actuator_controls callback registration failed!");
+		return false;
+	}
+
+	return true;
+}
+
+bool PidAutotuneAngularRate::areAllSmallerThan(const Vector<float, 5> &vect, float threshold) const
 {
 	return (vect(0) < threshold)
 	       && (vect(1) < threshold)
@@ -336,25 +348,9 @@ bool PidAutotuneAngularRate::areAllSmallerThan(Vector<float, 5> vect, float thre
 	       && (vect(4) < threshold);
 }
 
-void PidAutotuneAngularRate::copyGains()
+void PidAutotuneAngularRate::copyGains(int index)
 {
-	int index = -1;
-
-	switch (_state) {
-	default:
-		break;
-
-	case state::roll:
-		index = 0;
-
-		break;
-
-	case state::pitch:
-		index = 1;
-		break;
-	}
-
-	if (index >= 0) {
+	if (index <= 2) {
 		_rate_k(index) = _kid(0);
 		_rate_i(index) = _kid(1);
 		_rate_d(index) = _kid(2);
@@ -402,6 +398,13 @@ void PidAutotuneAngularRate::saveGainsToParams()
 	/* _param_mc_yawrate_d.set(_rate_d(2)); */
 }
 
+void PidAutotuneAngularRate::stopAutotune()
+{
+	_param_atune_start.set(false);
+	_param_atune_start.commit();
+	_actuator_controls_sub.unregisterCallback();
+}
+
 const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 {
 	if (_steps_counter > _max_steps) {
@@ -422,35 +425,11 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 
 	Vector3f rate_sp{};
 
-	switch (_state) {
-	default:
-
-	// fallthrough
-	case state::idle:
-
-	// fallthrough
-	case state::roll_pause:
-
-	// fallthrough
-	case state::pitch_pause:
-
-	// fallthrough
-	case state::yaw:
-
-	// fallthrough
-	case state::yaw_pause:
-
-	// fallthrough
-	case state::verification:
-		break;
-
-	case state::roll:
+	if (_state == state::roll) {
 		rate_sp(0) = signal;
-		break;
 
-	case state::pitch:
+	} else if (_state ==  state::pitch) {
 		rate_sp(1) = signal;
-		break;
 	}
 
 	return rate_sp;

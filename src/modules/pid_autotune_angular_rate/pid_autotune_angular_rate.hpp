@@ -88,25 +88,28 @@ private:
 
 	void checkFilters();
 
-	void updateStateMachine(const matrix::Vector<float, 5> &coeff_var, hrt_abstime now);
-	bool areAllSmallerThan(matrix::Vector<float, 5> vect, float threshold) const;
-	void copyGains();
+	void updateStateMachine(hrt_abstime now);
+	bool registerActuatorControlsCallback();
+	void stopAutotune();
+	bool areAllSmallerThan(const matrix::Vector<float, 5> &vect, float threshold) const;
+	void copyGains(int index);
 	bool areGainsGood() const;
 	void saveGainsToParams();
 
 	const matrix::Vector3f getIdentificationSignal();
 
 	uORB::SubscriptionCallbackWorkItem _actuator_controls_sub{this, ORB_ID(actuator_controls_0)};
+	uORB::SubscriptionCallbackWorkItem _parameter_update_sub{this, ORB_ID(parameter_update)};
 
-	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
+	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription _vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
-	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
+
 	uORB::PublicationData<pid_autotune_angular_rate_status_s> _pid_autotune_angular_rate_status_pub{ORB_ID(pid_autotune_angular_rate_status)};
 
 	SystemIdentification _sys_id;
 
-	enum class state {idle, roll, roll_pause, pitch, pitch_pause, yaw, yaw_pause, verification, complete, fail} _state{state::idle};
+	enum class state {idle, init, roll, roll_pause, pitch, pitch_pause, yaw, yaw_pause, verification, complete, fail} _state{state::idle};
 	hrt_abstime _state_start_time{0};
 	uint8_t _steps_counter{0};
 	uint8_t _max_steps{5};
@@ -131,7 +134,8 @@ private:
 
 	float _interval_sum{0.f};
 	float _interval_count{0.f};
-	float _filter_sample_rate{1.f / 800.f};
+	float _filter_sample_rate{1.f};
+	bool _are_filters_initialized{false};
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 
