@@ -205,11 +205,7 @@ void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
 	const float converged_thr = 2.f * _input_scale;
 
 	switch (_state) {
-	default:
-
-	// fallthrough
 	case state::idle:
-
 		if (_param_atune_start.get()) {
 			if (registerActuatorControlsCallback()) {
 				_state = state::init;
