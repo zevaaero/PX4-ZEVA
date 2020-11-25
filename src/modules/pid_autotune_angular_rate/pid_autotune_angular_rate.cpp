@@ -363,10 +363,16 @@ void PidAutotuneAngularRate::copyGains()
 
 bool PidAutotuneAngularRate::areGainsGood() const
 {
-	// TODO: check yaw gains as well
-	return _rate_k(0) > 0.f && _rate_k(1) > 0.f // && _rate_k(2) > 0.f
-	       && _rate_i(0) > 0.f && _rate_i(1) > 0.f // && _rate_i(2) > 0.f
-	       && _rate_d(0) > 0.f && _rate_d(1) > 0.f; //&& _rate_d(2) > 0.f;
+	// TODO: check yaw gains as well (remove Vector2f cast)
+	const bool are_positive = Vector2f(_rate_k).min() > 0.f
+				  && Vector2f(_rate_i).min() > 0.f
+				  && Vector2f(_rate_d).min() > 0.f;
+
+	const bool are_small_enough = Vector2f(_rate_k).max() < 0.5f
+				      && Vector2f(_rate_i).max() < 10.f
+				      && Vector2f(_rate_d).max() < 0.1f;
+
+	return are_positive && are_small_enough;
 }
 
 void PidAutotuneAngularRate::saveGainsToParams()
