@@ -517,6 +517,8 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		_pid_autotune_angular_sub.copy(&status);
 
 		// if not busy enable via the parameter
+		// do not check the return value of the uORB copy above because the module
+		// starts publishing only when ATUNE_START is set
 		if (status.state == pid_autotune_angular_rate_status_s::STATE_IDLE) {
 			param_t atune_start = param_find("ATUNE_START");
 
