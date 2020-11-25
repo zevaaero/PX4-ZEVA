@@ -44,7 +44,7 @@ using namespace time_literals;
 
 PidAutotuneAngularRate::PidAutotuneAngularRate() :
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl)
+	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
 {
 	reset();
 	_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
