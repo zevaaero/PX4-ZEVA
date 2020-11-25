@@ -32,74 +32,74 @@
  ****************************************************************************/
 
 /**
- * Test code for the ArxRls class
- * Run this test only using make tests TESTFILTER=arx_rls
+ * Test code for the SystemIdentification class
+ * Run this test only using make tests TESTFILTER=system_identification
  */
 
 #include <gtest/gtest.h>
 #include <matrix/matrix/math.hpp>
 
-#include "arx_rls.hpp"
+#include "system_identification.hpp"
 
 using namespace matrix;
 
-class ArxRlsTest : public ::testing::Test
+class SystemIdentificationTest : public ::testing::Test
 {
 public:
-	ArxRlsTest() {};
+	SystemIdentificationTest() {};
 };
 
-TEST_F(ArxRlsTest, test211)
+TEST_F(SystemIdentificationTest, basicTest)
 {
-	ArxRls<2, 1, 1> _rls;
-	_rls.update(1, 2);
-	_rls.update(3, 4);
-	_rls.update(5, 6);
-	const Vector<float, 4> coefficients = _rls.getCoefficients();
-	float data_check[] = {-1.79f, 0.97f, 0.42f, -0.48f}; // generated from Python script
-	const Vector<float, 4> coefficients_check(data_check);
-	float eps = 1e-2;
-	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
-}
+	constexpr float fs = 800.f;
 
-TEST_F(ArxRlsTest, test221)
-{
-	ArxRls<2, 2, 1> _rls;
-	_rls.update(1, 2);
-	_rls.update(3, 4);
-	_rls.update(5, 6);
-	_rls.update(7, 8);
-	const Vector<float, 5> coefficients = _rls.getCoefficients();
-	float data_check[] = {-1.81, 1.06f, 0.38f, -0.27f, 0.26f};
+	SystemIdentification _sys_id;
+	_sys_id.setHpfCutoffFrequency(fs, 0.05f);
+	_sys_id.setLpfCutoffFrequency(fs, 30.f);
+	_sys_id.setForgettingFactor(80.f, 1.f / fs);
+
+	for (int i = 0; i < 10; i += 2) {
+		_sys_id.update(float(i), float(i + 1));
+	}
+
+	const Vector<float, 5> coefficients = _sys_id.getCoefficients();
+	float data_check[] = {-2.51f, 2.39f, 12.21f, -8.44f, -10.28f};
 	const Vector<float, 5> coefficients_check(data_check);
 	float eps = 1e-2;
 	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
 	coefficients.print();
-	coefficients_check.print();
+	_sys_id.getVariances().print();
 }
 
-TEST_F(ArxRlsTest, resetTest)
+TEST_F(SystemIdentificationTest, resetTest)
 {
-	ArxRls<2, 2, 1> _rls;
-	_rls.update(1, 2);
-	_rls.update(3, 4);
-	_rls.update(5, 6);
-	_rls.update(7, 8);
-	const Vector<float, 5> coefficients = _rls.getCoefficients();
+	constexpr float fs = 800.f;
+
+	SystemIdentification _sys_id;
+	_sys_id.setHpfCutoffFrequency(fs, 0.05f);
+	_sys_id.setLpfCutoffFrequency(fs, 30.f);
+	_sys_id.setForgettingFactor(80.f, 1.f / fs);
+
+	for (int i = 0; i < 10; i += 2) {
+		_sys_id.update(float(i), float(i + 1));
+	}
+
+	const Vector<float, 5> coefficients = _sys_id.getCoefficients();
 
 	// WHEN: resetting
-	_rls.reset();
+	_sys_id.reset();
 
 	// THEN: the variances and coefficients should be properly reset
-	EXPECT_TRUE(_rls.getVariances().min() > 5000.f);
-	EXPECT_TRUE(_rls.getCoefficients().abs().max() < 1e-8f);
+	EXPECT_TRUE(_sys_id.getCoefficients().abs().max() < 1e-8f);
+	EXPECT_TRUE(_sys_id.getVariances().min() > 9e3f);
 
 	// AND WHEN: running the same sequence of inputs-outputs
-	_rls.update(1, 2);
-	_rls.update(3, 4);
-	_rls.update(5, 6);
-	_rls.update(7, 8);
+	for (int i = 0; i < 10; i += 2) {
+		_sys_id.update(float(i), float(i + 1));
+	}
 
 	// THEN: the result should be exactly the same
-	EXPECT_TRUE((coefficients - _rls.getCoefficients()).abs().max() < 1e-8f);
+	EXPECT_TRUE((coefficients - _sys_id.getCoefficients()).abs().max() < 1e-8f);
+	coefficients.print();
+	_sys_id.getVariances().print();
 }

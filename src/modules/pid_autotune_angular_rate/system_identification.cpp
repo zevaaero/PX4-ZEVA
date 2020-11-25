@@ -42,6 +42,7 @@
 void SystemIdentification::reset()
 {
 	_rls.reset();
+	_u_lpf.reset(0.f);
 	_u_hpf = 0.f;
 	_y_hpf = 0.f;
 	_u_prev = 0.f;
