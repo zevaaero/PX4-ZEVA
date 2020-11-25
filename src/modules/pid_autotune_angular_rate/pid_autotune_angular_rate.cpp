@@ -46,7 +46,6 @@ PidAutotuneAngularRate::PidAutotuneAngularRate() :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl)
 {
-	updateParams();
 	reset();
 	_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
 	_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
@@ -70,11 +69,6 @@ bool PidAutotuneAngularRate::init()
 
 void PidAutotuneAngularRate::reset()
 {
-}
-
-void PidAutotuneAngularRate::updateParams()
-{
-	ModuleParams::updateParams();
 }
 
 void PidAutotuneAngularRate::Run()

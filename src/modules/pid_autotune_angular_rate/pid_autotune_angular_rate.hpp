@@ -83,7 +83,6 @@ public:
 
 private:
 	void Run() override;
-	void updateParams() override;
 
 	void reset();
 
