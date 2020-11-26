@@ -2731,8 +2731,8 @@ Commander::run()
 
 			if (_armed.armed) {
 				if (fd_status_flags.arm_escs) {
-					// Check within the PWM spoolup time when the controllers are not affecting actuator_outputs
-					if (hrt_elapsed_time(&_status.armed_time) < _param_mpc_spoolup_time.get() * 1000000) {
+					// Check within the motor spool up time before the takeoff
+					if (hrt_elapsed_time(&_status.armed_time) < _param_mpc_spoolup_time.get() * 1_s) {
 						disarm(arm_disarm_reason_t::failure_detector);
 						mavlink_log_critical(&_mavlink_log_pub, "ESCs did not respond to arm request\t");
 						events::send(events::ID("commander_fd_escs_not_arming"), events::Log::Critical, "ESCs did not respond to arm request");
