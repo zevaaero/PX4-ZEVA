@@ -109,7 +109,20 @@ private:
 
 	SystemIdentification _sys_id;
 
-	enum class state {idle, init, roll, roll_pause, pitch, pitch_pause, yaw, yaw_pause, verification, complete, fail} _state{state::idle};
+	enum class state {
+		idle = pid_autotune_angular_rate_status_s::STATE_IDLE,
+		init = pid_autotune_angular_rate_status_s::STATE_INIT,
+		roll = pid_autotune_angular_rate_status_s::STATE_ROLL,
+		roll_pause = pid_autotune_angular_rate_status_s::STATE_ROLL_PAUSE,
+		pitch = pid_autotune_angular_rate_status_s::STATE_PITCH,
+		pitch_pause = pid_autotune_angular_rate_status_s::STATE_PITCH_PAUSE,
+		yaw = pid_autotune_angular_rate_status_s::STATE_YAW,
+		yaw_pause = pid_autotune_angular_rate_status_s::STATE_YAW_PAUSE,
+		verification = pid_autotune_angular_rate_status_s::STATE_VERIFICATION,
+		complete = pid_autotune_angular_rate_status_s::STATE_COMPLETE,
+		fail = pid_autotune_angular_rate_status_s::STATE_FAIL
+	} _state{state::idle};
+
 	hrt_abstime _state_start_time{0};
 	uint8_t _steps_counter{0};
 	uint8_t _max_steps{5};
