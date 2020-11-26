@@ -172,6 +172,8 @@ RCUpdate::update_rc_functions()
 	for (int i = 0; i < rc_parameter_map_s::RC_PARAM_MAP_NCHAN; i++) {
 		_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_PARAM_1 + i] = _parameters.rc_map_param[i] - 1;
 	}
+
+	map_flight_modes_buttons();
 }
 
 void
@@ -287,6 +289,42 @@ RCUpdate::set_params_from_rc()
 						  _rc_parameter_map.value_min[i], _rc_parameter_map.value_max[i]);
 
 			param_set(_parameter_handles.rc_param[i], &param_val);
+		}
+	}
+}
+
+void
+RCUpdate::map_flight_modes_buttons()
+{
+	static_assert(rc_channels_s::RC_CHANNELS_FUNCTION_FLTBTN_SLOT_1 + manual_control_setpoint_s::MODE_SLOT_NUM <= sizeof(
+			      _rc.function) / sizeof(_rc.function[0]), "Unexpected number of RC functions");
+	static_assert(rc_channels_s::RC_CHANNELS_FUNCTION_FLTBTN_NUM_SLOTS == manual_control_setpoint_s::MODE_SLOT_NUM,
+		      "Unexpected number of Flight Modes slots");
+
+	// Reset all the slots to -1
+	for (uint8_t index = 0; index < manual_control_setpoint_s::MODE_SLOT_NUM; index++) {
+		_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_FLTBTN_SLOT_1 + index] = -1;
+	}
+
+	// If the functionality is disabled we can early return, no need to map channels
+	int buttons_rc_channels = _param_rc_map_flightmode_buttons.get();
+
+	if (buttons_rc_channels == 0) {
+		return;
+	}
+
+	uint8_t slot_counter = 0;
+
+	for (uint8_t index = 0; index < RC_MAX_CHAN_COUNT; index++) {
+		if (buttons_rc_channels & (1 << index)) {
+			PX4_DEBUG("Slot %d assigned to channel %d", slot_counter + 1, index);
+			_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_FLTBTN_SLOT_1 + slot_counter] = index;
+			slot_counter++;
+		}
+
+		if (slot_counter == manual_control_setpoint_s::MODE_SLOT_NUM) {
+			// we have filled all the available slots
+			break;
 		}
 	}
 }
@@ -483,6 +521,30 @@ RCUpdate::Run()
 				if (manual_control_setpoint.mode_slot > num_slots) {
 					manual_control_setpoint.mode_slot = num_slots;
 				}
+
+			} else if (_param_rc_map_flightmode_buttons.get() > 0) {
+
+				for (uint8_t index = 0; index < manual_control_setpoint_s::MODE_SLOT_NUM; index++) {
+
+					// If the slot is not in use (-1), get_rc_value() will return 0
+					float value = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_FLTBTN_SLOT_1 + index, -1.0, 1.0);
+
+					// The range goes from -1 to 1, checking that value is greater than 0.5f
+					// corresponds to check that the signal is above 75% of the overall range.
+					if (value > 0.5f) {
+						if (!_button_pressed_slot[index]) {
+							_last_active_slot = index + 1;
+							_button_pressed_slot[index] = true;
+							PX4_DEBUG("Button %d, Switching to ON - slot %d", index, _last_active_slot);
+							break;
+						}
+
+					} else {
+						_button_pressed_slot[index] = false;
+					}
+				}
+
+				manual_control_setpoint.mode_slot = _last_active_slot;
 			}
 
 			/* mode switches */
