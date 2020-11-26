@@ -123,6 +123,8 @@ private:
 	 */
 	void		set_params_from_rc();
 
+	void		map_flight_modes_buttons();
+
 	static constexpr unsigned RC_MAX_CHAN_COUNT{input_rc_s::RC_INPUT_MAX_CHANNELS}; /**< maximum number of r/c channels we handle */
 
 	struct Parameters {
@@ -168,6 +170,9 @@ private:
 
 	uint8_t _channel_count_previous{0};
 
+	uint8_t _last_active_slot{};
+	bool _button_pressed_slot[manual_control_setpoint_s::MODE_SLOT_NUM] {};
+
 	perf_counter_t		_loop_perf;			/**< loop performance counter */
 
 	DEFINE_PARAMETERS(
@@ -195,6 +200,7 @@ private:
 		(ParamInt<px4::params::RC_MAP_GEAR_SW>) _param_rc_map_gear_sw,
 		(ParamInt<px4::params::RC_MAP_STAB_SW>) _param_rc_map_stab_sw,
 		(ParamInt<px4::params::RC_MAP_MAN_SW>) _param_rc_map_man_sw,
+		(ParamInt<px4::params::RC_MAP_FLTM_BTN>) _param_rc_map_flightmode_buttons,
 
 		(ParamInt<px4::params::RC_MAP_AUX1>) _param_rc_map_aux1,
 		(ParamInt<px4::params::RC_MAP_AUX2>) _param_rc_map_aux2,
