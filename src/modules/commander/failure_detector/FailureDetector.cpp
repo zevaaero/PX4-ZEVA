@@ -162,17 +162,18 @@ void FailureDetector::updateEscsStatus(const vehicle_status_s &vehicle_status)
 		esc_status_s esc_status;
 
 		if (_esc_status_sub.update(&esc_status)) {
-			int all_escs_armed = (1 << esc_status.esc_count) - 1;
+			const int limited_esc_count = math::min(esc_status.esc_count, esc_status_s::CONNECTED_ESC_MAX);
+			const int all_escs_armed_mask = (1 << limited_esc_count) - 1;
+			const bool is_all_escs_armed = (all_escs_armed_mask == esc_status.esc_armed_flags);
 
-			bool is_motor_stuck = false;
+			bool is_esc_failure = !is_all_escs_armed;
 
-			for (uint8_t i = 0; i < esc_status.esc_count; i++) {
-				is_motor_stuck = is_motor_stuck || (esc_status.esc[i].failures > esc_report_s::FAILURE_MOTOR_STUCK_MASK);
+			for (uint8_t i = 0; i < limited_esc_count; i++) {
+				is_esc_failure |= (esc_status.esc[i].failures != esc_report_s::FAILURE_NONE);
 			}
 
 			_esc_failure_hysteresis.set_hysteresis_time_from(false, 300_ms);
-			_esc_failure_hysteresis.set_state_and_update((all_escs_armed != esc_status.esc_armed_flags)
-					|| is_motor_stuck, time_now);
+			_esc_failure_hysteresis.set_state_and_update(is_esc_failure, time_now);
 
 			if (_esc_failure_hysteresis.get_state()) {
 				_status |= FAILURE_ARM_ESCS;

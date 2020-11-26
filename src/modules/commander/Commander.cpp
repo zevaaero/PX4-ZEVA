@@ -2252,12 +2252,11 @@ Commander::run()
 			_status_changed = true;
 
 			if (armed.armed) {
-
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_ARM_ESC) {
 					const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
 
-					// Check within the PWM spoolup time when the controllers are not affecting actuator_outputs
-					if (hrt_elapsed_time(&time_at_arm) < _param_mpc_spoolup_time.get() * 1000000) {
+					// Check within the motor spool up time before the takeoff
+					if (hrt_elapsed_time(&time_at_arm) < _param_mpc_spoolup_time.get() * 1_s) {
 						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
 						mavlink_log_critical(&mavlink_log_pub, "ESCs did not respond to arm request");
 					}
