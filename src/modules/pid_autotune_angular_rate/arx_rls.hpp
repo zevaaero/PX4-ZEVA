@@ -112,6 +112,8 @@ public:
 		_P = (_P - _P * phi * phi_t * _P / (_lambda + (phi_t * _P * phi)(0, 0))) / _lambda;
 		_innovation = _y[N] - (phi_t * _theta_hat)(0, 0);
 		_theta_hat = _theta_hat + _P * phi * _innovation;
+
+		/* fixCovarianceErrors(); // TODO: this could help against ill-conditioned matrix but needs more testing*/
 	}
 
 private:
@@ -149,6 +151,25 @@ private:
 		}
 
 		return phi;
+	}
+
+	void fixCovarianceErrors()
+	{
+		float max_var = 0.f;
+
+		for (size_t i = 0; i < (N + M + 1); i++) {
+			if (_P(i, i) > max_var) {
+				max_var = _P(i, i);
+			}
+		}
+
+		const float min_var_allowed = max_var * 0.1f;
+
+		for (size_t i = 0; i < (N + M + 1); i++) {
+			if (_P(i, i) < min_var_allowed) {
+				_P(i, i) = min_var_allowed;
+			}
+		}
 	}
 
 	matrix::SquareMatrix < float, N + M + 1 > _P;
