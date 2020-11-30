@@ -346,6 +346,7 @@ void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
 		|| (fabsf(manual_control_setpoint.x) > 0.05f)
 		|| (fabsf(manual_control_setpoint.y) > 0.05f))) {
 		_state = state::fail;
+		_state_start_time = now;
 	}
 }
 
