@@ -58,6 +58,8 @@ bool FlightTaskManualAcceleration::activate(vehicle_local_position_setpoint_s la
 		_velocity_setpoint.xy() = Vector2f(_velocity);
 	}
 
+	_stick_acceleration_xy.resetPosition();
+
 	if (PX4_ISFINITE(last_setpoint.acceleration[0])) {
 		_stick_acceleration_xy.resetAcceleration(Vector2f(last_setpoint.acceleration[0], last_setpoint.acceleration[1]));
 	}
