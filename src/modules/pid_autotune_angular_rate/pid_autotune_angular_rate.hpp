@@ -166,6 +166,10 @@ private:
 		(ParamFloat<px4::params::MC_PITCHRATE_P>) _param_mc_pitchrate_p,
 		(ParamFloat<px4::params::MC_PITCHRATE_K>) _param_mc_pitchrate_k,
 		(ParamFloat<px4::params::MC_PITCHRATE_I>) _param_mc_pitchrate_i,
-		(ParamFloat<px4::params::MC_PITCHRATE_D>) _param_mc_pitchrate_d
+		(ParamFloat<px4::params::MC_PITCHRATE_D>) _param_mc_pitchrate_d,
+		(ParamFloat<px4::params::MC_YAWRATE_P>) _param_mc_yawrate_p,
+		(ParamFloat<px4::params::MC_YAWRATE_K>) _param_mc_yawrate_k,
+		(ParamFloat<px4::params::MC_YAWRATE_I>) _param_mc_yawrate_i,
+		(ParamFloat<px4::params::MC_YAWRATE_D>) _param_mc_yawrate_d
 	)
 };

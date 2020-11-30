@@ -138,6 +138,10 @@ void PidAutotuneAngularRate::Run()
 	} else if (_state == state::pitch) {
 		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_PITCH],
 			       angular_velocity.xyz[1]);
+
+	} else if (_state == state::yaw) {
+		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_YAW],
+			       angular_velocity.xyz[2]);
 	}
 
 	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
@@ -263,19 +267,39 @@ void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
 		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(1);
-			_state = state::verification;
+			_state = state::pitch_pause;
 			_state_start_time = now;
 		}
 
 		break;
 
 	case state::pitch_pause:
+		if ((now - _state_start_time) > 2_s) {
+			_state = state::yaw;
+			_state_start_time = now;
+			_sys_id.reset();
+			_input_scale = 1.f / (_param_mc_yawrate_p.get() * _param_mc_yawrate_k.get());
+			_signal_sign = 1;
+			// first step needs to be shorter to keep the drone centered
+			_steps_counter = 5;
+			_max_steps = 10;
+		}
 
-	// fallthrough
+		break;
+
 	case state::yaw:
+		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
+		    && ((now - _state_start_time) > 5_s)) {
+			copyGains(2);
+			_state = state::yaw_pause;
+			_state_start_time = now;
+		}
+
+		break;
 
 	// fallthrough
 	case state::yaw_pause:
+		_state = state::verification;
 
 	// fallthrough
 	case state::verification:
@@ -355,14 +379,13 @@ void PidAutotuneAngularRate::copyGains(int index)
 
 bool PidAutotuneAngularRate::areGainsGood() const
 {
-	// TODO: check yaw gains as well (remove Vector2f cast)
-	const bool are_positive = Vector2f(_rate_k).min() > 0.f
-				  && Vector2f(_rate_i).min() > 0.f
-				  && Vector2f(_rate_d).min() > 0.f;
+	const bool are_positive = _rate_k.min() > 0.f
+				  && _rate_i.min() > 0.f
+				  && _rate_d.min() > 0.f;
 
-	const bool are_small_enough = Vector2f(_rate_k).max() < 0.5f
-				      && Vector2f(_rate_i).max() < 10.f
-				      && Vector2f(_rate_d).max() < 0.1f;
+	const bool are_small_enough = _rate_k.max() < 0.5f
+				      && _rate_i.max() < 10.f
+				      && _rate_d.max() < 0.1f;
 
 	return are_positive && are_small_enough;
 }
@@ -385,13 +408,16 @@ void PidAutotuneAngularRate::saveGainsToParams()
 	_param_mc_pitchrate_p.commit_no_notification();
 	_param_mc_pitchrate_k.commit_no_notification();
 	_param_mc_pitchrate_i.commit_no_notification();
-	_param_mc_pitchrate_d.commit();
+	_param_mc_pitchrate_d.commit_no_notification();
 
-	//TODO: save yawrate gains
-	/* _param_mc_yawrate_p.set(1.f); */
-	/* _param_mc_yawrate_k.set(_rate_k(2)); */
-	/* _param_mc_yawrate_i.set(_rate_i(2)); */
-	/* _param_mc_yawrate_d.set(_rate_d(2)); */
+	_param_mc_yawrate_p.set(1.f);
+	_param_mc_yawrate_k.set(_rate_k(2));
+	_param_mc_yawrate_i.set(_rate_i(2));
+	_param_mc_yawrate_d.set(_rate_d(2));
+	_param_mc_yawrate_p.commit_no_notification();
+	_param_mc_yawrate_k.commit_no_notification();
+	_param_mc_yawrate_i.commit_no_notification();
+	_param_mc_yawrate_d.commit();
 }
 
 void PidAutotuneAngularRate::stopAutotune()
@@ -426,6 +452,9 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 
 	} else if (_state ==  state::pitch) {
 		rate_sp(1) = signal;
+
+	} else if (_state ==  state::yaw) {
+		rate_sp(2) = signal;
 	}
 
 	return rate_sp;
