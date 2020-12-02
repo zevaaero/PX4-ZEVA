@@ -190,4 +190,30 @@ int countSetBits(T n)
 	return count;
 }
 
+/*
+ * Squareroot, linear function with fixed corner point at intersection (1,1)
+ *                     /
+ *      linear        /
+ *                   /
+ * 1                /
+ *                /
+ *      sqrt     |
+ *              |
+ * 0     -------
+ *             0    1
+ */
+template<typename T>
+const T sqrt_linear(const T &value)
+{
+	if (value < static_cast<T>(0)) {
+		return static_cast<T>(0);
+
+	} else if (value < static_cast<T>(1)) {
+		return sqrtf(value);
+
+	} else {
+		return value;
+	}
+}
+
 } /* namespace math */
