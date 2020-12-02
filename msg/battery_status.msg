@@ -41,6 +41,7 @@ uint8 BATTERY_WARNING_FAILED = 4   # the battery has failed completely
 uint8 BATTERY_STATE_UNHEALTHY = 6 # Battery is diagnosed to be defective or an error occurred, usage is discouraged / prohibited. Possible causes (faults) are listed in faults field.
 uint8 BATTERY_STATE_CHARGING = 7 # Battery is charging
 
+uint8 BATTERY_FAULT_NONE = 0
 uint8 BATTERY_FAULT_DEEP_DISCHARGE = 1 # Battery has deep discharged
 uint8 BATTERY_FAULT_SPIKES = 2 # Voltage spikes
 uint8 BATTERY_FAULT_CELL_FAIL= 4 # One or more cells have failed

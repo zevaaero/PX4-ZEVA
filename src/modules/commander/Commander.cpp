@@ -2233,6 +2233,16 @@ Commander::run()
 					}
 				}
 
+				if (status.failure_detector_status & vehicle_status_s::FAILURE_BATTERY) {
+					const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
+
+					// TODO: 500ms is taken without any empiric data. Needs real-life verification.
+					if (hrt_elapsed_time(&time_at_arm) < 500_ms) {
+						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
+						mavlink_log_critical(&mavlink_log_pub, "One or more Batteries outside nominal state");
+					}
+				}
+
 				if (status.failure_detector_status & (vehicle_status_s::FAILURE_ROLL | vehicle_status_s::FAILURE_PITCH |
 								      vehicle_status_s::FAILURE_ALT | vehicle_status_s::FAILURE_EXT)) {
 					const bool is_second_after_takeoff = hrt_elapsed_time(&_time_at_takeoff) < (1_s * _param_com_lkdown_tko.get());
