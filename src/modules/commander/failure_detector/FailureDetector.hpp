@@ -51,10 +51,11 @@
 
 // subscriptions
 #include <uORB/Subscription.hpp>
+#include <uORB/topics/battery_status.h>
+#include <uORB/topics/esc_status.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_status.h>
-#include <uORB/topics/esc_status.h>
 #include <uORB/topics/pwm_input.h>
 #include <uORB/topics/wind_estimate.h>
 
@@ -65,7 +66,8 @@ typedef enum {
 	FAILURE_ALT = vehicle_status_s::FAILURE_ALT,
 	FAILURE_EXT = vehicle_status_s::FAILURE_EXT,
 	FAILURE_ARM_ESCS = vehicle_status_s::FAILURE_ARM_ESC,
-	FAILURE_HIGH_WIND = vehicle_status_s::FAILURE_HIGH_WIND
+	FAILURE_HIGH_WIND = vehicle_status_s::FAILURE_HIGH_WIND,
+	FAILURE_BATTERY = vehicle_status_s::FAILURE_BATTERY
 } failure_detector_bitmak;
 
 using uORB::SubscriptionData;
@@ -82,6 +84,7 @@ private:
 	bool isAttitudeStabilized(const vehicle_status_s &vehicle_status);
 	void updateAttitudeStatus();
 	void updateExternalAtsStatus();
+	void updateBatteryStatus(const vehicle_status_s &vehicle_status);
 	void updateEscsStatus(const vehicle_status_s &vehicle_status);
 	void updateHighWindStatus();
 
@@ -91,7 +94,9 @@ private:
 	systemlib::Hysteresis _pitch_failure_hysteresis{false};
 	systemlib::Hysteresis _ext_ats_failure_hysteresis{false};
 	systemlib::Hysteresis _esc_failure_hysteresis{false};
+	systemlib::Hysteresis _battery_failure_hysteresis{false};
 
+	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
 	uORB::Subscription _vehicule_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _esc_status_sub{ORB_ID(esc_status)};
 	uORB::Subscription _pwm_input_sub{ORB_ID(pwm_input)};
@@ -105,6 +110,7 @@ private:
 		(ParamBool<px4::params::FD_EXT_ATS_EN>) _param_fd_ext_ats_en,
 		(ParamInt<px4::params::FD_EXT_ATS_TRIG>) _param_fd_ext_ats_trig,
 		(ParamInt<px4::params::FD_ESCS_EN>) _param_escs_en,
+		(ParamInt<px4::params::FD_BAT_EN>) _param_batteries_en,
 		(ParamFloat<px4::params::FD_WIND_MAX>) _param_fd_wind_max
 	)
 };

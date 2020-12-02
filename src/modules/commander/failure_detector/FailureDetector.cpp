@@ -62,6 +62,10 @@ bool FailureDetector::update(const vehicle_status_s &vehicle_status)
 		_status &= ~(FAILURE_ROLL | FAILURE_PITCH | FAILURE_ALT | FAILURE_EXT);
 	}
 
+	if (_param_batteries_en.get()) {
+		updateBatteryStatus(vehicle_status);
+	}
+
 	if (_param_escs_en.get()) {
 		updateEscsStatus(vehicle_status);
 	}
@@ -151,6 +155,32 @@ void FailureDetector::updateExternalAtsStatus()
 		if (_ext_ats_failure_hysteresis.get_state()) {
 			_status |= FAILURE_EXT;
 		}
+	}
+}
+
+void FailureDetector::updateBatteryStatus(const vehicle_status_s &vehicle_status)
+{
+	hrt_abstime time_now = hrt_absolute_time();
+
+	if (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
+		battery_status_s battery_status;
+
+		if (_battery_status_sub.update(&battery_status)) {
+			bool battery_nominal = (battery_status.mode == battery_status_s::BATTERY_MODE_UNKNOWN
+						&& battery_status.faults == battery_status_s::BATTERY_FAULT_NONE);
+
+			_battery_failure_hysteresis.set_hysteresis_time_from(false, 300_ms);
+			_battery_failure_hysteresis.set_state_and_update(battery_nominal, time_now);
+
+			if (_battery_failure_hysteresis.get_state()) {
+				_status |= FAILURE_BATTERY;
+			}
+		}
+
+	} else {
+		// reset battery bitfield
+		_battery_failure_hysteresis.set_state_and_update(false, time_now);
+		_status &= ~FAILURE_BATTERY;
 	}
 }
 

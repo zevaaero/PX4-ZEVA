@@ -143,6 +143,18 @@ PARAM_DEFINE_INT32(FD_EXT_ATS_TRIG, 1900);
 PARAM_DEFINE_INT32(FD_ESCS_EN, 1);
 
 /**
+ * Enable checks on smart batteries that report readiness or faults.
+ * If enabled, failure detector will verify that all the batteries are in nominal mode and no faults were detected by the batteries.
+ * Timeout for receiving a a status from the batteries is 0.3s, if no feedback is received the failure detector will auto disarm the vehicle.
+ *
+ * @boolean
+ * @reboot_required true
+ *
+ * @group Failure Detector
+ */
+PARAM_DEFINE_INT32(FD_BAT_EN, 1);
+
+/**
  * Maximum wind speed threshold
  *
  * Wind speed threshold above which the emergency action for high wind is triggered
