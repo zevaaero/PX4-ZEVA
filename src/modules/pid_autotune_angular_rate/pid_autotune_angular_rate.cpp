@@ -206,7 +206,7 @@ void PidAutotuneAngularRate::checkFilters()
 void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
-	const float converged_thr = 2.f * _input_scale;
+	const float converged_thr = 50.f;
 
 	switch (_state) {
 	case state::idle:
