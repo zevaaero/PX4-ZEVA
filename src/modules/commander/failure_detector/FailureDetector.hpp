@@ -51,6 +51,7 @@
 
 // subscriptions
 #include <uORB/Subscription.hpp>
+#include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/esc_status.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
@@ -96,7 +97,7 @@ private:
 	systemlib::Hysteresis _esc_failure_hysteresis{false};
 	systemlib::Hysteresis _battery_failure_hysteresis{false};
 
-	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
+	uORB::SubscriptionMultiArray<battery_status_s> _battery_status_subs{ORB_ID::battery_status};
 	uORB::Subscription _vehicule_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _esc_status_sub{ORB_ID(esc_status)};
 	uORB::Subscription _pwm_input_sub{ORB_ID(pwm_input)};
