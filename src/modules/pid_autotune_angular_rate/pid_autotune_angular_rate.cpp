@@ -112,13 +112,12 @@ void PidAutotuneAngularRate::Run()
 
 	perf_begin(_cycle_perf);
 
-	const hrt_abstime now = hrt_absolute_time();
-
-	// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
-	const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
+	const hrt_abstime now = controls.timestamp;
 
 	// collect sample interval average for filters
 	if (_last_run > 0) {
+		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
+		const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
 		_interval_sum += dt;
 		_interval_count++;
 
@@ -154,7 +153,7 @@ void PidAutotuneAngularRate::Run()
 
 		const Vector3f num(coeff(2), coeff(3), coeff(4));
 		const Vector3f den(1.f, coeff(0), coeff(1));
-		_kid = pid_design::computePidGmvc(num, den, dt, 0.08f, 0.f, 0.4f);
+		_kid = pid_design::computePidGmvc(num, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 		const Vector3f rate_sp = getIdentificationSignal();
@@ -183,8 +182,8 @@ void PidAutotuneAngularRate::checkFilters()
 {
 	if (_interval_count > 1000) {
 		// calculate sensor update rate
-		const float sample_interval_avg = _interval_sum / _interval_count;
-		const float update_rate_hz = 1.f / sample_interval_avg;
+		_sample_interval_avg = _interval_sum / _interval_count;
+		const float update_rate_hz = 1.f / _sample_interval_avg;
 
 		// check if sample rate error is greater than 1%
 		bool reset_filters = false;
@@ -198,8 +197,11 @@ void PidAutotuneAngularRate::checkFilters()
 			_filter_sample_rate = update_rate_hz;
 			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
 			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
-			_sys_id.setForgettingFactor(60.f, sample_interval_avg);
+			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
 		}
+
+		// reset sample interval accumulator
+		_last_run = 0;
 	}
 }
 

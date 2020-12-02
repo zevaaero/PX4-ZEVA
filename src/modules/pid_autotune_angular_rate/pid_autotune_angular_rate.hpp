@@ -147,6 +147,7 @@ private:
 
 	float _interval_sum{0.f};
 	float _interval_count{0.f};
+	float _sample_interval_avg{0.01f};
 	float _filter_sample_rate{1.f};
 	bool _are_filters_initialized{false};
 
