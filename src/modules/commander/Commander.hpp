@@ -268,7 +268,7 @@ private:
 		(ParamFloat<px4::params::BAT_LOW_THR>) _param_bat_low_thr,
 		(ParamFloat<px4::params::BAT_CRIT_THR>) _param_bat_crit_thr,
 
-		(ParamFloat<px4::params::MPC_SPOOLUP_TIME>) _param_mpc_spoolup_time
+		(ParamFloat<px4::params::COM_SPOOLUP_TIME>) _param_com_spoolup_time
 	)
 
 	enum class PrearmedMode {

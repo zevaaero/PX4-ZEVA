@@ -163,7 +163,7 @@ private:
 		(ParamBool<px4::params::MPC_USE_HTE>) _param_mpc_use_hte,
 
 		// Takeoff / Land
-		(ParamFloat<px4::params::MPC_SPOOLUP_TIME>) _param_mpc_spoolup_time, /**< time to let motors spool up after arming */
+		(ParamFloat<px4::params::COM_SPOOLUP_TIME>) _param_com_spoolup_time, /**< time to let motors spool up after arming */
 		(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _param_mpc_tko_ramp_t, /**< time constant for smooth takeoff ramp */
 		(ParamFloat<px4::params::MPC_TKO_SPEED>) _param_mpc_tko_speed,
 		(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed,
@@ -387,7 +387,7 @@ MulticopterPositionControl::parameters_update(bool force)
 		_param_mpc_land_speed.set(math::min(_param_mpc_land_speed.get(), _param_mpc_z_vel_max_dn.get()));
 
 		// set trigger time for takeoff delay
-		_takeoff.setSpoolupTime(_param_mpc_spoolup_time.get());
+		_takeoff.setSpoolupTime(_param_com_spoolup_time.get());
 		_takeoff.setTakeoffRampTime(_param_mpc_tko_ramp_t.get());
 		_takeoff.generateInitialRampValue(_param_mpc_z_vel_p_acc.get());
 

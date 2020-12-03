@@ -1006,3 +1006,18 @@ PARAM_DEFINE_FLOAT(COM_ARM_ARSP_EN, 1);
  * @value 2 Enforce SD card presence
  */
 PARAM_DEFINE_INT32(COM_ARM_SDCARD, 1);
+
+/**
+ * Enforced delay between arming and takeoff
+ *
+ * The minimal time from arming the motors until a takeoff is possible is COM_SPOOLUP_TIME seconds.
+ * Goal:
+ * - Motors and propellers spool up to idle speed before getting commanded to spin faster
+ * - ESCs do failure checks e.g. for stuck rotors before the vehicle is off the ground
+ *
+ * @group Commander
+ * @min 0
+ * @max 5
+ * @unit s
+ */
+PARAM_DEFINE_FLOAT(COM_SPOOLUP_TIME, 1.0f);
