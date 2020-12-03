@@ -2343,6 +2343,7 @@ Commander::run()
 
 			if (armed.armed) {
 				const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
+
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_ARM_ESC) {
 					// Check within the motor spool up time before the takeoff
 					if (hrt_elapsed_time(&time_at_arm) < _param_com_spoolup_time.get() * 1_s) {

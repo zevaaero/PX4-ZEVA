@@ -163,22 +163,24 @@ void FailureDetector::updateBatteryStatus(const vehicle_status_s &vehicle_status
 	const hrt_abstime time_now = hrt_absolute_time();
 
 	if (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
-		bool battery_operational = true;
+		bool battery_failure = false;
 
 		for (auto &battery_sub : _battery_status_subs) {
-			// int index = battery_sub.get_instance();
 			battery_status_s battery_status;
 
 			if (battery_sub.copy(&battery_status)) {
 				// One faulty battery is enough to trigger fault
-				battery_operational = battery_operational && (battery_status.mode == battery_status_s::BATTERY_MODE_UNKNOWN
-								      && battery_status.faults == battery_status_s::BATTERY_FAULT_NONE);
-                break;
+				battery_failure = battery_failure || (battery_status.mode != battery_status_s::BATTERY_MODE_UNKNOWN
+								      || battery_status.faults != battery_status_s::BATTERY_FAULT_NONE);
+
+				if (battery_failure){
+					break;
+				}
 			}
 		}
 
 		_battery_failure_hysteresis.set_hysteresis_time_from(false, 300_ms);
-		_battery_failure_hysteresis.set_state_and_update(battery_operational, time_now);
+		_battery_failure_hysteresis.set_state_and_update(battery_failure, time_now);
 
 		if (_battery_failure_hysteresis.get_state()) {
 			_status |= FAILURE_BATTERY;
