@@ -4108,32 +4108,45 @@ void Commander::battery_status_check()
 
 				if (battery.faults != _last_battery_fault[index]) {
 
+					bool unknown_fault = true;
+
 					if (battery.faults & battery_status_s::BATTERY_FAULT_DEEP_DISCHARGE) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: deep discharge fault!", index + 1);
+						unknown_fault = false;
 					}
 
 					if (battery.faults & battery_status_s::BATTERY_FAULT_SPIKES) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: voltage spikes fault!", index + 1);
+						unknown_fault = false;
 					}
 
 					if (battery.faults & battery_status_s::BATTERY_FAULT_CELL_FAIL) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: one or more cells have a fault!", index + 1);
+						unknown_fault = false;
 					}
 
 					if (battery.faults & battery_status_s::BATTERY_FAULT_OVER_CURRENT) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: over current fault!", index + 1);
+						unknown_fault = false;
 					}
 
 					if (battery.faults & battery_status_s::BATTERY_FAULT_OVER_TEMPERATURE) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: over temperature fault!", index + 1);
+						unknown_fault = false;
 					}
 
 					if (battery.faults & battery_status_s::BATTERY_FAULT_UNDER_TEMPERATURE) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: under temperature fault!", index + 1);
+						unknown_fault = false;
 					}
 
 					if (battery.faults & battery_status_s::BATTERY_FAULT_INCOMPATIBLE_VOLTAGE) {
 						mavlink_log_critical(&mavlink_log_pub, "Battery %d: charge state too different from the other batteries!", index + 1);
+						unknown_fault = false;
+					}
+
+					if (unknown_fault) {
+						mavlink_log_critical(&mavlink_log_pub, "Battery %d reported an unknown fault, code %d", index + 1, battery.faults);
 					}
 				}
 			}
