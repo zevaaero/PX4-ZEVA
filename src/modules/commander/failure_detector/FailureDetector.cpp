@@ -62,11 +62,11 @@ bool FailureDetector::update(const vehicle_status_s &vehicle_status)
 		_status &= ~(FAILURE_ROLL | FAILURE_PITCH | FAILURE_ALT | FAILURE_EXT);
 	}
 
-	if (_param_batteries_en.get()) {
+	if (_param_fd_bat_en.get()) {
 		updateBatteryStatus(vehicle_status);
 	}
 
-	if (_param_escs_en.get()) {
+	if (_param_fd_escs_en.get()) {
 		updateEscsStatus(vehicle_status);
 	}
 
@@ -160,23 +160,25 @@ void FailureDetector::updateExternalAtsStatus()
 
 void FailureDetector::updateBatteryStatus(const vehicle_status_s &vehicle_status)
 {
-	hrt_abstime time_now = hrt_absolute_time();
+	const hrt_abstime time_now = hrt_absolute_time();
 
 	if (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
-		bool battery_nominal = true;
+		bool battery_operational = true;
 
-		for (size_t i = 0; i < _battery_status_subs.size(); i++) {
+		for (auto &battery_sub : _battery_status_subs) {
+			// int index = battery_sub.get_instance();
 			battery_status_s battery_status;
 
-			if (_battery_status_subs[i].update(&battery_status)) {
+			if (battery_sub.copy(&battery_status)) {
 				// One faulty battery is enough to trigger fault
-				battery_nominal = battery_nominal && (battery_status.mode == battery_status_s::BATTERY_MODE_UNKNOWN
+				battery_operational = battery_operational && (battery_status.mode == battery_status_s::BATTERY_MODE_UNKNOWN
 								      && battery_status.faults == battery_status_s::BATTERY_FAULT_NONE);
+                break;
 			}
 		}
 
 		_battery_failure_hysteresis.set_hysteresis_time_from(false, 300_ms);
-		_battery_failure_hysteresis.set_state_and_update(battery_nominal, time_now);
+		_battery_failure_hysteresis.set_state_and_update(battery_operational, time_now);
 
 		if (_battery_failure_hysteresis.get_state()) {
 			_status |= FAILURE_BATTERY;

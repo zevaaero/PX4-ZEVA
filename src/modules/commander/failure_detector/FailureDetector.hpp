@@ -110,8 +110,8 @@ private:
 		(ParamFloat<px4::params::FD_FAIL_P_TTRI>) _param_fd_fail_p_ttri,
 		(ParamBool<px4::params::FD_EXT_ATS_EN>) _param_fd_ext_ats_en,
 		(ParamInt<px4::params::FD_EXT_ATS_TRIG>) _param_fd_ext_ats_trig,
-		(ParamInt<px4::params::FD_ESCS_EN>) _param_escs_en,
-		(ParamInt<px4::params::FD_BAT_EN>) _param_batteries_en,
+		(ParamInt<px4::params::FD_ESCS_EN>) _param_fd_escs_en,
+		(ParamInt<px4::params::FD_BAT_EN>) _param_fd_bat_en,
 		(ParamFloat<px4::params::FD_WIND_MAX>) _param_fd_wind_max
 	)
 };
