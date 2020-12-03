@@ -2342,9 +2342,8 @@ Commander::run()
 			_status_changed = true;
 
 			if (armed.armed) {
+				const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_ARM_ESC) {
-					const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
-
 					// Check within the motor spool up time before the takeoff
 					if (hrt_elapsed_time(&time_at_arm) < _param_com_spoolup_time.get() * 1_s) {
 						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
@@ -2353,12 +2352,10 @@ Commander::run()
 				}
 
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_BATTERY) {
-					const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
-
 					// TODO: 500ms is taken without any empiric data. Needs real-life verification.
 					if (hrt_elapsed_time(&time_at_arm) < 500_ms) {
 						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
-						mavlink_log_critical(&mavlink_log_pub, "One or more Batteries outside nominal state");
+						mavlink_log_critical(&mavlink_log_pub, "One or more Batteries has an error");
 					}
 				}
 
