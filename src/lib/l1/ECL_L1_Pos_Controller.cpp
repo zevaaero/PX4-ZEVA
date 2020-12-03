@@ -269,7 +269,7 @@ ECL_L1_Pos_Controller::navigate_loiter(const Vector2f &vector_A, const Vector2f 
 	float tangent_vel = xtrack_vel_center * loiter_direction;
 
 	/* prevent PD output from turning the wrong way */
-	if (tangent_vel < 0.0f) {
+	if (tangent_vel < 0.0f && _circle_mode) {
 		lateral_accel_sp_circle_pd = math::max(lateral_accel_sp_circle_pd, 0.0f);
 	}
 
