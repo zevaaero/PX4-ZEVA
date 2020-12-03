@@ -2224,6 +2224,7 @@ Commander::run()
 
 			if (armed.armed) {
 				const hrt_abstime time_at_arm = armed.armed_time_ms * 1000;
+
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_ARM_ESC) {
 					// 500ms is the PWM spoolup time. Within this timeframe controllers are not affecting actuator_outputs
 					if (hrt_elapsed_time(&time_at_arm) < 500_ms) {
