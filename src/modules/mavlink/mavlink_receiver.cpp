@@ -585,6 +585,8 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		custom_action_cmd.target_component = MAV_COMP_ID_PATHPLANNER;
 		custom_action_cmd.from_external = false;
 
+		PX4_DEBUG("receiving command %d from %d/%d", custom_action_cmd.command, custom_action_cmd.source_system, custom_action_cmd.source_component);
+
 		_cmd_pub.publish(custom_action_cmd);
 
 		send_ack = true;
