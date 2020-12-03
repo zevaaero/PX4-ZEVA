@@ -2236,7 +2236,7 @@ Commander::run()
 					// TODO: 500ms is taken without any empiric data. Needs real-life verification.
 					if (hrt_elapsed_time(&time_at_arm) < 500_ms) {
 						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
-						mavlink_log_critical(&mavlink_log_pub, "One or more Batteries has an error");
+						mavlink_log_critical(&mavlink_log_pub, "One or more batteries reported a problem");
 					}
 				}
 
