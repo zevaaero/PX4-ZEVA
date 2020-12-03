@@ -1,17 +1,14 @@
-Please use [PX4 Discuss](http://discuss.px4.io/) or [Slack](http://slack.px4.io/) to align on pull requests if necessary. You can then open draft pull requests to get early feedback.
+**JIRA ID in title, and link here**
+Add a link and the title of the JIRA for context
 
-**Describe problem solved by this pull request**
-A clear and concise description of the problem this proposed change will solve.
-E.g. For this use case I ran into...
+**Upstream/develop PR that this was backported from**
+If applicable, link to PR and/or commit
 
-**Describe your solution**
-A clear and concise description of what you have implemented.
+**Critical bug that needs backporting?**
+Yes/No, link to backport PR when applicable
 
-**Describe possible alternatives**
-A clear and concise description of alternative solutions or features you've considered.
-
-**Test data / coverage**
-How was it tested? What cases were covered? Logs uploaded to https://review.px4.io/ and screenshots of the important plot parts.
+**How this PR solves the problem**
+Depending on how complex the PR is, something between a line and a few paragraphs with logs and videos.
 
 **Additional context**
 Add any other related context or media.
