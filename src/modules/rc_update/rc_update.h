@@ -59,6 +59,7 @@
 #include <uORB/topics/rc_channels.h>
 #include <uORB/topics/rc_parameter_map.h>
 #include <uORB/topics/parameter_update.h>
+#include <hysteresis/hysteresis.h>
 
 namespace RCUpdate
 {
@@ -168,8 +169,12 @@ private:
 
 	hrt_abstime _last_rc_to_param_map_time = 0;
 
-	uint8_t _last_active_slot{};
-	bool _button_pressed_slot[manual_control_setpoint_s::MODE_SLOT_NUM] {};
+	uint8_t _channel_count_previous{0};
+
+	uint8_t _last_active_slot{0};
+	uint8_t _last_slot_selected{0};
+	bool 	_button_already_pressed{false};
+	systemlib::Hysteresis _button_pressed_hysteresis{false};
 
 	perf_counter_t		_loop_perf;			/**< loop performance counter */
 	DEFINE_PARAMETERS(

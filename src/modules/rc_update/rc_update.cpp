@@ -524,6 +524,8 @@ RCUpdate::Run()
 
 			} else if (_param_rc_map_flightmode_buttons.get() > 0) {
 
+				bool is_same_button_pressed = false;
+
 				for (uint8_t index = 0; index < manual_control_setpoint_s::MODE_SLOT_NUM; index++) {
 
 					// If the slot is not in use (-1), get_rc_value() will return 0
@@ -532,21 +534,31 @@ RCUpdate::Run()
 					// The range goes from -1 to 1, checking that value is greater than 0.5f
 					// corresponds to check that the signal is above 75% of the overall range.
 					if (value > 0.5f) {
-						if (!_button_pressed_slot[index]) {
-							_last_active_slot = index + 1;
-							_button_pressed_slot[index] = true;
-							manual_control_setpoint.fltmode_button_pressed = true;
-							PX4_DEBUG("Button %d, Switching to ON - slot %d", index, _last_active_slot);
-							break;
+						if (index + 1 == _last_slot_selected) {
+							is_same_button_pressed = true;
 						}
 
-					} else {
-						_button_pressed_slot[index] = false;
-						manual_control_setpoint.fltmode_button_pressed = false;
+						_last_slot_selected = index + 1;
+						break;
 					}
 				}
 
-				manual_control_setpoint.mode_slot = _last_active_slot;
+				_button_pressed_hysteresis.set_hysteresis_time_from(false, 50_ms);
+				_button_pressed_hysteresis.set_state_and_update(is_same_button_pressed
+						&& !_button_already_pressed, hrt_absolute_time());
+
+				if (_button_pressed_hysteresis.get_state()) {
+					PX4_DEBUG("Switching to slot %d", _last_slot_selected);
+					_button_already_pressed = true;
+					manual_control_setpoint.fltmode_button_pressed = true;
+					_last_active_slot = _last_slot_selected;
+
+				} else if (!is_same_button_pressed)  {
+					manual_control_setpoint.fltmode_button_pressed = false;
+					_button_already_pressed = false;
+				}
+
+				manual_control_setpoint.mode_slot = _last_active_slot ;
 			}
 
 			/* mode switches */
