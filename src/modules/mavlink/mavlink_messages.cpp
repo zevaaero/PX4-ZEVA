@@ -5573,7 +5573,7 @@ public:
 	}
 
 private:
-	uORB::Subscription _orb_status_sub{ORB_ID(orbit_status)};
+	uORB::SubscriptionMultiArray<orbit_status_s> _orb_status_sub{ORB_ID::orbit_status};
 
 	/* do not allow top copying this class */
 	MavlinkStreamOrbitStatus(MavlinkStreamOrbitStatus &);
@@ -5587,17 +5587,23 @@ protected:
 	{
 		orbit_status_s _orbit_status;
 
-		if (_orb_status_sub.update(&_orbit_status)) {
-			mavlink_orbit_execution_status_t _msg_orbit_execution_status{};
+		for (auto &orbit_sub : _orb_status_sub) {
 
-			_msg_orbit_execution_status.time_usec = _orbit_status.timestamp;
-			_msg_orbit_execution_status.radius = _orbit_status.radius;
-			_msg_orbit_execution_status.frame = _orbit_status.frame;
-			_msg_orbit_execution_status.x = _orbit_status.x * 1e7;
-			_msg_orbit_execution_status.y = _orbit_status.y * 1e7;
-			_msg_orbit_execution_status.z = _orbit_status.z;
+			if (orbit_sub.update(&_orbit_status)) {
+				mavlink_orbit_execution_status_t _msg_orbit_execution_status{};
 
-			mavlink_msg_orbit_execution_status_send_struct(_mavlink->get_channel(), &_msg_orbit_execution_status);
+				_msg_orbit_execution_status.time_usec = _orbit_status.timestamp;
+				_msg_orbit_execution_status.radius = _orbit_status.radius;
+				_msg_orbit_execution_status.frame = _orbit_status.frame;
+				_msg_orbit_execution_status.x = _orbit_status.x * 1e7;
+				_msg_orbit_execution_status.y = _orbit_status.y * 1e7;
+				_msg_orbit_execution_status.z = _orbit_status.z;
+
+				mavlink_msg_orbit_execution_status_send_struct(_mavlink->get_channel(), &_msg_orbit_execution_status);
+
+				// only one subscription should ever be active at any time, so we can exit here
+				break;
+			}
 		}
 
 		return true;

@@ -168,7 +168,8 @@ VtolAttitudeControl::handle_command()
 		if (vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF
 		    || (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 			&& (vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND
-			    || vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL))) {
+			    || vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL ||
+			    vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_ORBIT))) {
 			result = vehicle_command_ack_s::VEHICLE_RESULT_TEMPORARILY_REJECTED;
 
 		} else {

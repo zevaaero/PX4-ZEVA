@@ -825,13 +825,23 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 			/* waypoint is a loiter waypoint */
 			float loiter_radius = pos_sp_curr.loiter_radius;
-			uint8_t loiter_direction = pos_sp_curr.loiter_direction;
+			int8_t loiter_direction = pos_sp_curr.loiter_direction;
 
 			if (fabsf(pos_sp_curr.loiter_radius) < FLT_EPSILON) {
 				loiter_radius = _param_nav_loiter_rad.get();
 				loiter_direction = (loiter_radius > 0) ? 1 : -1;
 
 			}
+
+			orbit_status_s orbit_status{};
+			orbit_status.timestamp = hrt_absolute_time();
+			orbit_status.radius = static_cast<float>(loiter_direction) * loiter_radius;
+			orbit_status.frame = 0; // MAV_FRAME::MAV_FRAME_GLOBAL
+			orbit_status.x = static_cast<double>(curr_wp(0));
+			orbit_status.y = static_cast<double>(curr_wp(1));
+			orbit_status.z = pos_sp_curr.alt;
+			orbit_status.yaw_behaviour = orbit_status_s::ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TANGENT_TO_CIRCLE;
+			_orbit_status_pub.publish(orbit_status);
 
 			_l1_control.navigate_loiter(curr_wp, curr_pos, loiter_radius, loiter_direction, nav_speed_2d);
 

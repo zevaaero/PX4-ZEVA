@@ -1026,13 +1026,28 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 
 	case vehicle_command_s::VEHICLE_CMD_DO_ORBIT:
 
-		// Switch to orbit state and let the orbit task handle the command further
-		if (TRANSITION_DENIED != main_state_transition(*status_local, commander_state_s::MAIN_STATE_ORBIT, status_flags,
-				&_internal_state)) {
+		transition_result_t main_ret;
+
+		if (status.in_transition_mode) {
+			main_ret = TRANSITION_DENIED;
+
+		} else if (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
+			// in fixed-wing flight mode the behavior of orbit is the same as loiter
+			main_ret = main_state_transition(*status_local, commander_state_s::MAIN_STATE_AUTO_LOITER,
+							 status_flags, &_internal_state);
+
+		} else {
+			// Switch to orbit state and let the orbit task handle the command further
+			main_ret = main_state_transition(*status_local, commander_state_s::MAIN_STATE_ORBIT, status_flags,
+							 &_internal_state);
+		}
+
+		if ((main_ret != TRANSITION_DENIED)) {
 			cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
 
 		} else {
 			cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED;
+			mavlink_log_critical(&mavlink_log_pub, "Orbit command rejected");
 		}
 
 		break;
