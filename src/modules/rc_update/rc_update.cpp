@@ -535,12 +535,14 @@ RCUpdate::Run()
 						if (!_button_pressed_slot[index]) {
 							_last_active_slot = index + 1;
 							_button_pressed_slot[index] = true;
+							manual_control_setpoint.fltmode_button_pressed = true;
 							PX4_DEBUG("Button %d, Switching to ON - slot %d", index, _last_active_slot);
 							break;
 						}
 
 					} else {
 						_button_pressed_slot[index] = false;
+						manual_control_setpoint.fltmode_button_pressed = false;
 					}
 				}
 
