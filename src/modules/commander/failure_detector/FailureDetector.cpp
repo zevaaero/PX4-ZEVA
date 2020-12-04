@@ -173,7 +173,7 @@ void FailureDetector::updateBatteryStatus(const vehicle_status_s &vehicle_status
 				battery_failure = battery_failure || (battery_status.mode != battery_status_s::BATTERY_MODE_UNKNOWN
 								      || battery_status.faults != battery_status_s::BATTERY_FAULT_NONE);
 
-				if (battery_failure){
+				if (battery_failure) {
 					break;
 				}
 			}

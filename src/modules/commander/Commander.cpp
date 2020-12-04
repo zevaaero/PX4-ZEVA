@@ -2234,8 +2234,8 @@ Commander::run()
 				}
 
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_BATTERY) {
-					// TODO: 500ms is taken without any empiric data. Needs real-life verification.
-					if (hrt_elapsed_time(&time_at_arm) < 500_ms) {
+					// 1500ms ensures that at least one battery message published at 1Hz is evaluated
+					if (hrt_elapsed_time(&time_at_arm) < 1500_ms) {
 						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
 						mavlink_log_critical(&mavlink_log_pub, "One or more batteries reported a problem");
 					}
