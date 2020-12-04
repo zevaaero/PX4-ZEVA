@@ -2853,12 +2853,15 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 		|| (_last_manual_control_setpoint.stab_switch != _manual_control_setpoint.stab_switch)
 		|| (_last_manual_control_setpoint.man_switch != _manual_control_setpoint.man_switch);
 
+
+
 	// only switch mode based on RC switch if necessary to also allow mode switching via MAVLink
 	const bool should_evaluate_rc_mode_switch = first_time_rc
 			|| altitude_got_valid
 			|| lpos_got_valid
 			|| gpos_got_valid
-			|| (rc_values_updated && some_switch_changed);
+			|| (rc_values_updated && some_switch_changed)
+			|| (rc_values_updated && _manual_control_setpoint.fltmode_button_pressed);
 
 	if (!should_evaluate_rc_mode_switch) {
 
@@ -2947,6 +2950,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 		int new_mode = _flight_mode_slots[_manual_control_setpoint.mode_slot - 1];
 
 		if (new_mode < 0) {
+			printf("button not pressed \n");
 			/* slot is unused */
 			res = TRANSITION_NOT_CHANGED;
 
