@@ -300,9 +300,9 @@ FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, c
 {
 	float airspeed_setpoint = _param_fw_airspd_cruise.get();
 
-	// Adapt cruise airspeed setpoint based on wind estimate
-	bool do_wind_based_airspeed_scaling = (_param_fw_wind_thld_h.get() > FLT_EPSILON
-					       || _param_fw_wind_thld_l.get() > FLT_EPSILON);
+	// Adapt cruise airspeed setpoint based on wind estimate (disable in airspeed-less mode)
+	bool do_wind_based_airspeed_scaling = _airspeed_valid
+					      && (_param_fw_wind_thld_h.get() > FLT_EPSILON || _param_fw_wind_thld_l.get() > FLT_EPSILON);
 
 	if (do_wind_based_airspeed_scaling) {
 		FixedwingPositionControl::update_wind_mode();
