@@ -112,6 +112,7 @@ public:
 	void set_heightrate_ff(float heightrate_ff) { _height_setpoint_gain_ff = heightrate_ff; }
 	void set_height_error_time_constant(float time_const) { _height_error_gain = 1.0f / math::max(time_const, 0.1f); }
 
+	void set_indicated_airspeed_cruise(float airspeed) { _indicated_airspeed_cruise = airspeed; }
 	void set_indicated_airspeed_max(float airspeed) { _indicated_airspeed_max = airspeed; }
 	void set_indicated_airspeed_min(float airspeed) { _indicated_airspeed_min = airspeed; }
 
@@ -214,12 +215,13 @@ private:
 	float _pitch_speed_weight{1.0f};				///< speed control weighting used by pitch demand calculation
 	float _height_error_gain{0.2f};					///< height error inverse time constant [1/s]
 	float _height_setpoint_gain_ff{0.0f};				///< gain from height demand derivative to demanded climb rate
-	float _airspeed_error_gain{0.1f};							///< airspeed error inverse time constant [1/s]
+	float _airspeed_error_gain{0.1f};				///< airspeed error inverse time constant [1/s]
+	float _indicated_airspeed_cruise{15.0f};			///< equivalent cruise airspeed for airspeed less mode (m/sec)
 	float _indicated_airspeed_min{3.0f};				///< equivalent airspeed demand lower limit (m/sec)
 	float _indicated_airspeed_max{30.0f};				///< equivalent airspeed demand upper limit (m/sec)
 	float _throttle_slewrate{0.0f};					///< throttle demand slew rate limit (1/sec)
 	float _STE_rate_time_const{0.1f};				///< filter time constant for specific total energy rate (damping path) (s)
-	float _speed_derivative_time_const{0.01f};		///< speed derivative filter time constant (s)
+	float _speed_derivative_time_const{0.01f};			///< speed derivative filter time constant (s)
 
 	// complimentary filter states
 	float _vert_vel_state{0.0f};					///< complimentary filter state - height rate (m/sec)
