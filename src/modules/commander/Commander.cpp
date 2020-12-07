@@ -4411,7 +4411,7 @@ void Commander::esc_status_check(const esc_status_s &esc_status)
 					}
 
 					if (esc_status.esc[index].failures & esc_report_s::FAILURE_GENERIC_MASK) {
-						mavlink_log_critical(&mavlink_log_pub, "ESC%d: generic failure - code %d", index, esc_status.esc[index].esc_state);
+						mavlink_log_critical(&mavlink_log_pub, "ESC%d: generic failure - code %d", index + 1, esc_status.esc[index].esc_state);
 					}
 
 				}
