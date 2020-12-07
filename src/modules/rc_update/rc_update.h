@@ -171,9 +171,9 @@ private:
 
 	uint8_t _channel_count_previous{0};
 
-	uint8_t _last_active_slot{0};
-	uint8_t _last_slot_selected{0};
-	bool 	_button_already_pressed{false};
+	uint8_t _button_press_slot_to_send{0};
+	uint8_t _potential_button_press_slot{0};
+	bool 	_button_press_already_sent{false};
 	systemlib::Hysteresis _button_pressed_hysteresis{false};
 
 	perf_counter_t		_loop_perf;			/**< loop performance counter */

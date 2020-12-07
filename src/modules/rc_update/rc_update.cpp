@@ -531,7 +531,7 @@ RCUpdate::Run()
 
 			} else if (_param_rc_map_flightmode_buttons.get() > 0) {
 
-				bool is_same_button_pressed = false;
+				bool is_consistent_button_press = false;
 
 				for (uint8_t index = 0; index < manual_control_setpoint_s::MODE_SLOT_NUM; index++) {
 
@@ -541,30 +541,33 @@ RCUpdate::Run()
 					// The range goes from -1 to 1, checking that value is greater than 0.5f
 					// corresponds to check that the signal is above 75% of the overall range.
 					if (value > 0.5f) {
-						if (index + 1 == _last_slot_selected) {
-							is_same_button_pressed = true;
+						const uint8_t current_button_press_slot = index + 1;
+
+						// The same button stays pressed consistently
+						if (current_button_press_slot == _potential_button_press_slot) {
+							is_consistent_button_press = true;
 						}
 
-						_last_slot_selected = index + 1;
+						_potential_button_press_slot = current_button_press_slot;
 						break;
 					}
 				}
 
 				_button_pressed_hysteresis.set_hysteresis_time_from(false, 50_ms);
-				_button_pressed_hysteresis.set_state_and_update(is_same_button_pressed
-						&& !_button_already_pressed, hrt_absolute_time());
+				_button_pressed_hysteresis.set_state_and_update(
+					is_consistent_button_press && !_button_press_already_sent, hrt_absolute_time());
 
 				if (_button_pressed_hysteresis.get_state()) {
-					PX4_DEBUG("Switching to slot %d", _last_slot_selected);
-					_button_already_pressed = true;
-					_last_active_slot = _last_slot_selected;
+					_button_press_already_sent = true;
+					_button_press_slot_to_send = _potential_button_press_slot;
+					PX4_DEBUG("Switching to slot %d", manual_control_setpoint.mode_slot);
 
-				} else if (!is_same_button_pressed)  {
-					_button_already_pressed = false;
-					_last_active_slot = manual_control_setpoint_s::MODE_SLOT_NONE;
+				} else if (!is_consistent_button_press) {
+					_button_press_already_sent = false;
+					_button_press_slot_to_send = manual_control_setpoint_s::MODE_SLOT_NONE;
 				}
 
-				manual_control_setpoint.mode_slot = _last_active_slot ;
+				manual_control_setpoint.mode_slot = _button_press_slot_to_send;
 			}
 
 			/* mode switches */
