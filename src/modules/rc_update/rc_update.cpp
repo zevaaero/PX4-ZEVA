@@ -530,7 +530,7 @@ RCUpdate::Run()
 				}
 
 			} else if (_param_rc_map_flightmode_buttons.get() > 0) {
-
+				manual_control_setpoint.mode_slot = manual_control_setpoint_s::MODE_SLOT_NONE;
 				bool is_consistent_button_press = false;
 
 				for (uint8_t index = 0; index < manual_control_setpoint_s::MODE_SLOT_NUM; index++) {
@@ -554,20 +554,11 @@ RCUpdate::Run()
 				}
 
 				_button_pressed_hysteresis.set_hysteresis_time_from(false, 50_ms);
-				_button_pressed_hysteresis.set_state_and_update(
-					is_consistent_button_press && !_button_press_already_sent, hrt_absolute_time());
+				_button_pressed_hysteresis.set_state_and_update(is_consistent_button_press, hrt_absolute_time());
 
 				if (_button_pressed_hysteresis.get_state()) {
-					_button_press_already_sent = true;
-					_button_press_slot_to_send = _potential_button_press_slot;
-					PX4_DEBUG("Switching to slot %d", manual_control_setpoint.mode_slot);
-
-				} else if (!is_consistent_button_press) {
-					_button_press_already_sent = false;
-					_button_press_slot_to_send = manual_control_setpoint_s::MODE_SLOT_NONE;
+					manual_control_setpoint.mode_slot = _potential_button_press_slot;
 				}
-
-				manual_control_setpoint.mode_slot = _button_press_slot_to_send;
 			}
 
 			/* mode switches */
