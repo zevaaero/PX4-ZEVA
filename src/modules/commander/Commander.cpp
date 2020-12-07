@@ -2745,8 +2745,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 			|| altitude_got_valid
 			|| lpos_got_valid
 			|| gpos_got_valid
-			|| (rc_values_updated && some_switch_changed)
-			|| (rc_values_updated && _manual_control_setpoint.fltmode_button_pressed);
+			|| (rc_values_updated && some_switch_changed);
 
 	if (!should_evaluate_rc_mode_switch) {
 
