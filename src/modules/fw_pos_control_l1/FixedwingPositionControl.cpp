@@ -777,6 +777,23 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			mission_throttle = pos_sp_curr.cruising_throttle;
 		}
 
+		float tecs_fw_thr_min;
+		float tecs_fw_thr_max;
+		float tecs_fw_mission_throttle;
+
+		if (mission_throttle < _param_fw_thr_min.get()) {
+			/* enable gliding with this waypoint */
+			_tecs.set_speed_weight(2.0f);
+			tecs_fw_thr_min = 0.0;
+			tecs_fw_thr_max = 0.0;
+			tecs_fw_mission_throttle = 0.0;
+
+		} else {
+			tecs_fw_thr_min = _param_fw_thr_min.get();
+			tecs_fw_thr_max = _param_fw_thr_max.get();
+			tecs_fw_mission_throttle = mission_throttle;
+		}
+
 		if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
 			_att_sp.thrust_body[0] = 0.0f;
 			_att_sp.roll_body = 0.0f;
@@ -787,23 +804,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, nav_speed_2d);
 			_att_sp.roll_body = _l1_control.get_roll_setpoint();
 			_att_sp.yaw_body = _l1_control.nav_bearing();
-
-			float tecs_fw_thr_min;
-			float tecs_fw_thr_max;
-			float tecs_fw_mission_throttle;
-
-			if (mission_throttle < _param_fw_thr_min.get()) {
-				/* enable gliding with this waypoint */
-				_tecs.set_speed_weight(2.0f);
-				tecs_fw_thr_min = 0.0;
-				tecs_fw_thr_max = 0.0;
-				tecs_fw_mission_throttle = 0.0;
-
-			} else {
-				tecs_fw_thr_min = _param_fw_thr_min.get();
-				tecs_fw_thr_max = _param_fw_thr_max.get();
-				tecs_fw_mission_throttle = mission_throttle;
-			}
 
 			float adapted_mission_airspeed = 0.0f;
 
@@ -884,24 +884,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				}
 
 				_tecs.set_height_error_time_constant(_param_fw_thrtc_sc.get() * _param_fw_t_h_error_tc.get());
-			}
-
-
-			float tecs_fw_thr_min;
-			float tecs_fw_thr_max;
-			float tecs_fw_mission_throttle;
-
-			if (mission_throttle < _param_fw_thr_min.get()) {
-				/* enable gliding with this waypoint */
-				_tecs.set_speed_weight(2.0f);
-				tecs_fw_thr_min = 0.0;
-				tecs_fw_thr_max = 0.0;
-				tecs_fw_mission_throttle = 0.0;
-
-			} else {
-				tecs_fw_thr_min = _param_fw_thr_min.get();
-				tecs_fw_thr_max = _param_fw_thr_max.get();
-				tecs_fw_mission_throttle = _param_fw_thr_cruise.get();
 			}
 
 			tecs_update_pitch_throttle(now, alt_sp,
