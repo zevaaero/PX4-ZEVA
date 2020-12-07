@@ -2738,8 +2738,6 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 		|| (_last_manual_control_setpoint.stab_switch != _manual_control_setpoint.stab_switch)
 		|| (_last_manual_control_setpoint.man_switch != _manual_control_setpoint.man_switch);
 
-
-
 	// only switch mode based on RC switch if necessary to also allow mode switching via MAVLink
 	const bool should_evaluate_rc_mode_switch = first_time_rc
 			|| altitude_got_valid
