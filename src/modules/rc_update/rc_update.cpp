@@ -557,12 +557,11 @@ RCUpdate::Run()
 				if (_button_pressed_hysteresis.get_state()) {
 					PX4_DEBUG("Switching to slot %d", _last_slot_selected);
 					_button_already_pressed = true;
-					manual_control_setpoint.fltmode_button_pressed = true;
 					_last_active_slot = _last_slot_selected;
 
 				} else if (!is_same_button_pressed)  {
-					manual_control_setpoint.fltmode_button_pressed = false;
 					_button_already_pressed = false;
+					_last_active_slot = manual_control_setpoint_s::MODE_SLOT_NONE;
 				}
 
 				manual_control_setpoint.mode_slot = _last_active_slot ;
