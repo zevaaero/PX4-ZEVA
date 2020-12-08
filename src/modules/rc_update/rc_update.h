@@ -173,6 +173,7 @@ private:
 
 	uint8_t _potential_button_press_slot{0};
 	systemlib::Hysteresis _button_pressed_hysteresis{false};
+	systemlib::Hysteresis _rc_signal_lost_hysteresis{true};
 
 	perf_counter_t		_loop_perf;			/**< loop performance counter */
 

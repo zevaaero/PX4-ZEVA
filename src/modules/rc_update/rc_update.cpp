@@ -470,9 +470,12 @@ RCUpdate::Run()
 			}
 		}
 
+		_rc_signal_lost_hysteresis.set_hysteresis_time_from(true, 100_ms);
+		_rc_signal_lost_hysteresis.set_state_and_update(signal_lost, hrt_absolute_time());
+
 		_rc.channel_count = rc_input.channel_count;
 		_rc.rssi = rc_input.rssi;
-		_rc.signal_lost = signal_lost;
+		_rc.signal_lost = _rc_signal_lost_hysteresis.get_state();
 		_rc.timestamp = rc_input.timestamp_last_signal;
 		_rc.frame_drop_count = rc_input.rc_lost_frame_count;
 
@@ -480,7 +483,7 @@ RCUpdate::Run()
 		_rc_pub.publish(_rc);
 
 		/* only publish manual control if the signal is still present and was present once */
-		if (!signal_lost && rc_input.timestamp_last_signal > 0) {
+		if (!_rc_signal_lost_hysteresis.get_state() && rc_input.timestamp_last_signal > 0) {
 
 			/* initialize manual setpoint */
 			manual_control_setpoint_s manual_control_setpoint{};
