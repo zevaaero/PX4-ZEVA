@@ -2353,8 +2353,9 @@ Commander::run()
 				}
 
 				if (status.failure_detector_status & vehicle_status_s::FAILURE_BATTERY) {
-					// 1500ms ensures that at least one battery message published at 1Hz is evaluated
-					if (hrt_elapsed_time(&time_at_arm) < 1500_ms) {
+					// Check within the motor spool up time before the takeoff. Has no effect if battery_status
+					// is published at a lower rate than the spoolup time demands
+					if (hrt_elapsed_time(&time_at_arm) < _param_com_spoolup_time.get() * 1_s) {
 						arm_disarm(false, true, &mavlink_log_pub, arm_disarm_reason_t::FAILURE_DETECTOR);
 						mavlink_log_critical(&mavlink_log_pub, "One or more batteries reported a problem");
 					}
