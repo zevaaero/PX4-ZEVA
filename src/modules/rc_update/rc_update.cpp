@@ -470,6 +470,12 @@ RCUpdate::Run()
 			}
 		}
 
+		/*
+		 * some RC systems glitch after a reboot, we should ignore the first 100ms of regained signal
+		 * as the glitch might be interpreted as a commanded stick action or a flight mode switch
+		 *
+		 */
+
 		_rc_signal_lost_hysteresis.set_hysteresis_time_from(true, 100_ms);
 		_rc_signal_lost_hysteresis.set_state_and_update(signal_lost, hrt_absolute_time());
 
