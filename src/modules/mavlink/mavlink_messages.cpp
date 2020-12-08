@@ -220,6 +220,9 @@ void get_mavlink_navigation_mode(const struct vehicle_status_s *const status, ui
 		custom_mode->sub_mode = PX4_CUSTOM_SUB_MODE_AUTO_MISSION;
 		break;
 
+	case vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER:
+
+	/* fallthrough */
 	case vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER:
 		*mavlink_base_mode |= auto_mode_flags;
 		custom_mode->main_mode = PX4_CUSTOM_MAIN_MODE_AUTO;

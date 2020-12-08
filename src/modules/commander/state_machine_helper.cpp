@@ -752,8 +752,7 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 					status->nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 				} else {
-					// TODO: FW position controller doesn't run without condition_global_position_valid
-					status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL;
+					status->nav_state = vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER;
 				}
 
 			} else {

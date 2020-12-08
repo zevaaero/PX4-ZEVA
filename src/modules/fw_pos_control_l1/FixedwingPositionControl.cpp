@@ -1149,7 +1149,14 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   pitch_limit_min,
 					   tecs_status_s::TECS_MODE_NORMAL);
 
-		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
+		// if not in manual altitude mode flight, set fixed roll setpoint (GPS failure mode)
+		if (_control_mode.flag_control_manual_enabled) {
+			_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
+
+		} else {
+			_att_sp.roll_body = OL_LOITER_BANK; // open loop loiter bank angle (Altitdue mode without manual control available)
+		}
+
 		_att_sp.yaw_body = 0;
 
 	} else {

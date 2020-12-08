@@ -836,6 +836,8 @@ Navigator::run()
 		case vehicle_status_s::NAVIGATION_STATE_TERMINATION:
 		case vehicle_status_s::NAVIGATION_STATE_OFFBOARD:
 		case vehicle_status_s::NAVIGATION_STATE_STAB:
+		case vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER:
+
 		default:
 			navigation_mode_new = nullptr;
 			_can_loiter_at_sp = false;
