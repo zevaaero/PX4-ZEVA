@@ -463,6 +463,14 @@ RCUpdate::Run()
 			}
 		}
 
+		/*
+		 * HERELINK HACK
+		 * This hysteresis is required as all the herelink S.BUS channels glitch right after a reboot
+		 * causing a potential un-commanded mode change or stick override
+		 * Adding the hysteresis prevents the glitch from being considered.
+		 *
+		 */
+
 		_rc_signal_lost_hysteresis.set_hysteresis_time_from(true, 100_ms);
 		_rc_signal_lost_hysteresis.set_state_and_update(signal_lost, hrt_absolute_time());
 
