@@ -387,6 +387,8 @@ Navigator::run()
 					rep->current.lon = position_setpoint.lon;
 					rep->current.alt = position_setpoint.alt;
 
+					rep->current.cruising_throttle = get_cruising_throttle();
+
 					rep->current.valid = true;
 					rep->current.timestamp = hrt_absolute_time();
 
