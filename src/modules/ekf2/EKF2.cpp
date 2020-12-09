@@ -486,9 +486,39 @@ void EKF2::Run()
 			}
 		}
 
-		if ((_param_ekf2_gps_mask.get() == 0) && gps1_updated) {
-			// When GPS blending is disabled we always use the first receiver instance
-			_ekf.setGpsData(_gps_state[0]);
+		if ((_param_ekf2_gps_mask.get() == 0) && (gps1_updated || gps2_updated)) {
+			runMultiGpsChecks();
+
+			// Only use selected receiver data if it has been updated
+			_gps_new_output_data = (gps1_updated && _gps_select_index == 0) ||
+					       (gps2_updated && _gps_select_index == 1);
+
+			if (_gps_new_output_data) {
+				_ekf.setGpsData(_gps_state[_gps_select_index]);
+
+				// log selected GPS
+				ekf_gps_position_s gps;
+				gps.timestamp = _gps_state[_gps_select_index].time_usec;
+				gps.lat = _gps_state[_gps_select_index].lat;
+				gps.lon = _gps_state[_gps_select_index].lon;
+				gps.alt = _gps_state[_gps_select_index].alt;
+				gps.fix_type = _gps_state[_gps_select_index].fix_type;
+				gps.eph = _gps_state[_gps_select_index].eph;
+				gps.epv = _gps_state[_gps_select_index].epv;
+				gps.s_variance_m_s = _gps_state[_gps_select_index].sacc;
+				gps.vel_m_s = _gps_state[_gps_select_index].vel_m_s;
+				gps.vel_n_m_s = _gps_state[_gps_select_index].vel_ned(0);
+				gps.vel_e_m_s = _gps_state[_gps_select_index].vel_ned(1);
+				gps.vel_d_m_s = _gps_state[_gps_select_index].vel_ned(2);
+				gps.vel_ned_valid = _gps_state[_gps_select_index].vel_ned_valid;
+				gps.satellites_used = _gps_state[_gps_select_index].nsats;
+				gps.heading = _gps_state[_gps_select_index].yaw;
+				gps.heading_offset = _gps_state[_gps_select_index].yaw_offset;
+				gps.selected = _gps_select_index;
+
+				// Publish to the EKF blended GPS topic
+				_blended_gps_pub.publish(gps);
+			}
 
 		} else if ((_param_ekf2_gps_mask.get() > 0) && (gps1_updated || gps2_updated)) {
 			// blend dual receivers if available
@@ -1449,99 +1479,8 @@ bool EKF2::blend_gps_data()
 	// zero the blend weights
 	memset(&_blend_weights, 0, sizeof(_blend_weights));
 
-	/*
-	 * If both receivers have the same update rate, use the oldest non-zero time.
-	 * If two receivers with different update rates are used, use the slowest.
-	 * If time difference is excessive, use newest to prevent a disconnected receiver
-	 * from blocking updates.
-	 */
-
-	// Calculate the time step for each receiver with some filtering to reduce the effects of jitter
-	// Find the largest and smallest time step.
-	float dt_max = 0.0f;
-	float dt_min = 0.3f;
-
-	for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
-		float raw_dt = 1e-6f * (float)(_gps_state[i].time_usec - _time_prev_us[i]);
-
-		if (raw_dt > 0.0f && raw_dt < 0.3f) {
-			_gps_dt[i] = 0.1f * raw_dt + 0.9f * _gps_dt[i];
-		}
-
-		if (_gps_dt[i] > dt_max) {
-			dt_max = _gps_dt[i];
-			_gps_slowest_index = i;
-		}
-
-		if (_gps_dt[i] < dt_min) {
-			dt_min = _gps_dt[i];
-		}
-	}
-
-	// Find the receiver that is last be updated
-	uint64_t max_us = 0; // newest non-zero system time of arrival of a GPS message
-	uint64_t min_us = -1; // oldest non-zero system time of arrival of a GPS message
-
-	for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
-		// Find largest and smallest times
-		if (_gps_state[i].time_usec > max_us) {
-			max_us = _gps_state[i].time_usec;
-			_gps_newest_index = i;
-		}
-
-		if ((_gps_state[i].time_usec < min_us) && (_gps_state[i].time_usec > 0)) {
-			min_us = _gps_state[i].time_usec;
-			_gps_oldest_index = i;
-		}
-	}
-
-	if ((max_us - min_us) > 300000) {
-		// A receiver has timed out so fall out of blending
-		if (_gps_state[0].time_usec > _gps_state[1].time_usec) {
-			_gps_select_index = 0;
-
-		} else {
-			_gps_select_index = 1;
-		}
-
+	if (!runMultiGpsChecks()) {
 		return false;
-	}
-
-	// One receiver has lost 3D fix, fall out of blending
-	if (_gps_state[0].fix_type > 2 && _gps_state[1].fix_type < 3) {
-		_gps_select_index = 0;
-		return false;
-
-	} else if (_gps_state[1].fix_type > 2 && _gps_state[0].fix_type < 3) {
-		_gps_select_index = 1;
-		return false;
-	}
-
-	/*
-	 * If the largest dt is less than 20% greater than the smallest, then we have  receivers
-	 * running at the same rate then we wait until we have two messages with an arrival time
-	 * difference that is less than 50% of the smallest time step and use the time stamp from
-	 * the newest data.
-	 * Else we have two receivers at different update rates and use the slowest receiver
-	 * as the timing reference.
-	 */
-
-	if ((dt_max - dt_min) < 0.2f * dt_min) {
-		// both receivers assumed to be running at the same rate
-		if ((max_us - min_us) < (uint64_t)(5e5f * dt_min)) {
-			// data arrival within a short time window enables the two measurements to be blended
-			_gps_time_ref_index = _gps_newest_index;
-			_gps_new_output_data = true;
-		}
-
-	} else {
-		// both receivers running at different rates
-		_gps_time_ref_index = _gps_slowest_index;
-
-		if (_gps_state[_gps_time_ref_index].time_usec > _time_prev_us[_gps_time_ref_index]) {
-			// blend data at the rate of the slower receiver
-			_gps_new_output_data = true;
-		}
 	}
 
 	if (_gps_new_output_data) {
@@ -1689,6 +1628,106 @@ bool EKF2::blend_gps_data()
 		update_gps_offsets();
 		_gps_select_index = 2;
 
+	}
+
+	return true;
+}
+
+bool EKF2::runMultiGpsChecks()
+{
+	/*
+	 * If both receivers have the same update rate, use the oldest non-zero time.
+	 * If two receivers with different update rates are used, use the slowest.
+	 * If time difference is excessive, use newest to prevent a disconnected receiver
+	 * from blocking updates.
+	 */
+
+	// Calculate the time step for each receiver with some filtering to reduce the effects of jitter
+	// Find the largest and smallest time step.
+	float dt_max = 0.0f;
+	float dt_min = 0.3f;
+
+	for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
+		float raw_dt = 1e-6f * (float)(_gps_state[i].time_usec - _time_prev_us[i]);
+
+		if (raw_dt > 0.0f && raw_dt < 0.3f) {
+			_gps_dt[i] = 0.1f * raw_dt + 0.9f * _gps_dt[i];
+		}
+
+		if (_gps_dt[i] > dt_max) {
+			dt_max = _gps_dt[i];
+			_gps_slowest_index = i;
+		}
+
+		if (_gps_dt[i] < dt_min) {
+			dt_min = _gps_dt[i];
+		}
+	}
+
+	// Find the receiver that is last be updated
+	uint64_t max_us = 0; // newest non-zero system time of arrival of a GPS message
+	uint64_t min_us = -1; // oldest non-zero system time of arrival of a GPS message
+
+	for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
+		// Find largest and smallest times
+		if (_gps_state[i].time_usec > max_us) {
+			max_us = _gps_state[i].time_usec;
+			_gps_newest_index = i;
+		}
+
+		if ((_gps_state[i].time_usec < min_us) && (_gps_state[i].time_usec > 0)) {
+			min_us = _gps_state[i].time_usec;
+			_gps_oldest_index = i;
+		}
+	}
+
+	if ((max_us - min_us) > 500000) {
+		// A receiver has timed out so fall out of blending
+		if (_gps_state[0].time_usec > _gps_state[1].time_usec) {
+			_gps_select_index = 0;
+
+		} else {
+			_gps_select_index = 1;
+		}
+
+		return false;
+	}
+
+	// One receiver has lost 3D fix, fall out of blending
+	if (_gps_state[0].fix_type > 2 && _gps_state[1].fix_type < 3) {
+		_gps_select_index = 0;
+		return false;
+
+	} else if (_gps_state[1].fix_type > 2 && _gps_state[0].fix_type < 3) {
+		_gps_select_index = 1;
+		return false;
+	}
+
+	/*
+	 * If the largest dt is less than 20% greater than the smallest, then we have  receivers
+	 * running at the same rate then we wait until we have two messages with an arrival time
+	 * difference that is less than 50% of the smallest time step and use the time stamp from
+	 * the newest data.
+	 * Else we have two receivers at different update rates and use the slowest receiver
+	 * as the timing reference.
+	 */
+
+	if ((dt_max - dt_min) < 0.2f * dt_min) {
+		// both receivers assumed to be running at the same rate
+		if ((max_us - min_us) < (uint64_t)(5e5f * dt_min)) {
+			// data arrival within a short time window enables the two measurements to be blended
+			_gps_time_ref_index = _gps_newest_index;
+			_gps_new_output_data = true;
+		}
+
+	} else {
+		// both receivers running at different rates
+		_gps_time_ref_index = _gps_slowest_index;
+
+		if (_gps_state[_gps_time_ref_index].time_usec > _time_prev_us[_gps_time_ref_index]) {
+			// blend data at the rate of the slower receiver
+			_gps_new_output_data = true;
+		}
 	}
 
 	return true;

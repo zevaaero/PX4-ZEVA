@@ -146,6 +146,7 @@ private:
 	 * variation in the position solution.
 	*/
 	bool blend_gps_data();
+	bool runMultiGpsChecks();
 
 	/*
 	 * Calculate internal states used to blend GPS data from multiple receivers using weightings calculated
