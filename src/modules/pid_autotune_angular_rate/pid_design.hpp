@@ -102,4 +102,19 @@ inline matrix::Vector3f computePidGmvc(const matrix::Vector3f &num, const matrix
 	return matrix::Vector3f(kc, ki, kd);
 }
 
+inline float computePOuterGain(const matrix::Vector3f &den, float dt, float bw_factor)
+{
+	// assumes a model with a pure integrator: p2 = a2 / p1 ~= a2
+	if (fabsf(1.f - den(2)) < FLT_EPSILON) {
+		return 0.f;
+	}
+
+	const float tau_open_loop = dt / (1.f - den(2)); // 1st order approximation
+	const float tau_closed_loop = fmaxf(tau_open_loop,
+					    0.015f); // assumes the closed-loop BW ~= open-loop BW but not more than 65 rad/s
+	const float p_gain = 1.f / (bw_factor * tau_closed_loop);
+
+	return p_gain;
+}
+
 } // namespace pid_design

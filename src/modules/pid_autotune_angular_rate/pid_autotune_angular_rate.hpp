@@ -135,6 +135,9 @@ private:
 	matrix::Vector3f _rate_i{};
 	matrix::Vector3f _rate_d{};
 
+	float _attitude_p{0.f};
+	matrix::Vector3f _att_p{};
+
 	/**
 	 * Scale factor applied to the input data to have the same input/output range
 	 * When input and output scales are a lot different, some elements of the covariance
@@ -164,13 +167,16 @@ private:
 		(ParamFloat<px4::params::MC_ROLLRATE_K>) _param_mc_rollrate_k,
 		(ParamFloat<px4::params::MC_ROLLRATE_I>) _param_mc_rollrate_i,
 		(ParamFloat<px4::params::MC_ROLLRATE_D>) _param_mc_rollrate_d,
+		(ParamFloat<px4::params::MC_ROLL_P>) _param_mc_roll_p,
 		(ParamFloat<px4::params::MC_PITCHRATE_P>) _param_mc_pitchrate_p,
 		(ParamFloat<px4::params::MC_PITCHRATE_K>) _param_mc_pitchrate_k,
 		(ParamFloat<px4::params::MC_PITCHRATE_I>) _param_mc_pitchrate_i,
 		(ParamFloat<px4::params::MC_PITCHRATE_D>) _param_mc_pitchrate_d,
+		(ParamFloat<px4::params::MC_PITCH_P>) _param_mc_pitch_p,
 		(ParamFloat<px4::params::MC_YAWRATE_P>) _param_mc_yawrate_p,
 		(ParamFloat<px4::params::MC_YAWRATE_K>) _param_mc_yawrate_k,
 		(ParamFloat<px4::params::MC_YAWRATE_I>) _param_mc_yawrate_i,
-		(ParamFloat<px4::params::MC_YAWRATE_D>) _param_mc_yawrate_d
+		(ParamFloat<px4::params::MC_YAWRATE_D>) _param_mc_yawrate_d,
+		(ParamFloat<px4::params::MC_YAW_P>) _param_mc_yaw_p
 	)
 };
