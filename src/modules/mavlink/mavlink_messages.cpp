@@ -701,6 +701,7 @@ protected:
 				bat_msg.current_battery = (battery_status.connected) ? battery_status.current_filtered_a * 100 : -1;
 				bat_msg.battery_remaining = (battery_status.connected) ? ceilf(battery_status.remaining * 100.0f) : -1;
 				bat_msg.time_remaining = (battery_status.connected) ? battery_status.run_time_to_empty * 60 : 0;
+				bat_msg.fault_bitmask = (battery_status.connected) ? battery_status.faults : 0;
 
 				switch (battery_status.warning) {
 				case (battery_status_s::BATTERY_WARNING_NONE):
@@ -736,21 +737,25 @@ protected:
 					break;
 				}
 
-				switch (battery_status.mode) {
-				case (battery_status_s::BATTERY_MODE_AUTO_DISCHARGING):
-					bat_msg.mode = MAV_BATTERY_MODE_AUTO_DISCHARGING;
-					break;
+				uint8_t battery_mode = MAV_BATTERY_MODE_UNKNOWN;
 
-				case (battery_status_s::BATTERY_MODE_HOT_SWAP):
-					bat_msg.mode = MAV_BATTERY_MODE_HOT_SWAP;
-					break;
+				if (battery_status.connected) {
+					switch (battery_status.mode) {
+					case (battery_status_s::BATTERY_MODE_AUTO_DISCHARGING):
+						battery_mode = MAV_BATTERY_MODE_AUTO_DISCHARGING;
+						break;
 
-				default:
-					bat_msg.mode = MAV_BATTERY_MODE_UNKNOWN;
-					break;
+					case (battery_status_s::BATTERY_MODE_HOT_SWAP):
+						battery_mode = MAV_BATTERY_MODE_HOT_SWAP;
+						break;
+
+					default:
+						battery_mode = MAV_BATTERY_MODE_UNKNOWN;
+						break;
+					}
 				}
 
-				bat_msg.fault_bitmask = battery_status.faults;
+				bat_msg.mode = battery_mode;
 
 				// check if temperature valid
 				if (battery_status.connected && PX4_ISFINITE(battery_status.temperature)) {
