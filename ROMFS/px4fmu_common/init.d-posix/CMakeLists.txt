@@ -69,6 +69,8 @@ px4_add_romfs_files(
 	1060_rover
 	1061_r1_rover
 	1062_tf-r1
+	1063_rover_gimbal
+	1063_rover_gimbal.post
 	1070_boat
 	17001_tf-g1
 	2507_cloudship
