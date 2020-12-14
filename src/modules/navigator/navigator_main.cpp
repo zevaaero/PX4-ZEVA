@@ -849,6 +849,26 @@ Navigator::run()
 			navigation_mode_new = nullptr;
 		}
 
+		if (_vstatus.nav_state != _previous_nav_state) {
+			if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER) {
+				PX4_WARN("GPS invalid, fixed-bank loitering for 5 min, then descend.");
+
+			} else if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_DESCEND) {
+				// if vehicle is a VTOL in fixed-wing mode, switch to hover for the DESCEND mode
+				if (_vstatus.is_vtol && _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
+				    force_vtol()) {
+					PX4_WARN("GPS not recovered, transition to hover mode and descend.");
+					vehicle_command_s vcmd = {};
+					vcmd.command = NAV_CMD_DO_VTOL_TRANSITION;
+					vcmd.param1 = vtol_vehicle_status_s::VEHICLE_VTOL_STATE_MC;
+					publish_vehicle_cmd(&vcmd);
+
+				} else if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
+					PX4_WARN("GPS not recovered, start descending.");
+				}
+			}
+		}
+
 		// update the vehicle status
 		_previous_nav_state = _vstatus.nav_state;
 
