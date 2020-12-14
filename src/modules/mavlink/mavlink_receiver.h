@@ -84,7 +84,7 @@
 #include <uORB/topics/offboard_control_mode.h>
 #include <uORB/topics/onboard_computer_status.h>
 #include <uORB/topics/optical_flow.h>
-#include <uORB/topics/pid_autotune_angular_rate_status.h>
+#include <uORB/topics/autotune_attitude_control_status.h>
 #include <uORB/topics/ping.h>
 #include <uORB/topics/position_setpoint_triplet.h>
 #include <uORB/topics/radio_status.h>
@@ -296,7 +296,7 @@ private:
 	uORB::Subscription	_vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
 	uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription	_home_position_sub{ORB_ID(home_position)};
-	uORB::Subscription	_pid_autotune_angular_sub{ORB_ID(pid_autotune_angular_rate_status)};
+	uORB::Subscription	_pid_autotune_angular_sub{ORB_ID(autotune_attitude_control_status)};
 
 	// hil_sensor and hil_state_quaternion
 	enum SensorSource {

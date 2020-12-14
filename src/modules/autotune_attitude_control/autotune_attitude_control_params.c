@@ -32,9 +32,9 @@
  ****************************************************************************/
 
 /**
- * @file pid_autotune_angular_rate_params.c
+ * @file autotune_attitude_control_params.c
  *
- * Parameters used by the angular rate PID auto-tuner
+ * Parameters used by the attitude auto-tuner
  *
  * @author Mathieu Bresciani <mathieu@auterion.com>
  */
@@ -54,7 +54,7 @@
  * ATUNE_SYSID_AMP for more signal/noise ratio
  *
  * @boolean
- * @group PID Autotune Angular Rate
+ * @group Autotune
  */
 PARAM_DEFINE_INT32(ATUNE_START, 0);
 
@@ -64,12 +64,12 @@ PARAM_DEFINE_INT32(ATUNE_START, 0);
  * @min 0.1
  * @max 6.0
  * @decimal 1
- * @group PID Autotune Angular Rate
+ * @group Autotune
  */
 PARAM_DEFINE_FLOAT(ATUNE_SYSID_AMP, 1.0);
 
 /**
- * Controls when to apply the new PID gains
+ * Controls when to apply the new gains
  *
  * After the auto-tuning sequence is completed,
  * a new set of gains is available and can be applied
@@ -82,6 +82,6 @@ PARAM_DEFINE_FLOAT(ATUNE_SYSID_AMP, 1.0);
  * @value 0 Do not apply the new gains (logging only)
  * @value 1 Apply the new gains after disarm
  * @value 2 WARNING Apply the new gains in air
- * @group Multicopter Position Control
+ * @group Autotune
  */
 PARAM_DEFINE_INT32(ATUNE_APPLY, 1);

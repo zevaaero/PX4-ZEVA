@@ -65,9 +65,9 @@ mc_hover_thrust_estimator start
 mc_pos_control start
 
 #
-# Start rate control auto-tuner
+# Start attitude control auto-tuner
 #
-pid_autotune_angular_rate start
+autotune_attitude_control start
 
 #
 # Start Multicopter Land Detector.

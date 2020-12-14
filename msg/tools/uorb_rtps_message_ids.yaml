@@ -305,7 +305,7 @@ rtps:
     id: 145
   - msg: gimbal_manager_set_manual_control
     id: 146
-  - msg: pid_autotune_angular_rate_status
+  - msg: autotune_attitude_control_status
     id: 147
   ########## multi topics: begin ##########
   - msg: actuator_controls_0

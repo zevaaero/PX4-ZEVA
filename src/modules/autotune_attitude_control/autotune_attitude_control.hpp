@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file pid_autotune_angular_rate.hpp
+ * @file autotune_attitude_control.hpp
  *
  * @author Mathieu Bresciani <mathieu@auterion.com>
  */
@@ -52,7 +52,7 @@
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
-#include <uORB/topics/pid_autotune_angular_rate_status.h>
+#include <uORB/topics/autotune_attitude_control_status.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
 #include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
@@ -105,22 +105,22 @@ private:
 	uORB::Subscription _vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
 
-	uORB::PublicationData<pid_autotune_angular_rate_status_s> _pid_autotune_angular_rate_status_pub{ORB_ID(pid_autotune_angular_rate_status)};
+	uORB::PublicationData<autotune_attitude_control_status_s> _autotune_attitude_control_status_pub{ORB_ID(autotune_attitude_control_status)};
 
 	SystemIdentification _sys_id;
 
 	enum class state {
-		idle = pid_autotune_angular_rate_status_s::STATE_IDLE,
-		init = pid_autotune_angular_rate_status_s::STATE_INIT,
-		roll = pid_autotune_angular_rate_status_s::STATE_ROLL,
-		roll_pause = pid_autotune_angular_rate_status_s::STATE_ROLL_PAUSE,
-		pitch = pid_autotune_angular_rate_status_s::STATE_PITCH,
-		pitch_pause = pid_autotune_angular_rate_status_s::STATE_PITCH_PAUSE,
-		yaw = pid_autotune_angular_rate_status_s::STATE_YAW,
-		yaw_pause = pid_autotune_angular_rate_status_s::STATE_YAW_PAUSE,
-		verification = pid_autotune_angular_rate_status_s::STATE_VERIFICATION,
-		complete = pid_autotune_angular_rate_status_s::STATE_COMPLETE,
-		fail = pid_autotune_angular_rate_status_s::STATE_FAIL
+		idle = autotune_attitude_control_status_s::STATE_IDLE,
+		init = autotune_attitude_control_status_s::STATE_INIT,
+		roll = autotune_attitude_control_status_s::STATE_ROLL,
+		roll_pause = autotune_attitude_control_status_s::STATE_ROLL_PAUSE,
+		pitch = autotune_attitude_control_status_s::STATE_PITCH,
+		pitch_pause = autotune_attitude_control_status_s::STATE_PITCH_PAUSE,
+		yaw = autotune_attitude_control_status_s::STATE_YAW,
+		yaw_pause = autotune_attitude_control_status_s::STATE_YAW_PAUSE,
+		verification = autotune_attitude_control_status_s::STATE_VERIFICATION,
+		complete = autotune_attitude_control_status_s::STATE_COMPLETE,
+		fail = autotune_attitude_control_status_s::STATE_FAIL
 	} _state{state::idle};
 
 	hrt_abstime _state_start_time{0};
