@@ -125,8 +125,6 @@ static constexpr hrt_abstime T_ALT_TIMEOUT = 1_s; // time after which we abort l
 static constexpr float THROTTLE_THRESH =
 	0.05f;	///< max throttle from user which will not lead to motors spinning up in altitude controlled modes
 static constexpr float ALTHOLD_EPV_RESET_THRESH = 5.0f;
-static constexpr float OL_LOITER_BANK =
-	0.35f; ///< open loop loiter bank angle (Altitdue mode without manual control available)
 
 class FixedwingPositionControl final : public ModuleBase<FixedwingPositionControl>, public ModuleParams,
 	public px4::WorkItem
@@ -277,6 +275,8 @@ private:
 		FW_POSCTRL_MODE_AUTO,
 		FW_POSCTRL_MODE_POSITION,
 		FW_POSCTRL_MODE_ALTITUDE,
+		FW_POSCTRL_MODE_CLIMBRATE,
+		FW_POSCTRL_MODE_AUTO_ALTITUDE,
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER};		///< used to check the mode in the last control loop iteration. Use to check if the last iteration was in the same mode.
 
@@ -457,7 +457,9 @@ private:
 
 		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad,
 
-		(ParamFloat<px4::params::ASPD_STALL>) _param_fw_airspd_stall
+		(ParamFloat<px4::params::ASPD_STALL>) _param_fw_airspd_stall,
+
+		(ParamFloat<px4::params::FW_GPSF_R>) _param_fw_gpsf_r
 
 	)
 
