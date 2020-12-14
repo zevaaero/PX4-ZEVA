@@ -744,7 +744,8 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 
 		} else {
 			// go into a descent that does not require stick control
-			if (status_flags.condition_local_position_valid) {
+			if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
+			    status_flags.condition_local_position_valid) {
 				status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
 			} else  if (status_flags.condition_local_altitude_valid) {
