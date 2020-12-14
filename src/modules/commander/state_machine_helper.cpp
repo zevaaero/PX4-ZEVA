@@ -749,7 +749,9 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 				status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
 			} else  if (status_flags.condition_local_altitude_valid) {
-				if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+				// Switch to Descend state if MC or if FW and 5 min of loitering have passed
+				if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING ||
+				    hrt_elapsed_time(&status->failsafe_timestamp) > (300.0f * 1_s)) {
 					status->nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 				} else {
