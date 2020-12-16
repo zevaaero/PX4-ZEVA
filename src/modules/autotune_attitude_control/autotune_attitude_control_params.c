@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,37 +32,56 @@
  ****************************************************************************/
 
 /**
- * @file FlightManualPositionSmooth.cpp
+ * @file autotune_attitude_control_params.c
+ *
+ * Parameters used by the attitude auto-tuner
+ *
+ * @author Mathieu Bresciani <mathieu@auterion.com>
  */
 
-#include "FlightTaskManualPositionSmooth.hpp"
+/**
+ * Start the autotuning sequence
+ *
+ * WARNING: this will inject steps to the rate controller
+ * and can be dangerous. Only activate if you know what you
+ * are doing, and in a safe environment.
+ *
+ * Any motion of the remote stick will abord the signal
+ * injection and reset this parameter
+ * Best is to perform the identification in position or
+ * hold mode.
+ * Increase the amplitude of the injected signal using
+ * ATUNE_SYSID_AMP for more signal/noise ratio
+ *
+ * @boolean
+ * @group Autotune
+ */
+PARAM_DEFINE_INT32(ATUNE_START, 0);
 
-using namespace matrix;
+/**
+ * Amplitude of the injected signal
+ *
+ * @min 0.1
+ * @max 6.0
+ * @decimal 1
+ * @group Autotune
+ */
+PARAM_DEFINE_FLOAT(ATUNE_SYSID_AMP, 1.0);
 
-FlightTaskManualPositionSmooth::FlightTaskManualPositionSmooth() :
-	_smoothingXY(this, Vector2f(_velocity)),
-	_smoothingZ(this, _velocity(2), _sticks.getPosition()(2))
-{}
-
-void FlightTaskManualPositionSmooth::_updateSetpoints()
-{
-	/* Get yaw setpont, un-smoothed position setpoints.*/
-	FlightTaskManualPosition::_updateSetpoints();
-
-	/* Smooth velocity setpoint in xy.*/
-	Vector2f vel(_velocity);
-	Vector2f vel_sp_xy(_velocity_setpoint);
-	_smoothingXY.updateMaxVelocity(_constraints.speed_xy);
-	_smoothingXY.smoothVelocity(vel_sp_xy, vel, _yaw, _yawspeed_setpoint, _deltatime);
-	_velocity_setpoint(0) = vel_sp_xy(0);
-	_velocity_setpoint(1) = vel_sp_xy(1);
-
-	/* Check for xy position lock.*/
-	_updateXYlock();
-
-	/* Smooth velocity in z.*/
-	_smoothingZ.smoothVelFromSticks(_velocity_setpoint(2), _deltatime);
-
-	/* Check for altitude lock*/
-	_updateAltitudeLock();
-}
+/**
+ * Controls when to apply the new gains
+ *
+ * After the auto-tuning sequence is completed,
+ * a new set of gains is available and can be applied
+ * immediately or after landing.
+ *
+ * WARNING Applying the gains in air is dangerous as there is no
+ * guarantee that those new gains will be able to stabilize
+ * the drone properly.
+ *
+ * @value 0 Do not apply the new gains (logging only)
+ * @value 1 Apply the new gains after disarm
+ * @value 2 WARNING Apply the new gains in air
+ * @group Autotune
+ */
+PARAM_DEFINE_INT32(ATUNE_APPLY, 1);

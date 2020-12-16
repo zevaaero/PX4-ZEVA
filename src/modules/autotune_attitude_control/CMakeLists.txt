@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2020 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,9 +31,27 @@
 #
 ############################################################################
 
-px4_add_library(FlightTaskManualPositionSmooth
-	FlightTaskManualPositionSmooth.cpp
+px4_add_library(SystemIdentification
+	system_identification.cpp
+	system_identification.hpp
+	arx_rls.hpp
 )
 
-target_link_libraries(FlightTaskManualPositionSmooth PUBLIC FlightTaskManualPosition FlightTaskUtility)
-target_include_directories(FlightTaskManualPositionSmooth PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+px4_add_module(
+	MODULE autotune_attitude_control
+	MAIN autotune_attitude_control
+	COMPILE_FLAGS
+		${MAX_CUSTOM_OPT_LEVEL}
+	SRCS
+		autotune_attitude_control.cpp
+		autotune_attitude_control.hpp
+	DEPENDS
+		hysteresis
+		mathlib
+		px4_work_queue
+		SystemIdentification
+)
+
+px4_add_unit_gtest(SRC arx_rls_test.cpp LINKLIBS SystemIdentification)
+px4_add_unit_gtest(SRC system_identification_test.cpp LINKLIBS SystemIdentification mathlib)
+px4_add_unit_gtest(SRC pid_design_test.cpp)

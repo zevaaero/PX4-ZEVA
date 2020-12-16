@@ -32,12 +32,12 @@
  ****************************************************************************/
 
 /**
- * @file pid_autotune_angular_rate.cpp
+ * @file autotune_attitude_control.cpp
  *
  * @author Mathieu Bresciani <mathieu@auterion.com>
  */
 
-#include "pid_autotune_angular_rate.hpp"
+#include "autotune_attitude_control.hpp"
 
 using namespace matrix;
 using namespace time_literals;
@@ -159,7 +159,7 @@ void PidAutotuneAngularRate::Run()
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 		const Vector3f rate_sp = getIdentificationSignal();
 
-		pid_autotune_angular_rate_status_s status{};
+		autotune_attitude_control_status_s status{};
 		status.timestamp = now;
 		coeff.copyTo(status.coeff);
 		coeff_var.copyTo(status.coeff_var);
@@ -171,7 +171,7 @@ void PidAutotuneAngularRate::Run()
 		status.kd = _kid(2);
 		rate_sp.copyTo(status.rate_sp);
 		status.state = static_cast<int>(_state);
-		_pid_autotune_angular_rate_status_pub.publish(status);
+		_autotune_attitude_control_status_pub.publish(status);
 
 		_last_publish = now;
 	}
@@ -520,14 +520,14 @@ int PidAutotuneAngularRate::print_usage(const char *reason)
 
 )DESCR_STR");
 
-	PRINT_MODULE_USAGE_NAME("pid_autotune_angular_rate", "autotune");
+	PRINT_MODULE_USAGE_NAME("autotune_attitude_control", "autotune");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
 	return 0;
 }
 
-extern "C" __EXPORT int pid_autotune_angular_rate_main(int argc, char *argv[])
+extern "C" __EXPORT int autotune_attitude_control_main(int argc, char *argv[])
 {
 	return PidAutotuneAngularRate::main(argc, argv);
 }

@@ -335,12 +335,12 @@ MulticopterAttitudeControl::Run()
 			}
 
 			const hrt_abstime now = hrt_absolute_time();
-			pid_autotune_angular_rate_status_s pid_autotune;
+			autotune_attitude_control_status_s pid_autotune;
 
-			if (_pid_autotune_angular_rate_status_sub.copy(&pid_autotune)) {
-				if ((pid_autotune.state == pid_autotune_angular_rate_status_s::STATE_ROLL
-				     || pid_autotune.state == pid_autotune_angular_rate_status_s::STATE_PITCH
-				     || pid_autotune.state == pid_autotune_angular_rate_status_s::STATE_YAW)
+			if (_autotune_attitude_control_status_sub.copy(&pid_autotune)) {
+				if ((pid_autotune.state == autotune_attitude_control_status_s::STATE_ROLL
+				     || pid_autotune.state == autotune_attitude_control_status_s::STATE_PITCH
+				     || pid_autotune.state == autotune_attitude_control_status_s::STATE_YAW)
 				    && ((now - pid_autotune.timestamp) < 1_s)) {
 					rates_sp += Vector3f(pid_autotune.rate_sp);
 				}

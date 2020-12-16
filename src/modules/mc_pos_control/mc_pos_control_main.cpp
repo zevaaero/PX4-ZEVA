@@ -847,8 +847,8 @@ MulticopterPositionControl::start_flight_task()
 		FlightTaskError error = FlightTaskError::NoError;
 
 		switch (_param_mpc_pos_mode.get()) {
-		case 1:
-			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualPositionSmooth);
+		case 0:
+			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualPosition);
 			break;
 
 		case 3:
@@ -856,11 +856,8 @@ MulticopterPositionControl::start_flight_task()
 			break;
 
 		case 4:
-			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAcceleration);
-			break;
-
 		default:
-			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualPosition);
+			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAcceleration);
 			break;
 		}
 
@@ -884,16 +881,13 @@ MulticopterPositionControl::start_flight_task()
 		FlightTaskError error = FlightTaskError::NoError;
 
 		switch (_param_mpc_pos_mode.get()) {
-		case 1:
-			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitudeSmooth);
+		case 0:
+			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitude);
 			break;
 
 		case 3:
-			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitudeSmoothVel);
-			break;
-
 		default:
-			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitude);
+			error =  _flight_tasks.switchTask(FlightTaskIndex::ManualAltitudeSmoothVel);
 			break;
 		}
 

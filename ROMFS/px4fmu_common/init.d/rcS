@@ -57,6 +57,7 @@ set SDCARD_MIXERS_PATH /fs/microsd/etc/mixers
 set STARTUP_TUNE 1
 set USE_IO no
 set VEHICLE_TYPE none
+set SDCARD_EXT_PATH /fs/microsd/ext_autostart
 
 # Airframe parameter versioning: airframe maintainers can set this in the
 # airframe startup script, and then increase it by one whenever an airframe
@@ -126,6 +127,16 @@ then
 	# block Ubuntu trash
 	if [ ! -f "/fs/microsd/.Trash-1000" ]; then
 		cat > /fs/microsd/.Trash-1000
+	fi
+
+	# Check for an update
+	if [ -e /fs/microsd/new ]
+	then
+		echo "Updating external autostart files"
+		# FIXME: add NuttX support for recursive rm, then we can remove the
+		# directory (for now this is done during updating via MAVLink FTP)
+		#rm -r $SDCARD_EXT_PATH
+		mv /fs/microsd/new $SDCARD_EXT_PATH
 	fi
 
 else
@@ -629,6 +640,7 @@ unset SDCARD_MIXERS_PATH
 unset STARTUP_TUNE
 unset USE_IO
 unset VEHICLE_TYPE
+unset SDCARD_EXT_PATH
 
 #
 # Boot is complete, inform MAVLink app(s) that the system is now fully up and running.
