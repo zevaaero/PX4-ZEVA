@@ -74,7 +74,7 @@ public:
 		// Limit the rate of change of the value
 		const Type dvalue_desired = new_value - _value;
 		const Type dvalue_max = _slew_rate * deltatime;
-		const Type dvalue = constrain(dvalue_desired, -dvalue_max, dvalue_max);
+		const Type dvalue = math::constrain(dvalue_desired, -dvalue_max, dvalue_max);
 		_value += dvalue;
 		return _value;
 	}
@@ -82,20 +82,4 @@ public:
 private:
 	Type _slew_rate{}; ///< maximum rate of change for the value
 	Type _value{}; ///< state to keep last value of the slew rate
-
-	float constrain(float value, float min, float max)
-	{
-		return math::constrain(value, min, max);
-	}
-
-	matrix::Vector3f constrain(const matrix::Vector3f &value, const matrix::Vector3f &min, const matrix::Vector3f &max)
-	{
-		matrix::Vector3f constrained;
-
-		for (int i = 0; i < 3; i++) {
-			constrained(i) = math::constrain(value(i), min(i), max(i));
-		}
-
-		return constrained;
-	}
 };
