@@ -76,6 +76,7 @@
 #include <uORB/topics/transponder_report.h>
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
+#include <uORB/topics/vehicle_command_cancel.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_gps_position.h>
 #include <uORB/topics/vehicle_land_detected.h>
@@ -87,6 +88,13 @@
  * Number of navigation modes that need on_active/on_inactive calls
  */
 #define NAVIGATOR_MODE_ARRAY_SIZE 9
+
+struct custom_action_s {
+	uint8_t id;
+	uint64_t timeout;
+	bool timer_started;
+	uint64_t start_time;
+};
 
 
 class Navigator : public ModuleBase<Navigator>, public ModuleParams
@@ -122,6 +130,7 @@ public:
 	void		load_fence_from_file(const char *filename);
 
 	void		publish_vehicle_cmd(vehicle_command_s *vcmd);
+	void		publish_vehicle_cmd_cancel(vehicle_command_cancel_s *vcmd_cancel);
 
 	/**
 	 * Generate an artificial traffic indication
@@ -161,6 +170,7 @@ public:
 	struct vehicle_land_detected_s *get_land_detected() { return &_land_detected; }
 	struct vehicle_local_position_s *get_local_position() { return &_local_pos; }
 	struct vehicle_status_s *get_vstatus() { return &_vstatus; }
+	struct vehicle_command_ack_s *get_cmd_ack() { return &_vehicle_cmd_ack; }
 	PrecLand *get_precland() { return &_precland; } /**< allow others, e.g. Mission, to use the precision land block */
 
 	bool getGroundSpeed(float &ground_speed);	// return true if groundspeed is valid
@@ -284,6 +294,10 @@ public:
 
 	bool 		getMissionLandingInProgress() { return _mission_landing_in_progress; }
 
+	bool			get_in_custom_action() { return _in_custom_action; }
+	custom_action_s	get_custom_action() { return _custom_action; }
+	void			set_custom_action(const custom_action_s &custom_action) { _custom_action = custom_action; }
+
 	// MISSION
 	bool		is_planned_mission() const { return _navigation_mode == &_mission; }
 	bool		on_mission_landing() { return _mission.landing(); }
@@ -359,6 +373,7 @@ private:
 	uORB::Subscription _pos_ctrl_landing_status_sub{ORB_ID(position_controller_landing_status)};	/**< position controller landing status subscription */
 	uORB::Subscription _traffic_sub{ORB_ID(transponder_report)};		/**< traffic subscription */
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};	/**< vehicle commands (onboard and offboard) */
+	uORB::Subscription _vehicle_cmd_ack_sub{ORB_ID(vehicle_command_ack)};	/**< vehicle command acks (onboard and offboard) */
 
 	uORB::SubscriptionData<position_controller_status_s>	_position_controller_status_sub{ORB_ID(position_controller_status)};
 
@@ -369,8 +384,9 @@ private:
 
 	orb_advert_t	_mavlink_log_pub{nullptr};	/**< the uORB advert to send messages over mavlink */
 
-	uORB::PublicationQueued<vehicle_command_ack_s>	_vehicle_cmd_ack_pub{ORB_ID(vehicle_command_ack)};
 	uORB::PublicationQueued<vehicle_command_s>	_vehicle_cmd_pub{ORB_ID(vehicle_command)};
+	uORB::PublicationQueued<vehicle_command_ack_s>	_vehicle_cmd_ack_pub{ORB_ID(vehicle_command_ack)};
+	uORB::PublicationQueued<vehicle_command_cancel_s>	_vehicle_cmd_cancel_pub{ORB_ID(vehicle_command_cancel)};
 
 	// Subscriptions
 	home_position_s					_home_pos{};		/**< home position for RTL */
@@ -380,6 +396,7 @@ private:
 	vehicle_land_detected_s				_land_detected{};	/**< vehicle land_detected */
 	vehicle_local_position_s			_local_pos{};		/**< local vehicle position */
 	vehicle_status_s				_vstatus{};		/**< vehicle status */
+	vehicle_command_ack_s			_vehicle_cmd_ack{};		/**< vehicle command_ack */
 
 	uint8_t						_previous_nav_state{}; /**< nav_state of the previous iteration*/
 
@@ -402,6 +419,10 @@ private:
 	bool		_pos_sp_triplet_updated{false};		/**< flags if position SP triplet needs to be published */
 	bool 		_pos_sp_triplet_published_invalid_once{false};	/**< flags if position SP triplet has been published once to UORB */
 	bool		_mission_result_updated{false};		/**< flags if mission result has seen an update */
+
+	bool		_in_custom_action{false};			/**< currently in a custom action **/
+	bool 		_custom_action_timeout{false};		/**> custom action timed out **/
+	custom_action_s _custom_action{};				/**< current custom action **/
 
 	NavigatorMode	*_navigation_mode{nullptr};		/**< abstract pointer to current navigation mode class */
 	Mission		_mission;			/**< class that handles the missions */

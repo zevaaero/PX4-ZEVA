@@ -242,7 +242,6 @@ Mission::on_active()
 		_time_last_terrain_checked = hrt_absolute_time();
 	}
 
-
 	/* lets check if we reached the current mission item or if the terrain follower wants to insert an intermediate item*/
 	if (_mission_type != MISSION_TYPE_NONE && (mission_item_reached || reload_mission_items))  {
 		/* If we just completed a takeoff which was inserted before the right waypoint,
@@ -252,13 +251,42 @@ Mission::on_active()
 		}
 
 		if (_mission_item.autocontinue) {
-			/* switch to next waypoint if 'autocontinue' flag set */
+			/* If a custom action exists, set it and make it available to the navigator
+			   main routine */
+			custom_action_s custom_action{};
 
-			if (!reload_mission_items) {
-				advance_mission();
+			if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1 && !_custom_action_set) {
+				custom_action.id = _mission_item.params[0];
+				custom_action.timeout = _mission_item.params[2] * 1000000;
+				custom_action.start_time = hrt_absolute_time();
+				custom_action.timer_started = true;
+
+				_navigator->set_custom_action(custom_action);
+				_custom_action_set = true;
+
+				/* Give time so the action starts being executed on the Mission Computer */
+				px4_usleep(100000);
 			}
 
-			set_mission_items();
+			if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1 && _navigator->get_cmd_ack()->command == NAV_CMD_WAYPOINT_USER_1) {
+				if (_navigator->get_cmd_ack()->result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS) {
+					PX4_DEBUG("Custom action #%u in progress", custom_action.id);
+
+				} else if (_navigator->get_cmd_ack()->result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED) {
+					PX4_DEBUG("Custom action #%u finished", custom_action.id);
+					_custom_action_set = false;
+				}
+			}
+
+			if (!_navigator->get_in_custom_action()) {
+				/* switch to next waypoint if 'autocontinue' flag set */
+
+				if (!reload_mission_items) {
+					advance_mission();
+				}
+
+				set_mission_items();
+			}
 		}
 
 	} else {

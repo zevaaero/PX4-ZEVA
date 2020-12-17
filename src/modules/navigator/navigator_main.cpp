@@ -233,6 +233,50 @@ Navigator::run()
 		_position_controller_status_sub.update();
 		_home_pos_sub.update(&_home_pos);
 
+		if (_vehicle_cmd_ack_sub.update(&_vehicle_cmd_ack) &&
+		    _vehicle_cmd_ack.command == vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1) {
+			if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
+				_in_custom_action = true;
+
+			} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED || _custom_action_timeout) {
+				_in_custom_action = false;
+
+				// send cmd to get back to Mission mode if the custom action
+				// requested a mode change
+				vehicle_command_s vcmd = {};
+
+				vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+				vcmd.param1 = 1;
+				vcmd.param2 = 4;
+				vcmd.param3 = 4;
+
+				publish_vehicle_cmd(&vcmd);
+			}
+		}
+
+		if (_in_custom_action && _custom_action.timer_started
+		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout) {
+			PX4_WARN("Custom action #%u timed out. Continuing mission...", _custom_action.id);
+
+			_in_custom_action = false;
+			_custom_action_timeout = true;
+
+			// send cmd to get back to Mission mode so to continue the mission
+			vehicle_command_s vcmd = {};
+			vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+			vcmd.param1 = 1;
+			vcmd.param2 = 4;
+			vcmd.param3 = 4;
+			publish_vehicle_cmd(&vcmd);
+
+			// send message to cancel the action process on the mission computer
+			vehicle_command_cancel_s vcmd_cancel = {};
+			vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
+			vcmd_cancel.target_system = 0;
+			vcmd_cancel.target_component = 195;
+			publish_vehicle_cmd_cancel(&vcmd_cancel);
+		}
+
 		if (_vehicle_command_sub.updated()) {
 			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
 			vehicle_command_s cmd{};
@@ -1511,6 +1555,13 @@ Navigator::publish_vehicle_command_ack(const vehicle_command_s &cmd, uint8_t res
 	command_ack.result_param2 = 0;
 
 	_vehicle_cmd_ack_pub.publish(command_ack);
+}
+
+void
+Navigator::publish_vehicle_cmd_cancel(vehicle_command_cancel_s *vcmd_cancel)
+{
+	vcmd_cancel->timestamp = hrt_absolute_time();
+	_vehicle_cmd_cancel_pub.publish(*vcmd_cancel);
 }
 
 void

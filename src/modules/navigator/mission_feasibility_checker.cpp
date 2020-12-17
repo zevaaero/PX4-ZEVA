@@ -272,7 +272,7 @@ MissionFeasibilityChecker::checkMissionItemValidity(const mission_s &mission)
 		    missionitem.nav_cmd != NAV_CMD_DO_SET_CAM_TRIGG_INTERVAL &&
 		    missionitem.nav_cmd != NAV_CMD_SET_CAMERA_MODE &&
 		    missionitem.nav_cmd != NAV_CMD_SET_CAMERA_ZOOM &&
-			missionitem.nav_cmd != NAV_CMD_SET_CAMERA_FOCUS &&
+		    missionitem.nav_cmd != NAV_CMD_SET_CAMERA_FOCUS &&
 		    missionitem.nav_cmd != NAV_CMD_DO_VTOL_TRANSITION &&
 		    // missionitem.nav_cmd != NAV_CMD_CUSTOM_ACTION &&
 		    missionitem.nav_cmd != NAV_CMD_WAYPOINT_USER_1) {
