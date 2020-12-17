@@ -420,9 +420,10 @@ private:
 	bool 		_pos_sp_triplet_published_invalid_once{false};	/**< flags if position SP triplet has been published once to UORB */
 	bool		_mission_result_updated{false};		/**< flags if mission result has seen an update */
 
-	bool		_in_custom_action{false};			/**< currently in a custom action **/
+	bool		_in_custom_action{false};		/**< currently in a custom action **/
 	bool 		_custom_action_timeout{false};		/**> custom action timed out **/
-	custom_action_s _custom_action{};				/**< current custom action **/
+	custom_action_s _custom_action{};			/**< current custom action **/
+	uint64_t	_custom_action_ack_last_time{0};	/**< last time an ack for the custom action command was received **/
 
 	NavigatorMode	*_navigation_mode{nullptr};		/**< abstract pointer to current navigation mode class */
 	Mission		_mission;			/**< class that handles the missions */

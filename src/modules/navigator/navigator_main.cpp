@@ -235,23 +235,51 @@ Navigator::run()
 
 		if (_vehicle_cmd_ack_sub.update(&_vehicle_cmd_ack) &&
 		    _vehicle_cmd_ack.command == vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1) {
-			if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
-				_in_custom_action = true;
 
-			} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED || _custom_action_timeout) {
-				_in_custom_action = false;
+			if (_custom_action_ack_last_time > 0) {
+				if ((hrt_absolute_time() - _custom_action_ack_last_time) < 1500000) {
+					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
+						_in_custom_action = true;
 
-				// send cmd to get back to Mission mode if the custom action
-				// requested a mode change
-				vehicle_command_s vcmd = {};
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED || _custom_action_timeout) {
+						_in_custom_action = false;
 
-				vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
-				vcmd.param1 = 1;
-				vcmd.param2 = 4;
-				vcmd.param3 = 4;
+						// send cmd to get back to Mission mode if the custom action
+						// requested a mode change
+						vehicle_command_s vcmd = {};
 
-				publish_vehicle_cmd(&vcmd);
+						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+						vcmd.param1 = 1;
+						vcmd.param2 = 4;
+						vcmd.param3 = 4;
+
+						publish_vehicle_cmd(&vcmd);
+					}
+
+				} else {
+					PX4_WARN("Custom action #%u progress timed out. Continuing mission...", _custom_action.id);
+
+					_in_custom_action = false;
+					_custom_action_timeout = true;
+
+					// send cmd to get back to Mission mode so to continue the mission
+					vehicle_command_s vcmd = {};
+					vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+					vcmd.param1 = 1;
+					vcmd.param2 = 4;
+					vcmd.param3 = 4;
+					publish_vehicle_cmd(&vcmd);
+
+					// send message to cancel the action process on the mission computer
+					vehicle_command_cancel_s vcmd_cancel = {};
+					vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
+					vcmd_cancel.target_system = 0;
+					vcmd_cancel.target_component = 195;
+					publish_vehicle_cmd_cancel(&vcmd_cancel);
+				}
 			}
+
+			_custom_action_ack_last_time = hrt_absolute_time();
 		}
 
 		if (_in_custom_action && _custom_action.timer_started
