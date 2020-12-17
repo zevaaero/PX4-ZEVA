@@ -307,6 +307,8 @@ rtps:
     id: 146
   - msg: autotune_attitude_control_status
     id: 147
+  - msg: vehicle_command_cancel
+    id: 148
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150
