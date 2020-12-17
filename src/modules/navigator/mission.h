@@ -276,7 +276,6 @@ private:
 
 	bool _inited{false};
 	bool _home_inited{false};
-	bool _in_custom_action{false};
 	bool _custom_action_set{false};
 	bool _need_mission_reset{false};
 	bool _mission_waypoints_changed{false};
