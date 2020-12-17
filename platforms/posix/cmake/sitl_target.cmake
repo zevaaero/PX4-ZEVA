@@ -95,7 +95,7 @@ set(models none shell
 	plane plane_cam plane_catapult plane_lidar
 	standard_vtol tailsitter tiltrotor
 	standard_vtol_gimbal tiltrotor_tri
-	rover r1_rover boat
+	rover rover_gimbal r1_rover boat
 	uuv_hippocampus)
 set(worlds none empty almend almend_castle baylands crane ksql_airport mcmillan_airfield sonoma_raceway warehouse windy yosemite)
 set(all_posix_vmd_make_targets)
