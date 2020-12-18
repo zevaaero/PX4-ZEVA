@@ -277,7 +277,7 @@ Navigator::run()
 					vehicle_command_cancel_s vcmd_cancel = {};
 					vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
 					vcmd_cancel.target_system = 0;
-					vcmd_cancel.target_component = 195;
+					vcmd_cancel.target_component = 195; // MAV_COMP_ID_PATHPLANNER
 					publish_vehicle_cmd_cancel(&vcmd_cancel);
 
 					// reset custom action
