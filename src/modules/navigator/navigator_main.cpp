@@ -254,6 +254,9 @@ Navigator::run()
 						vcmd.param3 = 4;
 
 						publish_vehicle_cmd(&vcmd);
+
+						// reset custom action
+						_custom_action = {};
 					}
 
 				} else {
@@ -276,6 +279,9 @@ Navigator::run()
 					vcmd_cancel.target_system = 0;
 					vcmd_cancel.target_component = 195;
 					publish_vehicle_cmd_cancel(&vcmd_cancel);
+
+					// reset custom action
+					_custom_action = {};
 				}
 			}
 
@@ -303,6 +309,9 @@ Navigator::run()
 			vcmd_cancel.target_system = 0;
 			vcmd_cancel.target_component = 195;
 			publish_vehicle_cmd_cancel(&vcmd_cancel);
+
+			// reset custom action
+			_custom_action = {};
 		}
 
 		if (_vehicle_command_sub.updated()) {

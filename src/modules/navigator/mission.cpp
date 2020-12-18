@@ -274,6 +274,9 @@ Mission::on_active()
 
 				} else if (_navigator->get_cmd_ack()->result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED) {
 					PX4_DEBUG("Custom action #%u finished", custom_action.id);
+
+					// set empty custom action
+					_navigator->set_custom_action({});
 					_custom_action_set = false;
 				}
 			}
