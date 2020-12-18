@@ -250,8 +250,8 @@ Navigator::run()
 
 						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
 						vcmd.param1 = 1;
-						vcmd.param2 = 4;
-						vcmd.param3 = 4;
+						vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+						vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
 
 						publish_vehicle_cmd(&vcmd);
 
@@ -269,8 +269,8 @@ Navigator::run()
 					vehicle_command_s vcmd = {};
 					vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
 					vcmd.param1 = 1;
-					vcmd.param2 = 4;
-					vcmd.param3 = 4;
+					vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+					vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
 					publish_vehicle_cmd(&vcmd);
 
 					// send message to cancel the action process on the mission computer
