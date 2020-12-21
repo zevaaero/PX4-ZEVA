@@ -2175,26 +2175,33 @@ MavlinkReceiver::handle_message_heartbeat(mavlink_message_t *msg)
 			bool heartbeat_slot_found = false;
 			int heartbeat_slot = 0;
 
-			// find existing HEARTBEAT slot
-			for (size_t i = 0; i < (sizeof(tstatus.heartbeats) / sizeof(tstatus.heartbeats[0])); i++) {
-				if ((tstatus.heartbeats[i].system_id == msg->sysid)
-				    && (tstatus.heartbeats[i].component_id == msg->compid)
-				    && (tstatus.heartbeats[i].type == hb.type)) {
+			// first slot is always reserved for first ground station since it's critical for system functionality
+			if ((tstatus.heartbeats[0].system_id == 0) && (tstatus.heartbeats[0].timestamp == 0) && hb.type == MAV_TYPE_GCS) {
+				heartbeat_slot_found = true;
 
-					// found matching heartbeat slot
-					heartbeat_slot = i;
-					heartbeat_slot_found = true;
-					break;
-				}
-			}
+			} else {
 
-			// otherwise use first available slot
-			if (!heartbeat_slot_found) {
+				// find existing HEARTBEAT slot
 				for (size_t i = 0; i < (sizeof(tstatus.heartbeats) / sizeof(tstatus.heartbeats[0])); i++) {
-					if ((tstatus.heartbeats[i].system_id == 0) && (tstatus.heartbeats[i].timestamp == 0)) {
+					if ((tstatus.heartbeats[i].system_id == msg->sysid)
+					    && (tstatus.heartbeats[i].component_id == msg->compid)
+					    && (tstatus.heartbeats[i].type == hb.type)) {
+
+						// found matching heartbeat slot
 						heartbeat_slot = i;
 						heartbeat_slot_found = true;
 						break;
+					}
+				}
+
+				// otherwise use first available slot, first slot is reserved for ground station
+				if (!heartbeat_slot_found) {
+					for (size_t i = 1; i < (sizeof(tstatus.heartbeats) / sizeof(tstatus.heartbeats[0])); i++) {
+						if ((tstatus.heartbeats[i].system_id == 0) && (tstatus.heartbeats[i].timestamp == 0)) {
+							heartbeat_slot = i;
+							heartbeat_slot_found = true;
+							break;
+						}
 					}
 				}
 			}
