@@ -580,6 +580,10 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		send_ack = true;
 
 	} else if (cmd_mavlink.command == MAV_CMD_WAYPOINT_USER_1) {
+		// Note for this case, the command is sent from an external entity
+		// to trigger a custom action on the Mission Computer, so a timeout
+		// check is not handled by the autopilot, but should rather be handled
+		// by the entity sending this command
 		vehicle_command_s custom_action_cmd = vehicle_command;
 		custom_action_cmd.target_system = 0;
 		custom_action_cmd.target_component = MAV_COMP_ID_PATHPLANNER;
