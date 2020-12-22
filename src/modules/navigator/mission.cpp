@@ -263,9 +263,6 @@ Mission::on_active()
 
 				_navigator->set_custom_action(custom_action);
 				_custom_action_set = true;
-
-				/* Give time so the action starts being executed on the Mission Computer */
-				px4_usleep(100000);
 			}
 
 			if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1 && _navigator->get_cmd_ack()->command == NAV_CMD_WAYPOINT_USER_1) {
