@@ -305,7 +305,12 @@ void Standard::update_transition_state()
 
 		}
 
-		set_all_motor_state(motor_state::ENABLED);
+		set_all_motor_state(motor_state::ENABLED); // turn on all motors
+
+		// set idle speed for MC actuators
+		if (!_flag_idle_mc) {
+			_flag_idle_mc = set_idle_mc();
+		}
 	}
 
 	mc_weight = math::constrain(mc_weight, 0.0f, 1.0f);
