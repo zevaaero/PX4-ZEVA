@@ -164,7 +164,7 @@ MissionBlock::is_mission_item_reached()
 
 			float altitude_acceptance_radius = _navigator->get_altitude_acceptance_radius();
 
-			/* It should be safe to just use half of the takoeff_alt as an acceptance radius. */
+			/* It should be safe to just use half of the takeoff_alt as an acceptance radius. */
 			if (takeoff_alt > 0 && takeoff_alt < altitude_acceptance_radius) {
 				altitude_acceptance_radius = takeoff_alt / 2.0f;
 			}
@@ -359,6 +359,13 @@ MissionBlock::is_mission_item_reached()
 			if (fabsf(yaw_err) < _navigator->get_yaw_threshold()
 			    || (_navigator->get_yaw_timeout() >= FLT_EPSILON && !_mission_item.force_heading)) {
 
+				_waypoint_yaw_reached = true;
+			}
+
+			// Temporary hack: Always accept yaw during takeoff.
+			// TODO: Navigator needs to handle a yaw reset properly and adjust its yaw setpoint.
+			// FlightTaskAuto is currently also ignoring the yaw setpoint during takeoff because of this.
+			if (_mission_item.nav_cmd == vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF) {
 				_waypoint_yaw_reached = true;
 			}
 
