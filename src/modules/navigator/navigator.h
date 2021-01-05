@@ -424,6 +424,7 @@ private:
 	bool 		_custom_action_timeout{false};		/**> custom action timed out **/
 	custom_action_s _custom_action{};			/**< current custom action **/
 	uint64_t	_custom_action_ack_last_time{0};	/**< last time an ack for the custom action command was received **/
+	bool		_reset_custom_action{false};		/**< reset custom action status flag **/
 
 	NavigatorMode	*_navigation_mode{nullptr};		/**< abstract pointer to current navigation mode class */
 	Mission		_mission;			/**< class that handles the missions */

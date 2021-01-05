@@ -236,13 +236,19 @@ Navigator::run()
 		if (_vehicle_cmd_ack_sub.update(&_vehicle_cmd_ack) &&
 		    _vehicle_cmd_ack.command == vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1) {
 
-			if (_custom_action_ack_last_time > 0) {
+			if (!_custom_action.timer_started && !_reset_custom_action) {
+				_custom_action.start_time = hrt_absolute_time();
+				_custom_action.timer_started = true;
+			}
+
+			if (_custom_action.timer_started && _custom_action_ack_last_time > 0) {
 				if ((hrt_absolute_time() - _custom_action_ack_last_time) < 1500000) {
 					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
 						_in_custom_action = true;
 
-					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED || _custom_action_timeout) {
-						_in_custom_action = false;
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
+						   && !_custom_action_timeout) {
+						PX4_DEBUG("Custom action #%u finished successfully. Continuing mission...", _custom_action.id);
 
 						// send cmd to get back to Mission mode if the custom action
 						// requested a mode change
@@ -255,15 +261,60 @@ Navigator::run()
 
 						publish_vehicle_cmd(&vcmd);
 
-						// reset custom action
-						_custom_action = {};
+						// reset custom action timer
+						_custom_action.timer_started = false;
+						_custom_action.start_time = 0;
+
+						_in_custom_action = false;
+						_reset_custom_action = true;
+
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_FAILED && !_reset_custom_action
+						   && !_custom_action_timeout) {
+						PX4_WARN("Custom action #%u failed to be processed / executed. Continuing mission...", _custom_action.id);
+
+						// send cmd to get back to Mission mode if the custom action
+						// requested a mode change
+						vehicle_command_s vcmd = {};
+
+						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+						vcmd.param1 = 1;
+						vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+						vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+
+						publish_vehicle_cmd(&vcmd);
+
+						// reset custom action timer
+						_custom_action.timer_started = false;
+						_custom_action.start_time = 0;
+
+						_in_custom_action = false;
+						_reset_custom_action = true;
+
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_CANCELLED && !_reset_custom_action
+						   && !_custom_action_timeout) {
+						PX4_WARN("Custom action #%u cancelled. Continuing mission...", _custom_action.id);
+
+						// send cmd to get back to Mission mode if the custom action
+						// requested a mode change
+						vehicle_command_s vcmd = {};
+
+						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+						vcmd.param1 = 1;
+						vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+						vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+
+						publish_vehicle_cmd(&vcmd);
+
+						// reset custom action timer
+						_custom_action.timer_started = false;
+						_custom_action.start_time = 0;
+
+						_in_custom_action = false;
+						_reset_custom_action = true;
 					}
 
 				} else {
 					PX4_WARN("Custom action #%u progress timed out. Continuing mission...", _custom_action.id);
-
-					_in_custom_action = false;
-					_custom_action_timeout = true;
 
 					// send cmd to get back to Mission mode so to continue the mission
 					vehicle_command_s vcmd = {};
@@ -280,20 +331,23 @@ Navigator::run()
 					vcmd_cancel.target_component = 195; // MAV_COMP_ID_PATHPLANNER
 					publish_vehicle_cmd_cancel(&vcmd_cancel);
 
-					// reset custom action
-					_custom_action = {};
+					// reset custom action timer
+					_custom_action.timer_started = false;
+					_custom_action.start_time = 0;
+
+					_in_custom_action = false;
+					_custom_action_timeout = true;
+					_reset_custom_action = true;
 				}
 			}
 
-			_custom_action_ack_last_time = hrt_absolute_time();
+			_custom_action_ack_last_time = _reset_custom_action ? 0 : hrt_absolute_time();
+			_reset_custom_action = false;
 		}
 
 		if (_in_custom_action && _custom_action.timer_started
 		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout) {
 			PX4_WARN("Custom action #%u timed out. Continuing mission...", _custom_action.id);
-
-			_in_custom_action = false;
-			_custom_action_timeout = true;
 
 			// send cmd to get back to Mission mode so to continue the mission
 			vehicle_command_s vcmd = {};
@@ -310,8 +364,12 @@ Navigator::run()
 			vcmd_cancel.target_component = 195;
 			publish_vehicle_cmd_cancel(&vcmd_cancel);
 
-			// reset custom action
-			_custom_action = {};
+			// reset custom action timer
+			_custom_action.timer_started = false;
+			_custom_action.start_time = 0;
+
+			_in_custom_action = false;
+			_custom_action_timeout = true;
 		}
 
 		if (_vehicle_command_sub.updated()) {
