@@ -31,19 +31,11 @@
 #
 ############################################################################
 
-px4_add_module(
-	MODULE autotune_attitude_control
-	MAIN autotune_attitude_control
-	COMPILE_FLAGS
-		${MAX_CUSTOM_OPT_LEVEL}
-	SRCS
-		autotune_attitude_control.cpp
-		autotune_attitude_control.hpp
-	DEPENDS
-		hysteresis
-		mathlib
-		px4_work_queue
-		SystemIdentification
+px4_add_library(SystemIdentification
+	system_identification.cpp
+	system_identification.hpp
+	arx_rls.hpp
 )
 
-px4_add_unit_gtest(SRC pid_design_test.cpp)
+px4_add_unit_gtest(SRC arx_rls_test.cpp LINKLIBS SystemIdentification)
+px4_add_unit_gtest(SRC system_identification_test.cpp LINKLIBS SystemIdentification mathlib)

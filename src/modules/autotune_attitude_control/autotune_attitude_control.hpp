@@ -41,6 +41,7 @@
 
 #include <drivers/drv_hrt.h>
 #include <lib/perf/perf_counter.h>
+#include <lib/system_identification/system_identification.hpp>
 #include <px4_platform_common/defines.h>
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/module_params.h>
@@ -57,7 +58,6 @@
 #include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
 
-#include "system_identification.hpp"
 #include "pid_design.hpp"
 
 class PidAutotuneAngularRate : public ModuleBase<PidAutotuneAngularRate>, public ModuleParams,
