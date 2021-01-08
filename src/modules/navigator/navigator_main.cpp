@@ -248,96 +248,51 @@ Navigator::run()
 
 					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
 						   && !_custom_action_timeout) {
-						PX4_DEBUG("Custom action #%u finished successfully. Continuing mission...", _custom_action.id);
+						// This makes sure that the info is only printed once, even if multiple ACCEPTED ACKs are received
+						if (_custom_action.id != -1) {
+							mavlink_log_info(get_mavlink_log_pub(), "Custom action #%u finished successfully. Continuing mission...",
+									 _custom_action.id);
+						}
 
-						// send cmd to get back to Mission mode if the custom action
-						// requested a mode change
-						vehicle_command_s vcmd = {};
-
-						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
-						vcmd.param1 = 1;
-						vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-						vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-
-						publish_vehicle_cmd(&vcmd);
-
-						// reset custom action timer
-						_custom_action.timer_started = false;
-						_custom_action.start_time = 0;
-
-						_in_custom_action = false;
-						_reset_custom_action = true;
+						reset_custom_action();
 
 					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_FAILED && !_reset_custom_action
 						   && !_custom_action_timeout) {
-						PX4_WARN("Custom action #%u failed to be processed / executed. Continuing mission...", _custom_action.id);
+						// This makes sure that the warning is only printed once, even if multiple FAILED ACKs are received
+						if (_custom_action.id != -1) {
+							mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u failed to be processed / executed. Continuing mission...",
+									    _custom_action.id);
+						}
 
-						// send cmd to get back to Mission mode if the custom action
-						// requested a mode change
-						vehicle_command_s vcmd = {};
-
-						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
-						vcmd.param1 = 1;
-						vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-						vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-
-						publish_vehicle_cmd(&vcmd);
-
-						// reset custom action timer
-						_custom_action.timer_started = false;
-						_custom_action.start_time = 0;
-
-						_in_custom_action = false;
-						_reset_custom_action = true;
+						reset_custom_action();
 
 					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_CANCELLED && !_reset_custom_action
 						   && !_custom_action_timeout) {
-						PX4_WARN("Custom action #%u cancelled. Continuing mission...", _custom_action.id);
+						// This makes sure that the warning is only printed once, even if multiple CANCELLED ACKs are received
+						if (_custom_action.id != -1) {
+							mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u cancelled. Continuing mission...",
+									    _custom_action.id);
+						}
 
-						// send cmd to get back to Mission mode if the custom action
-						// requested a mode change
-						vehicle_command_s vcmd = {};
-
-						vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
-						vcmd.param1 = 1;
-						vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-						vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-
-						publish_vehicle_cmd(&vcmd);
-
-						// reset custom action timer
-						_custom_action.timer_started = false;
-						_custom_action.start_time = 0;
-
-						_in_custom_action = false;
-						_reset_custom_action = true;
+						reset_custom_action();
 					}
 
 				} else {
-					PX4_WARN("Custom action #%u progress timed out. Continuing mission...", _custom_action.id);
+					mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u progress timed out. Continuing mission...",
+							    _custom_action.id);
 
-					// send cmd to get back to Mission mode so to continue the mission
-					vehicle_command_s vcmd = {};
-					vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
-					vcmd.param1 = 1;
-					vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-					vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
-					publish_vehicle_cmd(&vcmd);
-
-					// send message to cancel the action process on the mission computer
+					// send message to cancel the action process on the external system
+					// processing the action. Note that the external system component
+					// should be identified as MAV_COMP_ID_PATHPLANNER
 					vehicle_command_cancel_s vcmd_cancel = {};
 					vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
 					vcmd_cancel.target_system = 0;
 					vcmd_cancel.target_component = 195; // MAV_COMP_ID_PATHPLANNER
 					publish_vehicle_cmd_cancel(&vcmd_cancel);
 
-					// reset custom action timer
-					_custom_action.timer_started = false;
-					_custom_action.start_time = 0;
+					reset_custom_action();
 
-					_in_custom_action = false;
 					_custom_action_timeout = true;
-					_reset_custom_action = true;
 				}
 			}
 
@@ -347,28 +302,20 @@ Navigator::run()
 
 		if (_in_custom_action && _custom_action.timer_started
 		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout) {
-			PX4_WARN("Custom action #%u timed out. Continuing mission...", _custom_action.id);
+			mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u timed out. Continuing mission...",
+					    _custom_action.id);
 
-			// send cmd to get back to Mission mode so to continue the mission
-			vehicle_command_s vcmd = {};
-			vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
-			vcmd.param1 = 1;
-			vcmd.param2 = 4;
-			vcmd.param3 = 4;
-			publish_vehicle_cmd(&vcmd);
-
-			// send message to cancel the action process on the mission computer
+			// send message to cancel the action process on the external system
+			// processing the action. Note that the external system component
+			// should be identified as MAV_COMP_ID_PATHPLANNER
 			vehicle_command_cancel_s vcmd_cancel = {};
 			vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
 			vcmd_cancel.target_system = 0;
 			vcmd_cancel.target_component = 195;
 			publish_vehicle_cmd_cancel(&vcmd_cancel);
 
-			// reset custom action timer
-			_custom_action.timer_started = false;
-			_custom_action.start_time = 0;
+			reset_custom_action();
 
-			_in_custom_action = false;
 			_custom_action_timeout = true;
 		}
 
@@ -1694,6 +1641,30 @@ Navigator::set_gimbal_neutral()
 	vcmd.param4 = NAN;
 	vcmd.param5 = gimbal_manager_set_attitude_s::GIMBAL_MANAGER_FLAGS_NEUTRAL;
 	publish_vehicle_cmd(&vcmd);
+}
+
+void
+Navigator::reset_custom_action()
+{
+	// send cmd to get back to Mission mode if the custom action
+	// requested a mode change or in case of failure
+	vehicle_command_s vcmd = {};
+
+	vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+	vcmd.param1 = 1;
+	vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+	vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+
+	publish_vehicle_cmd(&vcmd);
+
+	// reset custom action timer
+	_custom_action.timer_started = false;
+	_custom_action.start_time = 0;
+
+	_in_custom_action = false;
+	_reset_custom_action = true;
+	// ID of -1 is read as an unset custom_action
+	_custom_action.id = -1;
 }
 
 bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)

@@ -90,7 +90,7 @@
 #define NAVIGATOR_MODE_ARRAY_SIZE 9
 
 struct custom_action_s {
-	uint8_t id;
+	int8_t id;
 	uint64_t timeout;
 	bool timer_started;
 	uint64_t start_time;
@@ -467,4 +467,6 @@ private:
 	void		publish_vehicle_command_ack(const vehicle_command_s &cmd, uint8_t result);
 
 	bool 		geofence_allows_position(const vehicle_global_position_s &pos);
+
+	void		reset_custom_action();
 };
