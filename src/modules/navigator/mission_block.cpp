@@ -199,11 +199,11 @@ MissionBlock::is_mission_item_reached()
 			 * coordinates with a radius equal to the loiter_radius field. It is not flying
 			 * through the waypoint center.
 			 * Therefore the item is marked as reached once the system reaches the loiter
-			 * radius (+ some margin). Time inside and turn count is handled elsewhere.
+			 * radius + L1 distance. Time inside and turn count is handled elsewhere.
 			 */
 
-			// check if within loiter radius around wp, if yes then set altitude sp to mission item, plus type LOITER
-			if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+			// check if within loiter radius around wp, if yes then set altitude sp to mission item
+			if (dist >= 0.0f && dist_xy <= (_navigator->get_acceptance_radius() + fabsf(_mission_item.loiter_radius))
 			    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 				_waypoint_position_reached = true;
 			}
@@ -224,7 +224,7 @@ MissionBlock::is_mission_item_reached()
 						&dist_xy, &dist_z);
 
 				// check if within loiter radius around wp, if yes then set altitude sp to mission item, plus type LOITER
-				if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+				if (dist >= 0.0f && dist_xy <= (_navigator->get_acceptance_radius() + fabsf(_mission_item.loiter_radius))
 				    && dist_z <= _navigator->get_default_altitude_acceptance_radius()) {
 
 					curr_sp->alt = mission_item_altitude_amsl;
@@ -234,7 +234,7 @@ MissionBlock::is_mission_item_reached()
 
 			} else {
 				// loitering, check if new altitude is reached, while still also having check on position
-				if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+				if (dist >= 0.0f && dist_xy <= (_navigator->get_acceptance_radius() + fabsf(_mission_item.loiter_radius))
 				    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 
 					_waypoint_position_reached = true;
@@ -283,23 +283,7 @@ MissionBlock::is_mission_item_reached()
 		} else {
 			/*normal mission items */
 
-			struct position_setpoint_s *curr_sp = &_navigator->get_position_setpoint_triplet()->current;
-
-			/* change acceptance radius if vehicle is currently loitering and in fixed-wing */
-			float mission_acceptance_radius;
-
-			if (curr_sp->type == position_setpoint_s::SETPOINT_TYPE_LOITER &&
-			    _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
-				mission_acceptance_radius = math::max(fabsf(curr_sp->loiter_radius) * 1.2f, 10.0f); //set 10m as minimum
-
-			} else {
-				mission_acceptance_radius = _navigator->get_acceptance_radius(_mission_item.acceptance_radius);
-			}
-
-			/* if set to zero use the default instead */
-			if (mission_acceptance_radius < NAV_EPSILON_POSITION) {
-				mission_acceptance_radius = _navigator->get_acceptance_radius();
-			}
+			float mission_acceptance_radius = _navigator->get_acceptance_radius();
 
 			float alt_acc_rad_m = _navigator->get_altitude_acceptance_radius();
 
