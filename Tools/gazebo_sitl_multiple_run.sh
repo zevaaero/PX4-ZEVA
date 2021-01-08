@@ -17,7 +17,7 @@ function spawn_model() {
 	N=$2 #Instance Number
 
 	SUPPORTED_MODELS=("iris" "iris_rtps" "plane" "standard_vtol")
-	if [[ " ${SUPPORTED_MODELS[*]} " != *"$MODEL "* ]];
+	if [[ " ${SUPPORTED_MODELS[*]} " != *"$MODEL"* ]];
 	then
 		echo "ERROR: Currently only vehicle model $MODEL is not supported!"
 		echo "       Supported Models: [${SUPPORTED_MODELS[@]}]"
@@ -99,7 +99,7 @@ if [ -z ${SCRIPT} ]; then
 else
 	IFS=,
 	for target in ${SCRIPT}; do
-		target="$(echo "$target" | tr -d ' ')" #Remove spaces
+		target="$(echo "${target}" | tr -d ' ')" #Remove spaces
 		target_vehicle="${target%:*}"
 		target_number="${target#*:}"
 
