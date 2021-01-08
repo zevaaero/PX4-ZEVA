@@ -624,8 +624,8 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 			// is not possible and therefore the internal_state needs to be adjusted.
 			internal_state->main_state = commander_state_s::MAIN_STATE_POSCTL;
 
-		} else if (rc_lost && !data_link_loss_act_configured && status->data_link_lost && is_armed) {
-			// failsafe: RC is lost, datalink loss is not set up and rc loss is not disabled
+		} else if (rc_lost && status->data_link_lost && !data_link_loss_act_configured && is_armed) {
+			// Orbit does not depend on RC but while armed & all links lost & when datalink loss is not set up, we failsafe
 			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_rc);
 
 			set_link_loss_nav_state(status, armed, status_flags, internal_state, rc_loss_act, 0);
@@ -744,16 +744,18 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 
 		} else {
 			// go into a descent that does not require stick control
-			if (status_flags.condition_local_position_valid) {
+			if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
+			    status_flags.condition_local_position_valid) {
 				status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
 			} else  if (status_flags.condition_local_altitude_valid) {
-				if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+				// Switch to Descend state if MC or if FW and 5 min of loitering have passed
+				if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING ||
+				    hrt_elapsed_time(&status->failsafe_timestamp) > (300.0f * 1_s)) {
 					status->nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 				} else {
-					// TODO: FW position controller doesn't run without condition_global_position_valid
-					status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL;
+					status->nav_state = vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER;
 				}
 
 			} else {

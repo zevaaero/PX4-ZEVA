@@ -303,7 +303,7 @@ bool FlightTaskAuto::_evaluateTriplets()
 		    && _sub_triplet_setpoint.get().current.yaw_valid) {
 			// Use the yaw computed in Navigator except during takeoff because
 			// Navigator is not handling the yaw reset properly.
-			// But: use if from Navigator during takeoff if disable_weather_vane is true,
+			// But: use yaw from Navigator during takeoff if disable_weather_vane is true,
 			// because we're then aligning to the transition waypoint.
 			// TODO: fix in navigator
 			_yaw_setpoint = _sub_triplet_setpoint.get().current.yaw;

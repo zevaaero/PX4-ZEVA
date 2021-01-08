@@ -233,6 +233,92 @@ Navigator::run()
 		_position_controller_status_sub.update();
 		_home_pos_sub.update(&_home_pos);
 
+		if (_vehicle_cmd_ack_sub.update(&_vehicle_cmd_ack) &&
+		    _vehicle_cmd_ack.command == vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1) {
+
+			if (!_custom_action.timer_started && !_reset_custom_action) {
+				_custom_action.start_time = hrt_absolute_time();
+				_custom_action.timer_started = true;
+			}
+
+			if (_custom_action.timer_started && _custom_action_ack_last_time > 0) {
+				if ((hrt_absolute_time() - _custom_action_ack_last_time) < 1500000) {
+					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
+						_in_custom_action = true;
+
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
+						   && !_custom_action_timeout) {
+						// This makes sure that the info is only printed once, even if multiple ACCEPTED ACKs are received
+						if (_custom_action.id != -1) {
+							mavlink_log_info(get_mavlink_log_pub(), "Custom action #%u finished successfully. Continuing mission...",
+									 _custom_action.id);
+						}
+
+						reset_custom_action();
+
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_FAILED && !_reset_custom_action
+						   && !_custom_action_timeout) {
+						// This makes sure that the warning is only printed once, even if multiple FAILED ACKs are received
+						if (_custom_action.id != -1) {
+							mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u failed to be processed / executed. Continuing mission...",
+									    _custom_action.id);
+						}
+
+						reset_custom_action();
+
+					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_CANCELLED && !_reset_custom_action
+						   && !_custom_action_timeout) {
+						// This makes sure that the warning is only printed once, even if multiple CANCELLED ACKs are received
+						if (_custom_action.id != -1) {
+							mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u cancelled. Continuing mission...",
+									    _custom_action.id);
+						}
+
+						reset_custom_action();
+					}
+
+				} else {
+					mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u progress timed out. Continuing mission...",
+							    _custom_action.id);
+
+					// send message to cancel the action process on the external system
+					// processing the action. Note that the external system component
+					// should be identified as MAV_COMP_ID_PATHPLANNER
+					vehicle_command_cancel_s vcmd_cancel = {};
+					vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
+					vcmd_cancel.target_system = 0;
+					vcmd_cancel.target_component = 195; // MAV_COMP_ID_PATHPLANNER
+					publish_vehicle_cmd_cancel(&vcmd_cancel);
+
+					reset_custom_action();
+
+					_custom_action_timeout = true;
+				}
+			}
+
+			_custom_action_ack_last_time = _reset_custom_action ? 0 : hrt_absolute_time();
+			_reset_custom_action = false;
+		}
+
+		if (_in_custom_action && _custom_action.timer_started
+		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout) {
+			mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u timed out. Continuing mission...",
+					    _custom_action.id);
+
+			// send message to cancel the action process on the external system
+			// processing the action. Note that the external system component
+			// should be identified as MAV_COMP_ID_PATHPLANNER
+			vehicle_command_cancel_s vcmd_cancel = {};
+			vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
+			vcmd_cancel.target_system = 0;
+			vcmd_cancel.target_component = 195;
+			publish_vehicle_cmd_cancel(&vcmd_cancel);
+
+			reset_custom_action();
+
+			_custom_action_timeout = true;
+		}
+
 		if (_vehicle_command_sub.updated()) {
 			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
 			vehicle_command_s cmd{};
@@ -836,6 +922,8 @@ Navigator::run()
 		case vehicle_status_s::NAVIGATION_STATE_TERMINATION:
 		case vehicle_status_s::NAVIGATION_STATE_OFFBOARD:
 		case vehicle_status_s::NAVIGATION_STATE_STAB:
+		case vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER:
+
 		default:
 			navigation_mode_new = nullptr;
 			_can_loiter_at_sp = false;
@@ -845,6 +933,26 @@ Navigator::run()
 		// Do not execute any state machine while we are disarmed
 		if (_vstatus.arming_state != vehicle_status_s::ARMING_STATE_ARMED) {
 			navigation_mode_new = nullptr;
+		}
+
+		if (_vstatus.nav_state != _previous_nav_state) {
+			if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER) {
+				PX4_WARN("GPS invalid, fixed-bank loitering for 5 min, then descend.");
+
+			} else if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_DESCEND) {
+				// if vehicle is a VTOL in fixed-wing mode, switch to hover for the DESCEND mode
+				if (_vstatus.is_vtol && _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
+				    force_vtol()) {
+					PX4_WARN("GPS not recovered, transition to hover mode and descend.");
+					vehicle_command_s vcmd = {};
+					vcmd.command = NAV_CMD_DO_VTOL_TRANSITION;
+					vcmd.param1 = vtol_vehicle_status_s::VEHICLE_VTOL_STATE_MC;
+					publish_vehicle_cmd(&vcmd);
+
+				} else if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
+					PX4_WARN("GPS not recovered, start descending.");
+				}
+			}
 		}
 
 		// update the vehicle status
@@ -1492,6 +1600,13 @@ Navigator::publish_vehicle_command_ack(const vehicle_command_s &cmd, uint8_t res
 }
 
 void
+Navigator::publish_vehicle_cmd_cancel(vehicle_command_cancel_s *vcmd_cancel)
+{
+	vcmd_cancel->timestamp = hrt_absolute_time();
+	_vehicle_cmd_cancel_pub.publish(*vcmd_cancel);
+}
+
+void
 Navigator::acquire_gimbal_control()
 {
 	vehicle_command_s vcmd = {};
@@ -1526,6 +1641,30 @@ Navigator::set_gimbal_neutral()
 	vcmd.param4 = NAN;
 	vcmd.param5 = gimbal_manager_set_attitude_s::GIMBAL_MANAGER_FLAGS_NEUTRAL;
 	publish_vehicle_cmd(&vcmd);
+}
+
+void
+Navigator::reset_custom_action()
+{
+	// send cmd to get back to Mission mode if the custom action
+	// requested a mode change or in case of failure
+	vehicle_command_s vcmd = {};
+
+	vcmd.command = vehicle_command_s::VEHICLE_CMD_DO_SET_MODE;
+	vcmd.param1 = 1;
+	vcmd.param2 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+	vcmd.param3 = 4; // PX4_CUSTOM_MAIN_MODE_AUTO
+
+	publish_vehicle_cmd(&vcmd);
+
+	// reset custom action timer
+	_custom_action.timer_started = false;
+	_custom_action.start_time = 0;
+
+	_in_custom_action = false;
+	_reset_custom_action = true;
+	// ID of -1 is read as an unset custom_action
+	_custom_action.id = -1;
 }
 
 bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)

@@ -240,6 +240,8 @@ private:
 
 	bool _new_optical_flow_data_received{false};
 
+	float _airspeed_scale_factor{1.0f}; ///< scale factor correction applied to airspeed measurements
+
 	uORB::Subscription _airdata_sub{ORB_ID(vehicle_air_data)};
 	uORB::Subscription _airspeed_sub{ORB_ID(airspeed)};
 	uORB::Subscription _ev_odom_sub{ORB_ID(vehicle_visual_odometry)};

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,56 +31,34 @@
  *
  ****************************************************************************/
 
-#include <gtest/gtest.h>
-#include <SlewRate.hpp>
+/**
+ * @file SlewRateYaw.hpp
+ *
+ * Library limit the rate of change of a [-pi,pi] range yaw value with a maximum slew rate.
+ *
+ * @author Matthias Grob <maetugr@gmail.com>
+ */
 
-TEST(SlewRateTest, SlewUpLimited)
+#pragma once
+
+#include "SlewRate.hpp"
+
+template<typename Type>
+class SlewRateYaw : public SlewRate<Type>
 {
-	SlewRate<float> _slew_rate;
-	_slew_rate.setSlewRate(.1f);
-	_slew_rate.setForcedValue(-5.5f);
+public:
+	SlewRateYaw() = default;
+	~SlewRateYaw() = default;
 
-	for (int i = 1; i <= 10; i++) {
-		EXPECT_FLOAT_EQ(_slew_rate.update(20.f, .2f), -5.5f + i * .02f);
+	/**
+	 * Update slewrate with yaw wrapping [-pi,pi]
+	 * @param new_value desired new value
+	 * @param deltatime time in seconds since last update
+	 * @return actual value that complies with the slew rate
+	 */
+	Type update(const Type new_value, const float deltatime)
+	{
+		const Type d_wrapped = matrix::wrap_pi(new_value - this->_value);
+		return matrix::wrap_pi(SlewRate<Type>::update(this->_value + d_wrapped, deltatime));
 	}
-}
-
-TEST(SlewRateTest, SlewDownLimited)
-{
-	SlewRate<float> _slew_rate;
-	_slew_rate.setSlewRate(1.1f);
-	_slew_rate.setForcedValue(17.3f);
-
-	for (int i = 1; i <= 10; i++) {
-		EXPECT_FLOAT_EQ(_slew_rate.update(-50.f, .3f), 17.3f - i * .33f);
-	}
-}
-
-TEST(SlewRateTest, ReachValueSlewed)
-{
-	SlewRate<float> _slew_rate;
-	_slew_rate.setSlewRate(.2f);
-	_slew_rate.setForcedValue(8.f);
-
-	for (int i = 1; i <= 10; i++) {
-		EXPECT_FLOAT_EQ(_slew_rate.update(10.f, 1.f), 8.f + i * .2f);
-	}
-
-	for (int i = 1; i <= 10; i++) {
-		EXPECT_FLOAT_EQ(_slew_rate.update(10.f, 1.f), 10.f);
-	}
-}
-
-TEST(SlewRateTest, SlewVector3f)
-{
-	using namespace matrix;
-
-	SlewRate<Vector3f> _slew_rate;
-	_slew_rate.setSlewRate(Vector3f(1, 2, 3));
-	_slew_rate.setForcedValue(Vector3f(4, 5, 6));
-
-	EXPECT_EQ(_slew_rate.update(Vector3f(100, 100, 100), 1.f), Vector3f(5, 7, 9));
-	EXPECT_EQ(_slew_rate.update(Vector3f(5, 7, 9), 1.f), Vector3f(5, 7, 9));
-	EXPECT_EQ(_slew_rate.update(Vector3f(-100, 100, -100), 1.f), Vector3f(4, 9, 6));
-	EXPECT_EQ(_slew_rate.update(Vector3f(4.1f, 8.8f, 6.3f), 1.f), Vector3f(4.1f, 8.8f, 6.3f));
-}
+};

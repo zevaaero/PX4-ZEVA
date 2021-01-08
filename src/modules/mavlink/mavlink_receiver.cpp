@@ -579,6 +579,23 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 		send_ack = true;
 
+	} else if (cmd_mavlink.command == MAV_CMD_WAYPOINT_USER_1) {
+		// Note for this case, the command is sent from an external entity
+		// to trigger a custom action on the Mission Computer, so a timeout
+		// check is not handled by the autopilot, but should rather be handled
+		// by the entity sending this command
+		vehicle_command_s custom_action_cmd = vehicle_command;
+		custom_action_cmd.target_system = 0;
+		custom_action_cmd.target_component = MAV_COMP_ID_PATHPLANNER;
+		custom_action_cmd.from_external = false;
+
+		PX4_DEBUG("receiving command %d from %d/%d", custom_action_cmd.command, custom_action_cmd.source_system,
+			  custom_action_cmd.source_component);
+
+		_cmd_pub.publish(custom_action_cmd);
+
+		send_ack = true;
+
 	} else {
 
 		send_ack = false;
@@ -2175,26 +2192,33 @@ MavlinkReceiver::handle_message_heartbeat(mavlink_message_t *msg)
 			bool heartbeat_slot_found = false;
 			int heartbeat_slot = 0;
 
-			// find existing HEARTBEAT slot
-			for (size_t i = 0; i < (sizeof(tstatus.heartbeats) / sizeof(tstatus.heartbeats[0])); i++) {
-				if ((tstatus.heartbeats[i].system_id == msg->sysid)
-				    && (tstatus.heartbeats[i].component_id == msg->compid)
-				    && (tstatus.heartbeats[i].type == hb.type)) {
+			// first slot is always reserved for first ground station since it's critical for system functionality
+			if ((tstatus.heartbeats[0].system_id == 0) && (tstatus.heartbeats[0].timestamp == 0) && hb.type == MAV_TYPE_GCS) {
+				heartbeat_slot_found = true;
 
-					// found matching heartbeat slot
-					heartbeat_slot = i;
-					heartbeat_slot_found = true;
-					break;
-				}
-			}
+			} else {
 
-			// otherwise use first available slot
-			if (!heartbeat_slot_found) {
+				// find existing HEARTBEAT slot
 				for (size_t i = 0; i < (sizeof(tstatus.heartbeats) / sizeof(tstatus.heartbeats[0])); i++) {
-					if ((tstatus.heartbeats[i].system_id == 0) && (tstatus.heartbeats[i].timestamp == 0)) {
+					if ((tstatus.heartbeats[i].system_id == msg->sysid)
+					    && (tstatus.heartbeats[i].component_id == msg->compid)
+					    && (tstatus.heartbeats[i].type == hb.type)) {
+
+						// found matching heartbeat slot
 						heartbeat_slot = i;
 						heartbeat_slot_found = true;
 						break;
+					}
+				}
+
+				// otherwise use first available slot, first slot is reserved for ground station
+				if (!heartbeat_slot_found) {
+					for (size_t i = 1; i < (sizeof(tstatus.heartbeats) / sizeof(tstatus.heartbeats[0])); i++) {
+						if ((tstatus.heartbeats[i].system_id == 0) && (tstatus.heartbeats[i].timestamp == 0)) {
+							heartbeat_slot = i;
+							heartbeat_slot_found = true;
+							break;
+						}
 					}
 				}
 			}

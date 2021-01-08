@@ -267,6 +267,11 @@ void Standard::update_transition_state()
 
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
+		// in stabilized, acro or manual mode, set the MC thrust to the throttle stick position (coming from the FW attitude setpoint)
+		if (!_v_control_mode->flag_control_climb_rate_enabled) {
+			_v_att_sp->thrust_body[2] = -_fw_virtual_att_sp->thrust_body[0];
+		}
+
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
 
@@ -287,6 +292,11 @@ void Standard::update_transition_state()
 			_v_att_sp->pitch_body = update_and_get_backtransition_pitch_sp();
 		}
 
+		// in stabilized, acro or manual mode, set the MC thrust to the throttle stick position (coming from the FW attitude setpoint)
+		if (!_v_control_mode->flag_control_climb_rate_enabled) {
+			_v_att_sp->thrust_body[2] = -_fw_virtual_att_sp->thrust_body[0];
+		}
+
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
 
@@ -305,7 +315,12 @@ void Standard::update_transition_state()
 
 		}
 
-		set_all_motor_state(motor_state::ENABLED);
+		set_all_motor_state(motor_state::ENABLED); // turn on all motors
+
+		// set idle speed for MC actuators
+		if (!_flag_idle_mc) {
+			_flag_idle_mc = set_idle_mc();
+		}
 	}
 
 	mc_weight = math::constrain(mc_weight, 0.0f, 1.0f);

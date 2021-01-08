@@ -225,6 +225,13 @@ void TECS::_update_height_setpoint(float desired, float state)
 	}
 }
 
+void TECS::_update_height_rate_setpoint(float hgt_rate_sp)
+{
+	// Limit the rate of change of height demand to respect vehicle performance limits
+	_hgt_rate_setpoint = math::constrain(hgt_rate_sp, -_max_sink_rate, _max_climb_rate);
+	_hgt_setpoint_adj = _vert_pos_state;
+}
+
 void TECS::_detect_underspeed()
 {
 	if (!_detect_underspeed_enabled) {
@@ -541,7 +548,8 @@ void TECS::_update_STE_rate_lim()
 
 void TECS::update_pitch_throttle(const matrix::Dcmf &rotMat, float pitch, float baro_altitude, float hgt_setpoint,
 				 float EAS_setpoint, float indicated_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout,
-				 float throttle_min, float throttle_max, float throttle_cruise, float pitch_limit_min, float pitch_limit_max)
+				 float throttle_min, float throttle_max, float throttle_cruise, float pitch_limit_min, float pitch_limit_max,
+				 float hgt_rate_sp)
 {
 	// Calculate the time since last update (seconds)
 	uint64_t now = hrt_absolute_time();
@@ -579,8 +587,14 @@ void TECS::update_pitch_throttle(const matrix::Dcmf &rotMat, float pitch, float 
 	// Calculate the demanded true airspeed
 	_update_speed_setpoint();
 
-	// Calculate the demanded height
-	_update_height_setpoint(hgt_setpoint, baro_altitude);
+	if (PX4_ISFINITE(hgt_rate_sp)) {
+		// use the provided height rate setpoint instead of the height setpoint
+		_update_height_rate_setpoint(hgt_rate_sp);
+
+	} else {
+		// Calculate the demanded height
+		_update_height_setpoint(hgt_setpoint, baro_altitude);
+	}
 
 	// Calculate the specific energy values required by the control loop
 	_update_energy_estimates();

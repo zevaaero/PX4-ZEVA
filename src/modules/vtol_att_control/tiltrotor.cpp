@@ -359,10 +359,13 @@ void Tiltrotor::update_transition_state()
 
 		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
 
+		// in stabilized, acro or manual mode, set the MC thrust to the throttle stick position (coming from the FW attitude setpoint)
+		if (!_v_control_mode->flag_control_climb_rate_enabled) {
+			_v_att_sp->thrust_body[2] = -_fw_virtual_att_sp->thrust_body[0];
+		}
+
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
-		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
-		q_sp.copyTo(_v_att_sp->q_d);
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {
 		// the plane is ready to go into fixed wing mode, tilt the rotors forward completely
@@ -383,10 +386,13 @@ void Tiltrotor::update_transition_state()
 
 		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
 
+		// in stabilized, acro or manual mode, set the MC thrust to the throttle stick position (coming from the FW attitude setpoint)
+		if (!_v_control_mode->flag_control_climb_rate_enabled) {
+			_v_att_sp->thrust_body[2] = -_fw_virtual_att_sp->thrust_body[0];
+		}
+
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
-		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
-		q_sp.copyTo(_v_att_sp->q_d);
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {
 		// turn on all MC motors
@@ -394,8 +400,8 @@ void Tiltrotor::update_transition_state()
 
 
 		// set idle speed for rotary wing mode
-		if (!flag_idle_mc) {
-			flag_idle_mc = set_idle_mc();
+		if (!_flag_idle_mc) {
+			_flag_idle_mc = set_idle_mc();
 		}
 
 		// tilt rotors back
@@ -424,14 +430,17 @@ void Tiltrotor::update_transition_state()
 			_mc_throttle_weight = (time_since_trans_start - 1.0f) / 1.0f;
 		}
 
+		// in stabilized, acro or manual mode, set the MC thrust to the throttle stick position (coming from the FW attitude setpoint)
+		if (!_v_control_mode->flag_control_climb_rate_enabled) {
+			_v_att_sp->thrust_body[2] = -_fw_virtual_att_sp->thrust_body[0];
+		}
+
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
 		if (_v_control_mode->flag_control_climb_rate_enabled) {
 			_v_att_sp->pitch_body = update_and_get_backtransition_pitch_sp();
 		}
 
-		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
-		q_sp.copyTo(_v_att_sp->q_d);
 	}
 
 	_last_time_above_threshold = hrt_absolute_time();
