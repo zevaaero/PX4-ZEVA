@@ -108,7 +108,6 @@ MissionBlock::is_mission_item_reached()
 	case NAV_CMD_SET_CAMERA_ZOOM:
 	case NAV_CMD_SET_CAMERA_FOCUS:
 	case NAV_CMD_WAYPOINT_USER_1:
-		// case NAV_CMD_CUSTOM_ACTION:
 		return true;
 
 	case NAV_CMD_DO_VTOL_TRANSITION:
