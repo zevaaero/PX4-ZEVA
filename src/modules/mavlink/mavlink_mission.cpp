@@ -1499,7 +1499,6 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 		case MAV_CMD_CONDITION_DELAY:
 		case MAV_CMD_CONDITION_DISTANCE:
 		case MAV_CMD_WAYPOINT_USER_1:
-			// case MAV_CMD_CUSTOM_ACTION:
 			mission_item->nav_cmd = (NAV_CMD)mavlink_mission_item->command;
 			break;
 
@@ -1592,7 +1591,6 @@ MavlinkMissionManager::format_mavlink_mission_item(const struct mission_item_s *
 		case NAV_CMD_SET_CAMERA_FOCUS:
 		case NAV_CMD_DO_VTOL_TRANSITION:
 		case MAV_CMD_WAYPOINT_USER_1:
-			// case MAV_CMD_CUSTOM_ACTION:
 			break;
 
 		default:
