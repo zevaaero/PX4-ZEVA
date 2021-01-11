@@ -301,7 +301,7 @@ Navigator::run()
 		}
 
 		if (_in_custom_action && _custom_action.timer_started
-		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout) {
+		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout && _custom_action.timeout > 0) {
 			mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u timed out. Continuing mission...",
 					    _custom_action.id);
 
