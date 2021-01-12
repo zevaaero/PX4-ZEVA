@@ -153,7 +153,10 @@ void FwAutotuneAttitudeControl::Run()
 
 		const Vector3f num(coeff(2), coeff(3), coeff(4));
 		const Vector3f den(1.f, coeff(0), coeff(1));
-		_piff = Vector3f(); // TODO: compute gains
+		Vector3f kid = pid_design::computePidGmvc(num, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
+		_piff(0) = kid(0);
+		_piff(1) = kid(1);
+		_piff(2) = (1.f + coeff(0) + coeff(1)) / (coeff(2) + coeff(3) + coeff(4)); // inverse of the static gain
 		_attitude_p = 0.f; // TODO: compute gains
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
@@ -163,12 +166,14 @@ void FwAutotuneAttitudeControl::Run()
 		status.timestamp = now;
 		coeff.copyTo(status.coeff);
 		coeff_var.copyTo(status.coeff_var);
+		status.dt_model = _sample_interval_avg;
 		status.innov = _sys_id.getInnovation();
 		status.u_filt = _sys_id.getFilteredInputData();
 		status.y_filt = _sys_id.getFilteredOutputData();
 		status.kc = _piff(0);
 		status.ki = _piff(1);
-		status.kd = _piff(2);
+		status.kd = kid(2); // FW rate controller has no derivative gain
+		status.kff = _piff(2);
 		rate_sp.copyTo(status.rate_sp);
 		status.state = static_cast<int>(_state);
 		_autotune_attitude_control_status_pub.publish(status);
@@ -291,6 +296,8 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::yaw:
+		_state = state::yaw_pause; // TODO: skip yaw tuning for now
+
 		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(2);

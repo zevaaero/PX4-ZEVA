@@ -45,3 +45,5 @@ px4_add_module(
 		px4_work_queue
 		SystemIdentification
 )
+
+px4_add_unit_gtest(SRC pid_design_test.cpp)

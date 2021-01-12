@@ -58,6 +58,8 @@
 #include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
 
+#include "pid_design.hpp"
+
 class FwAutotuneAttitudeControl : public ModuleBase<FwAutotuneAttitudeControl>, public ModuleParams,
 	public px4::WorkItem
 {
