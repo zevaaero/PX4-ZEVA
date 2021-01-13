@@ -219,7 +219,7 @@ private:
 	uint64_t _time_prev_us[GPS_MAX_RECEIVERS] = {};	///< the previous value of time_us for that GPS instance - used to detect new data.
 	uint8_t _gps_best_index = 0;			///< index of the physical receiver with the lowest reported error
 	uint8_t _gps_select_index = 0;			///< 0 = GPS1, 1 = GPS2, 2 = blended
-	bool _gps_fallback_allowed = false;
+	bool _gps_fallback_allowed = false; ///< to prevent unnoticed failover to second GPS already on ground
 	uint8_t _gps_time_ref_index =
 		0;		///< index of the receiver that is used as the timing reference for the blending update
 	uint8_t _gps_oldest_index = 0;			///< index of the physical receiver with the oldest data
