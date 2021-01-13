@@ -185,14 +185,14 @@ static calibrate_return check_calibration_result(float offset_x, float offset_y,
 
 	for (unsigned i = 0; i < num_finite; ++i) {
 		if (!PX4_ISFINITE(must_be_finite[i])) {
-			calibration_log_emergency(mavlink_log_pub, "Retry calibration (sphere NaN, #%u)", cur_mag);
+			calibration_log_emergency(mavlink_log_pub, "Retry calibration (sphere NaN, %u)", cur_mag);
 			return calibrate_return_error;
 		}
 	}
 
 	// earth field between 0.25 and 0.65 Gauss
 	if (sphere_radius < 0.2f || sphere_radius >= 0.7f) {
-		calibration_log_emergency(mavlink_log_pub, "Retry calibration (mag #%u sphere radius invaid %.3f)", cur_mag,
+		calibration_log_emergency(mavlink_log_pub, "Retry calibration (mag %u sphere radius invaid %.3f)", cur_mag,
 					  (double)sphere_radius);
 		return calibrate_return_error;
 	}
@@ -202,7 +202,7 @@ static calibrate_return check_calibration_result(float offset_x, float offset_y,
 
 	for (unsigned i = 0; i < num_positive; ++i) {
 		if (should_be_positive[i] <= 0.0f) {
-			calibration_log_emergency(mavlink_log_pub, "Retry calibration (mag #%u with non-positive scale)", cur_mag);
+			calibration_log_emergency(mavlink_log_pub, "Retry calibration (mag %u with non-positive scale)", cur_mag);
 			return calibrate_return_error;
 		}
 	}
@@ -216,7 +216,7 @@ static calibrate_return check_calibration_result(float offset_x, float offset_y,
 		static constexpr float MAG_MAX_OFFSET_LEN = 1.3f;
 
 		if (fabsf(should_be_not_huge[i]) > MAG_MAX_OFFSET_LEN) {
-			calibration_log_critical(mavlink_log_pub, "Warning: mag (#%u) with large offsets", cur_mag);
+			calibration_log_critical(mavlink_log_pub, "Warning: mag %u with large offsets", cur_mag);
 			break;
 		}
 	}
@@ -227,7 +227,7 @@ static calibrate_return check_calibration_result(float offset_x, float offset_y,
 static float get_sphere_radius()
 {
 	// if GPS is available use real field intensity from world magnetic model
-	uORB::SubscriptionMultiArray<vehicle_gps_position_s> gps_subs{ORB_ID::vehicle_gps_position};
+	uORB::SubscriptionMultiArray<vehicle_gps_position_s, 3> gps_subs{ORB_ID::vehicle_gps_position};
 
 	for (auto &gps_sub : gps_subs) {
 		vehicle_gps_position_s gps;
@@ -256,7 +256,7 @@ static calibrate_return mag_calibration_worker(detect_orientation_return orienta
 	float mag_sphere_radius = get_sphere_radius();
 
 	// notify user to start rotating
-	set_tune(TONE_SINGLE_BEEP_TUNE);
+	set_tune(tune_control_s::TUNE_ID_SINGLE_BEEP);
 
 	calibration_log_info(worker_data->mavlink_log_pub, "[cal] Rotate vehicle");
 
@@ -599,7 +599,7 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 				}
 
 				if (!sphere_fit_success && !ellipsoid_fit_success) {
-					calibration_log_emergency(mavlink_log_pub, "Retry calibration (unable to fit mag #%u)", cur_mag);
+					calibration_log_emergency(mavlink_log_pub, "Retry calibration (unable to fit mag %u)", cur_mag);
 					result = calibrate_return_error;
 					break;
 				}
@@ -680,7 +680,7 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 			// only proceed if there's a valid internal
 			if (internal_index >= 0) {
 
-				const Dcmf board_rotation = calibration::GetBoardRotation();
+				const Dcmf board_rotation = calibration::GetBoardRotationMatrix();
 
 				// apply new calibrations to all raw sensor data before comparison
 				for (unsigned cur_mag = 0; cur_mag < MAX_MAGS; cur_mag++) {
@@ -737,18 +737,6 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 
 							// FALLTHROUGH
 							case ROTATION_PITCH_180_YAW_270: // skip 27, same as 10 ROTATION_ROLL_180_YAW_90
-
-							// FALLTHROUGH
-							case ROTATION_ROLL_270_YAW_180:  // skip 41, same as 31 ROTATION_ROLL_90_PITCH_180
-
-							// FALLTHROUGH
-							case ROTATION_ROLL_270_YAW_270:  // skip 42, same as 36 ROTATION_ROLL_90_PITCH_180_YAW_90
-
-							// FALLTHROUGH
-							case ROTATION_PITCH_90_YAW_180:  // skip 43, same as 29 ROTATION_ROLL_180_PITCH_90
-
-							// FALLTHROUGH
-							case ROTATION_PITCH_9_YAW_180: // skip, too close to ROTATION_YAW_180
 								MSE[r] = FLT_MAX;
 								break;
 
@@ -805,9 +793,6 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 
 							switch (worker_data.calibration[cur_mag].rotation_enum()) {
 							case ROTATION_ROLL_90_PITCH_68_YAW_293:
-
-							// FALLTHROUGH
-							case ROTATION_PITCH_9_YAW_180:
 								PX4_INFO("[cal] External Mag: %d (%d), keeping manually configured rotation %d", cur_mag,
 									 worker_data.calibration[cur_mag].device_id(), worker_data.calibration[cur_mag].rotation_enum());
 								continue;
@@ -918,16 +903,6 @@ calibrate_return mag_calibrate_all(orb_advert_t *mavlink_log_pub, int32_t cal_ma
 		}
 
 		if (param_save) {
-			// reset the learned EKF mag in-flight bias offsets which have been learned for the previous
-			//  sensor calibration and will be invalidated by a new sensor calibration
-			for (int axis = 0; axis < 3; axis++) {
-				char axis_char = 'X' + axis;
-				char str[20] {};
-				sprintf(str, "EKF2_MAGBIAS_%c", axis_char);
-				float offset = 0.f;
-				param_set_no_notification(param_find(str), &offset);
-			}
-
 			param_notify_changes();
 		}
 
@@ -1008,7 +983,7 @@ int do_mag_calibration_quick(orb_advert_t *mavlink_log_pub, float heading_radian
 			sensor_mag_s mag{};
 			mag_sub.copy(&mag);
 
-			if (mag_sub.advertised() && (hrt_elapsed_time(&mag.timestamp) < 1_s)) {
+			if (mag_sub.advertised() && (mag.timestamp != 0)) {
 
 				calibration::Magnetometer cal{mag.device_id, mag.is_external};
 

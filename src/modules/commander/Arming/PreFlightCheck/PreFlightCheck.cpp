@@ -42,48 +42,33 @@
 #include <lib/parameters/param.h>
 #include <systemlib/mavlink_log.h>
 #include <uORB/Subscription.hpp>
-#include <uORB/topics/subsystem_info.h>
 
 using namespace time_literals;
 
 static constexpr unsigned max_mandatory_gyro_count = 1;
-static constexpr unsigned max_optional_gyro_count = 3;
+static constexpr unsigned max_optional_gyro_count = 4;
 static constexpr unsigned max_mandatory_accel_count = 1;
-static constexpr unsigned max_optional_accel_count = 3;
+static constexpr unsigned max_optional_accel_count = 4;
 static constexpr unsigned max_mandatory_mag_count = 1;
 static constexpr unsigned max_optional_mag_count = 4;
 static constexpr unsigned max_mandatory_baro_count = 1;
-static constexpr unsigned max_optional_baro_count = 1;
+static constexpr unsigned max_optional_baro_count = 4;
 
 bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &status,
-				    vehicle_status_flags_s &status_flags, bool reportFailures, const bool prearm,
+				    vehicle_status_flags_s &status_flags, bool report_failures, const bool prearm,
 				    const hrt_abstime &time_since_boot)
 {
-	const bool hil_enabled = (status.hil_state == vehicle_status_s::HIL_STATE_ON);
-
-	reportFailures = (reportFailures && status_flags.condition_system_hotplug_timeout
-			  && !status_flags.condition_calibration_enabled);
-
-	const bool checkSensors = !hil_enabled;
-	const bool checkDynamic = !hil_enabled;
-
-	bool checkAirspeed = false;
-
-	/* Perform airspeed check only if circuit breaker is not
-	 * engaged and it's not a rotary wing */
-	if (!status_flags.circuit_breaker_engaged_airspd_check &&
-	    (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING || status.is_vtol)) {
-		checkAirspeed = true;
-	}
+	report_failures = (report_failures && status_flags.condition_system_hotplug_timeout
+			   && !status_flags.condition_calibration_enabled);
 
 	bool failed = false;
 
-	failed = failed || !externalUpdateCheck(mavlink_log_pub, reportFailures);
+	failed = failed || !externalUpdateCheck(mavlink_log_pub, report_failures);
 	failed = failed || !airframeCheck(mavlink_log_pub, status);
-	failed = failed || !sdcardCheck(mavlink_log_pub, reportFailures);
+	failed = failed || !sdcardCheck(mavlink_log_pub, report_failures);
 
 	/* ---- MAG ---- */
-	if (checkSensors) {
+	{
 		int32_t sys_has_mag = 1;
 		param_get(param_find("SYS_HAS_MAG"), &sys_has_mag);
 
@@ -92,7 +77,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 			/* check all sensors individually, but fail only for mandatory ones */
 			for (unsigned i = 0; i < max_optional_mag_count; i++) {
 				const bool required = (i < max_mandatory_mag_count) && (sys_has_mag == 1);
-				const bool report_fail = (reportFailures);
+				bool report_fail = report_failures;
 
 				int32_t device_id = -1;
 
@@ -100,31 +85,35 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 					if (required) {
 						failed = true;
 					}
+
+					report_fail = false; // only report the first failure
 				}
 			}
 
 			// TODO: highest priority mag
 
 			/* mag consistency checks (need to be performed after the individual checks) */
-			if (!magConsistencyCheck(mavlink_log_pub, status, (reportFailures))) {
+			if (!magConsistencyCheck(mavlink_log_pub, status, report_failures)) {
 				failed = true;
 			}
 		}
 	}
 
 	/* ---- ACCEL ---- */
-	if (checkSensors) {
+	{
 		/* check all sensors individually, but fail only for mandatory ones */
 		for (unsigned i = 0; i < max_optional_accel_count; i++) {
 			const bool required = (i < max_mandatory_accel_count);
-			const bool report_fail = (reportFailures);
+			bool report_fail = report_failures;
 
 			int32_t device_id = -1;
 
-			if (!accelerometerCheck(mavlink_log_pub, status, i, !required, checkDynamic, device_id, report_fail)) {
+			if (!accelerometerCheck(mavlink_log_pub, status, i, !required, device_id, report_fail)) {
 				if (required) {
 					failed = true;
 				}
+
+				report_fail = false; // only report the first failure
 			}
 		}
 
@@ -132,16 +121,20 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 	}
 
 	/* ---- GYRO ---- */
-	if (checkSensors) {
+	{
 		/* check all sensors individually, but fail only for mandatory ones */
 		for (unsigned i = 0; i < max_optional_gyro_count; i++) {
 			const bool required = (i < max_mandatory_gyro_count);
+			bool report_fail = report_failures;
+
 			int32_t device_id = -1;
 
-			if (!gyroCheck(mavlink_log_pub, status, i, !required, device_id, reportFailures)) {
+			if (!gyroCheck(mavlink_log_pub, status, i, !required, device_id, report_fail)) {
 				if (required) {
 					failed = true;
 				}
+
+				report_fail = false; // only report the first failure
 			}
 		}
 
@@ -149,7 +142,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 	}
 
 	/* ---- BARO ---- */
-	if (checkSensors) {
+	{
 		int32_t sys_has_baro = 1;
 		param_get(param_find("SYS_HAS_BARO"), &sys_has_baro);
 
@@ -158,7 +151,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 		/* check all sensors, but fail only for mandatory ones */
 		for (unsigned i = 0; i < max_optional_baro_count; i++) {
 			const bool required = (i < max_mandatory_baro_count) && (sys_has_baro == 1);
-			const bool report_fail = (reportFailures && !baro_fail_reported);
+			bool report_fail = (report_failures && !baro_fail_reported);
 
 			int32_t device_id = -1;
 
@@ -166,20 +159,24 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 				if (required) {
 					baro_fail_reported = true;
 				}
+
+				report_fail = false; // only report the first failure
 			}
 		}
 	}
 
 	/* ---- IMU CONSISTENCY ---- */
 	// To be performed after the individual sensor checks have completed
-	if (checkSensors) {
-		if (!imuConsistencyCheck(mavlink_log_pub, status, reportFailures)) {
+	{
+		if (!imuConsistencyCheck(mavlink_log_pub, status, report_failures)) {
 			failed = true;
 		}
 	}
 
 	/* ---- AIRSPEED ---- */
-	if (checkAirspeed) {
+	/* Perform airspeed check only if circuit breaker is not engaged and it's not a rotary wing */
+	if (!status_flags.circuit_breaker_engaged_airspd_check &&
+	    (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING || status.is_vtol)) {
 		int32_t optional = 0;
 		param_get(param_find("FW_ARSP_MODE"), &optional);
 
@@ -191,7 +188,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 		const float arming_max_airspeed_allowed = airspeed_stall / 2.0f; // set to half of stall speed
 
-		if (!airspeedCheck(mavlink_log_pub, status, (bool)optional, reportFailures, prearm, (bool)max_airspeed_check_en,
+		if (!airspeedCheck(mavlink_log_pub, status, (bool)optional, report_failures, prearm, (bool)max_airspeed_check_en,
 				   arming_max_airspeed_allowed)
 		    && !(bool)optional) {
 			failed = true;
@@ -200,8 +197,8 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 	/* ---- RC CALIBRATION ---- */
 	if (status.rc_input_mode == vehicle_status_s::RC_IN_MODE_DEFAULT) {
-		if (rcCalibrationCheck(mavlink_log_pub, reportFailures, status.is_vtol) != OK) {
-			if (reportFailures) {
+		if (rcCalibrationCheck(mavlink_log_pub, report_failures, status.is_vtol) != OK) {
+			if (report_failures) {
 				mavlink_log_critical(mavlink_log_pub, "RC calibration check failed");
 			}
 
@@ -220,7 +217,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 	/* ---- SYSTEM POWER ---- */
 	if (status_flags.condition_power_input_valid && !status_flags.circuit_breaker_engaged_power_check) {
-		if (!powerCheck(mavlink_log_pub, status, reportFailures, prearm)) {
+		if (!powerCheck(mavlink_log_pub, status, report_failures, prearm)) {
 			failed = true;
 		}
 	}
@@ -243,8 +240,8 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 		// don't report ekf failures for the first 10 seconds to allow time for the filter to start
 		if (time_since_boot > 10_s) {
 
-			ekf_healthy = ekf2Check(mavlink_log_pub, status, false, reportFailures) &&
-				      ekf2CheckStates(mavlink_log_pub, reportFailures);
+			ekf_healthy = ekf2Check(mavlink_log_pub, status, false, report_failures) &&
+				      ekf2CheckSensorBias(mavlink_log_pub, report_failures);
 
 			set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, true, ekf_healthy, status);
 
@@ -256,12 +253,12 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 	}
 
 	/* ---- Failure Detector ---- */
-	if (!failureDetectorCheck(mavlink_log_pub, status, reportFailures, prearm)) {
+	if (!failureDetectorCheck(mavlink_log_pub, status, report_failures, prearm)) {
 		failed = true;
 	}
 
-	failed = failed || !manualControlCheck(mavlink_log_pub, reportFailures);
-	failed = failed || !cpuResourceCheck(mavlink_log_pub, reportFailures);
+	failed = failed || !manualControlCheck(mavlink_log_pub, report_failures);
+	failed = failed || !cpuResourceCheck(mavlink_log_pub, report_failures);
 
 	/* Report status */
 	return !failed;

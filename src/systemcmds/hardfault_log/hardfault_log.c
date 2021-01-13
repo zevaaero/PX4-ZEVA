@@ -271,7 +271,7 @@ static int write_stack_detail(bool inValid, _stack_s *si, char *sp_name,
 
 #ifdef CONFIG_STACK_COLORATION
 	FAR struct tcb_s tcb;
-	tcb.stack_alloc_ptr = (void *) sbot;
+	tcb.adj_stack_ptr = (void *) sbot;
 	tcb.adj_stack_size = si->size;
 
 	if (verify_ram_address(sbot, si->size)) {

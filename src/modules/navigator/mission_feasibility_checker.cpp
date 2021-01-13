@@ -269,6 +269,7 @@ MissionFeasibilityChecker::checkMissionItemValidity(const mission_s &mission)
 		    missionitem.nav_cmd != NAV_CMD_DO_SET_ROI_WPNEXT_OFFSET &&
 		    missionitem.nav_cmd != NAV_CMD_DO_SET_ROI_NONE &&
 		    missionitem.nav_cmd != NAV_CMD_DO_SET_CAM_TRIGG_DIST &&
+		    missionitem.nav_cmd != NAV_CMD_OBLIQUE_SURVEY &&
 		    missionitem.nav_cmd != NAV_CMD_DO_SET_CAM_TRIGG_INTERVAL &&
 		    missionitem.nav_cmd != NAV_CMD_SET_CAMERA_MODE &&
 		    missionitem.nav_cmd != NAV_CMD_SET_CAMERA_ZOOM &&
@@ -399,6 +400,7 @@ MissionFeasibilityChecker::checkTakeoff(const mission_s &mission, float home_alt
 					  missionitem.nav_cmd != NAV_CMD_DO_SET_ROI_WPNEXT_OFFSET &&
 					  missionitem.nav_cmd != NAV_CMD_DO_SET_ROI_NONE &&
 					  missionitem.nav_cmd != NAV_CMD_DO_SET_CAM_TRIGG_DIST &&
+					  missionitem.nav_cmd != NAV_CMD_OBLIQUE_SURVEY &&
 					  missionitem.nav_cmd != NAV_CMD_DO_SET_CAM_TRIGG_INTERVAL &&
 					  missionitem.nav_cmd != NAV_CMD_SET_CAMERA_MODE &&
 					  missionitem.nav_cmd != NAV_CMD_SET_CAMERA_ZOOM &&

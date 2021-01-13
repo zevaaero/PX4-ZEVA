@@ -65,7 +65,7 @@ void ISM330DLC::exit_and_cleanup()
 {
 	if (_drdy_gpio != 0) {
 		// Disable data ready callback
-		px4_arch_gpiosetevent(_drdy_gpio, false, false, false, nullptr, nullptr);
+		//px4_arch_gpiosetevent(_drdy_gpio, false, false, false, nullptr, nullptr);
 
 		RegisterWrite(Register::INT1_CTRL, 0);
 	}

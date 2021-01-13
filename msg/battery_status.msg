@@ -23,7 +23,7 @@ uint16 cycle_count			# number of discharge cycles the battery has experienced
 uint16 run_time_to_empty	# predicted remaining battery capacity based on the present rate of discharge in min
 uint16 average_time_to_empty	# predicted remaining battery capacity based on the average rate of discharge in min
 char[16] serial_number      #serial number of the battery pack in ASCII characters
-uint16 manufacture_date		# manufacture date, part of serial number of the battery pack
+uint16 manufacture_date		# manufacture date, part of serial number of the battery pack. formated as: Day + Month×32 + (Year–1980)×512
 uint16 state_of_health		# state of health. FullChargeCapacity/DesignCapacity.
 uint16 max_error			# max error, expected margin of error in % in the state-of-charge calculation with a range of 1 to 100%
 uint8 id					# ID number of a battery. Should be unique and consistent for the lifetime of a vehicle. 1-indexed.
@@ -59,3 +59,6 @@ uint8 mode # Battery mode. Note, the normal operation mode
 uint8 BATTERY_MODE_UNKNOWN = 0 # Battery does not support a mode, or if it does, is operational
 uint8 BATTERY_MODE_AUTO_DISCHARGING = 1 # Battery is auto discharging (towards storage level)
 uint8 BATTERY_MODE_HOT_SWAP = 2 # Battery in hot-swap mode
+
+
+uint8 MAX_INSTANCES = 4

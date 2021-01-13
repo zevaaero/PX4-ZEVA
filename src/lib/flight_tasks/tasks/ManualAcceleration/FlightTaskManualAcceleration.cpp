@@ -36,10 +36,6 @@
  */
 
 #include "FlightTaskManualAcceleration.hpp"
-#include <mathlib/mathlib.h>
-#include <float.h>
-#include "ControlMath.hpp"
-#include <ecl/geo/geo.h>
 
 using namespace matrix;
 
@@ -117,3 +113,4 @@ void FlightTaskManualAcceleration::_ekfResetHandlerHeading(float delta_psi)
 		_yaw_setpoint += delta_psi;
 	}
 }
+

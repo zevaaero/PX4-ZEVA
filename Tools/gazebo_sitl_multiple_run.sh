@@ -16,7 +16,7 @@ function spawn_model() {
 	MODEL=$1
 	N=$2 #Instance Number
 
-	SUPPORTED_MODELS=("iris" "iris_rtps" "plane" "standard_vtol")
+	SUPPORTED_MODELS=("iris" "iris_rtps" "plane" "standard_vtol" "rover" "r1_rover" "typhoon_h480")
 	if [[ " ${SUPPORTED_MODELS[*]} " != *"$MODEL"* ]];
 	then
 		echo "ERROR: Currently only vehicle model $MODEL is not supported!"
@@ -31,7 +31,7 @@ function spawn_model() {
 	pushd "$working_dir" &>/dev/null
 	echo "starting instance $N in $(pwd)"
 	../bin/px4 -i $N -d "$build_path/etc" -w sitl_${MODEL}_${N} -s etc/init.d-posix/rcS >out.log 2>err.log &
-	python3 ${src_path}/Tools/sitl_gazebo/scripts/jinja_gen.py ${src_path}/Tools/sitl_gazebo/models/${MODEL}/${MODEL}.sdf.jinja ${src_path}/Tools/sitl_gazebo --mavlink_tcp_port $((4560+${N})) --mavlink_udp_port $((14560+${N})) --output-file /tmp/${MODEL}_${N}.sdf
+	python3 ${src_path}/Tools/sitl_gazebo/scripts/jinja_gen.py ${src_path}/Tools/sitl_gazebo/models/${MODEL}/${MODEL}.sdf.jinja ${src_path}/Tools/sitl_gazebo --mavlink_tcp_port $((4560+${N})) --mavlink_udp_port $((14560+${N})) --mavlink_id $((1+${N})) --gst_udp_port $((5600+${N})) --video_uri $((5600+${N})) --mavlink_cam_udp_port $((14530+${N})) --output-file /tmp/${MODEL}_${N}.sdf
 
 	echo "Spawning ${MODEL}_${N}"
 
@@ -99,7 +99,7 @@ if [ -z ${SCRIPT} ]; then
 else
 	IFS=,
 	for target in ${SCRIPT}; do
-		target="$(echo "${target}" | tr -d ' ')" #Remove spaces
+		target="$(echo "$target" | tr -d ' ')" #Remove spaces
 		target_vehicle="${target%:*}"
 		target_number="${target#*:}"
 

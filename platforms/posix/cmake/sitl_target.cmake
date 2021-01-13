@@ -26,6 +26,7 @@ add_custom_target(run_config
 px4_add_git_submodule(TARGET git_gazebo PATH "${PX4_SOURCE_DIR}/Tools/sitl_gazebo")
 px4_add_git_submodule(TARGET git_jmavsim PATH "${PX4_SOURCE_DIR}/Tools/jMAVSim")
 px4_add_git_submodule(TARGET git_flightgear_bridge PATH "${PX4_SOURCE_DIR}/Tools/flightgear_bridge")
+px4_add_git_submodule(TARGET git_jsbsim_bridge PATH "${PX4_SOURCE_DIR}/Tools/jsbsim_bridge")
 
 # Add support for external project building
 include(ExternalProject)
@@ -44,7 +45,7 @@ ExternalProject_Add(sitl_gazebo
 	USES_TERMINAL_BUILD true
 	EXCLUDE_FROM_ALL true
 	BUILD_ALWAYS 1
-	BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> -- -j2
+	BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> -- -j1
 )
 
 ExternalProject_Add(mavsdk_tests
@@ -80,7 +81,7 @@ ExternalProject_Add(jsbsim_bridge
 	BINARY_DIR ${PX4_BINARY_DIR}/build_jsbsim_bridge
 	INSTALL_COMMAND ""
 	DEPENDS
-		git_flightgear_bridge
+		git_jsbsim_bridge
 	USES_TERMINAL_CONFIGURE true
 	USES_TERMINAL_BUILD true
 	EXCLUDE_FROM_ALL true
@@ -92,11 +93,11 @@ set(viewers none jmavsim gazebo)
 set(debuggers none ide gdb lldb ddd valgrind callgrind)
 set(models none shell
 	if750a iris iris_dual_gps iris_opt_flow iris_opt_flow_mockup iris_vision iris_rplidar iris_irlock iris_obs_avoid iris_rtps px4vision solo typhoon_h480
-	plane plane_cam plane_catapult plane_lidar
+	plane plane_cam plane_catapult plane_lidar techpod
 	standard_vtol tailsitter tiltrotor
 	standard_vtol_gimbal tiltrotor_tri
 	rover rover_gimbal r1_rover boat cloudship
-	uuv_hippocampus)
+	uuv_hippocampus uuv_bluerov2_heavy)
 set(worlds none empty almend almend_castle baylands crane ksql_airport mcmillan_airfield sonoma_raceway warehouse windy yosemite)
 set(all_posix_vmd_make_targets)
 foreach(viewer ${viewers})
@@ -177,7 +178,7 @@ foreach(viewer ${viewers})
 endforeach()
 
 # create targets for jsbsim
-set(models_jsbsim none rascal quadrotor_x hexarotor_x)
+set(models_jsbsim none rascal quadrotor_x hexarotor_x malolo)
 set(worlds_jsbsim none LSZH)
 foreach(debugger ${debuggers})
 	foreach(model ${models_jsbsim})
@@ -288,10 +289,3 @@ add_custom_target(list_vmd_make_targets
 	COMMENT "List of acceptable '${PX4_BOARD}' <viewer_model_debugger> targets:"
 	VERBATIM
 	)
-
-# vscode launch.json
-if(${PX4_BOARD_LABEL} MATCHES "replay")
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Debug/launch_replay.json.in ${PX4_SOURCE_DIR}/.vscode/launch.json COPYONLY)
-else()
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Debug/launch_sim.json.in ${PX4_SOURCE_DIR}/.vscode/launch.json COPYONLY)
-endif()

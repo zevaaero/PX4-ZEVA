@@ -81,7 +81,7 @@ protected:
 	explicit MavlinkStreamGpsGlobalOrigin(Mavlink *mavlink) : MavlinkStream(mavlink)
 	{}
 
-	bool send(const hrt_abstime t) override
+	bool send() override
 	{
 		vehicle_local_position_s vehicle_local_position;
 
@@ -101,3 +101,4 @@ protected:
 };
 
 #endif // GPS_GLOBAL_ORIGIN_HPP
+

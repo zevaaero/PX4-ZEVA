@@ -7,7 +7,7 @@ on:
 jobs:
   build:
    runs-on: ubuntu-latest
-   container: px4io/px4-dev-nuttx-bionic:2020-04-01
+   container: px4io/px4-dev-nuttx-focal:2020-11-18
    steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper

@@ -6,7 +6,7 @@ set SDCARD_MIXERS_PATH ${SDCARD_EXT_PATH}/mixers
 
 if [ -e ${SDCARD_EXT_PATH}/rc.autostart ]
 then
-	sh ${SDCARD_EXT_PATH}/rc.autostart
+	. ${SDCARD_EXT_PATH}/rc.autostart
 else
 	echo "Error: ${SDCARD_EXT_PATH}/rc.autostart does not exist"
 fi

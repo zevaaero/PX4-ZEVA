@@ -749,10 +749,12 @@ PARAM_DEFINE_FLOAT(MPC_TKO_RAMP_T, 3.0f);
  * 	 the maximum allowed speeds (MPC_XY_VEL_MAX)
  * 3 Smooth position control with maximum acceleration and jerk limits (different algorithm
  *   than 1).
+ * 4 Smooth position control where sticks map to acceleration and there's a virtual brake drag
  *
  * @value 0 Simple position control
  * @value 1 Smooth position control
  * @value 3 Smooth position control (Velocity)
+ * @value 4 Acceleration based input
  * @value 4 Acceleration based input
  * @group Multicopter Position Control
  */

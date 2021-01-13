@@ -43,7 +43,7 @@ using namespace matrix;
 FlightTaskAutoMapper::FlightTaskAutoMapper() :
 	_sticks(this),
 	_stick_acceleration_xy(this)
-{};
+{}
 
 bool FlightTaskAutoMapper::activate(const vehicle_local_position_setpoint_s &last_setpoint)
 {
@@ -161,7 +161,7 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 	}
 
 	// User input assisted landing
-	if (_param_mpc_land_rc_help.get() && below_alt1 && _sticks.checkAndSetStickInputs(_time_stamp_current)) {
+	if (_param_mpc_land_rc_help.get() && below_alt1 && _sticks.checkAndSetStickInputs()) {
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		land_speed *= (1 + _sticks.getPositionExpo()(2));
 

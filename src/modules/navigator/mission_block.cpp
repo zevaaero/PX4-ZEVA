@@ -103,6 +103,7 @@ MissionBlock::is_mission_item_reached()
 	case NAV_CMD_DO_SET_ROI_WPNEXT_OFFSET:
 	case NAV_CMD_DO_SET_ROI_NONE:
 	case NAV_CMD_DO_SET_CAM_TRIGG_DIST:
+	case NAV_CMD_OBLIQUE_SURVEY:
 	case NAV_CMD_DO_SET_CAM_TRIGG_INTERVAL:
 	case NAV_CMD_SET_CAMERA_MODE:
 	case NAV_CMD_SET_CAMERA_ZOOM:
@@ -130,7 +131,6 @@ MissionBlock::is_mission_item_reached()
 	case NAV_CMD_DO_CHANGE_SPEED:
 	case NAV_CMD_DO_SET_HOME:
 		return true;
-
 
 	default:
 		/* do nothing, this is a 3D waypoint */
@@ -232,13 +232,10 @@ MissionBlock::is_mission_item_reached()
 					_navigator->set_position_setpoint_triplet_updated();
 				}
 
-			} else {
-				// loitering, check if new altitude is reached, while still also having check on position
-				if (dist >= 0.0f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
-				    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
+			} else if (dist >= 0.f && dist_xy <= _navigator->get_acceptance_radius(fabsf(_mission_item.loiter_radius) * 1.2f)
+				   && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 
-					_waypoint_position_reached = true;
-				}
+				_waypoint_position_reached = true;
 			}
 
 		} else if (_mission_item.nav_cmd == NAV_CMD_CONDITION_GATE) {
@@ -342,7 +339,6 @@ MissionBlock::is_mission_item_reached()
 	}
 
 	/* Check if the requested yaw setpoint is reached (only for rotary wing flight). */
-
 	if (_waypoint_position_reached && !_waypoint_yaw_reached) {
 
 		if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
@@ -651,6 +647,8 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 
 	// FALLTHROUGH
 	case NAV_CMD_LOITER_TIME_LIMIT:
+
+	// FALLTHROUGH
 	case NAV_CMD_LOITER_UNLIMITED:
 
 		sp->type = position_setpoint_s::SETPOINT_TYPE_LOITER;

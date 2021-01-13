@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-nuttx-bionic:2020-04-01
+    container: px4io/px4-dev-nuttx-focal:2020-11-18
     strategy:
       matrix:
         config: [
@@ -88,4 +88,3 @@ jobs:
       run: make ${{matrix.config}} bloaty_compare_master || true
     - name: ccache post-run
       run: ccache -s
-

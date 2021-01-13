@@ -214,7 +214,7 @@ FixedwingPositionControl::manual_control_setpoint_poll()
 	_manual_control_setpoint_sub.update(&_manual_control_setpoint);
 
 	_manual_control_setpoint_altitude = _manual_control_setpoint.x;
-	_manual_control_setpoint_airspeed = _manual_control_setpoint.z; // _manual_control_setpoint.z range = [0,1]
+	_manual_control_setpoint_airspeed = _manual_control_setpoint.z;
 
 	if (_param_fw_pos_stk_conf.get() & STICK_CONFIG_SWAP_STICKS_BIT) {
 		/* Alternate stick allocation (similar concept as for multirotor systems:
@@ -832,6 +832,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 				// LOITER: use SETPOINT_TYPE_POSITION to get to SETPOINT_TYPE_LOITER
 				if ((dist >= 0.f)
+				    && (dist_z > 2.f * _param_fw_clmbout_diff.get())
 				    && (dist_xy > 2.f * math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius)))) {
 					// SETPOINT_TYPE_LOITER -> SETPOINT_TYPE_POSITION
 					position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
@@ -1806,14 +1807,13 @@ FixedwingPositionControl::Run()
 		_alt_reset_counter = _local_pos.vz_reset_counter;
 		_pos_reset_counter = _local_pos.vxy_reset_counter;
 
-		airspeed_poll();
-		manual_control_setpoint_poll();
-
 		if (_pos_sp_triplet_sub.update(&_pos_sp_triplet)) {
 			// reset the altitude foh (first order hold) logic
 			_min_current_sp_distance_xy = FLT_MAX;
 		}
 
+		airspeed_poll();
+		manual_control_setpoint_poll();
 		vehicle_attitude_poll();
 		vehicle_command_poll();
 		vehicle_control_mode_poll();

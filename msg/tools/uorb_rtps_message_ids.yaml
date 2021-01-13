@@ -43,7 +43,7 @@ rtps:
     id: 19
   - msg: ekf_gps_drift
     id: 20
-  - msg: ekf_gps_position
+  - msg: sensor_gps
     id: 21
   - msg: esc_report
     id: 22
@@ -150,8 +150,6 @@ rtps:
     id: 70
   - msg: px4io_status
     id: 71
-  - msg: subsystem_info
-    id: 72
   - msg: system_power
     id: 73
   - msg: task_stack_info
@@ -277,38 +275,50 @@ rtps:
     id: 131
   - msg: yaw_estimator_status
     id: 132
-  - msg: telemetry_heartbeat
-    id: 133
   - msg: sensor_preflight_mag
-    id: 134
+    id: 133
   - msg: estimator_states
+    id: 134
+  - msg: generator_status
     id: 135
-  - msg: gimbal_device_attitude_status
+  - msg: sensor_gyro_fft
     id: 136
-  - msg: gimbal_device_information
-    id: 137
-  - msg: gimbal_device_set_attitude
-    id: 138
-  - msg: gimbal_manager_information
-    id: 139
-  - msg: gimbal_manager_set_attitude
-    id: 140
-  - msg: gimbal_manager_status
-    id: 141
-  - msg: rtl_flight_time
-    id: 142
   - msg: navigator_mission_item
-    id: 143
-  - msg: baro_bias_estimate
-    id: 144
+    id: 137
   - msg: estimator_optical_flow_vel
+    id: 138
+  - msg: estimator_selector_status
+    id: 139
+  - msg: manual_control_switches
+    id: 140
+  - msg: estimator_status_flags
+    id: 141
+  - msg: gimbal_device_attitude_status
+    id: 142
+  - msg: gimbal_device_information
+    id: 143
+  - msg: gimbal_device_set_attitude
+    id: 144
+  - msg: gimbal_manager_information
     id: 145
-  - msg: gimbal_manager_set_manual_control
+  - msg: gimbal_manager_set_attitude
     id: 146
-  - msg: autotune_attitude_control_status
+  - msg: gimbal_manager_status
     id: 147
-  - msg: vehicle_command_cancel
+  - msg: rtl_flight_time
     id: 148
+  - msg: navigator_mission_item
+    id: 149
+  - msg: baro_bias_estimate
+    id: 200
+  - msg: estimator_optical_flow_vel
+    id: 201
+  - msg: gimbal_manager_set_manual_control
+    id: 202
+  - msg: autotune_attitude_control_status
+    id: 202
+  - msg: vehicle_command_cancel
+    id: 203
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150
@@ -369,7 +379,7 @@ rtps:
   - msg: vehicle_angular_velocity_groundtruth
     id: 168
     alias: vehicle_angular_velocity
-  - msg: vehicle_visual_odometry_aligned
+  - msg: estimator_visual_odometry_aligned
     id: 169
     alias: vehicle_odometry
   - msg: estimator_innovation_variances
@@ -390,4 +400,19 @@ rtps:
   - msg: orb_test_medium_queue_poll
     id: 175
     alias: orb_test_medium
+  - msg: orb_test_medium_wrap_around
+    id: 176
+    alias: orb_test_medium
+  - msg: estimator_local_position
+    id: 177
+    alias: vehicle_local_position
+  - msg: estimator_global_position
+    id: 178
+    alias: vehicle_global_position
+  - msg: estimator_attitude
+    id: 179
+    alias: vehicle_attitude
+  - msg: estimator_odometry
+    id: 180
+    alias: vehicle_odometry
   ########## multi topics: end ##########

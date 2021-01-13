@@ -366,7 +366,6 @@ void Tiltrotor::update_transition_state()
 
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
-
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {
 		// the plane is ready to go into fixed wing mode, tilt the rotors forward completely
 		_tilt_control = _params_tiltrotor.tilt_transition +
@@ -392,7 +391,6 @@ void Tiltrotor::update_transition_state()
 		}
 
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
-
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {
 		// turn on all MC motors
@@ -452,8 +450,6 @@ void Tiltrotor::update_transition_state()
 	_mc_roll_weight = math::constrain(_mc_roll_weight, 0.0f, 1.0f);
 	_mc_yaw_weight = math::constrain(_mc_yaw_weight, 0.0f, 1.0f);
 	_mc_throttle_weight = math::constrain(_mc_throttle_weight, 0.0f, 1.0f);
-
-
 }
 
 void Tiltrotor::waiting_on_tecs()
@@ -467,18 +463,18 @@ void Tiltrotor::waiting_on_tecs()
 */
 void Tiltrotor::fill_actuator_outputs()
 {
+	auto &mc_in = _actuators_mc_in->control;
+	auto &fw_in = _actuators_fw_in->control;
+
+	auto &mc_out = _actuators_out_0->control;
+	auto &fw_out = _actuators_out_1->control;
+
 	// Multirotor output
-	_actuators_out_0->timestamp = hrt_absolute_time();
-	_actuators_out_0->timestamp_sample = _actuators_mc_in->timestamp_sample;
+	mc_out[actuator_controls_s::INDEX_ROLL]  = mc_in[actuator_controls_s::INDEX_ROLL]  * _mc_roll_weight;
+	mc_out[actuator_controls_s::INDEX_PITCH] = mc_in[actuator_controls_s::INDEX_PITCH] * _mc_pitch_weight;
+	mc_out[actuator_controls_s::INDEX_YAW]   = mc_in[actuator_controls_s::INDEX_YAW]   * _mc_yaw_weight;
 
-	_actuators_out_0->control[actuator_controls_s::INDEX_ROLL] =
-		_actuators_mc_in->control[actuator_controls_s::INDEX_ROLL] * _mc_roll_weight;
-	_actuators_out_0->control[actuator_controls_s::INDEX_PITCH] =
-		_actuators_mc_in->control[actuator_controls_s::INDEX_PITCH] * _mc_pitch_weight;
-	_actuators_out_0->control[actuator_controls_s::INDEX_YAW] =
-		_actuators_mc_in->control[actuator_controls_s::INDEX_YAW] * _mc_yaw_weight;
-
-	float throttle_fw = _actuators_fw_in->control[actuator_controls_s::INDEX_THROTTLE];
+	float throttle_fw = fw_in[actuator_controls_s::INDEX_THROTTLE];
 
 	if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
 
@@ -487,33 +483,27 @@ void Tiltrotor::fill_actuator_outputs()
 			throttle_fw = alternate_motors_throttle_adaption(throttle_fw);
 		}
 
-		_actuators_out_0->control[actuator_controls_s::INDEX_THROTTLE] = throttle_fw;
+		mc_out[actuator_controls_s::INDEX_THROTTLE] = throttle_fw;
 
 		/* allow differential thrust if enabled */
 		if (_params->diff_thrust == 1) {
-			_actuators_out_0->control[actuator_controls_s::INDEX_ROLL] =
-				_actuators_fw_in->control[actuator_controls_s::INDEX_YAW] * _params->diff_thrust_scale;
+			mc_out[actuator_controls_s::INDEX_ROLL] = fw_in[actuator_controls_s::INDEX_YAW] * _params->diff_thrust_scale;
 		}
 
 	} else {
-		_actuators_out_0->control[actuator_controls_s::INDEX_THROTTLE] =
-			_actuators_mc_in->control[actuator_controls_s::INDEX_THROTTLE] * _mc_throttle_weight;
+		mc_out[actuator_controls_s::INDEX_THROTTLE] = mc_in[actuator_controls_s::INDEX_THROTTLE] * _mc_throttle_weight;
 	}
 
 	// Fixed wing output
-	_actuators_out_1->timestamp = hrt_absolute_time();
-	_actuators_out_1->timestamp_sample = _actuators_fw_in->timestamp_sample;
-
-	_actuators_out_1->control[4] = _tilt_control;
+	fw_out[4] = _tilt_control;
 
 	if (_params->elevons_mc_lock && _vtol_schedule.flight_mode == vtol_mode::MC_MODE) {
-		_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = 0.0f;
-		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] = 0.0f;
-		_actuators_out_1->control[actuator_controls_s::INDEX_YAW] = 0.0f;
+		fw_out[actuator_controls_s::INDEX_ROLL]  = 0;
+		fw_out[actuator_controls_s::INDEX_PITCH] = 0;
+		fw_out[actuator_controls_s::INDEX_YAW]   = 0;
 
 	} else {
-		_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] =
-			_actuators_fw_in->control[actuator_controls_s::INDEX_ROLL];
+		fw_out[actuator_controls_s::INDEX_ROLL] = fw_in[actuator_controls_s::INDEX_ROLL];
 
 		// use pitch trimming when alternate motors are used for fixed-wing flight
 		float pitch_trim_offset = 0.0f;
@@ -522,12 +512,15 @@ void Tiltrotor::fill_actuator_outputs()
 			pitch_trim_offset = alternate_motors_elevator_trim(throttle_fw);
 		}
 
-		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] =
-			pitch_trim_offset + _actuators_fw_in->control[actuator_controls_s::INDEX_PITCH];
+		fw_out[actuator_controls_s::INDEX_PITCH] = pitch_trim_offset + fw_in[actuator_controls_s::INDEX_PITCH];
 
-		_actuators_out_1->control[actuator_controls_s::INDEX_YAW] =
-			_actuators_fw_in->control[actuator_controls_s::INDEX_YAW];
+		fw_out[actuator_controls_s::INDEX_YAW] = fw_in[actuator_controls_s::INDEX_YAW];
 	}
+
+	_actuators_out_0->timestamp_sample = _actuators_mc_in->timestamp_sample;
+	_actuators_out_1->timestamp_sample = _actuators_fw_in->timestamp_sample;
+
+	_actuators_out_0->timestamp = _actuators_out_1->timestamp = hrt_absolute_time();
 
 	if (_in_actuator_test_mode) {
 		_in_actuator_test_mode = override_controls_for_test_mode();
@@ -545,7 +538,6 @@ float Tiltrotor::thrust_compensation_for_tilt()
 
 	// increase vertical thrust by 1/cos(tilt), limmit to [-1,0]
 	return math::constrain(_v_att_sp->thrust_body[2] / cosf(compensated_tilt * M_PI_2_F), -1.0f, 0.0f);
-
 }
 
 void Tiltrotor::select_fixed_wing_motors()

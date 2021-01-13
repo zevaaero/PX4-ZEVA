@@ -73,6 +73,7 @@
 #include "vehicle_acceleration/VehicleAcceleration.hpp"
 #include "vehicle_angular_velocity/VehicleAngularVelocity.hpp"
 #include "vehicle_air_data/VehicleAirData.hpp"
+#include "vehicle_gps_position/VehicleGPSPosition.hpp"
 #include "vehicle_imu/VehicleIMU.hpp"
 #include "vehicle_magnetometer/VehicleMagnetometer.hpp"
 
@@ -116,14 +117,16 @@ private:
 
 	sensor_combined_s _sensor_combined{};
 
-	uORB::SubscriptionCallbackWorkItem _vehicle_imu_sub[3] {
+	uORB::SubscriptionCallbackWorkItem _vehicle_imu_sub[MAX_SENSOR_COUNT] {
 		{this, ORB_ID(vehicle_imu), 0},
 		{this, ORB_ID(vehicle_imu), 1},
-		{this, ORB_ID(vehicle_imu), 2}
+		{this, ORB_ID(vehicle_imu), 2},
+		{this, ORB_ID(vehicle_imu), 3}
 	};
 
+	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
+
 	uORB::Subscription _diff_pres_sub{ORB_ID(differential_pressure)};
-	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
 	uORB::Subscription _vcontrol_mode_sub{ORB_ID(vehicle_control_mode)};
 	uORB::Subscription _vehicle_air_data_sub{ORB_ID(vehicle_air_data)};
 
@@ -172,10 +175,9 @@ private:
 	VehicleAngularVelocity	_vehicle_angular_velocity;
 	VehicleAirData          *_vehicle_air_data{nullptr};
 	VehicleMagnetometer     *_vehicle_magnetometer{nullptr};
+	VehicleGPSPosition	*_vehicle_gps_position{nullptr};
 
-	static constexpr int MAX_SENSOR_COUNT = 3;
 	VehicleIMU      *_vehicle_imu_list[MAX_SENSOR_COUNT] {};
-
 
 	/**
 	 * Update our local parameter cache.
@@ -204,6 +206,7 @@ private:
 	void		adc_poll();
 
 	void		InitializeVehicleAirData();
+	void		InitializeVehicleGPSPosition();
 	void		InitializeVehicleIMU();
 	void		InitializeVehicleMagnetometer();
 
@@ -231,23 +234,7 @@ Sensors::Sensors(bool hil_enabled) :
 	_parameter_handles.air_tube_length = param_find("CAL_AIR_TUBELEN");
 	_parameter_handles.air_tube_diameter_mm = param_find("CAL_AIR_TUBED_MM");
 
-	param_find("BAT_V_DIV");
-	param_find("BAT_A_PER_V");
-
-	param_find("CAL_ACC0_ID");
-	param_find("CAL_GYRO0_ID");
-
-	param_find("SENS_BOARD_ROT");
-	param_find("SENS_BOARD_X_OFF");
-	param_find("SENS_BOARD_Y_OFF");
-	param_find("SENS_BOARD_Z_OFF");
-
 	param_find("SYS_FAC_CAL_MODE");
-	param_find("SYS_PARAM_VER");
-	param_find("SYS_AUTOSTART");
-	param_find("SYS_AUTOCONFIG");
-	param_find("TRIG_MODE");
-	param_find("UAVCAN_ENABLE");
 
 	// Parameters controlling the on-board sensor thermal calibrator
 	param_find("SYS_CAL_TDEL");
@@ -274,6 +261,11 @@ Sensors::~Sensors()
 	if (_vehicle_air_data) {
 		_vehicle_air_data->Stop();
 		delete _vehicle_air_data;
+	}
+
+	if (_vehicle_gps_position) {
+		_vehicle_gps_position->Stop();
+		delete _vehicle_gps_position;
 	}
 
 	if (_vehicle_magnetometer) {
@@ -498,6 +490,19 @@ void Sensors::InitializeVehicleAirData()
 	}
 }
 
+void Sensors::InitializeVehicleGPSPosition()
+{
+	if (_vehicle_gps_position == nullptr) {
+		if (orb_exists(ORB_ID(sensor_gps), 0) == PX4_OK) {
+			_vehicle_gps_position = new VehicleGPSPosition();
+
+			if (_vehicle_gps_position) {
+				_vehicle_gps_position->Start();
+			}
+		}
+	}
+}
+
 void Sensors::InitializeVehicleIMU()
 {
 	// create a VehicleIMU instance for each accel/gyro pair
@@ -515,7 +520,8 @@ void Sensors::InitializeVehicleIMU()
 			if (accel.device_id > 0 && gyro.device_id > 0) {
 				// if the sensors module is responsible for voting (SENS_IMU_MODE 1) then run every VehicleIMU in the same WQ
 				//   otherwise each VehicleIMU runs in a corresponding INSx WQ
-				const px4::wq_config_t &wq_config = px4::wq_configurations::nav_and_controllers;
+				const bool multi_mode = (_param_sens_imu_mode.get() == 0);
+				const px4::wq_config_t &wq_config = multi_mode ? px4::ins_instance_to_wq(i) : px4::wq_configurations::INS0;
 
 				VehicleIMU *imu = new VehicleIMU(i, i, i, wq_config);
 
@@ -568,6 +574,7 @@ void Sensors::Run()
 	if (_last_config_update == 0) {
 		InitializeVehicleAirData();
 		InitializeVehicleIMU();
+		InitializeVehicleGPSPosition();
 		InitializeVehicleMagnetometer();
 		_voted_sensors_update.init(_sensor_combined);
 		parameter_update_poll(true);
@@ -607,6 +614,7 @@ void Sensors::Run()
 		_voted_sensors_update.initializeSensors();
 		InitializeVehicleAirData();
 		InitializeVehicleIMU();
+		InitializeVehicleGPSPosition();
 		InitializeVehicleMagnetometer();
 		_last_config_update = hrt_absolute_time();
 
@@ -692,6 +700,11 @@ int Sensors::print_status()
 
 	PX4_INFO_RAW("\n");
 	_vehicle_angular_velocity.PrintStatus();
+
+	if (_vehicle_gps_position) {
+		PX4_INFO_RAW("\n");
+		_vehicle_gps_position->PrintStatus();
+	}
 
 	PX4_INFO_RAW("\n");
 

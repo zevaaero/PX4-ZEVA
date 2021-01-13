@@ -124,7 +124,7 @@ bool VtolType::init()
 	_alternate_motor_channel_bitmap = generate_bitmap_from_channel_numbers(_params->fw_motors_off);
 
 
-	// // in order to get the main motors we take all motors and clear the alternate motor bits
+	// in order to get the main motors we take all motors and clear the alternate motor bits
 	for (int i = 0; i < 8; i++) {
 		if (_alternate_motor_channel_bitmap & (1 << i)) {
 			_main_motor_channel_bitmap &= ~(1 << i);
@@ -157,6 +157,8 @@ void VtolType::update_fw_state()
 	if (_flag_idle_mc) {
 		_flag_idle_mc = !set_idle_fw();
 	}
+
+	VtolType::set_alternate_motor_state(motor_state::DISABLED);
 
 	// copy virtual attitude setpoint to real attitude setpoint
 	memcpy(_v_att_sp, _fw_virtual_att_sp, sizeof(vehicle_attitude_setpoint_s));

@@ -57,8 +57,8 @@ void send_pairing_command()
 	vcmd.timestamp = now;
 	vcmd.param1 = 10.f; // GCS pairing request handled by a companion.
 
-	uORB::PublicationQueued<vehicle_command_s> _pairing_command{ORB_ID(vehicle_command)};
-	_pairing_command.publish(vcmd);
+	uORB::Publication<vehicle_command_s> pairing_command{ORB_ID(vehicle_command)};
+	pairing_command.publish(vcmd);
 	PX4_INFO("Sending GCS pairing request");
 }
 

@@ -42,7 +42,7 @@ else
 	no_pxh=""
 fi
 
-# To enable simulator verbose output
+# To disable user input
 if [[ -n "$VERBOSE_SIM" ]]; then
 	verbose="--verbose"
 else

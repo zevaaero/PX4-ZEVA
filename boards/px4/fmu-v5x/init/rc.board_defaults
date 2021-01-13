@@ -39,6 +39,10 @@ fi
 
 if [ $AUTOCNF = yes ]
 then
+	# Multi-EKF
+	param set EKF2_MULTI_IMU 3
+	param set SENS_IMU_MODE 0
+
 	# Probe for LW20/c by default
 	param set SENS_EN_SF1XX 6
 fi

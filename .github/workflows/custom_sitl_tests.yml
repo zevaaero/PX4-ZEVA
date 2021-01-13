@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: px4io/px4-dev-simulation-focal:2020-04-01
+      image: px4io/px4-dev-simulation-focal:2020-11-18
       options: --privileged --ulimit core=-1 --security-opt seccomp=unconfined
     steps:
     # see https://github.com/actions/checkout/issues/14

@@ -102,7 +102,7 @@ private:
 	static MavlinkCommandSender *_instance;
 	static px4_sem_t _lock;
 
-	typedef struct {
+	struct command_item_s {
 		mavlink_command_long_t command = {};
 		hrt_abstime timestamp_us = 0;
 		hrt_abstime last_time_sent_us = 0;
@@ -115,9 +115,9 @@ private:
 #error Unknown number of MAVLINK_COMM_NUM_BUFFERS
 #endif
 
-	} command_item_t;
+	};
 
-	TimestampedList<command_item_t> _commands{3};
+	TimestampedList<command_item_s> _commands{3};
 
 	bool _debug_enabled = false;
 	static constexpr uint8_t RETRIES = 3;
