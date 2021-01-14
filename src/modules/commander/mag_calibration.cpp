@@ -942,14 +942,6 @@ int do_mag_calibration_quick(orb_advert_t *mavlink_log_pub, float heading_radian
 
 	} else {
 
-		FactoryCalibrationStorage factory_storage;
-
-		if (factory_storage.open() != PX4_OK) {
-			calibration_log_critical(mavlink_log_pub, "ERROR: cannot open calibration storage");
-			return PX4_ERROR;
-		}
-
-
 		// magnetic field data returned by the geo library using the current GPS position
 		const float mag_declination_gps = get_mag_declination_radians(latitude, longitude);
 		const float mag_inclination_gps = get_mag_inclination_radians(latitude, longitude);
@@ -964,6 +956,13 @@ int do_mag_calibration_quick(orb_advert_t *mavlink_log_pub, float heading_radian
 
 		if (hrt_elapsed_time(&attitude.timestamp) > 1_s) {
 			calibration_log_critical(mavlink_log_pub, "attitude required for mag quick cal");
+			return PX4_ERROR;
+		}
+
+		FactoryCalibrationStorage factory_storage;
+
+		if (factory_storage.open() != PX4_OK) {
+			calibration_log_critical(mavlink_log_pub, "ERROR: cannot open calibration storage");
 			return PX4_ERROR;
 		}
 

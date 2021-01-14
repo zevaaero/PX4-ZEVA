@@ -44,6 +44,7 @@ px4_add_board(
 		optical_flow # all available optical flow drivers
 		#osd
 		pca9685
+		pca9685_pwm_out
 		power_monitor/ina226
 		protocol_splitter
 		pwm_input
@@ -68,6 +69,7 @@ px4_add_board(
 		ekf2
 		esc_battery
 		events
+		flight_mode_manager
 		fw_att_control
 		fw_pos_control_l1
 		land_detector
@@ -82,6 +84,7 @@ px4_add_board(
 		mc_rate_control
 		micrortps_bridge
 		navigator
+		autotune_attitude_control
 		rc_update
 		rover_pos_control
 		sensors
@@ -98,6 +101,7 @@ px4_add_board(
 		hardfault_log
 		i2cdetect
 		led_control
+		mft
 		mixer
 		motor_ramp
 		motor_test
