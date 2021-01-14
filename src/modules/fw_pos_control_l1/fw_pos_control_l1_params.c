@@ -418,9 +418,10 @@ PARAM_DEFINE_FLOAT(FW_LND_THRTC_SC, 1.0f);
 
 
 /**
- * Minimum airspeed setpoint
+ * Minimum Airspeed
  *
- * The minimum airpseed that can be set via sticks or position setpoints.
+ * If the airspeed falls below this value, the TECS controller will try to
+ * increase airspeed more aggressively.
  *
  * @unit m/s
  * @min 0.0
@@ -432,9 +433,10 @@ PARAM_DEFINE_FLOAT(FW_LND_THRTC_SC, 1.0f);
 PARAM_DEFINE_FLOAT(FW_AIRSPD_MIN, 10.0f);
 
 /**
- * Maximum airspeed setpoint
+ * Maximum Airspeed
  *
- * The maximum airpseed that can be set via sticks or position setpoints.
+ * If the airspeed is above this value, the TECS controller will try to decrease
+ * airspeed more aggressively.
  *
  * @unit m/s
  * @min 0.0
@@ -759,7 +761,7 @@ PARAM_DEFINE_FLOAT(FW_T_TAS_TC, 5.0f);
 PARAM_DEFINE_FLOAT(FW_GND_SPD_MIN, 5.0f);
 
 /**
- * RC stick mapping fixed-wing
+ * RC stick mapping fixed-wing.
  *
  * Set RC/joystick configuration for fixed-wing position and altitude controlled flight.
  *
@@ -770,6 +772,20 @@ PARAM_DEFINE_FLOAT(FW_GND_SPD_MIN, 5.0f);
  * @group FW L1 Control
  */
 PARAM_DEFINE_INT32(FW_POS_STK_CONF, 2);
+
+/**
+ * GPS failure roll angle
+ *
+ * Roll in degrees during the loiter after the vehicle has lost GPS in an auto mode (e.g. mission or loiter)
+ *
+ * @unit deg
+ * @min -45.0
+ * @max 45.0
+ * @decimal 1
+ * @increment 0.5
+ * @group FW L1 Control
+ */
+PARAM_DEFINE_FLOAT(FW_GPSF_R, 15.0f);
 
 /**
  * Specific total energy rate first order filter time constant.
@@ -797,18 +813,3 @@ PARAM_DEFINE_FLOAT(FW_T_STE_R_TC, 0.4f);
  * @group FW TECS
  */
 PARAM_DEFINE_FLOAT(FW_T_TAS_R_TC, 0.2f);
-
-
-/**
- * GPS failure roll angle
- *
- * Roll in degrees during the loiter after the vehicle has lost GPS in an auto mode (e.g. mission or loiter)
- *
- * @unit deg
- * @min -45.0
- * @max 45.0
- * @decimal 1
- * @increment 0.5
- * @group FW L1 Control
- */
-PARAM_DEFINE_FLOAT(FW_GPSF_R, 15.0f);

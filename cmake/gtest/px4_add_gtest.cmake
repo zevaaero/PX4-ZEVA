@@ -98,11 +98,9 @@ function(px4_add_functional_gtest)
 
 		# link the libary to test and gtest
 		target_link_libraries(${TESTNAME} ${LINKLIBS} gtest_functional_main
-		                                              px4_daemon
-		                                              px4_platform
-		                                              modules__uORB
 		                                              px4_layer
 		                                              px4_platform
+		                                              modules__uORB
 		                                              systemlib
 		                                              cdev
 		                                              px4_work_queue

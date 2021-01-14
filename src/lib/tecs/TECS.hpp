@@ -74,8 +74,7 @@ public:
 	 * Must be called prior to udating tecs control loops
 	 * Must be called at 50Hz or greater
 	 */
-	void update_vehicle_state_estimates(float airspeed, const matrix::Dcmf &rotMat,
-					    const matrix::Vector3f &accel_body, bool altitude_lock, bool in_air,
+	void update_vehicle_state_estimates(float airspeed, const float speed_deriv_forward, bool altitude_lock, bool in_air,
 					    float altitude, float vz);
 
 	/**
@@ -165,13 +164,14 @@ public:
 
 	float STE_rate_setpoint() { return _SPE_rate_setpoint + _SKE_rate_setpoint; }
 
-	float SEB();
+	float SEB() { return _SPE_estimate * _SPE_weighting - _SKE_estimate * _SKE_weighting; }
 
-	float SEB_setpoint();
+	float SEB_setpoint() { return _SPE_setpoint * _SPE_weighting - _SKE_setpoint * _SKE_weighting; }
 
-	float SEB_rate();
+	float SEB_rate() { return _SPE_rate * _SPE_weighting - _SKE_rate * _SKE_weighting; }
 
-	float SEB_rate_setpoint();
+	float SEB_rate_setpoint() { return _SPE_rate_setpoint * _SPE_weighting - _SKE_rate_setpoint * _SKE_weighting; }
+
 
 	/**
 	 * Handle the altitude reset
@@ -215,13 +215,13 @@ private:
 	float _pitch_speed_weight{1.0f};				///< speed control weighting used by pitch demand calculation
 	float _height_error_gain{0.2f};					///< height error inverse time constant [1/s]
 	float _height_setpoint_gain_ff{0.0f};				///< gain from height demand derivative to demanded climb rate
-	float _airspeed_error_gain{0.1f};				///< airspeed error inverse time constant [1/s]
+	float _airspeed_error_gain{0.1f};							///< airspeed error inverse time constant [1/s]
 	float _indicated_airspeed_cruise{15.0f};			///< equivalent cruise airspeed for airspeed less mode (m/sec)
 	float _indicated_airspeed_min{3.0f};				///< equivalent airspeed demand lower limit (m/sec)
 	float _indicated_airspeed_max{30.0f};				///< equivalent airspeed demand upper limit (m/sec)
 	float _throttle_slewrate{0.0f};					///< throttle demand slew rate limit (1/sec)
 	float _STE_rate_time_const{0.1f};				///< filter time constant for specific total energy rate (damping path) (s)
-	float _speed_derivative_time_const{0.01f};			///< speed derivative filter time constant (s)
+	float _speed_derivative_time_const{0.01f};		///< speed derivative filter time constant (s)
 
 	// complimentary filter states
 	float _vert_vel_state{0.0f};					///< complimentary filter state - height rate (m/sec)

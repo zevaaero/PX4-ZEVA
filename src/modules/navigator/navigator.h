@@ -56,9 +56,6 @@
 #include "navigation.h"
 
 #include "GeofenceBreachAvoidance/geofence_breach_avoidance.h"
-#include <lib/terrain/terrain_provider.h>
-
-#include "terrain_follower_wrapper.hpp"
 
 #include <lib/perf/perf_counter.h>
 #include <px4_platform_common/module.h>
@@ -322,6 +319,8 @@ public:
 
 	bool		abort_landing();
 
+	void geofence_breach_check(bool &have_geofence_position_data);
+
 	// Param access
 	float		get_loiter_min_alt() const { return _param_mis_ltrmin_alt.get(); }
 	float		get_takeoff_min_alt() const { return _param_mis_takeoff_alt.get(); }
@@ -414,6 +413,7 @@ private:
 	Geofence	_geofence;			/**< class that handles the geofence */
 	bool		_geofence_violation_warning_sent{false}; /**< prevents spaming to mavlink */
 	GeofenceBreachAvoidance _gf_breach_avoidance;
+	hrt_abstime _last_geofence_check = 0;
 	terrain::TerrainProvider *_terrain_provider{nullptr};
 	TerrainFollowerWrapper _terrain_follower;
 

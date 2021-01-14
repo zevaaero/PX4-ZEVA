@@ -39,6 +39,8 @@
 
 class Geofence;
 
+#define GEOFENCE_CHECK_INTERVAL_US 200000
+
 union geofence_violation_type_u {
 	struct {
 		bool dist_to_home_exceeded: 1;	///< 0 - distance to home exceeded
@@ -51,9 +53,9 @@ union geofence_violation_type_u {
 class GeofenceBreachAvoidance : public ModuleParams
 {
 public:
-	GeofenceBreachAvoidance();
+	GeofenceBreachAvoidance(ModuleParams *parent);
 
-	~GeofenceBreachAvoidance();
+	~GeofenceBreachAvoidance() = default;
 
 	matrix::Vector2<double> getFenceViolationTestPoint();
 
@@ -144,3 +146,4 @@ private:
 	matrix::Vector2<double> waypointFromHomeToTestPointAtDist(float distance);
 
 };
+

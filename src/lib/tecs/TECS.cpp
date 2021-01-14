@@ -55,8 +55,8 @@ static constexpr float DT_MAX = 1.0f;	///< max value of _dt allowed before a fil
  * inertial nav data is not available. It also calculates a true airspeed derivative
  * which is used by the airspeed complimentary filter.
  */
-void TECS::update_vehicle_state_estimates(float airspeed, const matrix::Dcmf &rotMat,
-		const matrix::Vector3f &accel_body, bool altitude_lock, bool in_air,
+void TECS::update_vehicle_state_estimates(float airspeed, const float speed_deriv_forward, bool altitude_lock,
+		bool in_air,
 		float altitude, float vz)
 {
 	// calculate the time lapsed since the last update
@@ -89,12 +89,8 @@ void TECS::update_vehicle_state_estimates(float airspeed, const matrix::Dcmf &ro
 
 	// Update and average speed rate of change if airspeed is being measured
 	if (PX4_ISFINITE(airspeed) && airspeed_sensor_enabled()) {
-		// Assuming the vehicle is flying X axis forward, use the X axis measured acceleration
-		// compensated for gravity to estimate the rate of change of speed
-		const float speed_deriv_raw = rotMat(2, 0) * CONSTANTS_ONE_G + accel_body(0);
-
 		// Apply some noise filtering
-		_TAS_rate_filter.update(speed_deriv_raw);
+		_TAS_rate_filter.update(speed_deriv_forward);
 		_speed_derivative = _TAS_rate_filter.getState();
 
 	} else {
@@ -260,10 +256,8 @@ void TECS::_update_energy_estimates()
 
 	// Calculate the specific energy balance demand which specifies how the available total
 	// energy should be allocated to speed (kinetic energy) and height (potential energy)
-	float SEB_setpoint = _SPE_setpoint * _SPE_weighting - _SKE_setpoint * _SKE_weighting;
-
 	// Calculate the specific energy balance error
-	_SEB_error = SEB_setpoint - (_SPE_estimate * _SPE_weighting - _SKE_estimate * _SKE_weighting);
+	_SEB_error = SEB_setpoint() - (_SPE_estimate * _SPE_weighting - _SKE_estimate * _SKE_weighting);
 
 	// Calculate specific energy rate demands in units of (m**2/sec**3)
 	_SPE_rate_setpoint = _hgt_rate_setpoint * CONSTANTS_ONE_G; // potential energy rate of change
@@ -641,24 +635,4 @@ void TECS::_update_speed_height_weights()
 	// loop time constant and therefore can lead to a destabilization of that control loop
 	_SPE_weighting = constrain(2.0f - _SKE_weighting, 0.f, 1.f);
 	_SKE_weighting = constrain(_SKE_weighting, 0.f, 1.f);
-}
-
-float TECS::SEB()
-{
-	return _SPE_estimate * _SPE_weighting - _SKE_estimate * _SKE_weighting;
-}
-
-float TECS::SEB_setpoint()
-{
-	return _SPE_setpoint * _SPE_weighting - _SKE_setpoint * _SKE_weighting;
-}
-
-float TECS::SEB_rate()
-{
-	return _SPE_rate * _SPE_weighting - _SKE_rate * _SKE_weighting;
-}
-
-float TECS::SEB_rate_setpoint()
-{
-	return _SPE_rate_setpoint * _SPE_weighting - _SKE_rate_setpoint * _SKE_weighting;
 }
