@@ -1080,6 +1080,15 @@ void EKF2::Run()
 			// only report enabled GPS check failures (the param indexes are shifted by 1 bit, because they don't include
 			// the GPS Fix bit, which is always checked)
 			status.gps_check_fail_flags &= ((uint16_t)_params->gps_check_mask << 1) | 1;
+
+			if ((_gps_select_index == 0)
+			    && (status.gps_check_fail_flags == 0)
+			    && (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED)) {
+				// Switching to the secondary GPS is only allowed in flight and after the primary one was used to initialize the EKF
+				// This avoids starting without the primary GPS
+				_gps_fallback_allowed = true;
+			}
+
 			status.control_mode_flags = control_status.value;
 			_ekf.get_filter_fault_status(&status.filter_fault_flags);
 			_ekf.get_innovation_test_status(status.innovation_check_flags, status.mag_test_ratio,
@@ -1699,7 +1708,10 @@ bool EKF2::runMultiGpsChecks()
 			_gps_select_index = 0;
 
 		} else {
-			_gps_select_index = 1;
+			if (_gps_fallback_allowed) {
+				// failsafe
+				_gps_select_index = 1;
+			}
 		}
 
 		return false;
@@ -1711,7 +1723,11 @@ bool EKF2::runMultiGpsChecks()
 		return false;
 
 	} else if (_gps_state[1].fix_type > 2 && _gps_state[0].fix_type < 3) {
-		_gps_select_index = 1;
+		if (_gps_fallback_allowed) {
+			// failsafe
+			_gps_select_index = 1;
+		}
+
 		return false;
 	}
 
