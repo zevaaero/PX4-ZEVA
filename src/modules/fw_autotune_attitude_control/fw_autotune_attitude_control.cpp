@@ -153,10 +153,11 @@ void FwAutotuneAttitudeControl::Run()
 
 		const Vector3f num(coeff(2), coeff(3), coeff(4));
 		const Vector3f den(1.f, coeff(0), coeff(1));
-		Vector3f kid = pid_design::computePidGmvc(num, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
+		_piff(2) = (1.f + coeff(0) + coeff(1)) / (coeff(2) + coeff(3) + coeff(4)); // inverse of the static gain
+		const Vector3f num_design = num * _piff(2); // PID algorithm design works better with systems having unit static gain
+		Vector3f kid = pid_design::computePidGmvc(num_design, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
 		_piff(0) = kid(0);
 		_piff(1) = kid(1);
-		_piff(2) = (1.f + coeff(0) + coeff(1)) / (coeff(2) + coeff(3) + coeff(4)); // inverse of the static gain
 		_attitude_p = 0.f; // TODO: compute gains
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
