@@ -216,6 +216,9 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	// when identifying an axis, check if the estimate has converged
 	const float converged_thr = 50.f;
 
+	const float temp[5] = {0.f, 0.f, 0.f, 0.f, 0.f};
+	const Vector<float, 5> sys_id_init(temp);
+
 	switch (_state) {
 	case state::idle:
 		if (_param_fw_at_start.get()) {
@@ -235,7 +238,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		if (_are_filters_initialized) {
 			_state = state::roll;
 			_state_start_time = now;
-			_sys_id.reset();
+			_sys_id.reset(sys_id_init);
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
 			_max_steps = 10;
@@ -261,7 +264,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		if ((now - _state_start_time) > 2_s) {
 			_state = state::pitch;
 			_state_start_time = now;
-			_sys_id.reset();
+			_sys_id.reset(sys_id_init);
 			_input_scale = 1.f / _param_fw_pr_p.get();
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
@@ -285,7 +288,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		if ((now - _state_start_time) > 2_s) {
 			_state = state::yaw;
 			_state_start_time = now;
-			_sys_id.reset();
+			_sys_id.reset(sys_id_init);
 			_input_scale = 1.f / _param_fw_yr_p.get();
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered

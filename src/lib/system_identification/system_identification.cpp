@@ -39,9 +39,9 @@
 
 #include "system_identification.hpp"
 
-void SystemIdentification::reset()
+void SystemIdentification::reset(const matrix::Vector<float, 5> &id_state_init)
 {
-	_rls.reset();
+	_rls.reset(id_state_init);
 	_u_lpf.reset(0.f);
 	_u_hpf = 0.f;
 	_y_hpf = 0.f;

@@ -83,7 +83,7 @@ public:
 	const matrix::Vector < float, N + M + 1 > getVariances() const { return _P.diag(); }
 	float getInnovation() const { return _innovation; }
 
-	void reset()
+	void reset(const matrix::Vector < float, N + M + 1 > &theta_init = {})
 	{
 		/* _P.uncorrelateCovarianceSetVariance<N + M + 1>(0, 10e3f); // does not work */
 		_P.setZero();
@@ -92,7 +92,7 @@ public:
 			_P(i, i) = 10e3f;
 		}
 
-		_theta_hat.setZero();
+		_theta_hat = theta_init;
 
 		for (size_t i = 0; i < M + D + 1; i++) {
 			_u[i] = 0.f;
