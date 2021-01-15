@@ -74,10 +74,10 @@ void RTL::on_inactive()
 	find_RTL_destination();
 }
 
-void RTL::find_RTL_destination()
+void RTL::find_RTL_destination(bool force_update)
 {
 	// don't update RTL destination faster than 1 Hz
-	if (hrt_elapsed_time(&_destination_check_time) < 1_s) {
+	if (!force_update && hrt_elapsed_time(&_destination_check_time) < 1_s) {
 		return;
 	}
 

@@ -81,7 +81,7 @@ public:
 	void on_activation() override;
 	void on_active() override;
 
-	void find_RTL_destination();
+	void find_RTL_destination(bool force_update = false);
 
 	void set_return_alt_min(bool min) { _rtl_alt_min = min; }
 

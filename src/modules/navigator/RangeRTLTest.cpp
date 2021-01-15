@@ -16,6 +16,7 @@ TEST(Navigator_and_RTL, interact_correctly)
 
 	home_position_s home_pos{};
 	home_pos.valid_hpos = true;
+	home_pos.valid_lpos = true;
 	home_pos.valid_alt = true;
 	home_pos.timestamp = 1000;
 
@@ -43,7 +44,7 @@ TEST(Navigator_and_RTL, interact_correctly)
 
 	uORB::SubscriptionData<rtl_flight_time_s> _rtl_flight_time_sub{ORB_ID(rtl_flight_time)};
 	ASSERT_FALSE(_rtl_flight_time_sub.update());
-	rtl.find_RTL_destination();
+	rtl.find_RTL_destination(true);
 	ASSERT_TRUE(_rtl_flight_time_sub.update());
 	auto msg = _rtl_flight_time_sub.get();
 	EXPECT_EQ(msg.rtl_time_s, 0);
