@@ -120,6 +120,8 @@ private:
 	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub,
 				       arm_disarm_reason_t calling_reason);
 
+	transition_result_t try_mode_change(main_state_t desired_mode, const bool enable_fallback);
+
 	void battery_status_check();
 
 	void check_valid(const hrt_abstime &timestamp, const hrt_abstime &timeout, const bool valid_in, bool *valid_out,

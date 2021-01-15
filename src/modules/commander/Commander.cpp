@@ -501,6 +501,129 @@ Commander::arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink
 	return arming_res;
 }
 
+transition_result_t
+Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback)
+{
+
+	transition_result_t res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+
+	if (res == TRANSITION_DENIED) {
+
+		if (desired_mode == commander_state_s::MAIN_STATE_OFFBOARD) {
+
+			/* offboard does not have a fallback */
+			print_reject_mode("Offboard");
+			return res;
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_MISSION) {
+
+			/* fall back to loiter */
+			print_reject_mode("Auto Mission");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_RTL && (res == TRANSITION_DENIED)) {
+
+			/* fall back to loiter */
+			print_reject_mode("Auto RTL");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_LAND && (res == TRANSITION_DENIED)) {
+
+			/* fall back to loiter */
+			print_reject_mode("Auto Land");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_TAKEOFF && (res == TRANSITION_DENIED)) {
+
+			/* fall back to loiter */
+			print_reject_mode("Auto Takeoff");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_FOLLOW_TARGET && (res == TRANSITION_DENIED)) {
+
+			/* fall back to loiter */
+			print_reject_mode("Auto Follow");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_LOITER && (res == TRANSITION_DENIED)) {
+
+			/* fall back to position control */
+			print_reject_mode("Auto Hold");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_POSCTL;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_POSCTL && (res == TRANSITION_DENIED)) {
+
+			/* fall back to altitude control */
+			print_reject_mode("Position Control");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_ALTCTL;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_ALTCTL && (res == TRANSITION_DENIED)) {
+
+			/* fall back to stabilized */
+			print_reject_mode("Altitude Control");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_STAB;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+
+		}
+
+		if (desired_mode == commander_state_s::MAIN_STATE_STAB && (res == TRANSITION_DENIED)) {
+
+			/* fall back to manual */
+			desired_mode = commander_state_s::MAIN_STATE_MANUAL;
+			print_reject_mode("Stabilized");
+
+			if (enable_fallback) {
+				desired_mode = commander_state_s::MAIN_STATE_MANUAL;
+				res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
+			}
+
+		}
+	}
+
+	return res;
+}
+
 Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
@@ -902,10 +1025,9 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 			}
 
 			if (cmd.param1 > 0.5f) {
-				res = main_state_transition(*status_local, commander_state_s::MAIN_STATE_OFFBOARD, status_flags, &_internal_state);
+				res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false);
 
 				if (res == TRANSITION_DENIED) {
-					print_reject_mode("OFFBOARD");
 					status_flags.offboard_control_set_by_command = false;
 
 				} else {
@@ -916,7 +1038,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 			} else {
 				/* If the mavlink command is used to enable or disable offboard control:
 				 * switch back to previous mode when disabling */
-				res = main_state_transition(*status_local, _main_state_pre_offboard, status_flags, &_internal_state);
+				res = try_mode_change(_main_state_pre_offboard, false);
 				status_flags.offboard_control_set_by_command = false;
 			}
 
@@ -2902,13 +3024,10 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 
 	/* offboard switch overrides main switch */
 	if (_manual_control_setpoint.offboard_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_OFFBOARD, status_flags, &_internal_state);
 
-		if (res == TRANSITION_DENIED) {
-			print_reject_mode("OFFBOARD");
-			/* mode rejected, continue to evaluate the main system mode */
+		res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false);
 
-		} else {
+		if (res != TRANSITION_DENIED) {
 			/* changed successfully or already in this state */
 			return res;
 		}
@@ -2916,14 +3035,8 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 
 	/* RTL switch overrides main switch */
 	if (_manual_control_setpoint.return_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_AUTO_RTL, status_flags, &_internal_state);
 
-		if (res == TRANSITION_DENIED) {
-			print_reject_mode("AUTO RTL");
-
-			/* fallback to LOITER if home position not set */
-			res = main_state_transition(status_local, commander_state_s::MAIN_STATE_AUTO_LOITER, status_flags, &_internal_state);
-		}
+		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_RTL, true);
 
 		if (res != TRANSITION_DENIED) {
 			/* changed successfully or already in this state */
@@ -2935,12 +3048,10 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 
 	/* Loiter switch overrides main switch */
 	if (_manual_control_setpoint.loiter_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_AUTO_LOITER, status_flags, &_internal_state);
 
-		if (res == TRANSITION_DENIED) {
-			print_reject_mode("AUTO HOLD");
+		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_LOITER, false);
 
-		} else {
+		if (res != TRANSITION_DENIED) {
 			return res;
 		}
 	}
@@ -2960,125 +3071,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 			res = TRANSITION_NOT_CHANGED;
 
 		} else {
-			res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-			/* ensure that the mode selection does not get stuck here */
-			int maxcount = 5;
-
-			/* enable the use of break */
-			/* fallback strategies, give the user the closest mode to what he wanted */
-			while (res == TRANSITION_DENIED && maxcount > 0) {
-
-				maxcount--;
-
-				if (new_mode == commander_state_s::MAIN_STATE_AUTO_MISSION) {
-
-					/* fall back to loiter */
-					new_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
-					print_reject_mode("AUTO MISSION");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_AUTO_RTL) {
-
-					/* fall back to position control */
-					new_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
-					print_reject_mode("AUTO RTL");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_AUTO_LAND) {
-
-					/* fall back to position control */
-					new_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
-					print_reject_mode("AUTO LAND");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_AUTO_TAKEOFF) {
-
-					/* fall back to position control */
-					new_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
-					print_reject_mode("AUTO TAKEOFF");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_AUTO_FOLLOW_TARGET) {
-
-					/* fall back to position control */
-					new_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
-					print_reject_mode("AUTO FOLLOW");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_AUTO_LOITER) {
-
-					/* fall back to position control */
-					new_mode = commander_state_s::MAIN_STATE_POSCTL;
-					print_reject_mode("AUTO HOLD");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_POSCTL) {
-
-					/* fall back to altitude control */
-					new_mode = commander_state_s::MAIN_STATE_ALTCTL;
-					print_reject_mode("POSITION CONTROL");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_ALTCTL) {
-
-					/* fall back to stabilized */
-					new_mode = commander_state_s::MAIN_STATE_STAB;
-					print_reject_mode("ALTITUDE CONTROL");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-
-				if (new_mode == commander_state_s::MAIN_STATE_STAB) {
-
-					/* fall back to manual */
-					new_mode = commander_state_s::MAIN_STATE_MANUAL;
-					print_reject_mode("STABILIZED");
-					res = main_state_transition(status_local, new_mode, status_flags, &_internal_state);
-
-					if (res != TRANSITION_DENIED) {
-						break;
-					}
-				}
-			}
+			res = try_mode_change(new_mode, true);
 		}
 
 		return res;
@@ -3157,13 +3150,12 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 
 	case manual_control_setpoint_s::SWITCH_POS_MIDDLE:		// ASSIST
 		if (_manual_control_setpoint.posctl_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-			res = main_state_transition(status_local, commander_state_s::MAIN_STATE_POSCTL, status_flags, &_internal_state);
+
+			res = try_mode_change(commander_state_s::MAIN_STATE_POSCTL, false);
 
 			if (res != TRANSITION_DENIED) {
 				break;	// changed successfully or already in this state
 			}
-
-			print_reject_mode("POSITION CONTROL");
 		}
 
 		// fallback to ALTCTL
@@ -3173,8 +3165,9 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 			break;	// changed successfully or already in this mode
 		}
 
+		// ---> TODO: Not fully clear about this part of the logic
 		if (_manual_control_setpoint.posctl_switch != manual_control_setpoint_s::SWITCH_POS_ON) {
-			print_reject_mode("ALTITUDE CONTROL");
+			print_reject_mode("Altitude Control");
 		}
 
 		// fallback to MANUAL
@@ -3183,38 +3176,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 		break;
 
 	case manual_control_setpoint_s::SWITCH_POS_ON:			// AUTO
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_AUTO_MISSION, status_flags, &_internal_state);
-
-		if (res != TRANSITION_DENIED) {
-			break;	// changed successfully or already in this state
-		}
-
-		print_reject_mode("AUTO MISSION");
-
-		// fallback to LOITER if home position not set
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_AUTO_LOITER, status_flags, &_internal_state);
-
-		if (res != TRANSITION_DENIED) {
-			break;  // changed successfully or already in this state
-		}
-
-		// fallback to POSCTL
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_POSCTL, status_flags, &_internal_state);
-
-		if (res != TRANSITION_DENIED) {
-			break;  // changed successfully or already in this state
-		}
-
-		// fallback to ALTCTL
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_ALTCTL, status_flags, &_internal_state);
-
-		if (res != TRANSITION_DENIED) {
-			break;	// changed successfully or already in this state
-		}
-
-		// fallback to MANUAL
-		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_MANUAL, status_flags, &_internal_state);
-		// TRANSITION_DENIED is not possible here
+		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_MISSION, true);
 		break;
 
 	default:
@@ -3496,7 +3458,7 @@ Commander::print_reject_mode(const char *msg)
 
 	if (t - _last_print_mode_reject_time > PRINT_MODE_REJECT_INTERVAL) {
 		_last_print_mode_reject_time = t;
-		mavlink_log_critical(&mavlink_log_pub, "REJECT %s", msg);
+		mavlink_log_critical(&mavlink_log_pub, "Switching to %s is currently not available.", msg);
 
 		/* only buzz if armed, because else we're driving people nuts indoors
 		they really need to look at the leds as well. */
