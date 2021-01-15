@@ -36,10 +36,17 @@
 #include <systemlib/mavlink_log.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef __PX4_DARWIN
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
+#include <sys/statfs.h>
+#endif
 
 /* Error codes
  *
  * -1 = File does not exists
+ * -2 = FMU card missing
  *  0 = Parsing failure
  *
  */
@@ -52,6 +59,8 @@ bool PreFlightCheck::externalUpdateCheck(orb_advert_t *mavlink_log_pub, const bo
 	static bool already_executed = false;
 	static int error_code = -1;
 	int32_t enable_check = -1;
+	struct statfs statfs_buf;
+	uint64_t total_bytes = 0;
 	param_get(param_find("COM_EXT_COMP_EN"), &enable_check);
 
 	if (enable_check == 0) {
@@ -60,6 +69,20 @@ bool PreFlightCheck::externalUpdateCheck(orb_advert_t *mavlink_log_pub, const bo
 
 	if (!already_executed) {
 		already_executed = true;
+
+		if (statfs(ext_component_path, &statfs_buf) == 0) {
+			total_bytes = (uint64_t)statfs_buf.f_blocks * statfs_buf.f_bsize;
+		}
+
+		if (total_bytes == 0) { // on NuttX we get 0 total bytes if no SD card is inserted
+			if (report_fail) {
+				mavlink_log_critical(mavlink_log_pub, "Update Check Fail: Missing FMU SD Card");
+			}
+
+			error_code = -2;
+			return true; // Still allow arming when the SD card is missing
+		}
+
 		FILE *fp = fopen(ext_component_path, "r");
 
 		if (fp == nullptr) {
@@ -87,10 +110,18 @@ bool PreFlightCheck::externalUpdateCheck(orb_advert_t *mavlink_log_pub, const bo
 		}
 	}
 
+	bool result = update_succeeded;
+
 	if (report_fail && !update_succeeded) {
-		mavlink_log_critical(mavlink_log_pub, "Update Fail: Software update failed, error code %d.",
-				     error_code);
+		if (error_code == -2) {
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Software update check failed.");
+			result = true; // Still allow arming when the SD card is missing
+
+		} else {
+			mavlink_log_critical(mavlink_log_pub, "Update Fail: Software update failed, error code %d.",
+					     error_code);
+		}
 	}
 
-	return update_succeeded;
+	return result;
 }
