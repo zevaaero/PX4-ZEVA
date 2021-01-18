@@ -87,6 +87,7 @@ set(msg_files
 	led_control.msg
 	log_message.msg
 	logger_status.msg
+	mag_worker_data.msg
 	manual_control_setpoint.msg
 	mavlink_log.msg
 	mission.msg
