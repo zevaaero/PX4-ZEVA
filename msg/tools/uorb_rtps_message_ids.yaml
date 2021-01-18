@@ -310,15 +310,15 @@ rtps:
   - msg: navigator_mission_item
     id: 149
   - msg: baro_bias_estimate
-    id: 200
+    id: 150
   - msg: estimator_optical_flow_vel
-    id: 201
+    id: 151
   - msg: gimbal_manager_set_manual_control
-    id: 202
+    id: 152
   - msg: autotune_attitude_control_status
-    id: 202
+    id: 153
   - msg: vehicle_command_cancel
-    id: 203
+    id: 154
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 170
