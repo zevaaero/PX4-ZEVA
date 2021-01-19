@@ -278,7 +278,9 @@ private:
 	bool _home_inited{false};
 	bool _need_mission_reset{false};
 	bool _mission_waypoints_changed{false};
-	bool _mission_changed{false}; /** < true if the mission changed since the mission mode was active */
+	bool _mission_changed{false};	/** < true if the mission changed since the mission mode was active */
+
+	bool _custom_action_set{false};	/** < true if custom action item was set */
 
 	enum work_item_type {
 		WORK_ITEM_TYPE_DEFAULT,		/**< default mission item */
