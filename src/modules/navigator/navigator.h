@@ -295,6 +295,7 @@ public:
 	bool 		getMissionLandingInProgress() { return _mission_landing_in_progress; }
 
 	bool			get_in_custom_action() { return _in_custom_action; }
+	void			set_in_custom_action() { _in_custom_action = true; }
 	custom_action_s	get_custom_action() { return _custom_action; }
 	void			set_custom_action(const custom_action_s &custom_action) { _custom_action = custom_action; }
 
