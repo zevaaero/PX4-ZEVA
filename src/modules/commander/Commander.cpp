@@ -502,7 +502,7 @@ Commander::arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink
 }
 
 transition_result_t
-Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback)
+Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback, const bool notify_user)
 {
 
 	transition_result_t res = main_state_transition(status, desired_mode, status_flags, &_internal_state);
@@ -512,14 +512,19 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_OFFBOARD) {
 
 			/* offboard does not have a fallback */
-			print_reject_mode("Offboard");
+			if (notify_user) {
+				print_reject_mode("Offboard");
+			}
+
 			return res;
 		}
 
 		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_MISSION) {
 
 			/* fall back to loiter */
-			print_reject_mode("Auto Mission");
+			if (notify_user) {
+				print_reject_mode("Auto Mission");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
@@ -530,7 +535,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_RTL && (res == TRANSITION_DENIED)) {
 
 			/* fall back to loiter */
-			print_reject_mode("Auto RTL");
+			if (notify_user) {
+				print_reject_mode("Auto RTL");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
@@ -541,7 +548,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_LAND && (res == TRANSITION_DENIED)) {
 
 			/* fall back to loiter */
-			print_reject_mode("Auto Land");
+			if (notify_user) {
+				print_reject_mode("Auto Land");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
@@ -552,7 +561,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_TAKEOFF && (res == TRANSITION_DENIED)) {
 
 			/* fall back to loiter */
-			print_reject_mode("Auto Takeoff");
+			if (notify_user) {
+				print_reject_mode("Auto Takeoff");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
@@ -563,7 +574,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_FOLLOW_TARGET && (res == TRANSITION_DENIED)) {
 
 			/* fall back to loiter */
-			print_reject_mode("Auto Follow");
+			if (notify_user) {
+				print_reject_mode("Auto Follow");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_AUTO_LOITER;
@@ -574,7 +587,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_AUTO_LOITER && (res == TRANSITION_DENIED)) {
 
 			/* fall back to position control */
-			print_reject_mode("Auto Hold");
+			if (notify_user) {
+				print_reject_mode("Auto Hold");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_POSCTL;
@@ -586,7 +601,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_POSCTL && (res == TRANSITION_DENIED)) {
 
 			/* fall back to altitude control */
-			print_reject_mode("Position Control");
+			if (notify_user) {
+				print_reject_mode("Position");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_ALTCTL;
@@ -598,7 +615,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_ALTCTL && (res == TRANSITION_DENIED)) {
 
 			/* fall back to stabilized */
-			print_reject_mode("Altitude Control");
+			if (notify_user) {
+				print_reject_mode("Altitude");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_STAB;
@@ -610,8 +629,9 @@ Commander::try_mode_change(main_state_t desired_mode, const bool enable_fallback
 		if (desired_mode == commander_state_s::MAIN_STATE_STAB && (res == TRANSITION_DENIED)) {
 
 			/* fall back to manual */
-			desired_mode = commander_state_s::MAIN_STATE_MANUAL;
-			print_reject_mode("Stabilized");
+			if (notify_user) {
+				print_reject_mode("Stabilized");
+			}
 
 			if (enable_fallback) {
 				desired_mode = commander_state_s::MAIN_STATE_MANUAL;
@@ -825,6 +845,12 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 			}
 
 			if ((arming_ret != TRANSITION_DENIED) && (main_ret != TRANSITION_DENIED)) {
+
+				if (main_ret == TRANSITION_CHANGED) {
+					_user_changed_mode = true;
+
+				}
+
 				cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
 
 			} else {
@@ -1025,7 +1051,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 			}
 
 			if (cmd.param1 > 0.5f) {
-				res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false);
+				res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false, true);
 
 				if (res == TRANSITION_DENIED) {
 					status_flags.offboard_control_set_by_command = false;
@@ -1038,7 +1064,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 			} else {
 				/* If the mavlink command is used to enable or disable offboard control:
 				 * switch back to previous mode when disabling */
-				res = try_mode_change(_main_state_pre_offboard, false);
+				res = try_mode_change(_main_state_pre_offboard, false, true);
 				status_flags.offboard_control_set_by_command = false;
 			}
 
@@ -2315,7 +2341,9 @@ Commander::run()
 
 			/* evaluate the main state machine according to mode switches */
 			bool first_rc_eval = (_last_manual_control_setpoint.timestamp == 0) && (_manual_control_setpoint.timestamp > 0);
-			transition_result_t main_res = set_main_state(status, &_status_changed);
+			transition_result_t main_res = set_main_state(status, &_status_changed, first_rc_eval);
+
+			_last_manual_control_setpoint = _manual_control_setpoint;
 
 			/* store last position lock state */
 			_last_condition_local_altitude_valid = status_flags.condition_local_altitude_valid;
@@ -2937,13 +2965,14 @@ Commander::control_status_leds(vehicle_status_s *status_local, const actuator_ar
 }
 
 transition_result_t
-Commander::set_main_state(const vehicle_status_s &status_local, bool *changed)
+Commander::set_main_state(const vehicle_status_s &status_local, bool *changed, const bool &first_time_rc)
 {
+
 	if (_safety.override_available && _safety.override_enabled) {
 		return set_main_state_override_on(status_local, changed);
 
 	} else {
-		return set_main_state_rc(status_local, changed);
+		return set_main_state_from_controller(status_local, changed, first_time_rc);
 	}
 }
 
@@ -2958,20 +2987,23 @@ Commander::set_main_state_override_on(const vehicle_status_s &status_local, bool
 }
 
 transition_result_t
-Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed)
+Commander::set_main_state_from_controller(const vehicle_status_s &status_local, bool *changed,
+		const bool &first_time_rc)
 {
-	/* set main state according to RC switches */
+	/* set main state according to RC switches or initialize mode for vehicles that rely on a joystick */
 	transition_result_t res = TRANSITION_DENIED;
 
 	// Note: even if status_flags.offboard_control_set_by_command is set
 	// we want to allow rc mode change to take precidence.  This is a safety
 	// feature, just in case offboard control goes crazy.
 
+	const bool is_mavlink_joystick = _manual_control_setpoint.data_source > manual_control_setpoint_s::SOURCE_RC;
+
 	const bool altitude_got_valid = (!_last_condition_local_altitude_valid && status_flags.condition_local_altitude_valid);
 	const bool lpos_got_valid = (!_last_condition_local_position_valid && status_flags.condition_local_position_valid);
 	const bool gpos_got_valid = (!_last_condition_global_position_valid && status_flags.condition_global_position_valid);
-	const bool first_time_rc = (_last_manual_control_setpoint.timestamp == 0);
-	const bool rc_values_updated = (_last_manual_control_setpoint.timestamp != _manual_control_setpoint.timestamp);
+	const bool manual_control_values_updated = (_last_manual_control_setpoint.timestamp !=
+			_manual_control_setpoint.timestamp);
 	const bool some_switch_changed =
 		(_last_manual_control_setpoint.offboard_switch != _manual_control_setpoint.offboard_switch)
 		|| (_last_manual_control_setpoint.return_switch != _manual_control_setpoint.return_switch)
@@ -2989,34 +3021,35 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 			|| altitude_got_valid
 			|| lpos_got_valid
 			|| gpos_got_valid
-			|| (rc_values_updated && some_switch_changed);
+			|| (manual_control_values_updated && some_switch_changed);
+
+	// if _user_changed_mode is set means that we have received a mavlink command to change the mode (e.g VEHICLE_CMD_DO_SET_MODE)
+	// thus we no longer need to try to initialize the system with a flight mode
+	_user_changed_mode |= some_switch_changed;
+
+	const bool controler_uses_mode_buttons = is_mavlink_joystick || (_param_rc_map_flightmode_buttons.get() > 0);
+
+	// Joysticks that use MAVLink commands assigned to buttons or RCs with toggle buttons (RC_MAP_FLTM_BTN)
+	// do not command an initial mode.
+	// To avoid having the vehicle initialized to manual, we try to initialize the system to Position.
+	// The attempt to switch to Position should only occur while the vehicle is disarmed and the user did not explicity command
+	// a different flight mode.
+
+	const bool should_initialize_mode = controler_uses_mode_buttons && (altitude_got_valid || lpos_got_valid
+					    || gpos_got_valid)
+					    && !armed.armed && !_user_changed_mode && !(_internal_state.main_state == commander_state_s::MAIN_STATE_POSCTL);
+
+	if (should_initialize_mode) {
+		reset_posvel_validity(changed);
+		res = try_mode_change(commander_state_s::MAIN_STATE_POSCTL, true, false);
+		return res;
+
+	}
 
 	if (!should_evaluate_rc_mode_switch) {
-
-		// store the last manual control setpoint set by the pilot in a manual state
-		// if the system now later enters an autonomous state the pilot can move
-		// the sticks to break out of the autonomous state
-
-		if (!_geofence_warning_action_on
-		    && (_internal_state.main_state == commander_state_s::MAIN_STATE_MANUAL ||
-			_internal_state.main_state == commander_state_s::MAIN_STATE_ALTCTL ||
-			_internal_state.main_state == commander_state_s::MAIN_STATE_POSCTL ||
-			_internal_state.main_state == commander_state_s::MAIN_STATE_ACRO ||
-			_internal_state.main_state == commander_state_s::MAIN_STATE_RATTITUDE ||
-			_internal_state.main_state == commander_state_s::MAIN_STATE_STAB)) {
-
-			_last_manual_control_setpoint.timestamp = _manual_control_setpoint.timestamp;
-			_last_manual_control_setpoint.x = _manual_control_setpoint.x;
-			_last_manual_control_setpoint.y = _manual_control_setpoint.y;
-			_last_manual_control_setpoint.z = _manual_control_setpoint.z;
-			_last_manual_control_setpoint.r = _manual_control_setpoint.r;
-		}
-
 		/* no timestamp change or no switch change -> nothing changed */
 		return TRANSITION_NOT_CHANGED;
 	}
-
-	_last_manual_control_setpoint = _manual_control_setpoint;
 
 	// reset the position and velocity validity calculation to give the best change of being able to select
 	// the desired mode
@@ -3025,7 +3058,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 	/* offboard switch overrides main switch */
 	if (_manual_control_setpoint.offboard_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
 
-		res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false);
+		res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false, true);
 
 		if (res != TRANSITION_DENIED) {
 			/* changed successfully or already in this state */
@@ -3036,7 +3069,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 	/* RTL switch overrides main switch */
 	if (_manual_control_setpoint.return_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
 
-		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_RTL, true);
+		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_RTL, true, true);
 
 		if (res != TRANSITION_DENIED) {
 			/* changed successfully or already in this state */
@@ -3049,7 +3082,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 	/* Loiter switch overrides main switch */
 	if (_manual_control_setpoint.loiter_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
 
-		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_LOITER, false);
+		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_LOITER, false, true);
 
 		if (res != TRANSITION_DENIED) {
 			return res;
@@ -3071,7 +3104,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 			res = TRANSITION_NOT_CHANGED;
 
 		} else {
-			res = try_mode_change(new_mode, true);
+			res = try_mode_change(new_mode, true, true);
 		}
 
 		return res;
@@ -3151,7 +3184,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 	case manual_control_setpoint_s::SWITCH_POS_MIDDLE:		// ASSIST
 		if (_manual_control_setpoint.posctl_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
 
-			res = try_mode_change(commander_state_s::MAIN_STATE_POSCTL, false);
+			res = try_mode_change(commander_state_s::MAIN_STATE_POSCTL, false, true);
 
 			if (res != TRANSITION_DENIED) {
 				break;	// changed successfully or already in this state
@@ -3165,9 +3198,8 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 			break;	// changed successfully or already in this mode
 		}
 
-		// ---> TODO: Not fully clear about this part of the logic
 		if (_manual_control_setpoint.posctl_switch != manual_control_setpoint_s::SWITCH_POS_ON) {
-			print_reject_mode("Altitude Control");
+			print_reject_mode("Altitude");
 		}
 
 		// fallback to MANUAL
@@ -3176,7 +3208,7 @@ Commander::set_main_state_rc(const vehicle_status_s &status_local, bool *changed
 		break;
 
 	case manual_control_setpoint_s::SWITCH_POS_ON:			// AUTO
-		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_MISSION, true);
+		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_MISSION, true, true);
 		break;
 
 	default:

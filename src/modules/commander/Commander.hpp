@@ -120,7 +120,7 @@ private:
 	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub,
 				       arm_disarm_reason_t calling_reason);
 
-	transition_result_t try_mode_change(main_state_t desired_mode, const bool enable_fallback);
+	transition_result_t try_mode_change(main_state_t desired_mode, const bool enable_fallback, const bool notify_user);
 
 	void battery_status_check();
 
@@ -172,14 +172,15 @@ private:
 
 	void update_control_mode();
 
-	// Set the main system state based on RC and override device inputs
-	transition_result_t set_main_state(const vehicle_status_s &status, bool *changed);
+	// Set the main system state based on RC/Joystick and override device inputs
+	transition_result_t set_main_state(const vehicle_status_s &status, bool *changed, const bool &first_time_rc);
 
 	// Enable override (manual reversion mode) on the system
 	transition_result_t set_main_state_override_on(const vehicle_status_s &status, bool *changed);
 
-	// Set the system main state based on the current RC inputs
-	transition_result_t set_main_state_rc(const vehicle_status_s &status, bool *changed);
+	// Set the system main state based on the current controller (Joystick/RC) state
+	transition_result_t set_main_state_from_controller(const vehicle_status_s &status, bool *changed,
+			const bool &first_time_rc);
 
 	bool shutdown_if_allowed();
 
@@ -248,6 +249,7 @@ private:
 		(ParamInt<px4::params::COM_RC_IN_MODE>) _param_rc_in_off,
 		(ParamInt<px4::params::COM_RC_ARM_HYST>) _param_rc_arm_hyst,
 		(ParamFloat<px4::params::COM_RC_STICK_OV>) _param_com_rc_stick_ov,
+		(ParamInt<px4::params::RC_MAP_FLTM_BTN>) _param_rc_map_flightmode_buttons,
 
 		(ParamInt<px4::params::COM_FLTMODE1>) _param_fltmode_1,
 		(ParamInt<px4::params::COM_FLTMODE2>) _param_fltmode_2,
@@ -383,6 +385,7 @@ private:
 	uint8_t		_last_manual_control_setpoint_arm_switch{0};
 	uint32_t	_stick_off_counter{0};
 	uint32_t	_stick_on_counter{0};
+	bool 		_user_changed_mode{false};
 
 	hrt_abstime	_boot_timestamp{0};
 	hrt_abstime	_last_disarmed_timestamp{0};
