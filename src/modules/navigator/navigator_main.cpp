@@ -243,11 +243,8 @@ Navigator::run()
 
 			if (_custom_action.timer_started && _custom_action_ack_last_time > 0) {
 				if ((hrt_absolute_time() - _custom_action_ack_last_time) < 1500000) {
-					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
-						_in_custom_action = true;
-
-					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
-						   && !_custom_action_timeout) {
+					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
+					    && !_custom_action_timeout) {
 						// This makes sure that the info is only printed once, even if multiple ACCEPTED ACKs are received
 						if (_custom_action.id != -1) {
 							mavlink_log_info(get_mavlink_log_pub(), "Custom action #%u finished successfully. Continuing mission...",
@@ -300,7 +297,7 @@ Navigator::run()
 			_reset_custom_action = false;
 		}
 
-		if (_in_custom_action && _custom_action.timer_started
+		if (_custom_action.timer_started && _custom_action.start_time > 0
 		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout && _custom_action.timeout > 0) {
 			mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u timed out. Continuing mission...",
 					    _custom_action.id);
@@ -1659,7 +1656,8 @@ Navigator::reset_custom_action()
 
 	// reset custom action timer
 	_custom_action.timer_started = false;
-	_custom_action.start_time = 0;
+	_custom_action.start_time = -1;
+	_custom_action.timeout = -1;
 
 	_in_custom_action = false;
 	_reset_custom_action = true;
