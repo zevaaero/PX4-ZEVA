@@ -51,6 +51,7 @@ px4_add_module(
 		mag_calibration.cpp
 		rc_calibration.cpp
 		state_machine_helper.cpp
+		lm_fit.cpp
 	DEPENDS
 		circuit_breaker
 		failure_detector
@@ -67,4 +68,4 @@ if(PX4_TESTING)
 	add_subdirectory(commander_tests)
 endif()
 
-px4_add_unit_gtest(SRC mag_calibration_test.cpp LINKLIBS mathlib)
+px4_add_unit_gtest(SRC mag_calibration_test.cpp LINKLIBS modules__commander)
