@@ -20,3 +20,5 @@ uint8 MAIN_STATE_AUTO_VTOL_TAKEOFF = 15
 uint8 MAIN_STATE_MAX                = 16
 
 uint8 main_state		    	# main state machine
+
+uint16 main_state_changes
