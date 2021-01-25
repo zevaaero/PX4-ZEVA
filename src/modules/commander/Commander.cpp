@@ -845,10 +845,8 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 			}
 
 			if ((arming_ret != TRANSITION_DENIED) && (main_ret != TRANSITION_DENIED)) {
-
 				if (main_ret == TRANSITION_CHANGED) {
 					_user_changed_mode = true;
-
 				}
 
 				cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
@@ -2967,7 +2965,6 @@ Commander::control_status_leds(vehicle_status_s *status_local, const actuator_ar
 transition_result_t
 Commander::set_main_state(const vehicle_status_s &status_local, bool *changed, const bool &first_time_rc)
 {
-
 	if (_safety.override_available && _safety.override_enabled) {
 		return set_main_state_override_on(status_local, changed);
 
@@ -2997,13 +2994,11 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 	// we want to allow rc mode change to take precidence.  This is a safety
 	// feature, just in case offboard control goes crazy.
 
-	const bool is_mavlink_joystick = _manual_control_setpoint.data_source > manual_control_setpoint_s::SOURCE_RC;
-
 	const bool altitude_got_valid = (!_last_condition_local_altitude_valid && status_flags.condition_local_altitude_valid);
 	const bool lpos_got_valid = (!_last_condition_local_position_valid && status_flags.condition_local_position_valid);
 	const bool gpos_got_valid = (!_last_condition_global_position_valid && status_flags.condition_global_position_valid);
-	const bool manual_control_values_updated = (_last_manual_control_setpoint.timestamp !=
-			_manual_control_setpoint.timestamp);
+	const bool manual_control_values_updated =
+		(_last_manual_control_setpoint.timestamp != _manual_control_setpoint.timestamp);
 	const bool some_switch_changed =
 		(_last_manual_control_setpoint.offboard_switch != _manual_control_setpoint.offboard_switch)
 		|| (_last_manual_control_setpoint.return_switch != _manual_control_setpoint.return_switch)
@@ -3026,7 +3021,7 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 	// if _user_changed_mode is set means that we have received a mavlink command to change the mode (e.g VEHICLE_CMD_DO_SET_MODE)
 	// thus we no longer need to try to initialize the system with a flight mode
 	_user_changed_mode |= some_switch_changed;
-
+	const bool is_mavlink_joystick = _manual_control_setpoint.data_source > manual_control_setpoint_s::SOURCE_RC;
 	const bool controler_uses_mode_buttons = is_mavlink_joystick || (_param_rc_map_flightmode_buttons.get() > 0);
 
 	// Joysticks that use MAVLink commands assigned to buttons or RCs with toggle buttons (RC_MAP_FLTM_BTN)
@@ -3034,16 +3029,14 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 	// To avoid having the vehicle initialized to manual, we try to initialize the system to Position.
 	// The attempt to switch to Position should only occur while the vehicle is disarmed and the user did not explicity command
 	// a different flight mode.
-
-	const bool should_initialize_mode = controler_uses_mode_buttons && (altitude_got_valid || lpos_got_valid
-					    || gpos_got_valid)
-					    && !armed.armed && !_user_changed_mode && !(_internal_state.main_state == commander_state_s::MAIN_STATE_POSCTL);
+	const bool should_initialize_mode = controler_uses_mode_buttons
+					    && (altitude_got_valid || lpos_got_valid || gpos_got_valid)
+					    && !armed.armed && !_user_changed_mode;
 
 	if (should_initialize_mode) {
 		reset_posvel_validity(changed);
 		res = try_mode_change(commander_state_s::MAIN_STATE_POSCTL, true, false);
 		return res;
-
 	}
 
 	if (!should_evaluate_rc_mode_switch) {
@@ -3057,7 +3050,6 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 
 	/* offboard switch overrides main switch */
 	if (_manual_control_setpoint.offboard_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-
 		res = try_mode_change(commander_state_s::MAIN_STATE_OFFBOARD, false, true);
 
 		if (res != TRANSITION_DENIED) {
@@ -3068,7 +3060,6 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 
 	/* RTL switch overrides main switch */
 	if (_manual_control_setpoint.return_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-
 		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_RTL, true, true);
 
 		if (res != TRANSITION_DENIED) {
@@ -3081,7 +3072,6 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 
 	/* Loiter switch overrides main switch */
 	if (_manual_control_setpoint.loiter_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-
 		res = try_mode_change(commander_state_s::MAIN_STATE_AUTO_LOITER, false, true);
 
 		if (res != TRANSITION_DENIED) {
@@ -3183,7 +3173,6 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 
 	case manual_control_setpoint_s::SWITCH_POS_MIDDLE:		// ASSIST
 		if (_manual_control_setpoint.posctl_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
-
 			res = try_mode_change(commander_state_s::MAIN_STATE_POSCTL, false, true);
 
 			if (res != TRANSITION_DENIED) {
