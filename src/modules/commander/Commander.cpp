@@ -2338,8 +2338,7 @@ Commander::run()
 			}
 
 			/* evaluate the main state machine according to mode switches */
-			bool first_rc_eval = (_last_manual_control_setpoint.timestamp == 0) && (_manual_control_setpoint.timestamp > 0);
-			transition_result_t main_res = set_main_state(status, &_status_changed, first_rc_eval);
+			transition_result_t main_res = set_main_state(status, &_status_changed);
 
 			_last_manual_control_setpoint = _manual_control_setpoint;
 
@@ -2349,7 +2348,9 @@ Commander::run()
 			_last_condition_global_position_valid = status_flags.condition_global_position_valid;
 
 			/* play tune on mode change only if armed, blink LED always */
-			if (main_res == TRANSITION_CHANGED || first_rc_eval) {
+			const bool first_time_rc = (_last_manual_control_setpoint.timestamp == 0) && (_manual_control_setpoint.timestamp > 0);
+
+			if (main_res == TRANSITION_CHANGED || first_time_rc) {
 				tune_positive(armed.armed);
 				_status_changed = true;
 
@@ -2963,13 +2964,13 @@ Commander::control_status_leds(vehicle_status_s *status_local, const actuator_ar
 }
 
 transition_result_t
-Commander::set_main_state(const vehicle_status_s &status_local, bool *changed, const bool &first_time_rc)
+Commander::set_main_state(const vehicle_status_s &status_local, bool *changed)
 {
 	if (_safety.override_available && _safety.override_enabled) {
 		return set_main_state_override_on(status_local, changed);
 
 	} else {
-		return set_main_state_from_controller(status_local, changed, first_time_rc);
+		return set_main_state_from_controller(status_local, changed);
 	}
 }
 
@@ -2984,8 +2985,7 @@ Commander::set_main_state_override_on(const vehicle_status_s &status_local, bool
 }
 
 transition_result_t
-Commander::set_main_state_from_controller(const vehicle_status_s &status_local, bool *changed,
-		const bool &first_time_rc)
+Commander::set_main_state_from_controller(const vehicle_status_s &status_local, bool *changed)
 {
 	/* set main state according to RC switches or initialize mode for vehicles that rely on a joystick */
 	transition_result_t res = TRANSITION_DENIED;
@@ -2993,7 +2993,7 @@ Commander::set_main_state_from_controller(const vehicle_status_s &status_local, 
 	// Note: even if status_flags.offboard_control_set_by_command is set
 	// we want to allow rc mode change to take precidence.  This is a safety
 	// feature, just in case offboard control goes crazy.
-
+	const bool first_time_rc = (_last_manual_control_setpoint.timestamp == 0) && (_manual_control_setpoint.timestamp > 0);
 	const bool altitude_got_valid = (!_last_condition_local_altitude_valid && status_flags.condition_local_altitude_valid);
 	const bool lpos_got_valid = (!_last_condition_local_position_valid && status_flags.condition_local_position_valid);
 	const bool gpos_got_valid = (!_last_condition_global_position_valid && status_flags.condition_global_position_valid);
