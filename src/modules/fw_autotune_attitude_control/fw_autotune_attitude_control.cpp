@@ -42,9 +42,10 @@
 using namespace matrix;
 using namespace time_literals;
 
-FwAutotuneAttitudeControl::FwAutotuneAttitudeControl() :
+FwAutotuneAttitudeControl::FwAutotuneAttitudeControl(bool is_vtol) :
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
+	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default),
+	_actuator_controls_sub(this, is_vtol ? ORB_ID(actuator_controls_1) : ORB_ID(actuator_controls_0))
 {
 	reset();
 }
@@ -479,7 +480,15 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 
 int FwAutotuneAttitudeControl::task_spawn(int argc, char *argv[])
 {
-	FwAutotuneAttitudeControl *instance = new FwAutotuneAttitudeControl();
+	bool is_vtol = false;
+
+	if (argc > 1) {
+		if (strcmp(argv[1], "vtol") == 0) {
+			is_vtol = true;
+		}
+	}
+
+	FwAutotuneAttitudeControl *instance = new FwAutotuneAttitudeControl(is_vtol);
 
 	if (instance) {
 		_object.store(instance);

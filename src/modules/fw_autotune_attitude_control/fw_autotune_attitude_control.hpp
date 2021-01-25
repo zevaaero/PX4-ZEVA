@@ -64,7 +64,7 @@ class FwAutotuneAttitudeControl : public ModuleBase<FwAutotuneAttitudeControl>, 
 	public px4::WorkItem
 {
 public:
-	FwAutotuneAttitudeControl();
+	FwAutotuneAttitudeControl(bool is_vtol);
 	~FwAutotuneAttitudeControl() override;
 
 	/** @see ModuleBase */
@@ -98,7 +98,7 @@ private:
 
 	const matrix::Vector3f getIdentificationSignal();
 
-	uORB::SubscriptionCallbackWorkItem _actuator_controls_sub{this, ORB_ID(actuator_controls_0)};
+	uORB::SubscriptionCallbackWorkItem _actuator_controls_sub;
 	uORB::SubscriptionCallbackWorkItem _parameter_update_sub{this, ORB_ID(parameter_update)};
 
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
