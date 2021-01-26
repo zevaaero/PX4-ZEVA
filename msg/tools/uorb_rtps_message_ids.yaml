@@ -321,6 +321,8 @@ rtps:
     id: 154
   - msg: mag_worker_data
     id: 155
+  - msg: takeoff_status
+    id: 156
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 170
