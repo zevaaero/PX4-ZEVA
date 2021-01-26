@@ -96,15 +96,16 @@ jobs:
       run: 'git config --global url."https://github.com/".insteadof git@github.com:'
     - name: get submodules
       run: 'git submodule update --init --recursive'
-    - name: microRTPS agent
+    - name: microRTPS agent and system_monitord
       run: |
         make px4_sitl_rtps
-        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/micrortps_agent.git
-        if git show-ref --quiet refs/heads/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
         git config --global user.name "auterion-ci"
         git config --global user.email "ci@auterion.com"
-        cp -R build/px4_sitl_rtps/src/modules/micrortps_bridge/micrortps_agent/* micrortps_agent
+        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/micrortps_agent.git
         cd micrortps_agent
+        git fetch
+        if git rev-parse --verify origin/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
+        cp -R ../build/px4_sitl_rtps/src/modules/micrortps_bridge/micrortps_agent/* .
         git status
         git add src
         git commit -a -m "Update microRTPS agent source code `date`" || true
@@ -115,6 +116,21 @@ jobs:
         git push -u origin HEAD:$GITHUB_HEAD_REF || true
         cd ..
         rm -rf micrortps_agent
+        sed -i -e 's/  - msg: onboard_computer_status/  - msg: onboard_computer_status\n    send: true/' msg/tools/uorb_rtps_message_ids.yaml
+        make clean
+        make px4_sitl_rtps
+        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/system_monitord.git
+        cd system_monitord
+        git fetch
+        if git rev-parse --verify origin/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
+        cp -R ../build/px4_sitl_rtps/src/modules/micrortps_bridge/micrortps_agent/src/onboard_computer_status*.cpp src/rtps/
+        cp -R ../build/px4_sitl_rtps/src/modules/micrortps_bridge/micrortps_agent/src/onboard_computer_status*.h include/rtps/
+        git status
+        git add .
+        git commit -a -m "Update onboard_computer_status RTPS source code `date`" || true
+        git push -u origin HEAD:$GITHUB_HEAD_REF || true
+        cd ..
+        rm -rf system_monitord
 
   ROS_msgs:
     runs-on: ubuntu-latest
@@ -132,11 +148,12 @@ jobs:
     - name: PX4 ROS msgs
       run: |
         git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_msgs.git
-        if git show-ref --quiet refs/heads/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
         git config --global user.name "auterion-ci"
         git config --global user.email "ci@auterion.com"
-        python3 msg/tools/uorb_to_ros_msgs.py msg/ px4_msgs/msg/
         cd px4_msgs
+        git fetch
+        if git rev-parse --verify origin/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
+        python3 ../msg/tools/uorb_to_ros_msgs.py ../msg/ msg/
         git status
         git add .
         git commit -a -m "Update message definitions `date`" || true
@@ -160,11 +177,12 @@ jobs:
     - name: PX4 ROS2 bridge
       run: |
         git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_ros_com.git
-        if git show-ref --quiet refs/heads/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
         git config --global user.name "auterion-ci"
         git config --global user.email "ci@auterion.com"
-        ./msg/tools/uorb_to_ros_rtps_ids.py -i msg/tools/uorb_rtps_message_ids.yaml -o px4_ros_com/templates/uorb_rtps_message_ids.yaml
         cd px4_ros_com
+        git fetch
+        if git rev-parse --verify origin/$GITHUB_HEAD_REF; then git checkout $GITHUB_HEAD_REF; else git checkout -b $GITHUB_HEAD_REF; fi
+        python3 ../msg/tools/uorb_to_ros_rtps_ids.py -i ../msg/tools/uorb_rtps_message_ids.yaml -o templates/uorb_rtps_message_ids.yaml
         git status
         git add .
         git commit -a -m "Update uORB RTPS ID map `date`" || true
