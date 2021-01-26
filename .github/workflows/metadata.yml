@@ -96,7 +96,7 @@ jobs:
       run: 'git config --global url."https://github.com/".insteadof git@github.com:'
     - name: get submodules
       run: 'git submodule update --init --recursive'
-    - name: microRTPS agent and system_monitord
+    - name: microRTPS agent deploy
       run: |
         make px4_sitl_rtps
         git config --global user.name "auterion-ci"
@@ -116,9 +116,28 @@ jobs:
         git push -u origin HEAD:$GITHUB_HEAD_REF || true
         cd ..
         rm -rf micrortps_agent
+
+  system_monitord:
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-base-bionic:2020-11-12
+    steps:
+    - uses: actions/checkout@v1
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
+    - name: system_monitord RTPS code deploy
+      run: |
         sed -i -e 's/  - msg: onboard_computer_status/  - msg: onboard_computer_status\n    send: true/' msg/tools/uorb_rtps_message_ids.yaml
-        make clean
         make px4_sitl_rtps
+        git config --global user.name "auterion-ci"
+        git config --global user.email "ci@auterion.com"
         git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/system_monitord.git
         cd system_monitord
         git fetch
@@ -145,7 +164,7 @@ jobs:
       run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
     - name: tell git to use https instead of ssh whenever it encounters it
       run: 'git config --global url."https://github.com/".insteadof git@github.com:'
-    - name: PX4 ROS msgs
+    - name: PX4 ROS msgs (px4_msgs) deploy
       run: |
         git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_msgs.git
         git config --global user.name "auterion-ci"
@@ -174,7 +193,7 @@ jobs:
       run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
     - name: tell git to use https instead of ssh whenever it encounters it
       run: 'git config --global url."https://github.com/".insteadof git@github.com:'
-    - name: PX4 ROS2 bridge
+    - name: PX4 ROS2 bridge (px4_ros_com) deploy
       run: |
         git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_ros_com.git
         git config --global user.name "auterion-ci"
