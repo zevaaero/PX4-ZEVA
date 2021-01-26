@@ -2313,46 +2313,48 @@ Mavlink::task_main(int argc, char *argv[])
 
 
 		// vehicle_command
-		const unsigned last_generation = cmd_sub.get_last_generation();
-		vehicle_command_s vehicle_cmd;
+		while (cmd_sub.updated()) {
+			vehicle_command_s vehicle_cmd;
+			const unsigned last_generation = cmd_sub.get_last_generation();
 
-		if (cmd_sub.update(&vehicle_cmd)) {
+			if (cmd_sub.update(&vehicle_cmd)) {
 
-			if (cmd_sub.get_last_generation() != last_generation + 1) {
-				PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, cmd_sub.get_last_generation());
-			}
-
-			if ((vehicle_cmd.command == vehicle_command_s::VEHICLE_CMD_CONTROL_HIGH_LATENCY) &&
-			    (_mode == MAVLINK_MODE_IRIDIUM)) {
-				if (vehicle_cmd.param1 > 0.5f) {
-					if (!_transmitting_enabled) {
-						mavlink_log_info(&_mavlink_log_pub, "Enable transmitting with IRIDIUM mavlink on device %s by command",
-								 _device_name);
-					}
-
-					_transmitting_enabled = true;
-					_transmitting_enabled_commanded = true;
-
-				} else {
-					if (_transmitting_enabled) {
-						mavlink_log_info(&_mavlink_log_pub, "Disable transmitting with IRIDIUM mavlink on device %s by command",
-								 _device_name);
-					}
-
-					_transmitting_enabled = false;
-					_transmitting_enabled_commanded = false;
+				if (cmd_sub.get_last_generation() != last_generation + 1) {
+					PX4_ERR("vehicle_command lost, generation %d -> %d", last_generation, cmd_sub.get_last_generation());
 				}
 
-				// send positive command ack
-				vehicle_command_ack_s command_ack{};
-				command_ack.timestamp = vehicle_cmd.timestamp;
-				command_ack.command = vehicle_cmd.command;
-				command_ack.result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
-				command_ack.from_external = !vehicle_cmd.from_external;
-				command_ack.target_system = vehicle_cmd.source_system;
-				command_ack.target_component = vehicle_cmd.source_component;
+				if ((vehicle_cmd.command == vehicle_command_s::VEHICLE_CMD_CONTROL_HIGH_LATENCY) &&
+				    (_mode == MAVLINK_MODE_IRIDIUM)) {
+					if (vehicle_cmd.param1 > 0.5f) {
+						if (!_transmitting_enabled) {
+							mavlink_log_info(&_mavlink_log_pub, "Enable transmitting with IRIDIUM mavlink on device %s by command",
+									 _device_name);
+						}
 
-				command_ack_pub.publish(command_ack);
+						_transmitting_enabled = true;
+						_transmitting_enabled_commanded = true;
+
+					} else {
+						if (_transmitting_enabled) {
+							mavlink_log_info(&_mavlink_log_pub, "Disable transmitting with IRIDIUM mavlink on device %s by command",
+									 _device_name);
+						}
+
+						_transmitting_enabled = false;
+						_transmitting_enabled_commanded = false;
+					}
+
+					// send positive command ack
+					vehicle_command_ack_s command_ack{};
+					command_ack.timestamp = vehicle_cmd.timestamp;
+					command_ack.command = vehicle_cmd.command;
+					command_ack.result = vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED;
+					command_ack.from_external = !vehicle_cmd.from_external;
+					command_ack.target_system = vehicle_cmd.source_system;
+					command_ack.target_component = vehicle_cmd.source_component;
+
+					command_ack_pub.publish(command_ack);
+				}
 			}
 		}
 
