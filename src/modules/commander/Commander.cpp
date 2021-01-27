@@ -2094,17 +2094,18 @@ Commander::run()
 
 		if ((override_auto_mode || override_offboard_mode) && is_rotary_wing
 		    && !in_low_battery_failsafe && !_geofence_warning_action_on) {
-			const float minimum_stick_deflection = 0.01f * _param_com_rc_stick_ov.get();
+			const float minimum_stick_change = .01f * _param_com_rc_stick_ov.get();
 
-			const bool rpy_deflected = (fabsf(_manual_control_setpoint.x) > minimum_stick_deflection) ||
-						   (fabsf(_manual_control_setpoint.y) > minimum_stick_deflection)
-						   || (fabsf(_manual_control_setpoint.r) > minimum_stick_deflection);
-			const bool throttle_deflected = fabsf(_manual_control_setpoint.z - 0.5f) * 2.f > minimum_stick_deflection;
+			const bool rpy_moved = (fabsf(_manual_control_setpoint.x - _last_manual_control_setpoint.x) > minimum_stick_change)
+					       || (fabsf(_manual_control_setpoint.y - _last_manual_control_setpoint.y) > minimum_stick_change)
+					       || (fabsf(_manual_control_setpoint.r - _last_manual_control_setpoint.r) > minimum_stick_change);
+			const bool throttle_moved =
+				(fabsf(_manual_control_setpoint.z - _last_manual_control_setpoint.z) * 2.f > minimum_stick_change);
 			const bool use_throttle = !(_param_rc_override.get() & OVERRIDE_IGNORE_THROTTLE_BIT);
 
 			// transition to previous state if sticks are touched
 			if (hrt_elapsed_time(&_manual_control_setpoint.timestamp) < 1_s && // don't use uninitialized or old messages
-			    (rpy_deflected || (use_throttle && throttle_deflected))) {
+			    (rpy_moved || (use_throttle && throttle_moved))) {
 				// revert to position control in any case
 				main_state_transition(_status, commander_state_s::MAIN_STATE_POSCTL, _status_flags, &_internal_state);
 				mavlink_log_info(&_mavlink_log_pub, "Pilot took over control using sticks");
