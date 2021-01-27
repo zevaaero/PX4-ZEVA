@@ -254,16 +254,24 @@ Mission::on_active()
 			/* If a custom action exists, set it and make it available to the navigator
 			   main routine */
 
-			if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1 && !_navigator->get_in_custom_action()) {
+			if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1 && !_custom_action_set
+			    && !_navigator->get_in_custom_action()) {
 				custom_action_s custom_action{};
 				custom_action.id = _mission_item.params[0];
 				custom_action.timeout = _mission_item.params[2] * 1000000;
 
 				_navigator->set_custom_action(custom_action);
+				_navigator->set_in_custom_action();
+
+				// This guarantees that each item is verified correctly
+				// and the setup of the custom action execution is done correctly
+				_custom_action_set = true;
 			}
 
 			if (!_navigator->get_in_custom_action()) {
 				/* switch to next waypoint if 'autocontinue' flag set */
+
+				_custom_action_set = false;
 
 				if (!reload_mission_items) {
 					advance_mission();

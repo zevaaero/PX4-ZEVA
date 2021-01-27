@@ -261,15 +261,6 @@ public:
 	void		set_cruising_throttle(float throttle = NAN) { _mission_throttle = throttle; }
 
 	/**
-	 * Get the acceptance radius given the mission item preset radius
-	 *
-	 * @param mission_item_radius the radius to use in case the controller-derived radius is smaller
-	 *
-	 * @return the distance at which the next waypoint should be used
-	 */
-	float		get_acceptance_radius(float mission_item_radius);
-
-	/**
 	 * Get the yaw acceptance given the current mission item
 	 *
 	 * @param mission_item_yaw the yaw to use in case the controller-derived radius is finite
@@ -294,6 +285,7 @@ public:
 	bool 		getMissionLandingInProgress() { return _mission_landing_in_progress; }
 
 	bool			get_in_custom_action() { return _in_custom_action; }
+	void			set_in_custom_action() { _in_custom_action = true; }
 	custom_action_s	get_custom_action() { return _custom_action; }
 	void			set_custom_action(const custom_action_s &custom_action) { _custom_action = custom_action; }
 

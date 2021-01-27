@@ -236,11 +236,8 @@ Navigator::run()
 
 			if (_custom_action.timer_started && _custom_action_ack_last_time > 0) {
 				if ((hrt_absolute_time() - _custom_action_ack_last_time) < 1500000) {
-					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_IN_PROGRESS && !_custom_action_timeout) {
-						_in_custom_action = true;
-
-					} else if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
-						   && !_custom_action_timeout) {
+					if (_vehicle_cmd_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED && !_reset_custom_action
+					    && !_custom_action_timeout) {
 						// This makes sure that the info is only printed once, even if multiple ACCEPTED ACKs are received
 						if (_custom_action.id != -1) {
 							mavlink_log_info(get_mavlink_log_pub(), "Custom action #%u finished successfully. Continuing mission...",
@@ -293,7 +290,7 @@ Navigator::run()
 			_reset_custom_action = false;
 		}
 
-		if (_in_custom_action && _custom_action.timer_started
+		if (_custom_action.timer_started && _custom_action.start_time > 0
 		    && (hrt_absolute_time() - _custom_action.start_time) >= _custom_action.timeout && _custom_action.timeout > 0) {
 			mavlink_log_warning(get_mavlink_log_pub(), "Custom action #%u timed out. Continuing mission...",
 					    _custom_action.id);
@@ -1039,12 +1036,6 @@ Navigator::get_default_acceptance_radius()
 }
 
 float
-Navigator::get_acceptance_radius()
-{
-	return get_acceptance_radius(_param_nav_acc_rad.get());
-}
-
-float
 Navigator::get_default_altitude_acceptance_radius()
 {
 	if (get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
@@ -1175,24 +1166,17 @@ Navigator::get_cruising_throttle()
 }
 
 float
-Navigator::get_acceptance_radius(float mission_item_radius)
+Navigator::get_acceptance_radius()
 {
-	float radius = mission_item_radius;
+	if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+		// return the value specified in the parameter NAV_ACC_RAD
+		return get_default_acceptance_radius();
 
-	// XXX only use navigation capabilities for now
-	// when in fixed wing mode
-	// this might need locking against a commanded transition
-	// so that a stale _vstatus doesn't trigger an accepted mission item.
-
-	const position_controller_status_s &pos_ctrl_status = _position_controller_status_sub.get();
-
-	if (_vstatus.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
-	    && hrt_elapsed_time(&pos_ctrl_status.timestamp) < 5000000
-	    && pos_ctrl_status.acceptance_radius > radius) {
-		radius = pos_ctrl_status.acceptance_radius;
+	} else {
+		// return the max of NAV_ACC_RAD and the controller acceptance radius (e.g. L1 distance)
+		const position_controller_status_s &pos_ctrl_status = _position_controller_status_sub.get();
+		return math::max(pos_ctrl_status.acceptance_radius, get_default_acceptance_radius());
 	}
-
-	return radius;
 }
 
 float
@@ -1642,7 +1626,8 @@ Navigator::reset_custom_action()
 
 	// reset custom action timer
 	_custom_action.timer_started = false;
-	_custom_action.start_time = 0;
+	_custom_action.start_time = -1;
+	_custom_action.timeout = -1;
 
 	_in_custom_action = false;
 	_reset_custom_action = true;

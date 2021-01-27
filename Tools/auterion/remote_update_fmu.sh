@@ -1,13 +1,14 @@
 #!/bin/bash
-# Flash PX4 to a device running Balena in the local network
+# Flash PX4 to a device running AOS in the local network
 if [ "$1" == "-h" ] || [ "$1" == "--help" ] || [ $# -lt 2 ]; then
-	echo "Usage: $0 -f <firmware.px4|.elf> [-c <configuration_dir>] -d <IP/Device> [-p <ssh_port>]"
+	echo "Usage: $0 -f <firmware.px4|.elf> [-c <configuration_dir>] -d <IP/Device> [-u <user>] [-p <ssh_port>]"
 	exit 1
 fi
 
 ssh_port=22
+ssh_user=root
 
-while getopts ":f:c:d:p:" opt; do
+while getopts ":f:c:d:p:u:" opt; do
 	case ${opt} in
 		f )
 			if [ -n "$OPTARG" ]; then
@@ -41,10 +42,17 @@ while getopts ":f:c:d:p:" opt; do
 				exit 1
 			fi
 			;;
+		u )
+			if [ "$OPTARG" ]; then
+				ssh_user="$OPTARG"
+			else
+				echo "ERROR: -u requires a non-empty option argument."
+				exit 1
+			fi
+			;;
 	esac
 done
 
-ssh_user=root
 target_dir=/shared_container_dir/fmu
 
 # create update-dev.tar
@@ -85,5 +93,5 @@ popd &>/dev/null
 rm -rf "$tmp_dir"
 
 # grab status output
-cmd="tail --follow=name $target_dir/update_status 2>/dev/null"
+cmd="tail --follow=name $target_dir/update_status 2>/dev/null || true"
 ssh -t -p $ssh_port $ssh_user@$device "$cmd"
