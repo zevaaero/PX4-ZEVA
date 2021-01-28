@@ -187,7 +187,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 		param_get(param_find("COM_ARM_ARSP_EN"), &max_airspeed_check_en);
 
 		float airspeed_stall = 10.0f;
-		param_get(param_find("ARSP_STALL"), &airspeed_stall);
+		param_get(param_find("ASPD_STALL"), &airspeed_stall);
 
 		const float arming_max_airspeed_allowed = airspeed_stall / 2.0f; // set to half of stall speed
 
