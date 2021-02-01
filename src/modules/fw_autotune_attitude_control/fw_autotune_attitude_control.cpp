@@ -461,10 +461,12 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 	Vector3f rate_sp{};
 
 	if (_state == state::roll) {
-		rate_sp(0) = signal;
+		// Scale the signal such that the attitude controller is
+		// able to cancel it completely at an attitude error of pi/8
+		rate_sp(0) = signal * M_PI_F / (8.f * _param_fw_r_tc.get());
 
 	} else if (_state ==  state::pitch) {
-		rate_sp(1) = signal;
+		rate_sp(1) = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
 
 	} else if (_state ==  state::yaw) {
 		rate_sp(2) = signal;
