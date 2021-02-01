@@ -2,8 +2,7 @@ name: Scheduled deployment of FMU binaries from develop
 
 on:
   schedule:
-    cron:
-    - '0 17 * * *' # every day, by the end of the day, trigger PR (if any changes are detected)
+    - cron: '0 17 * * *' # every day, by the end of the day, trigger PR (if any changes are detected)
 
 jobs:
   build:
