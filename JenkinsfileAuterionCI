@@ -1,21 +1,4 @@
-pipeline
-{
-    agent any
-    options
-    {
-        buildDiscarder(
-            logRotator(
-                numToKeepStr: '10'))
-    }
-    stages {
-        stage("Execute Main") {
-            steps {
-                build job: 'AvionicsMainPipeline', propagate: true, wait: true, parameters: [
-                    string(name: 'BUILD_TYPE', value: 'PULLREQUEST')
-                    ]
-            }
-        }
-    }
+AvionicsRepoPipeline {
 }
 
 
