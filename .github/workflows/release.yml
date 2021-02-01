@@ -48,11 +48,11 @@ jobs:
         make px4_fmu-v3_default
         make px4_fmu-v4_default
         make px4_fmu-v5_default
-        make px4_fmu-v5x_default
         make px4_fmu-v5x_rtps
 
     - name: build zip
       run: zip nuttx-targets.zip build/*/*.elf build/*/*.map build/*/*.px4 build/*/*.bin
+
     - name: Upload NuttX targets artifact
       uses: actions/upload-release-asset@v1.0.1
       env:

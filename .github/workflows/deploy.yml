@@ -26,7 +26,6 @@ jobs:
         make px4_fmu-v3_default
         make px4_fmu-v4_default
         make px4_fmu-v5_default
-        make px4_fmu-v5x_default
         make px4_fmu-v5x_rtps
 
     - name: clone auterion_distro_resin
