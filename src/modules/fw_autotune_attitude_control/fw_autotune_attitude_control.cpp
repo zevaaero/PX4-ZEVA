@@ -379,35 +379,26 @@ bool FwAutotuneAttitudeControl::registerActuatorControlsCallback()
 	return true;
 }
 
-bool FwAutotuneAttitudeControl::areAllSmallerThan(const Vector<float, 5> &vect, float threshold) const
-{
-	return (vect(0) < threshold)
-	       && (vect(1) < threshold)
-	       && (vect(2) < threshold)
-	       && (vect(3) < threshold)
-	       && (vect(4) < threshold);
-}
-
 void FwAutotuneAttitudeControl::copyGains(int index)
 {
 	if (index <= 2) {
-		_rate_p(index) = _piff(0);
-		_rate_i(index) = _piff(1);
-		_rate_ff(index) = _piff(2);
+		_rate_k(index) = _kiff(0);
+		_rate_i(index) = _kiff(1);
+		_rate_ff(index) = _kiff(2);
 		_att_p(index) = _attitude_p;
 	}
 }
 
 bool FwAutotuneAttitudeControl::areGainsGood() const
 {
-	const bool are_positive = _rate_p.min() > 0.f
+	const bool are_positive = _rate_k.min() > 0.f
 				  && _rate_i.min() > 0.f
 				  && _rate_ff.min() > 0.f
 				  && _att_p.min() > 0.f;
 
-	const bool are_small_enough = _rate_p.max() < 0.5f
+	const bool are_small_enough = _rate_k.max() < 0.5f
 				      && _rate_i.max() < 10.f
-				      && _rate_ff.max() < 0.1f
+				      && _rate_ff.max() < 2.f
 				      && _att_p.max() < 12.f;
 
 	return are_positive && are_small_enough;
