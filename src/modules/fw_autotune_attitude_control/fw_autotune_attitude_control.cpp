@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -154,28 +154,30 @@ void FwAutotuneAttitudeControl::Run()
 
 		const Vector3f num(coeff(2), coeff(3), coeff(4));
 		const Vector3f den(1.f, coeff(0), coeff(1));
-		_piff(2) = (1.f + coeff(0) + coeff(1)) / (coeff(2) + coeff(3) + coeff(4)); // inverse of the static gain
-		const Vector3f num_design = num * _piff(2); // PID algorithm design works better with systems having unit static gain
+		_kiff(2) = (1.f + coeff(0) + coeff(1)) / (coeff(2) + coeff(3) + coeff(4)); // inverse of the static gain
+		const Vector3f num_design = num * _kiff(2); // PID algorithm design works better with systems having unit static gain
 		Vector3f kid = pid_design::computePidGmvc(num_design, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
-		_piff(0) = kid(0);
-		_piff(1) = kid(1);
-		_attitude_p = 0.f; // TODO: compute gains
+		_kiff(0) = kid(0);
+		_kiff(1) = kid(1);
+		_attitude_p = 8.f / (M_PI_F * (_kiff(2) + _kiff(0))); // Maximum control power at an attitude error of pi/8
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
-		const Vector3f rate_sp = getIdentificationSignal();
+		const Vector3f &rate_sp = getIdentificationSignal();
 
 		autotune_attitude_control_status_s status{};
 		status.timestamp = now;
 		coeff.copyTo(status.coeff);
 		coeff_var.copyTo(status.coeff_var);
+		status.fitness = _sys_id.getFitness();
 		status.dt_model = _sample_interval_avg;
 		status.innov = _sys_id.getInnovation();
 		status.u_filt = _sys_id.getFilteredInputData();
 		status.y_filt = _sys_id.getFilteredOutputData();
-		status.kc = _piff(0);
-		status.ki = _piff(1);
+		status.kc = _kiff(0);
+		status.ki = _kiff(1);
 		status.kd = kid(2); // FW rate controller has no derivative gain
-		status.kff = _piff(2);
+		status.kff = _kiff(2);
+		status.att_p = _attitude_p;
 		rate_sp.copyTo(status.rate_sp);
 		status.state = static_cast<int>(_state);
 		_autotune_attitude_control_status_pub.publish(status);
@@ -206,6 +208,7 @@ void FwAutotuneAttitudeControl::checkFilters()
 			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
 			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
 			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
+			_sys_id.setFitnessLpfTimeConstant(1.f, _sample_interval_avg);
 		}
 
 		// reset sample interval accumulator
@@ -216,7 +219,7 @@ void FwAutotuneAttitudeControl::checkFilters()
 void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
-	const float converged_thr = 50.f;
+	const float converged_thr = 1.f;
 
 	const float temp[5] = {0.f, 0.f, 0.f, 0.f, 0.f};
 	const Vector<float, 5> sys_id_init(temp);
@@ -251,7 +254,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::roll:
-		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
+		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(0);
 
@@ -277,7 +280,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::pitch:
-		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
+		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(1);
 			_state = state::pitch_pause;
@@ -301,9 +304,9 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::yaw:
-		_state = state::yaw_pause; // TODO: skip yaw tuning for now
+		_state = state::verification; // TODO: skip yaw tuning for now
 
-		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
+		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(2);
 			_state = state::yaw_pause;
@@ -412,8 +415,8 @@ bool FwAutotuneAttitudeControl::areGainsGood() const
 
 void FwAutotuneAttitudeControl::saveGainsToParams()
 {
-	_param_fw_rr_p.set(_rate_p(0));
-	_param_fw_rr_i.set(_rate_i(0));
+	_param_fw_rr_p.set(_rate_k(0));
+	_param_fw_rr_i.set(_rate_k(0) * _rate_i(0));
 	_param_fw_rr_ff.set(_rate_ff(0));
 	_param_fw_r_tc.set(1.f / _att_p(0));
 	_param_fw_rr_p.commit_no_notification();
@@ -421,21 +424,22 @@ void FwAutotuneAttitudeControl::saveGainsToParams()
 	_param_fw_rr_ff.commit_no_notification();
 	_param_fw_r_tc.commit_no_notification();
 
-	_param_fw_pr_p.set(_rate_p(1));
-	_param_fw_pr_i.set(_rate_i(1));
+	_param_fw_pr_p.set(_rate_k(1));
+	_param_fw_pr_i.set(_rate_k(1) * _rate_i(1));
 	_param_fw_pr_ff.set(_rate_ff(1));
 	_param_fw_p_tc.set(1.f / _att_p(1));
 	_param_fw_pr_p.commit_no_notification();
 	_param_fw_pr_i.commit_no_notification();
 	_param_fw_pr_ff.commit_no_notification();
-	_param_fw_p_tc.commit_no_notification();
+	_param_fw_p_tc.commit();
+	/* _param_fw_p_tc.commit_no_notification(); */
 
-	_param_fw_yr_p.set(_rate_p(2));
-	_param_fw_yr_i.set(_rate_i(2));
-	_param_fw_yr_ff.set(_rate_ff(2));
-	_param_fw_yr_p.commit_no_notification();
-	_param_fw_yr_i.commit_no_notification();
-	_param_fw_yr_ff.commit();
+	/* _param_fw_yr_p.set(_rate_k(2)); */
+	/* _param_fw_yr_i.set(_rate_k(2) * _rate_i(2)); */
+	/* _param_fw_yr_ff.set(_rate_ff(2)); */
+	/* _param_fw_yr_p.commit_no_notification(); */
+	/* _param_fw_yr_i.commit_no_notification(); */
+	/* _param_fw_yr_ff.commit(); */
 }
 
 void FwAutotuneAttitudeControl::stopAutotune()

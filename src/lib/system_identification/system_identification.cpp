@@ -59,4 +59,20 @@ void SystemIdentification::update(float u, float y)
 
 	_u_prev = u_lpf;
 	_y_prev = y;
+
+	updateFitness();
+}
+
+void SystemIdentification::updateFitness()
+{
+	const matrix::Vector<float, 5> &diff = _rls.getDiffEstimate();
+	float sum = 0.f;
+
+	for (size_t i = 0; i < 5; i++) {
+		sum += diff(i);
+	}
+
+	if (_dt > FLT_EPSILON) {
+		_fitness_lpf.update(sum / _dt);
+	}
 }
