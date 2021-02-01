@@ -316,7 +316,7 @@ Navigator::run()
 			_custom_action_timeout = true;
 		}
 
-		if (_vehicle_command_sub.updated()) {
+		while (_vehicle_command_sub.updated()) {
 			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
 			vehicle_command_s cmd{};
 			_vehicle_command_sub.copy(&cmd);
