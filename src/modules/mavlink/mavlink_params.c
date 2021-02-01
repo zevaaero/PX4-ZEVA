@@ -188,7 +188,7 @@ PARAM_DEFINE_INT32(MAV_RADIO_TOUT, 25);
  * @group MAVLink
  * @reboot_required true
  */
-PARAM_DEFINE_INT32(MAV_SKN_RTPS, 0);
+PARAM_DEFINE_INT32(MAV_SKN_RTPS, 1);
 
 /**
  * Enable MAVLink forwarding on TELEM2
