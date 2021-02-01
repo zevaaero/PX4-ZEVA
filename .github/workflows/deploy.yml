@@ -1,0 +1,58 @@
+name: Scheduled deployment of FMU binaries from develop
+
+on:
+  schedule:
+    cron:
+    - '0 17 * * *' # every day, by the end of the day, trigger PR (if any changes are detected)
+
+jobs:
+  build:
+   runs-on: ubuntu-latest
+   container: px4io/px4-dev-nuttx-focal:2020-04-01
+   steps:
+    - uses: actions/checkout@v1
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
+
+    - name: make relevant nuttx targets
+      run: |
+        make px4_fmu-v3_default
+        make px4_fmu-v4_default
+        make px4_fmu-v5_default
+        make px4_fmu-v5x_default
+        make px4_fmu-v5x_rtps
+
+    - name: clone auterion_distro_resin
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+        repository: Auterion/auterion_distro_resin
+        path: distro/
+
+    - name: update binaries in AuterionOS
+      id: update_binaries
+      run: |
+        yes | cp -rf build/*/*.px4 distro/src/fmu/binaries/
+        echo "::set-output name=timestamp::$(date)"
+
+    - name: create PR to auterion_distro_resin repo
+      uses: peter-evans/create-pull-request@v3
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: distro/
+        title: "Update FMU binaries to latest develop | ${{ steps.update_binaries.outputs.timestamp }}"
+        body: "Updates FMU binaries from latest APX4 develop build. Created in ${{ steps.update_binaries.outputs.timestamp }}."
+        reviewers: DanielePettenuzzo,QuentinVecchio
+        commit-message: "src: fmu: update binaries to latest develop"
+        author: auterionci <ci@auterion.com>
+        committer: auterionci <ci@auterion.com>
+        base: master
+        branch: pr-update_fmu_binaries_develop
