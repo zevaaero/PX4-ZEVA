@@ -423,4 +423,7 @@ rtps:
   - msg: actuator_controls_5
     id: 202
     alias: actuator_controls
+  - msg: log_message_incoming
+    id: 203
+    alias: log_message
   ########## multi topics: end ##########
