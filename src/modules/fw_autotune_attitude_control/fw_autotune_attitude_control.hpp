@@ -40,6 +40,7 @@
 #pragma once
 
 #include <drivers/drv_hrt.h>
+#include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
 #include <lib/perf/perf_counter.h>
 #include <lib/system_identification/system_identification.hpp>
 #include <px4_platform_common/defines.h>
@@ -152,6 +153,8 @@ private:
 	float _sample_interval_avg{0.01f};
 	float _filter_sample_rate{1.f};
 	bool _are_filters_initialized{false};
+
+	AlphaFilter<float> _signal_filter;
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 

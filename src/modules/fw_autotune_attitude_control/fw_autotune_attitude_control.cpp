@@ -209,6 +209,7 @@ void FwAutotuneAttitudeControl::checkFilters()
 			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
 			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
 			_sys_id.setFitnessLpfTimeConstant(1.f, _sample_interval_avg);
+			_signal_filter.setParameters(_sample_interval_avg, 0.01f);
 		}
 
 		// reset sample interval accumulator
@@ -299,12 +300,14 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
 			_max_steps = 10;
+
+			// reset yaw signal filter states
+			_signal_filter.reset(0.f);
 		}
 
 		break;
 
 	case state::yaw:
-		_state = state::verification; // TODO: skip yaw tuning for now
 
 		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
@@ -469,7 +472,9 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 		rate_sp(1) = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
 
 	} else if (_state ==  state::yaw) {
-		rate_sp(2) = signal;
+		const float signal_pos = math::max(signal, 0.f);
+		rate_sp(2) = signal_pos - _signal_filter.getState();
+		_signal_filter.update(signal_pos);
 	}
 
 	return rate_sp;
