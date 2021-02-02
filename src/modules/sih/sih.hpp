@@ -133,7 +133,8 @@ private:
 	static constexpr hrt_abstime LOOP_INTERVAL = 4000;      // 4ms => 250 Hz real-time
 
 	void init_variables();
-	void init_sensors();
+	void gps_fix();
+	void gps_no_fix();
 	void read_motors();
 	void generate_force_and_torques();
 	void equations_of_motion();
@@ -192,6 +193,8 @@ private:
 	matrix::Matrix3f _Im1;  // inverse of the intertia matrix
 	matrix::Vector3f _mu_I; // NED magnetic field in inertial frame [G]
 
+	int _gps_used;
+
 	// parameters defined in sih_params.c
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::SIH_MASS>) _sih_mass,
@@ -212,6 +215,7 @@ private:
 		(ParamFloat<px4::params::SIH_LOC_H0>) _sih_h0,
 		(ParamFloat<px4::params::SIH_LOC_MU_X>) _sih_mu_x,
 		(ParamFloat<px4::params::SIH_LOC_MU_Y>) _sih_mu_y,
-		(ParamFloat<px4::params::SIH_LOC_MU_Z>) _sih_mu_z
+		(ParamFloat<px4::params::SIH_LOC_MU_Z>) _sih_mu_z,
+		(ParamInt<px4::params::SIH_GPS_USED>) _sih_gps_used
 	)
 };
