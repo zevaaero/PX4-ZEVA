@@ -62,7 +62,7 @@ bool FwAutotuneAttitudeControl::init()
 		return false;
 	}
 
-	_signal_filter.setParameters(100e-3f, 1.f); // runs in the slow 10Hz loop
+	_signal_filter.setParameters(100e-3f, .2f); // runs in the slow 10Hz loop
 
 	return true;
 }
