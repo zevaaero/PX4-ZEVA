@@ -87,4 +87,4 @@ PARAM_DEFINE_FLOAT(FW_AT_SYSID_AMP, 1.0);
  * @value 2 WARNING Apply the new gains in air
  * @group Autotune
  */
-PARAM_DEFINE_INT32(FW_AT_APPLY, 1);
+PARAM_DEFINE_INT32(FW_AT_APPLY, 0);
