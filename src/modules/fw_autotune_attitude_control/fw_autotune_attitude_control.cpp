@@ -427,15 +427,14 @@ void FwAutotuneAttitudeControl::saveGainsToParams()
 	_param_fw_pr_p.commit_no_notification();
 	_param_fw_pr_i.commit_no_notification();
 	_param_fw_pr_ff.commit_no_notification();
-	_param_fw_p_tc.commit();
-	/* _param_fw_p_tc.commit_no_notification(); */
+	_param_fw_p_tc.commit_no_notification();
 
-	/* _param_fw_yr_p.set(_rate_k(2)); */
-	/* _param_fw_yr_i.set(_rate_k(2) * _rate_i(2)); */
-	/* _param_fw_yr_ff.set(_rate_ff(2)); */
-	/* _param_fw_yr_p.commit_no_notification(); */
-	/* _param_fw_yr_i.commit_no_notification(); */
-	/* _param_fw_yr_ff.commit(); */
+	_param_fw_yr_p.set(_rate_k(2));
+	_param_fw_yr_i.set(_rate_k(2) * _rate_i(2));
+	_param_fw_yr_ff.set(_rate_ff(2));
+	_param_fw_yr_p.commit_no_notification();
+	_param_fw_yr_i.commit_no_notification();
+	_param_fw_yr_ff.commit();
 }
 
 void FwAutotuneAttitudeControl::stopAutotune()
