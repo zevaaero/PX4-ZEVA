@@ -477,8 +477,10 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 		_signal_filter.update(signal_scaled);
 
 	} else if (_state ==  state::yaw) {
-		rate_sp(2) = signal - _signal_filter.getState();
-		_signal_filter.update(signal);
+		// Do not send a signal that produces more than a full deflection of the rudder
+		const float signal_scaled = math::min(signal, 1.f / (_param_fw_yr_ff.get() + _param_fw_yr_p.get()));
+		rate_sp(2) = signal_scaled - _signal_filter.getState();
+		_signal_filter.update(signal_scaled);
 	}
 
 	return rate_sp;
