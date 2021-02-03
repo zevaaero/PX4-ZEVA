@@ -154,7 +154,7 @@ private:
 	float _filter_sample_rate{1.f};
 	bool _are_filters_initialized{false};
 
-	AlphaFilter<float> _signal_filter;
+	AlphaFilter<float> _signal_filter; ///< used to create a wash-out filter
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 

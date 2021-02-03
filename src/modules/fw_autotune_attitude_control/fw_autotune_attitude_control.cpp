@@ -62,6 +62,8 @@ bool FwAutotuneAttitudeControl::init()
 		return false;
 	}
 
+	_signal_filter.setParameters(100e-3f, 1.f); // runs in the slow 10Hz loop
+
 	return true;
 }
 
@@ -209,7 +211,6 @@ void FwAutotuneAttitudeControl::checkFilters()
 			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
 			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
 			_sys_id.setFitnessLpfTimeConstant(1.f, _sample_interval_avg);
-			_signal_filter.setParameters(_sample_interval_avg, 0.01f);
 		}
 
 		// reset sample interval accumulator
@@ -250,6 +251,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_max_steps = 10;
 			_signal_sign = 1;
 			_input_scale = 1.f / _param_fw_rr_p.get();
+			_signal_filter.reset(0.f);
 		}
 
 		break;
@@ -276,6 +278,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
 			_max_steps = 10;
+			_signal_filter.reset(0.f);
 		}
 
 		break;
@@ -335,8 +338,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		if ((now - _state_start_time) > 2_s) {
 			if (((_param_fw_at_apply.get() == 1) && !_armed)
 			    || (_param_fw_at_apply.get() == 2)) {
-				// TODO: disable saving gains for now
-				//saveGainsToParams();
+				saveGainsToParams();
 				_state = state::idle;
 				stopAutotune();
 
@@ -446,7 +448,7 @@ void FwAutotuneAttitudeControl::stopAutotune()
 const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 {
 	if (_steps_counter > _max_steps) {
-		_signal_sign = (_signal_sign >= 0) ? -1 : 1;
+		_signal_sign = (_signal_sign == 1) ? 0 : 1;
 		_steps_counter = 0;
 
 		if (_max_steps > 1) {
@@ -466,15 +468,18 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 	if (_state == state::roll) {
 		// Scale the signal such that the attitude controller is
 		// able to cancel it completely at an attitude error of pi/8
-		rate_sp(0) = signal * M_PI_F / (8.f * _param_fw_r_tc.get());
+		const float signal_scaled = signal * M_PI_F / (8.f * _param_fw_r_tc.get());
+		rate_sp(0) = signal_scaled - _signal_filter.getState();
+		_signal_filter.update(signal_scaled);
 
 	} else if (_state ==  state::pitch) {
-		rate_sp(1) = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
+		const float signal_scaled = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
+		rate_sp(1) = signal_scaled - _signal_filter.getState();
+		_signal_filter.update(signal_scaled);
 
 	} else if (_state ==  state::yaw) {
-		const float signal_pos = math::max(signal, 0.f);
-		rate_sp(2) = signal_pos - _signal_filter.getState();
-		_signal_filter.update(signal_pos);
+		rate_sp(2) = signal - _signal_filter.getState();
+		_signal_filter.update(signal);
 	}
 
 	return rate_sp;
