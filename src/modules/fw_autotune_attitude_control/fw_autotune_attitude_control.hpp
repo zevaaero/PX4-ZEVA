@@ -82,6 +82,12 @@ public:
 	int print_status() override;
 
 private:
+	enum Axes : int32_t {
+		roll = (1 << 0),
+		pitch = (1 << 1),
+		yaw = (1 << 2)
+	};
+
 	void Run() override;
 
 	void reset();
@@ -158,6 +164,7 @@ private:
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 
 	DEFINE_PARAMETERS(
+		(ParamInt<px4::params::FW_AT_AXES>) _param_fw_at_axes,
 		(ParamBool<px4::params::FW_AT_START>) _param_fw_at_start,
 		(ParamFloat<px4::params::FW_AT_SYSID_AMP>) _param_fw_at_sysid_amp,
 		(ParamInt<px4::params::FW_AT_APPLY>) _param_fw_at_apply,

@@ -88,3 +88,22 @@ PARAM_DEFINE_FLOAT(FW_AT_SYSID_AMP, 1.0);
  * @group Autotune
  */
 PARAM_DEFINE_INT32(FW_AT_APPLY, 0);
+
+/**
+ * Tuning axes selection
+ *
+ * Defines which axes will be tuned during the auto-tuning sequence
+ *
+ * Set bits in the following positions to enable:
+ * 0 : Roll
+ * 1 : Pitch
+ * 2 : Yaw
+ *
+ * @bit 0 roll
+ * @bit 1 pitch
+ * @bit 2 yaw
+ * @min 1
+ * @max 7
+ * @group Autotune
+ */
+PARAM_DEFINE_INT32(FW_AT_AXES, 3);

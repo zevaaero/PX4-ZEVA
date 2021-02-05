@@ -257,6 +257,11 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::roll:
+		if (!(_param_fw_at_axes.get() & Axes::roll)) {
+			// Should not tune this axis, skip
+			_state = state::roll_pause;
+		}
+
 		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(0);
@@ -284,6 +289,11 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::pitch:
+		if (!(_param_fw_at_axes.get() & Axes::pitch)) {
+			// Should not tune this axis, skip
+			_state = state::pitch_pause;
+		}
+
 		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
 			copyGains(1);
@@ -311,6 +321,10 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::yaw:
+		if (!(_param_fw_at_axes.get() & Axes::yaw)) {
+			// Should not tune this axis, skip
+			_state = state::yaw_pause;
+		}
 
 		if ((_sys_id.getFitness() < converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
@@ -321,7 +335,6 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 		break;
 
-	// fallthrough
 	case state::yaw_pause:
 		_state = state::verification;
 
@@ -396,45 +409,76 @@ void FwAutotuneAttitudeControl::copyGains(int index)
 
 bool FwAutotuneAttitudeControl::areGainsGood() const
 {
-	const bool are_positive = _rate_k.min() > 0.f
-				  && _rate_i.min() > 0.f
-				  && _rate_ff.min() > 0.f
-				  && _att_p.min() > 0.f;
+	bool are_positive = true;
+	bool are_small_enough = true;
 
-	const bool are_small_enough = _rate_k.max() < 0.5f
-				      && _rate_i.max() < 10.f
-				      && _rate_ff.max() < 2.f
-				      && _att_p.max() < 12.f;
+	for (int i = 0; i < 3; i++) {
+		if (((i == 0) && (_param_fw_at_axes.get() & Axes::roll))
+		    || ((i == 1) && (_param_fw_at_axes.get() & Axes::pitch))
+		    || ((i == 2) && (_param_fw_at_axes.get() & Axes::yaw))) {
+			are_positive &= _rate_k(i) > 0.f
+					&& _rate_i(i) > 0.f
+					&& _rate_ff(i) > 0.f;
+
+			are_small_enough &= _rate_k(i) < 0.5f
+					    && _rate_i(i) < 10.f
+					    && _rate_ff(i) < 2.f;
+
+			if (i < 3) {
+				// There is no yaw attitude controller
+				are_positive &=	_att_p(i) > 0.f;
+				are_small_enough &= _att_p(i) < 12.f;
+			}
+		}
+	}
 
 	return are_positive && are_small_enough;
 }
 
 void FwAutotuneAttitudeControl::saveGainsToParams()
 {
-	_param_fw_rr_p.set(_rate_k(0));
-	_param_fw_rr_i.set(_rate_k(0) * _rate_i(0));
-	_param_fw_rr_ff.set(_rate_ff(0));
-	_param_fw_r_tc.set(1.f / _att_p(0));
-	_param_fw_rr_p.commit_no_notification();
-	_param_fw_rr_i.commit_no_notification();
-	_param_fw_rr_ff.commit_no_notification();
-	_param_fw_r_tc.commit_no_notification();
+	if (_param_fw_at_axes.get() & Axes::roll) {
+		_param_fw_rr_p.set(_rate_k(0));
+		_param_fw_rr_i.set(_rate_k(0) * _rate_i(0));
+		_param_fw_rr_ff.set(_rate_ff(0));
+		_param_fw_r_tc.set(1.f / _att_p(0));
+		_param_fw_rr_p.commit_no_notification();
+		_param_fw_rr_i.commit_no_notification();
+		_param_fw_rr_ff.commit_no_notification();
 
-	_param_fw_pr_p.set(_rate_k(1));
-	_param_fw_pr_i.set(_rate_k(1) * _rate_i(1));
-	_param_fw_pr_ff.set(_rate_ff(1));
-	_param_fw_p_tc.set(1.f / _att_p(1));
-	_param_fw_pr_p.commit_no_notification();
-	_param_fw_pr_i.commit_no_notification();
-	_param_fw_pr_ff.commit_no_notification();
-	_param_fw_p_tc.commit_no_notification();
+		if (_param_fw_at_axes.get() == Axes::roll) {
+			_param_fw_r_tc.commit();
 
-	_param_fw_yr_p.set(_rate_k(2));
-	_param_fw_yr_i.set(_rate_k(2) * _rate_i(2));
-	_param_fw_yr_ff.set(_rate_ff(2));
-	_param_fw_yr_p.commit_no_notification();
-	_param_fw_yr_i.commit_no_notification();
-	_param_fw_yr_ff.commit();
+		} else {
+			_param_fw_r_tc.commit_no_notification();
+		}
+	}
+
+	if (_param_fw_at_axes.get() & Axes::pitch) {
+		_param_fw_pr_p.set(_rate_k(1));
+		_param_fw_pr_i.set(_rate_k(1) * _rate_i(1));
+		_param_fw_pr_ff.set(_rate_ff(1));
+		_param_fw_p_tc.set(1.f / _att_p(1));
+		_param_fw_pr_p.commit_no_notification();
+		_param_fw_pr_i.commit_no_notification();
+		_param_fw_pr_ff.commit_no_notification();
+
+		if (!(_param_fw_at_axes.get() & Axes::yaw)) {
+			_param_fw_p_tc.commit();
+
+		} else {
+			_param_fw_p_tc.commit_no_notification();
+		}
+	}
+
+	if (_param_fw_at_axes.get() & Axes::yaw) {
+		_param_fw_yr_p.set(_rate_k(2));
+		_param_fw_yr_i.set(_rate_k(2) * _rate_i(2));
+		_param_fw_yr_ff.set(_rate_ff(2));
+		_param_fw_yr_p.commit_no_notification();
+		_param_fw_yr_i.commit_no_notification();
+		_param_fw_yr_ff.commit();
+	}
 }
 
 void FwAutotuneAttitudeControl::stopAutotune()
