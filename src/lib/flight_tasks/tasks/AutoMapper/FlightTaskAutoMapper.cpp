@@ -190,7 +190,7 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 		}
 
 		_stick_acceleration_xy.generateSetpoints(_sticks.getPositionExpo().slice<2, 1>(0, 0), _yaw, _yaw_setpoint, _position,
-				_deltatime);
+				Vector2f(_velocity_setpoint_feedback), _deltatime);
 		_stick_acceleration_xy.getSetpoints(_land_position, _velocity_setpoint, _acceleration_setpoint);
 
 	} else {
