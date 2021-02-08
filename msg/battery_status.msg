@@ -18,13 +18,15 @@ uint8 BATTERY_SOURCE_EXTERNAL = 1
 uint8 BATTERY_SOURCE_ESCS = 2
 uint8 source				# Battery source
 uint8 priority				# Zero based priority is the connection on the Power Controller V1..Vn AKA BrickN-1
-uint16 capacity				# actual capacity of the battery
+uint16 capacity         		# actual capacity of the battery in mAh
+uint8 model 				# Battery model
+uint8[2] fw_version			# Firmware version,format MAJOR.MINOR where [0] = MAJOR
 uint16 cycle_count			# number of discharge cycles the battery has experienced
 uint16 run_time_to_empty	# predicted remaining battery capacity based on the present rate of discharge in min
 uint16 average_time_to_empty	# predicted remaining battery capacity based on the average rate of discharge in min
-char[16] serial_number      #serial number of the battery pack in ASCII characters
-uint16 manufacture_date		# manufacture date, part of serial number of the battery pack
-uint16 state_of_health		# state of health. FullChargeCapacity/DesignCapacity.
+char[16] serial_number      	# serial number of the battery pack in ASCII characters
+uint16 manufacture_date		# manufacture date, part of serial number of the battery pack. formated as: Day + Month×32 + (Year–1980)×512
+uint16 state_of_health		# state of health. FullChargeCapacity/DesignCapacity, 0-100%.
 uint16 max_error			# max error, expected margin of error in % in the state-of-charge calculation with a range of 1 to 100%
 uint8 id					# ID number of a battery. Should be unique and consistent for the lifetime of a vehicle. 1-indexed.
 uint16 interface_error		# SMBUS interface error counter
@@ -46,15 +48,18 @@ uint8 BATTERY_STATE_CHARGING = 7 # Battery is charging
 uint8 BATTERY_FAULT_NONE = 0
 uint8 BATTERY_FAULT_DEEP_DISCHARGE = 1 # Battery has deep discharged
 uint8 BATTERY_FAULT_SPIKES = 2 # Voltage spikes
-uint8 BATTERY_FAULT_CELL_FAIL= 4 # One or more cells have failed
-uint8 BATTERY_FAULT_OVER_CURRENT = 8 # Over-current
-uint8 BATTERY_FAULT_OVER_TEMPERATURE = 16 # Over-temperature
-uint8 BATTERY_FAULT_UNDER_TEMPERATURE = 32 # Under-temperature fault
-uint8 BATTERY_FAULT_INCOMPATIBLE_VOLTAGE = 64 # Vehicle voltage is not compatible with battery one
+uint8 BATTERY_FAULT_CELL_FAIL= 3 # One or more cells have failed
+uint8 BATTERY_FAULT_OVER_CURRENT = 4 # Over-current
+uint8 BATTERY_FAULT_OVER_TEMPERATURE = 5 # Over-temperature
+uint8 BATTERY_FAULT_UNDER_TEMPERATURE = 6 # Under-temperature fault
+uint8 BATTERY_FAULT_INCOMPATIBLE_VOLTAGE = 7 # Vehicle voltage is not compatible with battery one
+uint8 BATTERY_FAULT_INCOMPATIBLE_FIRMWARE = 8 # Battery firmware is not compatible with current autopilot firmware
+uint8 BATTERY_FAULT_INCOMPATIBLE_MODEL = 9 # Battery model is not supported by the system
 
-uint8 faults # Smart battery supply status/fault flags (bitmask) for health indication.
-uint8 warning    # Current battery warning
-uint8 mode # Battery mode. Note, the normal operation mode
+uint16 faults		# Smart battery supply status/fault flags (bitmask) for health indication.
+uint32 custom_faults 	# Bitmask indicating smart battery internal manufacturer faults, those are not user actionable.
+uint8 warning		# Current battery warning
+uint8 mode 		# Battery mode. Note, the normal operation mode
 
 uint8 BATTERY_MODE_UNKNOWN = 0 # Battery does not support a mode, or if it does, is operational
 uint8 BATTERY_MODE_AUTO_DISCHARGING = 1 # Battery is auto discharging (towards storage level)
