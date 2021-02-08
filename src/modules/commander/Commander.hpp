@@ -348,14 +348,14 @@ private:
 	hrt_abstime	_high_latency_datalink_lost{0};
 
 	int		_last_esc_online_flags{-1};
-	int		_last_esc_failure[esc_status_s::CONNECTED_ESC_MAX] {0};
+	int		_last_esc_failure[esc_status_s::CONNECTED_ESC_MAX] {};
 	bool		_esc_status_was_updated{false};
 
 	uint8_t		_battery_warning{battery_status_s::BATTERY_WARNING_NONE};
 	float		_battery_current{0.0f};
 	uint8_t		_last_connected_batteries{0};
-	uint8_t		_last_battery_fault[battery_status_s::CONNECTED_BATTERIES_MAX];
-	uint8_t		_last_battery_mode[battery_status_s::CONNECTED_BATTERIES_MAX];
+	uint16_t	_last_battery_fault[battery_status_s::CONNECTED_BATTERIES_MAX] {};
+	uint8_t		_last_battery_mode[battery_status_s::CONNECTED_BATTERIES_MAX] {};
 
 	Hysteresis	_auto_disarm_landed{false};
 	Hysteresis	_auto_disarm_killed{false};
