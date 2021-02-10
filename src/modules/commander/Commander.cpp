@@ -4374,28 +4374,33 @@ void Commander::estimator_check(const vehicle_status_flags_s &vstatus_flags)
 				_nav_test_passed = false;
 
 			} else {
-				// if nav status is unconfirmed, confirm yaw angle as passed after 30 seconds or achieving 5 m/s of speed
-				const bool sufficient_time = (hrt_elapsed_time(&_time_at_takeoff) > 30_s);
-				const bool sufficient_speed = (lpos.vx * lpos.vx + lpos.vy * lpos.vy > 25.0f);
+				if (!_nav_test_passed) {
+					// Both test ratios need to pass/fail together to change the nav test status
+					const bool innovation_pass = (estimator_status.vel_test_ratio < 1.0f) && (estimator_status.pos_test_ratio < 1.0f)
+								     && (estimator_status.vel_test_ratio > FLT_EPSILON) && (estimator_status.pos_test_ratio > FLT_EPSILON);
+					const bool innovation_fail = (estimator_status.vel_test_ratio >= 1.0f) && (estimator_status.pos_test_ratio >= 1.0f);
 
-				bool innovation_pass = estimator_status.vel_test_ratio < 1.0f && estimator_status.pos_test_ratio < 1.0f;
+					if (innovation_pass) {
+						_time_last_innov_pass = hrt_absolute_time();
 
-				if (!_nav_test_failed) {
-					if (!_nav_test_passed) {
-						// pass if sufficient time or speed
-						if (sufficient_time || sufficient_speed) {
+						// if nav status is unconfirmed, confirm yaw angle as passed after 30 seconds or achieving 5 m/s of speed
+						const bool sufficient_time = (_time_at_takeoff != 0) && (hrt_elapsed_time(&_time_at_takeoff) > 30_s);
+						const bool sufficient_speed = matrix::Vector2f(lpos.vx, lpos.vy).longerThan(5.f);
+
+						// Even if the test already failed, allow it to pass if it did not fail during the last 10 seconds
+						if (hrt_elapsed_time(&_time_last_innov_fail) > 10_s
+						    && (sufficient_time || sufficient_speed)) {
 							_nav_test_passed = true;
+							_nav_test_failed = false;
 						}
 
-						// record the last time the innovation check passed
-						if (innovation_pass) {
-							_time_last_innov_pass = hrt_absolute_time();
-						}
+					} else if (innovation_fail) {
+						_time_last_innov_fail = hrt_absolute_time();
 
-						// if the innovation test has failed continuously, declare the nav as failed
-						if (hrt_elapsed_time(&_time_last_innov_pass) > 1_s) {
+						if (!_nav_test_failed && hrt_elapsed_time(&_time_last_innov_pass) > 1_s) {
+							// if the innovation test has failed continuously, declare the nav as failed
 							_nav_test_failed = true;
-							mavlink_log_emergency(&mavlink_log_pub, "Critical navigation failure! Check sensor calibration");
+							mavlink_log_emergency(&mavlink_log_pub, "Navigation failure! Recalibrate sensors");
 						}
 					}
 				}
