@@ -428,4 +428,10 @@ rtps:
   - msg: log_message_incoming
     id: 203
     alias: log_message
+  - msg: actuator_controls_status_0
+    id: 204
+    alias: actuator_controls_status
+  - msg: actuator_controls_status_1
+    id: 205
+    alias: actuator_controls_status
   ########## multi topics: end ##########
