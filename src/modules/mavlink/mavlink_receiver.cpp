@@ -526,7 +526,26 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 		// do not check the return value of the uORB copy above because the module
 		// starts publishing only when ATUNE_START is set
 		if (status.state == autotune_attitude_control_status_s::STATE_IDLE) {
-			param_t atune_start = param_find("ATUNE_START");
+			vehicle_status_s vehicle_status{};
+			_vehicle_status_sub.copy(&vehicle_status);
+
+			param_t atune_start;
+
+			switch (vehicle_status.vehicle_type) {
+			case vehicle_status_s::VEHICLE_TYPE_FIXED_WING:
+				atune_start = param_find("FW_AT_START");
+
+				break;
+
+			case vehicle_status_s::VEHICLE_TYPE_ROTARY_WING:
+				atune_start = param_find("ATUNE_START");
+
+				break;
+
+			default:
+				atune_start = PARAM_INVALID;
+				break;
+			}
 
 			if (atune_start == PARAM_INVALID) {
 				has_module = false;
