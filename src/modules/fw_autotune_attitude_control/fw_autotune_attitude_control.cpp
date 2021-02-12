@@ -40,7 +40,6 @@
 #include "fw_autotune_attitude_control.hpp"
 
 using namespace matrix;
-using namespace time_literals;
 
 FwAutotuneAttitudeControl::FwAutotuneAttitudeControl(bool is_vtol) :
 	ModuleParams(nullptr),
@@ -62,7 +61,7 @@ bool FwAutotuneAttitudeControl::init()
 		return false;
 	}
 
-	_signal_filter.setParameters(100e-3f, .2f); // runs in the slow 10Hz loop
+	_signal_filter.setParameters(_publishing_dt_s, .2f); // runs in the slow publishing loop
 
 	return true;
 }
@@ -146,7 +145,7 @@ void FwAutotuneAttitudeControl::Run()
 			       angular_velocity.xyz[2]);
 	}
 
-	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
+	if (hrt_elapsed_time(&_last_publish) > _publishing_dt_hrt || _last_publish == 0) {
 		updateStateMachine(now);
 
 		Vector<float, 5> coeff = _sys_id.getCoefficients();

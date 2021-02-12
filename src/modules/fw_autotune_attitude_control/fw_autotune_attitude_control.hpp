@@ -60,6 +60,8 @@
 #include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
 
+using namespace time_literals;
+
 class FwAutotuneAttitudeControl : public ModuleBase<FwAutotuneAttitudeControl>, public ModuleParams,
 	public px4::WorkItem
 {
@@ -183,4 +185,7 @@ private:
 		(ParamFloat<px4::params::FW_YR_I>) _param_fw_yr_i,
 		(ParamFloat<px4::params::FW_YR_FF>) _param_fw_yr_ff
 	)
+
+	static constexpr float _publishing_dt_s = 100e-3f;
+	static constexpr hrt_abstime _publishing_dt_hrt = 100_ms;
 };
