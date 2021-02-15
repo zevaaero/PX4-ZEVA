@@ -529,30 +529,35 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 			vehicle_status_s vehicle_status{};
 			_vehicle_status_sub.copy(&vehicle_status);
 
-			param_t atune_start;
+			if (!vehicle_status.in_transition_mode) {
+				param_t atune_start;
 
-			switch (vehicle_status.vehicle_type) {
-			case vehicle_status_s::VEHICLE_TYPE_FIXED_WING:
-				atune_start = param_find("FW_AT_START");
+				switch (vehicle_status.vehicle_type) {
+				case vehicle_status_s::VEHICLE_TYPE_FIXED_WING:
+					atune_start = param_find("FW_AT_START");
 
-				break;
+					break;
 
-			case vehicle_status_s::VEHICLE_TYPE_ROTARY_WING:
-				atune_start = param_find("ATUNE_START");
+				case vehicle_status_s::VEHICLE_TYPE_ROTARY_WING:
+					atune_start = param_find("ATUNE_START");
 
-				break;
+					break;
 
-			default:
-				atune_start = PARAM_INVALID;
-				break;
-			}
+				default:
+					atune_start = PARAM_INVALID;
+					break;
+				}
 
-			if (atune_start == PARAM_INVALID) {
-				has_module = false;
+				if (atune_start == PARAM_INVALID) {
+					has_module = false;
+
+				} else {
+					int32_t start = 1;
+					param_set(atune_start, &start);
+				}
 
 			} else {
-				int32_t start = 1;
-				param_set(atune_start, &start);
+				has_module = false;
 			}
 		}
 
