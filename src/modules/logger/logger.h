@@ -312,6 +312,8 @@ private:
 
 	void publish_logger_status();
 
+	void adjust_subscription_updates();
+
 	uint8_t						*_msg_buffer{nullptr};
 	int						_msg_buffer_len{0};
 
