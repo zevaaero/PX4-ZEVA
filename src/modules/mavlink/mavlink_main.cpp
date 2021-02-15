@@ -2368,7 +2368,10 @@ Mavlink::task_main(int argc, char *argv[])
 					msg.result_param2 = command_ack.result_param2;
 					msg.target_system = command_ack.target_system;
 					msg.target_component = command_ack.target_component;
-					current_command_ack = command_ack.command;
+
+					if (command_ack.result == vehicle_command_ack_s::VEHICLE_RESULT_ACCEPTED) {
+						current_command_ack = command_ack.command;
+					}
 
 					// TODO: always transmit the acknowledge once it is only sent over the instance the command is received
 					//bool _transmitting_enabled_temp = _transmitting_enabled;
@@ -2414,10 +2417,9 @@ Mavlink::task_main(int argc, char *argv[])
 
 		/* check for ulog streaming messages */
 		if (_mavlink_ulog) {
-			if (_mavlink_ulog_stop_requested) {
+			if (current_command_ack == vehicle_command_s::VEHICLE_CMD_LOGGING_STOP) {
 				_mavlink_ulog->stop();
 				_mavlink_ulog = nullptr;
-				_mavlink_ulog_stop_requested = false;
 
 			} else {
 				if (current_command_ack == vehicle_command_s::VEHICLE_CMD_LOGGING_START) {

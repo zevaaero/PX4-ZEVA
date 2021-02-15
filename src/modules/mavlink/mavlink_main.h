@@ -488,11 +488,6 @@ public:
 
 		_mavlink_ulog = MavlinkULog::try_start(_datarate, 0.7f, target_system, target_component);
 	}
-	void			request_stop_ulog_streaming()
-	{
-		if (_mavlink_ulog) { _mavlink_ulog_stop_requested = true; }
-	}
-
 
 	void set_uorb_main_fd(int fd, unsigned int interval);
 
@@ -560,8 +555,6 @@ private:
 
 	MavlinkShell		*_mavlink_shell{nullptr};
 	MavlinkULog		*_mavlink_ulog{nullptr};
-
-	volatile bool		_mavlink_ulog_stop_requested{false};
 
 	MAVLINK_MODE 		_mode{MAVLINK_MODE_NORMAL};
 
