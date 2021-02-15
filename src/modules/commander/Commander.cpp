@@ -2762,6 +2762,8 @@ Commander::run()
 		_last_condition_local_position_valid = _status_flags.condition_local_position_valid;
 		_last_condition_global_position_valid = _status_flags.condition_global_position_valid;
 
+		_last_manual_control_setpoint = _manual_control_setpoint;
+
 		arm_auth_update(now, params_updated || param_init_forced);
 
 		px4_indicate_external_reset_lockout(LockoutComponent::Commander, _armed.armed);
