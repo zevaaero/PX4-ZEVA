@@ -323,6 +323,8 @@ rtps:
     id: 155
   - msg: takeoff_status
     id: 156
+  - msg: actuator_controls_status
+    id: 157
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 170
