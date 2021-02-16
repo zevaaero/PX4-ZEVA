@@ -44,7 +44,8 @@ using namespace matrix;
 FwAutotuneAttitudeControl::FwAutotuneAttitudeControl(bool is_vtol) :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default),
-	_actuator_controls_sub(this, is_vtol ? ORB_ID(actuator_controls_1) : ORB_ID(actuator_controls_0))
+	_actuator_controls_sub(this, is_vtol ? ORB_ID(actuator_controls_1) : ORB_ID(actuator_controls_0)),
+	_actuator_controls_status_sub(is_vtol ? ORB_ID(actuator_controls_status_1) : ORB_ID(actuator_controls_status_0))
 {
 	reset();
 }
@@ -101,6 +102,14 @@ void FwAutotuneAttitudeControl::Run()
 
 		if (_vehicle_status_sub.copy(&vehicle_status)) {
 			_armed = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
+		}
+	}
+
+	if (_actuator_controls_status_sub.updated()) {
+		actuator_controls_status_s controls_status;
+
+		if (_actuator_controls_status_sub.copy(&controls_status)) {
+			_control_power = Vector3f(controls_status.control_power);
 		}
 	}
 
@@ -336,29 +345,52 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::yaw_pause:
+		_signal_filter.reset(0.f);
 		_state = state::verification;
 
 	// fallthrough
 	case state::verification:
 		_state = areGainsGood()
-			 ? state::complete
+			 ? state::apply
 			 : state::fail;
 
 		_state_start_time = now;
 		break;
 
+	case state::apply:
+		if ((_param_fw_at_apply.get() == 1) && !_armed) {
+			saveGainsToParams();
+			_state = state::complete;
+
+		} else if (_param_fw_at_apply.get() == 2) {
+			saveGainsToParams();
+			_state = state::test;
+
+		} else {
+			_state = state::complete;
+		}
+
+		_state_start_time = now;
+		break;
+
+	case state::test:
+		if ((now - _state_start_time) < 2_s
+		    && _control_power.longerThan(0.1f)) {
+			_state = state::fail;
+			// TODO:revert gains
+			_state_start_time = now;
+
+		} else if ((now - _state_start_time) > 2_s) {
+			_state = state::complete;
+			_state_start_time = now;
+		}
+
+		break;
+
 	case state::complete:
 		if ((now - _state_start_time) > 2_s) {
-			if (((_param_fw_at_apply.get() == 1) && !_armed)
-			    || (_param_fw_at_apply.get() == 2)) {
-				saveGainsToParams();
-				_state = state::idle;
-				stopAutotune();
-
-			} else if (_param_fw_at_apply.get() == 0) {
-				_state = state::idle;
-				stopAutotune();
-			}
+			_state = state::idle;
+			stopAutotune();
 		}
 
 		break;
@@ -377,7 +409,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	manual_control_setpoint_s manual_control_setpoint{};
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
-	if (_state != state::complete
+	if (_state != state::apply
 	    && _state != state::idle
 	    && (((now - _state_start_time) > 20_s)
 		|| (fabsf(manual_control_setpoint.x) > 0.2f)
@@ -508,24 +540,28 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 
 	Vector3f rate_sp{};
 
-	if (_state == state::roll) {
+	float signal_scaled = 0.f;
+
+	if (_state == state::roll || _state == state::test) {
 		// Scale the signal such that the attitude controller is
 		// able to cancel it completely at an attitude error of pi/8
-		const float signal_scaled = signal * M_PI_F / (8.f * _param_fw_r_tc.get());
+		signal_scaled = signal * M_PI_F / (8.f * _param_fw_r_tc.get());
 		rate_sp(0) = signal_scaled - _signal_filter.getState();
-		_signal_filter.update(signal_scaled);
-
-	} else if (_state ==  state::pitch) {
-		const float signal_scaled = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
-		rate_sp(1) = signal_scaled - _signal_filter.getState();
-		_signal_filter.update(signal_scaled);
-
-	} else if (_state ==  state::yaw) {
-		// Do not send a signal that produces more than a full deflection of the rudder
-		const float signal_scaled = math::min(signal, 1.f / (_param_fw_yr_ff.get() + _param_fw_yr_p.get()));
-		rate_sp(2) = signal_scaled - _signal_filter.getState();
-		_signal_filter.update(signal_scaled);
 	}
+
+	if (_state ==  state::pitch || _state == state::test) {
+		signal_scaled = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
+		rate_sp(1) = signal_scaled - _signal_filter.getState();
+
+	}
+
+	if (_state ==  state::yaw) {
+		// Do not send a signal that produces more than a full deflection of the rudder
+		signal_scaled = math::min(signal, 1.f / (_param_fw_yr_ff.get() + _param_fw_yr_p.get()));
+		rate_sp(2) = signal_scaled - _signal_filter.getState();
+	}
+
+	_signal_filter.update(signal_scaled);
 
 	return rate_sp;
 }
