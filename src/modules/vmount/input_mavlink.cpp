@@ -807,7 +807,7 @@ int InputMavlinkGimbalV2::update_impl(unsigned int timeout_ms, ControlData **con
 						_ack_vehicle_command(&vehicle_command, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED);
 
 					} else {
-						PX4_ERR("GIMBAL_MANAGER_PITCHYAW denied, not in control");
+						PX4_INFO("GIMBAL_MANAGER_PITCHYAW denied, not in control");
 						_ack_vehicle_command(&vehicle_command, vehicle_command_s::VEHICLE_CMD_RESULT_DENIED);
 					}
 
