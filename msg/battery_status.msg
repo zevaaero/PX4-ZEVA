@@ -45,16 +45,15 @@ uint8 BATTERY_WARNING_FAILED = 4	# the battery has failed completely
 uint8 BATTERY_STATE_UNHEALTHY = 6 # Battery is diagnosed to be defective or an error occurred, usage is discouraged / prohibited. Possible causes (faults) are listed in faults field.
 uint8 BATTERY_STATE_CHARGING = 7 # Battery is charging
 
-uint8 BATTERY_FAULT_NONE = 0
-uint8 BATTERY_FAULT_DEEP_DISCHARGE = 1 # Battery has deep discharged
-uint8 BATTERY_FAULT_SPIKES = 2 # Voltage spikes
-uint8 BATTERY_FAULT_CELL_FAIL= 3 # One or more cells have failed
-uint8 BATTERY_FAULT_OVER_CURRENT = 4 # Over-current
-uint8 BATTERY_FAULT_OVER_TEMPERATURE = 5 # Over-temperature
-uint8 BATTERY_FAULT_UNDER_TEMPERATURE = 6 # Under-temperature fault
-uint8 BATTERY_FAULT_INCOMPATIBLE_VOLTAGE = 7 # Vehicle voltage is not compatible with battery one
-uint8 BATTERY_FAULT_INCOMPATIBLE_FIRMWARE = 8 # Battery firmware is not compatible with current autopilot firmware
-uint8 BATTERY_FAULT_INCOMPATIBLE_MODEL = 9 # Battery model is not supported by the system
+uint8 BATTERY_FAULT_DEEP_DISCHARGE = 0 # Battery has deep discharged
+uint8 BATTERY_FAULT_SPIKES = 1 # Voltage spikes
+uint8 BATTERY_FAULT_CELL_FAIL= 2 # One or more cells have failed
+uint8 BATTERY_FAULT_OVER_CURRENT = 3 # Over-current
+uint8 BATTERY_FAULT_OVER_TEMPERATURE = 4 # Over-temperature
+uint8 BATTERY_FAULT_UNDER_TEMPERATURE = 5 # Under-temperature fault
+uint8 BATTERY_FAULT_INCOMPATIBLE_VOLTAGE = 6 # Vehicle voltage is not compatible with battery one
+uint8 BATTERY_FAULT_INCOMPATIBLE_FIRMWARE = 7 # Battery firmware is not compatible with current autopilot firmware
+uint8 BATTERY_FAULT_INCOMPATIBLE_MODEL = 8 # Battery model is not supported by the system
 
 uint16 faults		# Smart battery supply status/fault flags (bitmask) for health indication.
 uint32 custom_faults 	# Bitmask indicating smart battery internal manufacturer faults, those are not user actionable.
