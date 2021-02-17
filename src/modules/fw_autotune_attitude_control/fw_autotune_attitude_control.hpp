@@ -103,6 +103,8 @@ private:
 	void copyGains(int index);
 	bool areGainsGood() const;
 	void saveGainsToParams();
+	void copyParamGainsTo(float backup_gains[11]);
+	void backupParamGains(float backup_gains[11]);
 
 	const matrix::Vector3f getIdentificationSignal();
 
