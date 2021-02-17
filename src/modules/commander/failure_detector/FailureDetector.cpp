@@ -171,7 +171,7 @@ void FailureDetector::updateBatteryStatus(const vehicle_status_s &vehicle_status
 			if (battery_sub.copy(&battery_status)) {
 				// One faulty battery is enough to trigger fault
 				battery_failure = battery_failure || (battery_status.mode != battery_status_s::BATTERY_MODE_UNKNOWN
-								      || battery_status.faults != battery_status_s::BATTERY_FAULT_NONE);
+								      || battery_status.faults > 0);
 
 				if (battery_failure) {
 					break;
