@@ -13,9 +13,9 @@ then
 	if param compare MAV_SKN_RTPS 1
 	then
 		protocol_splitter start /dev/ttyS4
-		mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard -x -z
+		mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z
 		micrortps_client start -d /dev/rtps -b 3000000 -h
 	else
-		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x -z
+		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z
 	fi
 fi
