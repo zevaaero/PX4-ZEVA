@@ -379,8 +379,8 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	if (_state != state::complete
 	    && _state != state::idle
 	    && (((now - _state_start_time) > 20_s)
-		|| (fabsf(manual_control_setpoint.x) > 0.05f)
-		|| (fabsf(manual_control_setpoint.y) > 0.05f))) {
+		|| (fabsf(manual_control_setpoint.x) > 0.2f)
+		|| (fabsf(manual_control_setpoint.y) > 0.2f))) {
 		_state = state::fail;
 		_state_start_time = now;
 	}
