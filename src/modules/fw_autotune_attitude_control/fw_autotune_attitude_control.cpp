@@ -419,7 +419,7 @@ bool FwAutotuneAttitudeControl::areGainsGood() const
 					&& _rate_i(i) > 0.f
 					&& _rate_ff(i) > 0.f;
 
-			are_small_enough &= _rate_k(i) < 0.5f
+			are_small_enough &= _rate_k(i) < 4.0f
 					    && _rate_i(i) < 10.f
 					    && _rate_ff(i) < 2.f;
 
