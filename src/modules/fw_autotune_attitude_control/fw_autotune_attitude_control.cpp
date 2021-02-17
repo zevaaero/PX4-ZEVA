@@ -146,7 +146,7 @@ void FwAutotuneAttitudeControl::Run()
 	}
 
 	if (hrt_elapsed_time(&_last_publish) > _publishing_dt_hrt || _last_publish == 0) {
-		updateStateMachine(now);
+		updateStateMachine(hrt_absolute_time());
 
 		Vector<float, 5> coeff = _sys_id.getCoefficients();
 		coeff(2) *= _input_scale;
