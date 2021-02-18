@@ -48,7 +48,7 @@ px4_add_board(
 		mc_rate_control
 		#micrortps_bridge
 		navigator
-		autotune_attitude_control
+		mc_autotune_attitude_control
 		rc_update
 		replay
 		rover_pos_control

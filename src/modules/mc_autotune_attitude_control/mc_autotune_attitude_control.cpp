@@ -32,12 +32,12 @@
  ****************************************************************************/
 
 /**
- * @file autotune_attitude_control.cpp
+ * @file mc_autotune_attitude_control.cpp
  *
  * @author Mathieu Bresciani <mathieu@auterion.com>
  */
 
-#include "autotune_attitude_control.hpp"
+#include "mc_autotune_attitude_control.hpp"
 
 using namespace matrix;
 using namespace time_literals;
@@ -521,14 +521,14 @@ int McAutotuneAttitudeControl::print_usage(const char *reason)
 
 )DESCR_STR");
 
-	PRINT_MODULE_USAGE_NAME("autotune_attitude_control", "autotune");
+	PRINT_MODULE_USAGE_NAME("mc_autotune_attitude_control", "autotune");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
 	return 0;
 }
 
-extern "C" __EXPORT int autotune_attitude_control_main(int argc, char *argv[])
+extern "C" __EXPORT int mc_autotune_attitude_control_main(int argc, char *argv[])
 {
 	return McAutotuneAttitudeControl::main(argc, argv);
 }

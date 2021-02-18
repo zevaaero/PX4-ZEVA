@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file autotune_attitude_control.hpp
+ * @file mc_autotune_attitude_control.hpp
  *
  * @author Mathieu Bresciani <mathieu@auterion.com>
  */
