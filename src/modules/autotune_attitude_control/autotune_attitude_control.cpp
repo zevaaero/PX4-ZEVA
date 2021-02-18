@@ -112,12 +112,12 @@ void PidAutotuneAngularRate::Run()
 
 	perf_begin(_cycle_perf);
 
-	const hrt_abstime now = controls.timestamp;
+	const hrt_abstime timestamp_sample = controls.timestamp;
 
 	// collect sample interval average for filters
 	if (_last_run > 0) {
 		// Guard against too small (< 0.125ms) and too large (> 20ms) dt's.
-		const float dt = math::constrain(((now - _last_run) * 1e-6f), 0.000125f, 0.02f);
+		const float dt = math::constrain(((timestamp_sample - _last_run) * 1e-6f), 0.000125f, 0.02f);
 		_interval_sum += dt;
 		_interval_count++;
 
@@ -126,7 +126,7 @@ void PidAutotuneAngularRate::Run()
 		_interval_count = 0.f;
 	}
 
-	_last_run = now;
+	_last_run = timestamp_sample;
 
 	checkFilters();
 
@@ -144,6 +144,7 @@ void PidAutotuneAngularRate::Run()
 	}
 
 	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
+		const hrt_abstime now = hrt_absolute_time();
 		updateStateMachine(now);
 
 		Vector<float, 5> coeff = _sys_id.getCoefficients();
