@@ -59,12 +59,12 @@
 #include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
 
-class PidAutotuneAngularRate : public ModuleBase<PidAutotuneAngularRate>, public ModuleParams,
+class McAutotuneAttitudeControl : public ModuleBase<McAutotuneAttitudeControl>, public ModuleParams,
 	public px4::WorkItem
 {
 public:
-	PidAutotuneAngularRate();
-	~PidAutotuneAngularRate() override;
+	McAutotuneAttitudeControl();
+	~McAutotuneAttitudeControl() override;
 
 	/** @see ModuleBase */
 	static int task_spawn(int argc, char *argv[]);
