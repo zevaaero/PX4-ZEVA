@@ -42,19 +42,19 @@
 using namespace matrix;
 using namespace time_literals;
 
-PidAutotuneAngularRate::PidAutotuneAngularRate() :
+McAutotuneAttitudeControl::McAutotuneAttitudeControl() :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
 {
 	reset();
 }
 
-PidAutotuneAngularRate::~PidAutotuneAngularRate()
+McAutotuneAttitudeControl::~McAutotuneAttitudeControl()
 {
 	perf_free(_cycle_perf);
 }
 
-bool PidAutotuneAngularRate::init()
+bool McAutotuneAttitudeControl::init()
 {
 	if (!_parameter_update_sub.registerCallback()) {
 		PX4_ERR("parameter_update callback registration failed!");
@@ -64,11 +64,11 @@ bool PidAutotuneAngularRate::init()
 	return true;
 }
 
-void PidAutotuneAngularRate::reset()
+void McAutotuneAttitudeControl::reset()
 {
 }
 
-void PidAutotuneAngularRate::Run()
+void McAutotuneAttitudeControl::Run()
 {
 	if (should_exit()) {
 		_parameter_update_sub.unregisterCallback();
@@ -180,7 +180,7 @@ void PidAutotuneAngularRate::Run()
 	perf_end(_cycle_perf);
 }
 
-void PidAutotuneAngularRate::checkFilters()
+void McAutotuneAttitudeControl::checkFilters()
 {
 	if (_interval_count > 1000) {
 		// calculate sensor update rate
@@ -207,7 +207,7 @@ void PidAutotuneAngularRate::checkFilters()
 	}
 }
 
-void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
+void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 {
 	// when identifying an axis, check if the estimate has converged
 	const float converged_thr = 50.f;
@@ -354,7 +354,7 @@ void PidAutotuneAngularRate::updateStateMachine(hrt_abstime now)
 	}
 }
 
-bool PidAutotuneAngularRate::registerActuatorControlsCallback()
+bool McAutotuneAttitudeControl::registerActuatorControlsCallback()
 {
 	if (!_actuator_controls_sub.registerCallback()) {
 		PX4_ERR("actuator_controls callback registration failed!");
@@ -364,7 +364,7 @@ bool PidAutotuneAngularRate::registerActuatorControlsCallback()
 	return true;
 }
 
-bool PidAutotuneAngularRate::areAllSmallerThan(const Vector<float, 5> &vect, float threshold) const
+bool McAutotuneAttitudeControl::areAllSmallerThan(const Vector<float, 5> &vect, float threshold) const
 {
 	return (vect(0) < threshold)
 	       && (vect(1) < threshold)
@@ -373,7 +373,7 @@ bool PidAutotuneAngularRate::areAllSmallerThan(const Vector<float, 5> &vect, flo
 	       && (vect(4) < threshold);
 }
 
-void PidAutotuneAngularRate::copyGains(int index)
+void McAutotuneAttitudeControl::copyGains(int index)
 {
 	if (index <= 2) {
 		_rate_k(index) = _kid(0);
@@ -383,7 +383,7 @@ void PidAutotuneAngularRate::copyGains(int index)
 	}
 }
 
-bool PidAutotuneAngularRate::areGainsGood() const
+bool McAutotuneAttitudeControl::areGainsGood() const
 {
 	const bool are_positive = _rate_k.min() > 0.f
 				  && _rate_i.min() > 0.f
@@ -398,7 +398,7 @@ bool PidAutotuneAngularRate::areGainsGood() const
 	return are_positive && are_small_enough;
 }
 
-void PidAutotuneAngularRate::saveGainsToParams()
+void McAutotuneAttitudeControl::saveGainsToParams()
 {
 	_param_mc_rollrate_p.set(1.f);
 	_param_mc_rollrate_k.set(_rate_k(0));
@@ -434,14 +434,14 @@ void PidAutotuneAngularRate::saveGainsToParams()
 	_param_mc_yaw_p.commit();
 }
 
-void PidAutotuneAngularRate::stopAutotune()
+void McAutotuneAttitudeControl::stopAutotune()
 {
 	_param_atune_start.set(false);
 	_param_atune_start.commit();
 	_actuator_controls_sub.unregisterCallback();
 }
 
-const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
+const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 {
 	if (_steps_counter > _max_steps) {
 		_signal_sign = (_signal_sign >= 0) ? -1 : 1;
@@ -474,9 +474,9 @@ const Vector3f PidAutotuneAngularRate::getIdentificationSignal()
 	return rate_sp;
 }
 
-int PidAutotuneAngularRate::task_spawn(int argc, char *argv[])
+int McAutotuneAttitudeControl::task_spawn(int argc, char *argv[])
 {
-	PidAutotuneAngularRate *instance = new PidAutotuneAngularRate();
+	McAutotuneAttitudeControl *instance = new McAutotuneAttitudeControl();
 
 	if (instance) {
 		_object.store(instance);
@@ -497,19 +497,19 @@ int PidAutotuneAngularRate::task_spawn(int argc, char *argv[])
 	return PX4_ERROR;
 }
 
-int PidAutotuneAngularRate::custom_command(int argc, char *argv[])
+int McAutotuneAttitudeControl::custom_command(int argc, char *argv[])
 {
 	return print_usage("unknown command");
 }
 
-int PidAutotuneAngularRate::print_status()
+int McAutotuneAttitudeControl::print_status()
 {
 	perf_print_counter(_cycle_perf);
 
 	return 0;
 }
 
-int PidAutotuneAngularRate::print_usage(const char *reason)
+int McAutotuneAttitudeControl::print_usage(const char *reason)
 {
 	if (reason) {
 		PX4_WARN("%s\n", reason);
@@ -530,5 +530,5 @@ int PidAutotuneAngularRate::print_usage(const char *reason)
 
 extern "C" __EXPORT int autotune_attitude_control_main(int argc, char *argv[])
 {
-	return PidAutotuneAngularRate::main(argc, argv);
+	return McAutotuneAttitudeControl::main(argc, argv);
 }
