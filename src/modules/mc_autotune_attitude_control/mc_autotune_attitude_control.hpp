@@ -157,9 +157,9 @@ private:
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 
 	DEFINE_PARAMETERS(
-		(ParamBool<px4::params::ATUNE_START>) _param_atune_start,
-		(ParamFloat<px4::params::ATUNE_SYSID_AMP>) _param_atune_sysid_amp,
-		(ParamInt<px4::params::ATUNE_APPLY>) _param_atune_apply,
+		(ParamBool<px4::params::MC_AT_START>) _param_mc_at_start,
+		(ParamFloat<px4::params::MC_AT_SYSID_AMP>) _param_mc_at_sysid_amp,
+		(ParamInt<px4::params::MC_AT_APPLY>) _param_mc_at_apply,
 
 		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,
 

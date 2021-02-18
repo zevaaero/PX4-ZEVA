@@ -51,12 +51,12 @@
  * Best is to perform the identification in position or
  * hold mode.
  * Increase the amplitude of the injected signal using
- * ATUNE_SYSID_AMP for more signal/noise ratio
+ * MC_AT_SYSID_AMP for more signal/noise ratio
  *
  * @boolean
  * @group Autotune
  */
-PARAM_DEFINE_INT32(ATUNE_START, 0);
+PARAM_DEFINE_INT32(MC_AT_START, 0);
 
 /**
  * Amplitude of the injected signal
@@ -66,7 +66,7 @@ PARAM_DEFINE_INT32(ATUNE_START, 0);
  * @decimal 1
  * @group Autotune
  */
-PARAM_DEFINE_FLOAT(ATUNE_SYSID_AMP, 1.0);
+PARAM_DEFINE_FLOAT(MC_AT_SYSID_AMP, 1.0);
 
 /**
  * Controls when to apply the new gains
@@ -84,4 +84,4 @@ PARAM_DEFINE_FLOAT(ATUNE_SYSID_AMP, 1.0);
  * @value 2 WARNING Apply the new gains in air
  * @group Autotune
  */
-PARAM_DEFINE_INT32(ATUNE_APPLY, 1);
+PARAM_DEFINE_INT32(MC_AT_APPLY, 1);

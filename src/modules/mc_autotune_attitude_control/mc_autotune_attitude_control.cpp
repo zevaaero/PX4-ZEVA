@@ -214,7 +214,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 	switch (_state) {
 	case state::idle:
-		if (_param_atune_start.get()) {
+		if (_param_mc_at_start.get()) {
 			if (registerActuatorControlsCallback()) {
 				_state = state::init;
 
@@ -316,13 +316,13 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 	case state::complete:
 		if ((now - _state_start_time) > 2_s) {
-			if (((_param_atune_apply.get() == 1) && !_armed)
-			    || (_param_atune_apply.get() == 2)) {
+			if (((_param_mc_at_apply.get() == 1) && !_armed)
+			    || (_param_mc_at_apply.get() == 2)) {
 				saveGainsToParams();
 				_state = state::idle;
 				stopAutotune();
 
-			} else if (_param_atune_apply.get() == 0) {
+			} else if (_param_mc_at_apply.get() == 0) {
 				_state = state::idle;
 				stopAutotune();
 			}
@@ -436,8 +436,8 @@ void McAutotuneAttitudeControl::saveGainsToParams()
 
 void McAutotuneAttitudeControl::stopAutotune()
 {
-	_param_atune_start.set(false);
-	_param_atune_start.commit();
+	_param_mc_at_start.set(false);
+	_param_mc_at_start.commit();
 	_actuator_controls_sub.unregisterCallback();
 }
 
@@ -457,7 +457,7 @@ const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 
 	_steps_counter++;
 
-	const float signal = float(_signal_sign) * _param_atune_sysid_amp.get();
+	const float signal = float(_signal_sign) * _param_mc_at_sysid_amp.get();
 
 	Vector3f rate_sp{};
 

@@ -518,9 +518,9 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 		// if not busy enable via the parameter
 		// do not check the return value of the uORB copy above because the module
-		// starts publishing only when ATUNE_START is set
+		// starts publishing only when MC_AT_START is set
 		if (status.state == autotune_attitude_control_status_s::STATE_IDLE) {
-			param_t atune_start = param_find("ATUNE_START");
+			param_t atune_start = param_find("MC_AT_START");
 
 			if (atune_start == PARAM_INVALID) {
 				has_module = false;
