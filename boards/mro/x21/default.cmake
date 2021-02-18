@@ -71,12 +71,12 @@ px4_add_board(
 		logger
 		mavlink
 		mc_att_control
+		#mc_autotune_attitude_control
 		mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
 		#micrortps_bridge
 		navigator
-		#mc_autotune_attitude_control
 		rc_update
 		rover_pos_control
 		sensors

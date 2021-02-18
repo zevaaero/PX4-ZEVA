@@ -75,6 +75,7 @@ px4_add_board(
 		logger
 		mavlink
 		mc_att_control
+		#mc_autotune_attitude_control
 		mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
@@ -82,7 +83,6 @@ px4_add_board(
 		muorb/krait
 		muorb/test
 		navigator
-		#mc_autotune_attitude_control
 		rc_update
 		rover_pos_control
 		sensors
