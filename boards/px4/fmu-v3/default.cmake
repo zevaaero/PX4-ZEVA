@@ -74,6 +74,7 @@ px4_add_board(
 		events
 		flight_mode_manager
 		fw_att_control
+		fw_autotune_attitude_control
 		fw_pos_control_l1
 		land_detector
 		landing_target_estimator
