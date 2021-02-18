@@ -524,7 +524,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 		// if not busy enable via the parameter
 		// do not check the return value of the uORB copy above because the module
-		// starts publishing only when ATUNE_START is set
+		// starts publishing only when MC_AT_START is set
 		if (status.state == autotune_attitude_control_status_s::STATE_IDLE) {
 			vehicle_status_s vehicle_status{};
 			_vehicle_status_sub.copy(&vehicle_status);
@@ -539,7 +539,7 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 					break;
 
 				case vehicle_status_s::VEHICLE_TYPE_ROTARY_WING:
-					atune_start = param_find("ATUNE_START");
+					atune_start = param_find("MC_AT_START");
 
 					break;
 
