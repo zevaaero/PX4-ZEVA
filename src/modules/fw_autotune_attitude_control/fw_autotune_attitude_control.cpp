@@ -586,6 +586,7 @@ int FwAutotuneAttitudeControl::print_usage(const char *reason)
 
 	PRINT_MODULE_USAGE_NAME("fw_autotune_attitude_control", "autotune");
 	PRINT_MODULE_USAGE_COMMAND("start");
+	PRINT_MODULE_USAGE_ARG("vtol", "VTOL mode", true);
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
 	return 0;
