@@ -28,11 +28,11 @@ px4_add_board(
 		logger
 		mavlink
 		mc_att_control
+		#mc_autotune_attitude_control
 		mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
 		navigator
-		#mc_autotune_attitude_control
 		rc_update
 		sensors
 		#temperature_compensation
