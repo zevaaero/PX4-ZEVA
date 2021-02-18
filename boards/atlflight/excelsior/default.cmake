@@ -79,7 +79,7 @@ px4_add_board(
 		muorb/krait
 		muorb/test
 		navigator
-		#autotune_attitude_control
+		#mc_autotune_attitude_control
 		rc_update
 		rover_pos_control
 		sensors

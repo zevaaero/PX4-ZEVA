@@ -67,7 +67,7 @@ mc_pos_control start
 #
 # Start attitude control auto-tuner
 #
-autotune_attitude_control start
+mc_autotune_attitude_control start
 
 #
 # Start Multicopter Land Detector.

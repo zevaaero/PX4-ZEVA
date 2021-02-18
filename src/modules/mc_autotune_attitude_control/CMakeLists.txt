@@ -38,13 +38,13 @@ px4_add_library(SystemIdentification
 )
 
 px4_add_module(
-	MODULE autotune_attitude_control
-	MAIN autotune_attitude_control
+	MODULE mc_autotune_attitude_control
+	MAIN mc_autotune_attitude_control
 	COMPILE_FLAGS
 		${MAX_CUSTOM_OPT_LEVEL}
 	SRCS
-		autotune_attitude_control.cpp
-		autotune_attitude_control.hpp
+		mc_autotune_attitude_control.cpp
+		mc_autotune_attitude_control.hpp
 	DEPENDS
 		hysteresis
 		mathlib
