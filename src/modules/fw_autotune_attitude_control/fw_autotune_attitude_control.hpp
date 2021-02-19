@@ -103,8 +103,8 @@ private:
 	void copyGains(int index);
 	bool areGainsGood() const;
 	void saveGainsToParams();
-	void copyParamGainsTo(float backup_gains[11]);
-	void backupParamGains(float backup_gains[11]);
+	void backupAndSaveGainsToParams();
+	void revertParamGains();
 
 	const matrix::Vector3f getIdentificationSignal();
 
@@ -152,6 +152,8 @@ private:
 	matrix::Vector3f _att_p{};
 
 	matrix::Vector3f _control_power{};
+
+	bool _gains_backup_available{false}; // true if a backup of the parameters has been done
 
 	/**
 	 * Scale factor applied to the input data to have the same input/output range

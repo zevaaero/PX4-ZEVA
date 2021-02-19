@@ -261,6 +261,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_signal_sign = 1;
 			_input_scale = 1.f / _param_fw_rr_p.get();
 			_signal_filter.reset(0.f);
+			_gains_backup_available = false;
 		}
 
 		break;
@@ -363,7 +364,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state = state::complete;
 
 		} else if (_param_fw_at_apply.get() == 2) {
-			saveGainsToParams();
+			backupAndSaveGainsToParams();
 			_state = state::test;
 
 		} else {
@@ -377,7 +378,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		if ((now - _state_start_time) < 2_s
 		    && _control_power.longerThan(0.1f)) {
 			_state = state::fail;
-			saveGainsToParams(); // revert to the previous gains
+			revertParamGains();
 			_state_start_time = now;
 
 		} else if ((now - _state_start_time) > 2_s) {
@@ -465,11 +466,47 @@ bool FwAutotuneAttitudeControl::areGainsGood() const
 	return are_positive && are_small_enough;
 }
 
-void FwAutotuneAttitudeControl::saveGainsToParams()
+void FwAutotuneAttitudeControl::backupAndSaveGainsToParams()
 {
 	float backup_gains[11] = {};
-	copyParamGainsTo(backup_gains);
+	backup_gains[0] = _param_fw_rr_p.get();
+	backup_gains[1] = _param_fw_rr_i.get();
+	backup_gains[2] = _param_fw_rr_ff.get();
+	backup_gains[3] = _param_fw_r_tc.get();
+	backup_gains[4] = _param_fw_pr_p.get();
+	backup_gains[5] = _param_fw_pr_i.get();
+	backup_gains[6] = _param_fw_pr_ff.get();
+	backup_gains[7] = _param_fw_p_tc.get();
+	backup_gains[8] = _param_fw_yr_p.get();
+	backup_gains[9] = _param_fw_yr_i.get();
+	backup_gains[10] = _param_fw_yr_ff.get();
 
+	saveGainsToParams();
+
+	_rate_k(0) = backup_gains[0];
+	_rate_i(0) = backup_gains[1] / _rate_k(0);
+	_rate_ff(0) = backup_gains[2];
+	_att_p(0) = 1.f / backup_gains[3];
+	_rate_k(1) = backup_gains[4];
+	_rate_i(1) = backup_gains[5] / _rate_k(1);
+	_rate_ff(1) = backup_gains[6];
+	_att_p(1) = 1.f / backup_gains[7];
+	_rate_k(2) = backup_gains[8];
+	_rate_i(2) = backup_gains[9] / _rate_k(2);
+	_rate_ff(2) = backup_gains[10];
+
+	_gains_backup_available = true;
+}
+
+void FwAutotuneAttitudeControl::revertParamGains()
+{
+	if (_gains_backup_available) {
+		saveGainsToParams();
+	}
+}
+
+void FwAutotuneAttitudeControl::saveGainsToParams()
+{
 	if (_param_fw_at_axes.get() & Axes::roll) {
 		_param_fw_rr_p.set(_rate_k(0));
 		_param_fw_rr_i.set(_rate_k(0) * _rate_i(0));
@@ -512,38 +549,6 @@ void FwAutotuneAttitudeControl::saveGainsToParams()
 		_param_fw_yr_i.commit_no_notification();
 		_param_fw_yr_ff.commit();
 	}
-
-	backupParamGains(backup_gains);
-}
-
-void FwAutotuneAttitudeControl::copyParamGainsTo(float backup_gains[11])
-{
-	backup_gains[0] = _param_fw_rr_p.get();
-	backup_gains[1] = _param_fw_rr_i.get();
-	backup_gains[2] = _param_fw_rr_ff.get();
-	backup_gains[3] = _param_fw_r_tc.get();
-	backup_gains[4] = _param_fw_pr_p.get();
-	backup_gains[5] = _param_fw_pr_i.get();
-	backup_gains[6] = _param_fw_pr_ff.get();
-	backup_gains[7] = _param_fw_p_tc.get();
-	backup_gains[8] = _param_fw_yr_p.get();
-	backup_gains[9] = _param_fw_yr_i.get();
-	backup_gains[10] = _param_fw_yr_ff.get();
-}
-
-void FwAutotuneAttitudeControl::backupParamGains(float backup_gains[11])
-{
-	_rate_k(0) = backup_gains[0];
-	_rate_i(0) = backup_gains[1] / _rate_k(0);
-	_rate_ff(0) = backup_gains[2];
-	_att_p(0) = 1.f / backup_gains[3];
-	_rate_k(1) = backup_gains[4];
-	_rate_i(1) = backup_gains[5] / _rate_k(1);
-	_rate_ff(1) = backup_gains[6];
-	_att_p(1) = 1.f / backup_gains[7];
-	_rate_k(2) = backup_gains[8];
-	_rate_i(2) = backup_gains[9] / _rate_k(2);
-	_rate_ff(2) = backup_gains[10];
 }
 
 void FwAutotuneAttitudeControl::stopAutotune()
