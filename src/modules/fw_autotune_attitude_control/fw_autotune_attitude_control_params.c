@@ -78,16 +78,12 @@ PARAM_DEFINE_FLOAT(FW_AT_SYSID_AMP, 1.0);
  * a new set of gains is available and can be applied
  * immediately or after landing.
  *
- * WARNING Applying the gains in air is dangerous as there is no
- * guarantee that those new gains will be able to stabilize
- * the drone properly.
- *
  * @value 0 Do not apply the new gains (logging only)
  * @value 1 Apply the new gains after disarm
- * @value 2 WARNING Apply the new gains in air
+ * @value 2 Apply the new gains in air
  * @group Autotune
  */
-PARAM_DEFINE_INT32(FW_AT_APPLY, 0);
+PARAM_DEFINE_INT32(FW_AT_APPLY, 2);
 
 /**
  * Tuning axes selection
