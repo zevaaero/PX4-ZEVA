@@ -218,14 +218,16 @@ void RTL::find_RTL_destination(bool force_update)
 
 	// figure out how long the RTL will take
 	float rtl_xy_speed, rtl_z_speed;
-	get_rtl_xy_z_speed(rtl_xy_speed, rtl_z_speed);
+	bool is_windspeed;
+	get_rtl_xy_z_speed(rtl_xy_speed, rtl_z_speed, is_windspeed);
 
 	matrix::Vector3f to_destination_vec;
 	get_vector_to_next_waypoint(global_position.lat, global_position.lon, _destination.lat, _destination.lon,
 				    &to_destination_vec(0), &to_destination_vec(1));
 	to_destination_vec(2) = _destination.alt - global_position.alt;
 
-	float time_to_home_s = time_to_home(to_destination_vec, get_wind(), rtl_xy_speed, rtl_z_speed);
+	matrix::Vector2f wind = is_windspeed ? get_wind() : matrix::Vector2f(0, 0);
+	float time_to_home_s = time_to_home(to_destination_vec, wind, rtl_xy_speed, rtl_z_speed);
 
 	float rtl_flight_time_ratio = time_to_home_s / (60 * _param_rtl_flt_time.get());
 	rtl_flight_time_s rtl_flight_time{};
@@ -678,7 +680,7 @@ float RTL::calculate_return_alt_from_cone_half_angle(float cone_half_angle_deg)
 	return max(return_altitude_amsl, gpos.alt);
 }
 
-void RTL::get_rtl_xy_z_speed(float &xy, float &z)
+void RTL::get_rtl_xy_z_speed(float &xy, float &z, bool &is_windspeed)
 {
 	uint8_t vehicle_type = _navigator->get_vstatus()->vehicle_type;
 	// Caution: here be dragons!
@@ -705,6 +707,8 @@ void RTL::get_rtl_xy_z_speed(float &xy, float &z)
 		}
 	}
 
+	is_windspeed = _rtl_vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
+
 	if (param_get(_rtl_xy_speed, &xy) != 0) {
 		xy = 1e6f;
 	}
@@ -720,7 +724,7 @@ matrix::Vector2f RTL::get_wind()
 	_wind_estimate_sub.update();
 	matrix::Vector2f wind;
 
-	if (hrt_absolute_time() - _wind_estimate_sub.get().timestamp < 1_s) {
+	if (hrt_absolute_time() - _wind_estimate_sub.get().timestamp < 2_s) {
 		wind(0) = _wind_estimate_sub.get().windspeed_north;
 		wind(1) = _wind_estimate_sub.get().windspeed_east;
 	}
