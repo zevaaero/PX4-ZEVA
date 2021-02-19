@@ -89,7 +89,7 @@ public:
 
 	int rtl_destination();
 
-	void get_rtl_xy_z_speed(float &xy, float &z);
+	void get_rtl_xy_z_speed(float &xy, float &z, bool &is_windspeed);
 	matrix::Vector2f get_wind();
 
 	void setClimbAndReturnDone(bool done) { _climb_and_return_done = done; }
