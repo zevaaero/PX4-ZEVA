@@ -591,6 +591,14 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 				progress = 80;
 				break;
 
+			case autotune_attitude_control_status_s::STATE_APPLY:
+				progress = 85;
+				break;
+
+			case autotune_attitude_control_status_s::STATE_TEST:
+				progress = 90;
+				break;
+
 			case autotune_attitude_control_status_s::STATE_COMPLETE:
 				progress = 100;
 				// ack it properly with an ACCEPTED once we're done

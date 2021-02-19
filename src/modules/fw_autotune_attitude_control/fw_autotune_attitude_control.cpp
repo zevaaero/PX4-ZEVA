@@ -388,14 +388,12 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::complete:
-		if ((now - _state_start_time) > 2_s) {
-			_state = state::idle;
-			stopAutotune();
-		}
 
-		break;
-
+	// fallthrough
 	case state::fail:
+
+		// Wait a bit in that state to make sure
+		// the other components are aware of the final result
 		if ((now - _state_start_time) > 2_s) {
 			_state = state::idle;
 			stopAutotune();
