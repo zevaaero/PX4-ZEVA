@@ -391,7 +391,7 @@ private:
 
 		(ParamFloat<px4::params::FW_AIRSPD_MAX>) _param_fw_airspd_max,
 		(ParamFloat<px4::params::FW_AIRSPD_MIN>) _param_fw_airspd_min,
-		(ParamFloat<px4::params::FW_AIRSPD_CRUISE>) _param_fw_airspd_cruise,
+		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_cruise,
 
 		(ParamFloat<px4::params::FW_WIND_THLD_H>) _param_fw_wind_thld_h,
 		(ParamFloat<px4::params::FW_WIND_THLD_L>) _param_fw_wind_thld_l,

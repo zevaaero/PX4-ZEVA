@@ -553,9 +553,11 @@ PARAM_DEFINE_INT32(FW_ARSP_MODE, 0);
 PARAM_DEFINE_INT32(FW_ARSP_SCALE_EN, 1);
 
 /**
- * Trim airspeed
+ * Trim / Cruise airspeed
  *
- * The (calibrated) airspeed around which the airspeed scaling is applied
+ * This is the default cruise airspeed used by the system in assisted
+ * and autonomous control modes. It is also used for control surface scaling:
+ * It is the (calibrated) cruise airspeed around which the airspeed scaling is applied
  * (scaling = FW_AIRSPD_TRIM / calibrated_airspeed).
  *
  * @unit m/s
