@@ -446,20 +446,6 @@ PARAM_DEFINE_FLOAT(FW_AIRSPD_MIN, 10.0f);
 PARAM_DEFINE_FLOAT(FW_AIRSPD_MAX, 20.0f);
 
 /**
- * Cruise airspeed setpoint
- *
- * The default cruise airspeed setpoint if level and no other airspeed setpoint is provided.
- *
- * @unit m/s
- * @min 0.0
- * @max 40
- * @decimal 1
- * @increment 0.5
- * @group FW TECS
- */
-PARAM_DEFINE_FLOAT(FW_AIRSPD_CRUISE, 15.0f);
-
-/**
  * High wind threshold
  *
  * If the current wind estimate is above this threshold,the value of FW_WIND_ARSP_OF
