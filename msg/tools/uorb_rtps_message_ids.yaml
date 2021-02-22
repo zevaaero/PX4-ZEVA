@@ -325,6 +325,8 @@ rtps:
     id: 156
   - msg: actuator_controls_status
     id: 157
+  - msg: magnetometer_bias_estimate
+    id: 158
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 170
