@@ -313,6 +313,13 @@ main_state_transition(const vehicle_status_s &status, const main_state_t new_mai
 
 		break;
 
+	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF:
+		if (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+			ret = TRANSITION_CHANGED;
+		}
+
+		break;
+
 	case commander_state_s::MAIN_STATE_AUTO_MISSION:
 
 		/* need global position, home position, and a valid mission */
@@ -658,6 +665,7 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		break;
 
 	case commander_state_s::MAIN_STATE_AUTO_TAKEOFF:
+	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF:
 
 		/* require local position */
 
@@ -668,7 +676,8 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 			// nothing to do - everything done in check_invalid_pos_nav_state
 
 		} else {
-			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF;
+			status->nav_state = internal_state->main_state == commander_state_s::MAIN_STATE_AUTO_TAKEOFF ?
+					    vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF : vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF;
 		}
 
 		break;

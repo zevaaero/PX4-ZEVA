@@ -985,6 +985,24 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 		break;
 
+	case vehicle_command_s::VEHICLE_CMD_NAV_VTOL_TAKEOFF:
+
+		/* ok, home set, use it to take off */
+		if (TRANSITION_CHANGED == main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF,
+				_status_flags,
+				&_internal_state)) {
+			cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
+
+		} else if (_internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF) {
+			cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED;
+
+		} else {
+			mavlink_log_critical(&_mavlink_log_pub, "VTOL Takeoff denied! Please disarm and retry");
+			cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_TEMPORARILY_REJECTED;
+		}
+
+		break;
+
 	case vehicle_command_s::VEHICLE_CMD_DO_MOTOR_TEST:
 		cmd_result = handle_command_motor_test(cmd);
 		break;
@@ -2417,8 +2435,9 @@ Commander::run()
 		 * Sometimes, the mission result topic is outdated and the mission is still signaled
 		 * as finished even though we only just started with the takeoff. Therefore, we also
 		 * check the timestamp of the mission_result topic. */
-		if (_internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_TAKEOFF
-		    && (_mission_result_sub.get().timestamp >= _internal_state.timestamp)
+		if ((_internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_TAKEOFF ||
+		     _internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF)
+		    && (_mission_result_sub.get().timestamp > _internal_state.timestamp)
 		    && _mission_result_sub.get().finished) {
 
 			const bool mission_available = (_mission_result_sub.get().timestamp > _boot_timestamp)
@@ -3469,6 +3488,7 @@ Commander::update_control_mode()
 	case vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION:
 	case vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER:
 	case vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF:
+	case vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF:
 		control_mode.flag_control_auto_enabled = true;
 		control_mode.flag_control_rates_enabled = true;
 		control_mode.flag_control_attitude_enabled = true;
