@@ -52,6 +52,8 @@
 #include "navigator_mode.h"
 #include "rtl.h"
 #include "takeoff.h"
+#include "vtol_takeoff.h"
+#include "vtol_land.h"
 
 #include "navigation.h"
 
@@ -80,6 +82,7 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/wind_estimate.h>
 #include <uORB/uORB.h>
 
 using namespace time_literals;
@@ -87,7 +90,7 @@ using namespace time_literals;
 /**
  * Number of navigation modes that need on_active/on_inactive calls
  */
-#define NAVIGATOR_MODE_ARRAY_SIZE 9
+#define NAVIGATOR_MODE_ARRAY_SIZE 11
 
 struct custom_action_s {
 	int8_t id;
@@ -170,6 +173,7 @@ public:
 	struct vehicle_local_position_s *get_local_position() { return &_local_pos; }
 	struct vehicle_status_s *get_vstatus() { return &_vstatus; }
 	struct vehicle_command_ack_s *get_cmd_ack() { return &_vehicle_cmd_ack; }
+	struct wind_estimate_s 		*get_wind() { return &_wind; }
 	PrecLand *get_precland() { return &_precland; } /**< allow others, e.g. Mission, to use the precision land block */
 
 	bool getGroundSpeed(float &ground_speed);	// return true if groundspeed is valid
@@ -302,6 +306,8 @@ public:
 	double 	get_mission_landing_lon() { return _mission.get_landing_lon(); }
 	float 	get_mission_landing_alt() { return _mission.get_landing_alt(); }
 
+	matrix::Vector2<double> getTakeoffPosition() { return _vtol_takeoff.getTakeoffPosition(); }
+
 	TerrainFollowerWrapper &getTerrainFollower() { return _terrain_follower; }
 
 	// RTL
@@ -368,6 +374,7 @@ private:
 	uORB::Subscription _traffic_sub{ORB_ID(transponder_report)};		/**< traffic subscription */
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};	/**< vehicle commands (onboard and offboard) */
 	uORB::Subscription _vehicle_cmd_ack_sub{ORB_ID(vehicle_command_ack)};	/**< vehicle command acks (onboard and offboard) */
+	uORB::Subscription _wind_estimate_sub{ORB_ID(wind_estimate)};
 
 	uORB::SubscriptionData<position_controller_status_s>	_position_controller_status_sub{ORB_ID(position_controller_status)};
 
@@ -391,6 +398,7 @@ private:
 	vehicle_local_position_s			_local_pos{};		/**< local vehicle position */
 	vehicle_status_s				_vstatus{};		/**< vehicle status */
 	vehicle_command_ack_s			_vehicle_cmd_ack{};		/**< vehicle command_ack */
+	wind_estimate_s 				_wind{};
 
 	uint8_t						_previous_nav_state{}; /**< nav_state of the previous iteration*/
 
@@ -425,6 +433,8 @@ private:
 	Mission		_mission;			/**< class that handles the missions */
 	Loiter		_loiter;			/**< class that handles loiter */
 	Takeoff		_takeoff;			/**< class for handling takeoff commands */
+	VtolTakeoff _vtol_takeoff;
+	VtolLand 	_vtol_land;
 	Land		_land;			/**< class for handling land commands */
 	PrecLand	_precland;			/**< class for handling precision land commands */
 	RTL 		_rtl;				/**< class that handles RTL */

@@ -81,6 +81,8 @@ Navigator::Navigator() :
 	_mission(this, _terrain_follower),
 	_loiter(this),
 	_takeoff(this),
+	_vtol_takeoff(this),
+	_vtol_land(this),
 	_land(this),
 	_precland(this),
 	_rtl(this, _terrain_follower),
@@ -98,6 +100,8 @@ Navigator::Navigator() :
 	_navigation_mode_array[6] = &_land;
 	_navigation_mode_array[7] = &_precland;
 	_navigation_mode_array[8] = &_follow_target;
+	_navigation_mode_array[9] = &_vtol_takeoff;
+	_navigation_mode_array[10] = &_vtol_land;
 
 	_handle_back_trans_dec_mss = param_find("VT_B_DEC_MSS");
 	_handle_reverse_delay = param_find("VT_B_REV_DEL");
@@ -520,6 +524,20 @@ Navigator::run()
 
 				// CMD_NAV_TAKEOFF is acknowledged by commander
 
+			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_VTOL_TAKEOFF) {
+
+
+				const uint8_t sector_bitmap = static_cast<uint8_t>(cmd.param1);
+				const int offsetDegrees = static_cast<int>(cmd.param3);
+
+				_vtol_takeoff.setTakeoffPosition(cmd.param5, cmd.param6);
+				_vtol_takeoff.setTransitionAltitudeAbsolute(cmd.param7);
+				_vtol_takeoff.updateLoiterAltitudeAbsolute();
+				_vtol_takeoff.setSectorBitmap(sector_bitmap);
+				_vtol_land.setSectorBitmap(sector_bitmap);
+				_vtol_takeoff.setSectorOffsetDegrees(offsetDegrees);
+				_vtol_land.setSectorOffsetDegrees(offsetDegrees);
+
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 
 				/* find NAV_CMD_DO_LAND_START in the mission and
@@ -638,100 +656,112 @@ Navigator::run()
 
 				const bool rtl_activated = _previous_nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
 
-				switch (rtl_type()) {
-				case RTL::RTL_LAND: // use mission landing
-				case RTL::RTL_CLOSEST:
-					if (rtl_activated) {
-						if (rtl_type() == RTL::RTL_LAND) {
-							mavlink_log_info(get_mavlink_log_pub(), "RTL LAND activated");
-
-						} else {
-							mavlink_log_info(get_mavlink_log_pub(), "RTL Closest landing point activated");
-						}
-
-					}
-
-					if (!rtl_activated && !_rtl.denyMissionLanding() && _rtl.getClimbAndReturnDone()
-					    && get_mission_start_land_available()) {
-						_mission.set_execution_mode(mission_result_s::MISSION_EXECUTION_MODE_FAST_FORWARD);
-
-						if (!getMissionLandingInProgress() && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED
-						    && !get_land_detected()->landed) {
-							start_mission_landing();
-						}
-
-						navigation_mode_new = &_mission;
+				if (_vtol_land.hasSafeArea()) {
+					if (!rtl_activated && _rtl.getClimbDone()) {
+						navigation_mode_new = &_vtol_land;
 
 					} else {
 						navigation_mode_new = &_rtl;
 					}
 
-					break;
+				} else {
 
-				case RTL::RTL_MISSION:
-					if (_mission.get_land_start_available() && !get_land_detected()->landed) {
-						// the mission contains a landing spot
-						_mission.set_execution_mode(mission_result_s::MISSION_EXECUTION_MODE_FAST_FORWARD);
-
-						if (_navigation_mode != &_mission) {
-							if (_navigation_mode == nullptr) {
-								// switching from an manual mode, go to landing if not already landing
-								if (!on_mission_landing()) {
-									start_mission_landing();
-								}
+					switch (rtl_type()) {
+					case RTL::RTL_LAND: // use mission landing
+					case RTL::RTL_CLOSEST:
+						if (rtl_activated) {
+							if (rtl_type() == RTL::RTL_LAND) {
+								mavlink_log_info(get_mavlink_log_pub(), "RTL LAND activated");
 
 							} else {
-								// switching from an auto mode, continue the mission from the closest item
-								_mission.set_closest_item_as_current();
-							}
-						}
-
-						if (rtl_activated) {
-							mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, continue mission");
-						}
-
-						navigation_mode_new = &_mission;
-
-					} else {
-						// fly the mission in reverse if switching from a non-manual mode
-						_mission.set_execution_mode(mission_result_s::MISSION_EXECUTION_MODE_REVERSE);
-
-						if ((_navigation_mode != nullptr && (_navigation_mode != &_rtl || _mission.get_mission_changed())) &&
-						    (! _mission.get_mission_finished()) &&
-						    (!get_land_detected()->landed)) {
-							// determine the closest mission item if switching from a non-mission mode, and we are either not already
-							// mission mode or the mission waypoints changed.
-							// The seconds condition is required so that when no mission was uploaded and one is available the closest
-							// mission item is determined and also that if the user changes the active mission index while rtl is active
-							// always that waypoint is tracked first.
-							if ((_navigation_mode != &_mission) && (rtl_activated || _mission.get_mission_waypoints_changed())) {
-								_mission.set_closest_item_as_current();
+								mavlink_log_info(get_mavlink_log_pub(), "RTL Closest landing point activated");
 							}
 
-							if (rtl_activated) {
-								mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly mission in reverse");
+						}
+
+						if (!rtl_activated && !_rtl.denyMissionLanding() && _rtl.getClimbAndReturnDone()
+						    && get_mission_start_land_available()) {
+							_mission.set_execution_mode(mission_result_s::MISSION_EXECUTION_MODE_FAST_FORWARD);
+
+							if (!getMissionLandingInProgress() && _vstatus.arming_state == vehicle_status_s::ARMING_STATE_ARMED
+							    && !get_land_detected()->landed) {
+								start_mission_landing();
 							}
 
 							navigation_mode_new = &_mission;
 
 						} else {
-							if (rtl_activated) {
-								mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly to home");
-							}
-
 							navigation_mode_new = &_rtl;
 						}
+
+						break;
+
+					case RTL::RTL_MISSION:
+						if (_mission.get_land_start_available() && !get_land_detected()->landed) {
+							// the mission contains a landing spot
+							_mission.set_execution_mode(mission_result_s::MISSION_EXECUTION_MODE_FAST_FORWARD);
+
+							if (_navigation_mode != &_mission) {
+								if (_navigation_mode == nullptr) {
+									// switching from an manual mode, go to landing if not already landing
+									if (!on_mission_landing()) {
+										start_mission_landing();
+									}
+
+								} else {
+									// switching from an auto mode, continue the mission from the closest item
+									_mission.set_closest_item_as_current();
+								}
+							}
+
+							if (rtl_activated) {
+								mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, continue mission");
+							}
+
+							navigation_mode_new = &_mission;
+
+						} else {
+							// fly the mission in reverse if switching from a non-manual mode
+							_mission.set_execution_mode(mission_result_s::MISSION_EXECUTION_MODE_REVERSE);
+
+							if ((_navigation_mode != nullptr && (_navigation_mode != &_rtl || _mission.get_mission_changed())) &&
+							    (! _mission.get_mission_finished()) &&
+							    (!get_land_detected()->landed)) {
+								// determine the closest mission item if switching from a non-mission mode, and we are either not already
+								// mission mode or the mission waypoints changed.
+								// The seconds condition is required so that when no mission was uploaded and one is available the closest
+								// mission item is determined and also that if the user changes the active mission index while rtl is active
+								// always that waypoint is tracked first.
+								if ((_navigation_mode != &_mission) && (rtl_activated || _mission.get_mission_waypoints_changed())) {
+									_mission.set_closest_item_as_current();
+								}
+
+								if (rtl_activated) {
+									mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly mission in reverse");
+								}
+
+								navigation_mode_new = &_mission;
+
+							} else {
+								if (rtl_activated) {
+									mavlink_log_info(get_mavlink_log_pub(), "RTL Mission activated, fly to home");
+								}
+
+								navigation_mode_new = &_rtl;
+							}
+						}
+
+						break;
+
+					default:
+						if (rtl_activated) {
+							mavlink_log_info(get_mavlink_log_pub(), "RTL HOME activated");
+						}
+
+						navigation_mode_new = &_rtl;
+						break;
+
 					}
-
-					break;
-
-				default:
-					if (rtl_activated) {
-						mavlink_log_info(get_mavlink_log_pub(), "RTL HOME activated");
-					}
-
-					navigation_mode_new = &_rtl;
-					break;
 
 				}
 
@@ -741,6 +771,11 @@ Navigator::run()
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF:
 			_pos_sp_triplet_published_invalid_once = false;
 			navigation_mode_new = &_takeoff;
+			break;
+
+		case vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF:
+			_pos_sp_triplet_published_invalid_once = false;
+			navigation_mode_new = &_vtol_takeoff;
 			break;
 
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_LAND:
@@ -785,7 +820,7 @@ Navigator::run()
 			break;
 		}
 
-		// Do not execute any state machine while we are disarmed
+// Do not execute any state machine while we are disarmed
 		if (_vstatus.arming_state != vehicle_status_s::ARMING_STATE_ARMED) {
 			navigation_mode_new = nullptr;
 		}
@@ -810,7 +845,7 @@ Navigator::run()
 			}
 		}
 
-		// update the vehicle status
+// update the vehicle status
 		_previous_nav_state = _vstatus.nav_state;
 
 		/* we have a new navigation mode: reset triplet */
@@ -825,9 +860,9 @@ Navigator::run()
 			//
 			// FIXME: a better solution would be to add reset where they are needed and remove
 			//        this general reset here.
-			if (!(_navigation_mode == &_takeoff &&
-			      navigation_mode_new == &_loiter) && !(navigation_mode_new == &_loiter && _pos_sp_triplet.current.valid
-					      && _pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LOITER)) {
+			if (navigation_mode_new != &_rtl && !(_navigation_mode == &_takeoff &&
+							      navigation_mode_new == &_loiter) && !(navigation_mode_new == &_loiter && _pos_sp_triplet.current.valid
+									      && _pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LOITER)) {
 				reset_triplets();
 			}
 		}

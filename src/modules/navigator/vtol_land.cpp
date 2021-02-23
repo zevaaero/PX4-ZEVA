@@ -229,3 +229,8 @@ float VtolLand::getBestLandingHeading()
 
 	return wrap_pi(sector_angle * min_index + math::radians(_offset_degrees) + sector_angle * 0.5f);
 }
+
+bool VtolLand::hasSafeArea()
+{
+	return _sector_bitmap > 0;
+}

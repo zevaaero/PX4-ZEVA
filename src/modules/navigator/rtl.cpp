@@ -239,6 +239,8 @@ void RTL::find_RTL_destination(bool force_update)
 
 void RTL::on_activation()
 {
+	setClimbDone(false);
+	setClimbAndReturnDone(false);
 
 	_deny_mission_landing = _navigator->get_vstatus()->is_vtol
 				&& _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING;
@@ -271,7 +273,6 @@ void RTL::on_activation()
 							_navigator->get_home_position()->alt + _param_rtl_return_alt.get()));
 	}
 
-
 	if (_navigator->get_land_detected()->landed) {
 		// For safety reasons don't go into RTL if landed.
 		_rtl_state = RTL_STATE_LANDED;
@@ -294,6 +295,7 @@ void RTL::on_activation()
 	}
 
 	setClimbAndReturnDone(_rtl_state > RTL_STATE_RETURN);
+	setClimbDone(_rtl_state > RTL_STATE_CLIMB);
 
 	set_rtl_item(true);
 
@@ -401,8 +403,16 @@ void RTL::set_rtl_item(bool do_user_feedback)
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
 			}
 
-			_mission_item.lat = gpos.lat;
-			_mission_item.lon = gpos.lon;
+			if (pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+				_mission_item.lat = pos_sp_triplet->current.lat;
+				_mission_item.lon = pos_sp_triplet->current.lon;
+
+			} else {
+				_mission_item.lat = gpos.lat;
+				_mission_item.lon = gpos.lon;
+			}
+
+
 			_mission_item.altitude = _rtl_alt;
 			_mission_item.altitude_is_relative = false;
 			_mission_item.yaw = _navigator->get_local_position()->heading;
@@ -583,6 +593,7 @@ void RTL::advance_rtl()
 	switch (_rtl_state) {
 	case RTL_STATE_CLIMB:
 		_rtl_state = RTL_STATE_RETURN;
+		setClimbDone(true);
 		break;
 
 	case RTL_STATE_RETURN:

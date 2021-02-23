@@ -94,7 +94,11 @@ public:
 
 	void setClimbAndReturnDone(bool done) { _climb_and_return_done = done; }
 
+	void setClimbDone(bool done) { _climb_done = done; }
+
 	bool getClimbAndReturnDone() { return _climb_and_return_done; }
+
+	bool getClimbDone() {return _climb_done;}
 
 	bool denyMissionLanding() { return _deny_mission_landing; }
 
@@ -156,6 +160,7 @@ private:
 	bool _rtl_alt_min{false};
 	bool _climb_and_return_done{false};	// this flag is set to true if RTL is active and we are past the climb state and return state
 	bool _deny_mission_landing{false};
+	bool _climb_done{false}; 			// this flag is set to true if RTL is active and we are past the climb state
 
 	TerrainFollowerWrapper &_terrain_follower;
 

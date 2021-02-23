@@ -155,6 +155,9 @@ VtolTakeoff::set_takeoff_position()
 	// set current mission item to takeoff
 	set_takeoff_item(&_mission_item, _transition_alt_amsl);
 
+	_mission_item.lat = _navigator->get_home_position()->lat;
+	_mission_item.lon = _navigator->get_home_position()->lon;
+
 	_takeoff_pos_lat_lon = matrix::Vector2<double>(_mission_item.lat, _mission_item.lon);
 
 	_mission_item.nav_cmd = NAV_CMD_VTOL_TAKEOFF;

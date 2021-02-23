@@ -60,6 +60,7 @@ public:
 	void setLoiterAltitudeAbsolute(const float alt_amsl) {_loiter_alt_amsl = alt_amsl; }
 	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
 	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
+	bool hasSafeArea();
 
 private:
 
