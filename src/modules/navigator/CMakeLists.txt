@@ -53,6 +53,8 @@ px4_add_module(
 		gpsfailure.cpp
 		follow_target.cpp
 		terrain_follower_wrapper.cpp
+		vtol_takeoff.cpp
+		vtol_land.cpp
 	DEPENDS
 		git_ecl
 		ecl_geo
