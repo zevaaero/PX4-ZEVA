@@ -354,8 +354,9 @@ private:
 		(ParamInt<px4::params::TF_TERRAIN_EN>) _param_tf_terrain_en
 	)
 
-	int		_local_pos_sub{-1};		/**< local position subscription */
-	int		_vehicle_status_sub{-1};	/**< local position subscription */
+	int		_local_pos_sub{-1};
+	int		_mission_sub{-1};
+	int		_vehicle_status_sub{-1};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
