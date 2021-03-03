@@ -221,6 +221,11 @@
 #define GPIO_HW_VER_SENSE      /* PH3 */  GPIO_ADC3_INP14
 #define HW_INFO_INIT           "V6X%04x%04x"
 
+// Base                   FMUM
+#define V6X00000000   HW_VER_REV(0x0,0x0) // FMUV6X,                 Rev 0
+#define V6X00000001   HW_VER_REV(0x1,0x0) // BMP388 moved to I2C2,   ?
+#define V6x00900000   HW_VER_REV(0x0,0x09) // 			      ?
+
 /* HEATER
  * PWM in future
  */
