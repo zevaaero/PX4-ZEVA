@@ -656,7 +656,11 @@ Navigator::run()
 
 				const bool rtl_activated = _previous_nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
 
-				if (_vtol_land.hasSafeArea()) {
+				const bool use_mission_landing = _mission.get_land_start_available() && !_rtl.denyMissionLanding()
+								 && rtl_type() > RTL::RTL_HOME;
+
+
+				if (!use_mission_landing && _vtol_land.hasSafeArea()) {
 					if (!rtl_activated && _rtl.getClimbDone()) {
 						navigation_mode_new = &_vtol_land;
 
