@@ -403,16 +403,9 @@ void RTL::set_rtl_item(bool do_user_feedback)
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
 			}
 
-			if (pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-				_mission_item.lat = pos_sp_triplet->current.lat;
-				_mission_item.lon = pos_sp_triplet->current.lon;
 
-			} else {
-				_mission_item.lat = gpos.lat;
-				_mission_item.lon = gpos.lon;
-			}
-
-
+			_mission_item.lat = gpos.lat;
+			_mission_item.lon = gpos.lon;
 			_mission_item.altitude = _rtl_alt;
 			_mission_item.altitude_is_relative = false;
 			_mission_item.yaw = _navigator->get_local_position()->heading;
