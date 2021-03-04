@@ -25,18 +25,36 @@ then
 	ina238 -X -b 2 -t 2 -k start
 fi
 
-# Internal SPI BMI088
-bmi088 -A -R 4 -s start
-bmi088 -G -R 4 -s start
 
-# Internal SPI bus ICM42688p
-icm42688p -R 6 -s start
+if ver hwtypecmp V6X90 #for Skynode
+then
+  # Internal SPI BMI088
+  bmi088 -A -R 2 -s start
+  bmi088 -G -R 2 -s start
 
-# Internal SPI bus ICM-20649 (hard-mounted)
-icm20649 -R 14 -s start
+  # Internal SPI bus ICM42688p
+  icm42688p -R 4 -s start
 
-# Internal magnetometer on I2c
-bmm150 -I start
+  # Internal SPI bus ICM-20649 (hard-mounted)
+  icm20649 -R 12 -s start
+
+  # Internal magnetometer on I2c
+  bmm150 -I -R 6 start
+
+else #v6x base
+  # Internal SPI BMI088
+  bmi088 -A -R 4 -s start
+  bmi088 -G -R 4 -s start
+
+  # Internal SPI bus ICM42688p
+  icm42688p -R 6 -s start
+
+  # Internal SPI bus ICM-20649 (hard-mounted)
+  icm20649 -R 14 -s start
+
+  # Internal magnetometer on I2c
+  bmm150 -I start
+fi
 
 # External compass on GPS1/I2C1 (the 3rd external bus): standard Holybro Pixhawk 4 or CUAV V5 GPS/compass puck (with lights, safety button, and buzzer)
 ist8310 -X -b 1 -R 10 start
@@ -44,7 +62,7 @@ ist8310 -X -b 1 -R 10 start
 # Possible internal Baro
 bmp388 -I -a 0x77 start
 
-if ver hwtypecmp V6X00000000
+if ver hwtypecmp V6X00 V6X90000000
 then
 	bmp388 -I start
 else
