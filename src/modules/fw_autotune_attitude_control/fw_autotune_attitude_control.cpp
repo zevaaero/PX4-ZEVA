@@ -167,7 +167,7 @@ void FwAutotuneAttitudeControl::Run()
 		const Vector3f den(1.f, coeff(0), coeff(1));
 		_kiff(2) = (1.f + coeff(0) + coeff(1)) / (coeff(2) + coeff(3) + coeff(4)); // inverse of the static gain
 		const Vector3f num_design = num * _kiff(2); // PID algorithm design works better with systems having unit static gain
-		Vector3f kid = pid_design::computePidGmvc(num_design, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
+		Vector3f kid = pid_design::computePidGmvc(num_design, den, _sample_interval_avg, 0.2f, 0.f, 0.4f);
 		_kiff(0) = kid(0);
 		_kiff(1) = kid(1);
 		_attitude_p = 8.f / (M_PI_F * (_kiff(2) + _kiff(0))); // Maximum control power at an attitude error of pi/8
