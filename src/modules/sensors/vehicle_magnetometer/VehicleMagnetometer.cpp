@@ -198,8 +198,6 @@ void VehicleMagnetometer::MagCalibrationUpdate()
 					calibration_param_save_needed = true;
 					_calibration_estimator_bias[mag_index].zero();
 				}
-
-				_on_ground_mag_bias_estimate_available = false;
 			}
 
 			// apply all valid saved offsets
@@ -239,8 +237,6 @@ void VehicleMagnetometer::MagCalibrationUpdate()
 						_mag_cal[i].mag_bias_variance.zero();
 					}
 				}
-
-				_in_flight_mag_cal_available = false;
 			}
 		}
 
@@ -253,6 +249,8 @@ void VehicleMagnetometer::MagCalibrationUpdate()
 		}
 
 		_should_save_on_disarm = false;
+		_on_ground_mag_bias_estimate_available = false;
+		_in_flight_mag_cal_available = false;
 
 	} else {
 		// Continuous mag calibration is running when not armed
