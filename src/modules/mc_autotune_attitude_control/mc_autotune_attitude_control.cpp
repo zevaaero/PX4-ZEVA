@@ -102,6 +102,14 @@ void McAutotuneAttitudeControl::Run()
 		}
 	}
 
+	if (_actuator_controls_status_sub.updated()) {
+		actuator_controls_status_s controls_status;
+
+		if (_actuator_controls_status_sub.copy(&controls_status)) {
+			_control_power = Vector3f(controls_status.control_power);
+		}
+	}
+
 	actuator_controls_s controls;
 	vehicle_angular_velocity_s angular_velocity;
 
@@ -237,6 +245,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_max_steps = 10;
 			_signal_sign = 1;
 			_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
+			_gains_backup_available = false;
 		}
 
 		break;
@@ -301,36 +310,64 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 		break;
 
-	// fallthrough
 	case state::yaw_pause:
-		_state = state::verification;
+		if ((now - _state_start_time) > 2_s) {
+			_state = state::verification;
+			_state_start_time = now;
+			_sys_id.reset();
+			_signal_sign = 1;
+			_steps_counter = 5;
+			_max_steps = 10;
+		}
 
-	// fallthrough
+		break;
+
 	case state::verification:
 		_state = areGainsGood()
-			 ? state::complete
+			 ? state::apply
 			 : state::fail;
 
 		_state_start_time = now;
 		break;
 
-	case state::complete:
-		if ((now - _state_start_time) > 2_s) {
-			if (((_param_mc_at_apply.get() == 1) && !_armed)
-			    || (_param_mc_at_apply.get() == 2)) {
-				saveGainsToParams();
-				_state = state::idle;
-				stopAutotune();
+	case state::apply:
+		if ((_param_mc_at_apply.get() == 1) && !_armed) {
+			saveGainsToParams();
+			_state = state::complete;
 
-			} else if (_param_mc_at_apply.get() == 0) {
-				_state = state::idle;
-				stopAutotune();
-			}
+		} else if (_param_mc_at_apply.get() == 2) {
+			backupAndSaveGainsToParams();
+			_state = state::test;
+
+		} else {
+			_state = state::complete;
+		}
+
+		_state_start_time = now;
+		break;
+
+	case state::test:
+		if ((now - _state_start_time) < 4_s
+		    && (now - _state_start_time) > 1_s
+		    && _control_power.longerThan(0.1f)) {
+			_state = state::fail;
+			revertParamGains();
+			_state_start_time = now;
+
+		} else if ((now - _state_start_time) > 4_s) {
+			_state = state::complete;
+			_state_start_time = now;
 		}
 
 		break;
 
+	case state::complete:
+
+	// fallthrough
 	case state::fail:
+
+		// Wait a bit in that state to make sure
+		// the other components are aware of the final result
 		if ((now - _state_start_time) > 2_s) {
 			_state = state::idle;
 			stopAutotune();
@@ -344,13 +381,57 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	manual_control_setpoint_s manual_control_setpoint{};
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
-	if (_state != state::complete
+	if (_state != state::apply
 	    && _state != state::idle
 	    && (((now - _state_start_time) > 20_s)
 		|| (fabsf(manual_control_setpoint.x) > 0.05f)
 		|| (fabsf(manual_control_setpoint.y) > 0.05f))) {
 		_state = state::fail;
 		_state_start_time = now;
+	}
+}
+
+void McAutotuneAttitudeControl::backupAndSaveGainsToParams()
+{
+	float backup_gains[15] = {};
+	backup_gains[0] = _param_mc_rollrate_k.get();
+	backup_gains[1] = _param_mc_rollrate_p.get();
+	backup_gains[2] = _param_mc_rollrate_i.get();
+	backup_gains[3] = _param_mc_rollrate_d.get();
+	backup_gains[4] = _param_mc_roll_p.get();
+	backup_gains[5] = _param_mc_pitchrate_k.get();
+	backup_gains[6] = _param_mc_pitchrate_p.get();
+	backup_gains[7] = _param_mc_pitchrate_i.get();
+	backup_gains[8] = _param_mc_pitchrate_d.get();
+	backup_gains[9] = _param_mc_pitch_p.get();
+	backup_gains[10] = _param_mc_yawrate_k.get();
+	backup_gains[11] = _param_mc_yawrate_p.get();
+	backup_gains[12] = _param_mc_yawrate_i.get();
+	backup_gains[13] = _param_mc_yawrate_d.get();
+	backup_gains[14] = _param_mc_yaw_p.get();
+
+	saveGainsToParams();
+
+	_rate_k(0) = backup_gains[0] * backup_gains[1]; // convert and save as standard form
+	_rate_i(0) = backup_gains[2] / backup_gains[1];
+	_rate_d(0) = backup_gains[3] / backup_gains[1];
+	_att_p(0) = backup_gains[4];
+	_rate_k(1) = backup_gains[5] * backup_gains[6];
+	_rate_i(1) = backup_gains[7] / backup_gains[6];
+	_rate_d(1) = backup_gains[8] / backup_gains[6];
+	_att_p(1) = backup_gains[9];
+	_rate_k(2) = backup_gains[10] * backup_gains[11];
+	_rate_i(2) = backup_gains[12] / backup_gains[11];
+	_rate_d(2) = backup_gains[13] / backup_gains[11];
+	_att_p(2) = backup_gains[14];
+
+	_gains_backup_available = true;
+}
+
+void McAutotuneAttitudeControl::revertParamGains()
+{
+	if (_gains_backup_available) {
+		saveGainsToParams();
 	}
 }
 
@@ -469,6 +550,10 @@ const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 
 	} else if (_state ==  state::yaw) {
 		rate_sp(2) = signal;
+
+	} else if (_state == state::test) {
+		rate_sp(0) = signal;
+		rate_sp(1) = signal;
 	}
 
 	return rate_sp;

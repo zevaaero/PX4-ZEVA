@@ -52,6 +52,7 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionCallback.hpp>
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_controls_status.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/autotune_attitude_control_status.h>
@@ -94,12 +95,15 @@ private:
 	void copyGains(int index);
 	bool areGainsGood() const;
 	void saveGainsToParams();
+	void backupAndSaveGainsToParams();
+	void revertParamGains();
 
 	const matrix::Vector3f getIdentificationSignal();
 
 	uORB::SubscriptionCallbackWorkItem _actuator_controls_sub{this, ORB_ID(actuator_controls_0)};
 	uORB::SubscriptionCallbackWorkItem _parameter_update_sub{this, ORB_ID(parameter_update)};
 
+	uORB::Subscription _actuator_controls_status_sub{ORB_ID(actuator_controls_status_0)};
 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription _vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
@@ -117,6 +121,8 @@ private:
 		pitch_pause = autotune_attitude_control_status_s::STATE_PITCH_PAUSE,
 		yaw = autotune_attitude_control_status_s::STATE_YAW,
 		yaw_pause = autotune_attitude_control_status_s::STATE_YAW_PAUSE,
+		apply = autotune_attitude_control_status_s::STATE_APPLY,
+		test = autotune_attitude_control_status_s::STATE_TEST,
 		verification = autotune_attitude_control_status_s::STATE_VERIFICATION,
 		complete = autotune_attitude_control_status_s::STATE_COMPLETE,
 		fail = autotune_attitude_control_status_s::STATE_FAIL
@@ -136,6 +142,10 @@ private:
 
 	float _attitude_p{0.f};
 	matrix::Vector3f _att_p{};
+
+	matrix::Vector3f _control_power{};
+
+	bool _gains_backup_available{false}; // true if a backup of the parameters has been done
 
 	/**
 	 * Scale factor applied to the input data to have the same input/output range

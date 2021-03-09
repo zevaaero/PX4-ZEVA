@@ -340,7 +340,8 @@ MulticopterAttitudeControl::Run()
 			if (_autotune_attitude_control_status_sub.copy(&pid_autotune)) {
 				if ((pid_autotune.state == autotune_attitude_control_status_s::STATE_ROLL
 				     || pid_autotune.state == autotune_attitude_control_status_s::STATE_PITCH
-				     || pid_autotune.state == autotune_attitude_control_status_s::STATE_YAW)
+				     || pid_autotune.state == autotune_attitude_control_status_s::STATE_YAW
+				     || pid_autotune.state == autotune_attitude_control_status_s::STATE_TEST)
 				    && ((now - pid_autotune.timestamp) < 1_s)) {
 					rates_sp += Vector3f(pid_autotune.rate_sp);
 				}
