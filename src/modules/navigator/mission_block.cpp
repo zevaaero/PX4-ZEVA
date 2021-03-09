@@ -654,44 +654,47 @@ MissionBlock::mission_item_to_position_setpoint(const mission_item_s &item, posi
 }
 
 void
-MissionBlock::set_loiter_item(struct mission_item_s *item, float min_clearance)
+MissionBlock::setLoiterItemFromCurrentPositionSetpoint(struct mission_item_s *item)
 {
-	if (_navigator->get_land_detected()->landed) {
-		/* landed, don't takeoff, but switch to IDLE mode */
-		item->nav_cmd = NAV_CMD_IDLE;
+	setLoiterItemCommonFields(item);
 
-	} else {
-		item->nav_cmd = NAV_CMD_LOITER_UNLIMITED;
+	struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
-		struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+	item->lat = pos_sp_triplet->current.lat;
+	item->lon = pos_sp_triplet->current.lon;
+	item->altitude = pos_sp_triplet->current.alt;
+	item->loiter_radius = pos_sp_triplet->current.loiter_radius;
+}
 
-		float loiter_radius = _navigator->get_loiter_radius();
+void
+MissionBlock::setLoiterItemFromCurrentPosition(struct mission_item_s *item)
+{
+	setLoiterItemCommonFields(item);
 
-		if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-			/* use current position setpoint */
-			item->lat = pos_sp_triplet->current.lat;
-			item->lon = pos_sp_triplet->current.lon;
-			item->altitude = pos_sp_triplet->current.alt;
-			loiter_radius = pos_sp_triplet->current.loiter_radius;
+	item->lat = _navigator->get_global_position()->lat;
+	item->lon = _navigator->get_global_position()->lon;
+	item->altitude = _navigator->get_global_position()->alt;
+	item->loiter_radius = _navigator->get_loiter_radius();
+}
 
-		} else {
-			/* use current position and use return altitude as clearance */
-			item->lat = _navigator->get_global_position()->lat;
-			item->lon = _navigator->get_global_position()->lon;
-			item->altitude = _navigator->get_global_position()->alt;
+void
+MissionBlock::setLoiterItemCommonFields(struct mission_item_s *item)
+{
+	item->nav_cmd = NAV_CMD_LOITER_UNLIMITED;
 
-			if (min_clearance > 0.0f && item->altitude < _navigator->get_home_position()->alt + min_clearance) {
-				item->altitude = _navigator->get_home_position()->alt + min_clearance;
-			}
-		}
+	item->altitude_is_relative = false;
+	item->acceptance_radius = _navigator->get_acceptance_radius();
+	item->yaw = NAN;
+	item->time_inside = 0.0f;
+	item->autocontinue = false;
+	item->origin = ORIGIN_ONBOARD;
+}
 
-		item->altitude_is_relative = false;
-		item->yaw = NAN;
-		item->loiter_radius = loiter_radius;
-		item->acceptance_radius = _navigator->get_acceptance_radius();
-		item->time_inside = 0.0f;
-		item->autocontinue = false;
-		item->origin = ORIGIN_ONBOARD;
+void
+MissionBlock::limitMinAltAboveHome(struct mission_item_s *item, float min_alt_above_home_m)
+{
+	if (min_alt_above_home_m > 0.0f && item->altitude < _navigator->get_home_position()->alt + min_alt_above_home_m) {
+		item->altitude = _navigator->get_home_position()->alt + min_alt_above_home_m;
 	}
 }
 
