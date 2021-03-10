@@ -351,15 +351,15 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::test:
-		if ((now - _state_start_time) < 4_s
-		    && (now - _state_start_time) > 1_s
-		    && _control_power.longerThan(0.1f)) {
-			_state = state::fail;
-			revertParamGains();
+		if ((now - _state_start_time) > 4_s) {
+			_state = state::complete;
 			_state_start_time = now;
 
-		} else if ((now - _state_start_time) > 4_s) {
-			_state = state::complete;
+		} else if ((now - _state_start_time) < 4_s
+			   && (now - _state_start_time) > 1_s
+			   && _control_power.longerThan(0.1f)) {
+			_state = state::fail;
+			revertParamGains();
 			_state_start_time = now;
 		}
 
