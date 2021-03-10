@@ -331,19 +331,23 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::apply:
-		if ((_param_mc_at_apply.get() == 1) && !_armed) {
-			saveGainsToParams();
-			_state = state::complete;
+		if ((_param_mc_at_apply.get() == 1)) {
+			if (!_armed) {
+				saveGainsToParams();
+				_state = state::complete;
+				_state_start_time = now;
+			}
 
 		} else if (_param_mc_at_apply.get() == 2) {
 			backupAndSaveGainsToParams();
 			_state = state::test;
+			_state_start_time = now;
 
 		} else {
 			_state = state::complete;
+			_state_start_time = now;
 		}
 
-		_state_start_time = now;
 		break;
 
 	case state::test:
