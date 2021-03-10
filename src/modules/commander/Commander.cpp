@@ -2202,7 +2202,10 @@ Commander::run()
 								|| _internal_state.main_state == commander_state_s::MAIN_STATE_ACRO
 								|| _internal_state.main_state == commander_state_s::MAIN_STATE_STAB
 								|| _internal_state.main_state == commander_state_s::MAIN_STATE_RATTITUDE;
-				const bool rc_wants_disarm = (_stick_off_counter == rc_arm_hyst && _stick_on_counter < rc_arm_hyst)
+
+				// if vehicle is not landed require 10s for disarming with the gesture in manual modes
+				const uint32_t disarm_hysteresis = _land_detector.landed ? rc_arm_hyst : 10000 * COMMANDER_MONITORING_LOOPSPERMSEC;
+				const bool rc_wants_disarm = (_stick_off_counter >= disarm_hysteresis && _stick_on_counter < rc_arm_hyst)
 							     || arm_switch_to_disarm_transition;
 
 				if (rc_wants_disarm && (_land_detector.landed || manual_thrust_mode)) {
