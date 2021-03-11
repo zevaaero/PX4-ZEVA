@@ -85,6 +85,7 @@ private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::VTO_SAFE_AREA_R>) _param_safe_area_radius_m,
 		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt,
+		(ParamFloat<px4::params::RTL_DESCEND_ALT>) _param_descend_alt_rel_m,
 		(ParamFloat<px4::params::RTL_RETURN_ALT>) _param_return_alt_rel_m,
 		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_loiter_radius_m
 	)
