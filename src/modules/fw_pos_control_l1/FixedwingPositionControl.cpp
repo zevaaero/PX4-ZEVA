@@ -162,9 +162,8 @@ FixedwingPositionControl::parameters_update()
 		check_ret = PX4_ERROR;
 	}
 
-	if (_param_fw_airspd_stall.get() > _param_fw_airspd_min.get()) {
-		mavlink_log_critical(&_mavlink_log_pub, "Config invalid: Stall airspeed higher than min");
-		check_ret = PX4_ERROR;
+	if (_param_fw_airspd_stall.get() > _param_fw_airspd_min.get() * 0.9f) {
+		mavlink_log_critical(&_mavlink_log_pub, "Config invalid: Stall airspeed higher than 0.9 of min");
 	}
 
 	if (_param_fw_wind_thld_h.get() < _param_fw_wind_thld_l.get() &&
