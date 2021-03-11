@@ -3989,18 +3989,29 @@ void Commander::battery_status_check()
 				oldest_update = battery.timestamp;
 			}
 
-			if (battery.faults > 0) {
+
+			if (battery.faults > 0 && battery.custom_faults == 0) {
+				// MAVLink supported faults, can be checked on the ground station
 				battery_has_fault = true;
 
 				if (battery.faults != _last_battery_fault[index]) {
-					if (_armed.armed || (!_armed.armed && (battery.faults != battery_status_s::BATTERY_FAULT_INCOMPATIBLE_VOLTAGE))) {
-						mavlink_log_critical(&_mavlink_log_pub, "Battery %d reported faults: code %d. %s", index + 1, battery.faults,
-								     _armed.armed ? "Land now!" : "");
-					}
+					mavlink_log_critical(&_mavlink_log_pub, "Battery %d reported faults, check status %s", index + 1,
+							     _armed.armed ? "and land now!" : "");
+				}
+
+			} else if (battery.custom_faults > 0) {
+				// Manufacturer specific faults, flag the specific error code
+				battery_has_fault = true;
+
+				if (battery.custom_faults != _last_battery_custom_fault[index]) {
+
+					mavlink_log_critical(&_mavlink_log_pub, "Battery %d reported faults: code %d. %s", index + 1, battery.custom_faults,
+							     _armed.armed ? "Land now!" : "");
 				}
 			}
 
 			_last_battery_fault[index] = battery.faults;
+			_last_battery_custom_fault[index] = battery.custom_faults;
 
 			// Sum up current from all batteries.
 			_battery_current += battery.current_filtered_a;
