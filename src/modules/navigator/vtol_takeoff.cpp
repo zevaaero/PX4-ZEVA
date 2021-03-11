@@ -63,20 +63,16 @@ VtolTakeoff::on_active()
 		switch	(_takeoff_state) {
 		case vtol_takeoff_state::TAKEOFF_HOVER: {
 
-
-				if (!transitionHeadingReached()) {
-					set_loiter_item(&_mission_item);
-					_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
-					_mission_item.yaw = getClosestTransitionHeading();
-					_mission_item.force_heading = true;
-					struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
-					mission_apply_limitation(_mission_item);
-					mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
-					pos_sp_triplet->current.disable_weather_vane = true;
-					_navigator->set_position_setpoint_triplet_updated();
-					reset_mission_item_reached();
-				}
-
+				set_loiter_item(&_mission_item);
+				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
+				_mission_item.yaw = getClosestTransitionHeading();
+				_mission_item.force_heading = true;
+				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+				mission_apply_limitation(_mission_item);
+				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
+				pos_sp_triplet->current.disable_weather_vane = true;
+				_navigator->set_position_setpoint_triplet_updated();
+				reset_mission_item_reached();
 
 				_takeoff_state = vtol_takeoff_state::ALIGN_HEADING;
 
