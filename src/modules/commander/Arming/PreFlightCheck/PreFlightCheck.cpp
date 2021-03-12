@@ -235,12 +235,20 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 	}
 
 	if (estimator_type == 2) {
-		bool ekf_healthy = true;
+		bool ekf_healthy = false;
 
-		ekf_healthy = ekf2Check(mavlink_log_pub, status, false, report_failures) &&
-			      ekf2CheckSensorBias(mavlink_log_pub, report_failures);
+		// For the first 10 seconds we mark the ekf2 as not available, unless
+		// we are specifically asked to, so if report_failures is true.
 
-		set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, true, ekf_healthy, status);
+		if (time_since_boot > 10_s || report_failures) {
+			ekf_healthy = ekf2Check(mavlink_log_pub, status, false, report_failures) &&
+				      ekf2CheckSensorBias(mavlink_log_pub, report_failures);
+
+			set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, true, ekf_healthy, status);
+
+		} else {
+			set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_AHRS, true, false, false, status);
+		}
 
 		failed |= !ekf_healthy;
 	}
