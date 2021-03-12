@@ -44,6 +44,8 @@
 bool PreFlightCheck::sdcardCheck(orb_advert_t *mavlink_log_pub, const bool report_fail)
 {
 	const char *microsd_dir = PX4_STORAGEDIR;
+	static bool sd_card_missing = true;
+	static bool checked_once = false;
 	bool success = true;
 	struct statfs statfs_buf;
 	uint64_t total_bytes = 0;
@@ -55,12 +57,17 @@ bool PreFlightCheck::sdcardCheck(orb_advert_t *mavlink_log_pub, const bool repor
 		return success;
 	}
 
-	if (statfs(microsd_dir, &statfs_buf) == 0) {
-		total_bytes = (uint64_t)statfs_buf.f_blocks * statfs_buf.f_bsize;
+	if (!checked_once) {
+		checked_once = true;
+
+		if (statfs(microsd_dir, &statfs_buf) == 0) {
+			total_bytes = (uint64_t)statfs_buf.f_blocks * statfs_buf.f_bsize;
+		}
+
+		sd_card_missing = total_bytes == 0; // on NuttX we get 0 total bytes if no SD card is inserted
 	}
 
-	if (total_bytes == 0) { // on NuttX we get 0 total bytes if no SD card is inserted
-
+	if (sd_card_missing) {
 		if (reporting_enabled == 2) {
 			success = false;
 		}
