@@ -156,8 +156,6 @@ VtolTakeoff::set_takeoff_position()
 
 	_takeoff_pos_lat_lon = matrix::Vector2<double>(_mission_item.lat, _mission_item.lon);
 
-	_mission_item.nav_cmd = NAV_CMD_VTOL_TAKEOFF;
-
 	_navigator->get_mission_result()->finished = false;
 	_navigator->set_mission_result_updated();
 	reset_mission_item_reached();
@@ -166,6 +164,8 @@ VtolTakeoff::set_takeoff_position()
 	struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 	mission_apply_limitation(_mission_item);
 	mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
+
+
 
 	pos_sp_triplet->previous.valid = false;
 	pos_sp_triplet->current.yaw_valid = true;
