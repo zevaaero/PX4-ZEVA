@@ -78,7 +78,7 @@ public:
 private:
 	ArxRls<2, 2, 1> _rls;
 	math::LowPassFilter2p _u_lpf{400.f, 30.f};
-	//math::LowPassFilter2p u_lpf; // measurements are already filtered
+	//math::LowPassFilter2p _y_lpf; // measurements are already filtered
 
 	//TODO: replace by HighPassFilter class
 	float _alpha_hpf{0.f};

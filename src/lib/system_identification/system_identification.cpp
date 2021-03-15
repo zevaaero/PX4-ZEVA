@@ -47,6 +47,7 @@ void SystemIdentification::reset(const matrix::Vector<float, 5> &id_state_init)
 	_y_hpf = 0.f;
 	_u_prev = 0.f;
 	_y_prev = 0.f;
+	_fitness_lpf.reset(0.f);
 }
 
 void SystemIdentification::update(float u, float y)

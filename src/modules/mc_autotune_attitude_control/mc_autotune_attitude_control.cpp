@@ -172,12 +172,15 @@ void McAutotuneAttitudeControl::Run()
 		status.timestamp = now;
 		coeff.copyTo(status.coeff);
 		coeff_var.copyTo(status.coeff_var);
+		status.fitness = _sys_id.getFitness();
+		status.dt_model = _sample_interval_avg;
 		status.innov = _sys_id.getInnovation();
 		status.u_filt = _sys_id.getFilteredInputData();
 		status.y_filt = _sys_id.getFilteredOutputData();
 		status.kc = _kid(0);
 		status.ki = _kid(1);
 		status.kd = _kid(2);
+		status.att_p = _attitude_p;
 		rate_sp.copyTo(status.rate_sp);
 		status.state = static_cast<int>(_state);
 		_autotune_attitude_control_status_pub.publish(status);
@@ -208,6 +211,7 @@ void McAutotuneAttitudeControl::checkFilters()
 			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
 			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
 			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
+			_sys_id.setFitnessLpfTimeConstant(1.f, _sample_interval_avg);
 		}
 
 		// reset sample interval accumulator
