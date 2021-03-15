@@ -183,7 +183,7 @@ VtolLand::set_loiter_position()
 	_mission_item.nav_cmd = NAV_CMD_LOITER_TIME_LIMIT;
 	_mission_item.force_heading = true;
 	_mission_item.autocontinue = false;
-	_mission_item.time_inside = 0;
+	_mission_item.time_inside = _min_loiter_time_before_land;
 
 	_mission_item.altitude_is_relative = false;
 

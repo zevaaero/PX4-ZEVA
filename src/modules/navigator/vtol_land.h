@@ -81,6 +81,7 @@ private:
 
 	uint8_t _sector_bitmap{0};
 	static constexpr uint8_t _num_sectors = 8;
+	static constexpr float _min_loiter_time_before_land = 10.0f;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::VTO_SAFE_AREA_R>) _param_safe_area_radius_m,
