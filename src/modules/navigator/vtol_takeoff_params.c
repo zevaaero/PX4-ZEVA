@@ -60,10 +60,10 @@ PARAM_DEFINE_FLOAT(VTO_SAFE_AREA_R, 200);
  * Altitude relative to home at which vehicle will loiter after front transition.
  *
  * @unit m
- * @min 10
- * @max 200
+ * @min 20
+ * @max 300
  * @decimal 1
  * @increment 1
  * @group VTOL Takeoff
  */
-PARAM_DEFINE_FLOAT(VTO_LOITER_ALT, 50);
+PARAM_DEFINE_FLOAT(VTO_LOITER_ALT, 80);
