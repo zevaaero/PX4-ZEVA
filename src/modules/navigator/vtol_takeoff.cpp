@@ -118,13 +118,12 @@ VtolTakeoff::on_active()
 			}
 
 		case vtol_takeoff_state::CLIMB: {
-				const float alt_err = _loiter_alt_amsl - _navigator->get_global_position()->alt;
 
-				if (abs(alt_err) < _navigator->get_altitude_acceptance_radius()) {
-					_navigator->get_mission_result()->finished = true;
-					_navigator->set_mission_result_updated();
-					break;
-				}
+				// the VTOL takeoff is done, proceed loitering and upate the navigation state to LOITER
+				_navigator->get_mission_result()->finished = true;
+				_navigator->set_mission_result_updated();
+
+				break;
 			}
 
 		default: {
