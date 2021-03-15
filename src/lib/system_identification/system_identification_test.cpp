@@ -47,7 +47,37 @@ class SystemIdentificationTest : public ::testing::Test
 {
 public:
 	SystemIdentificationTest() {};
+	float apply(float sample);
+	void setCoefficients(float a1, float a2, float b0, float b1, float b2)
+	{
+		_a1 = a1;
+		_a2 = a2;
+		_b0 = b0;
+		_b1 = b1;
+		_b2 = b2;
+	}
+
+private:
+	float _a1{};
+	float _a2{};
+	float _b0{};
+	float _b1{};
+	float _b2{};
+	float _delay_element_1{};
+	float _delay_element_2{};
 };
+
+float SystemIdentificationTest::apply(float sample)
+{
+	// Direct Form II implementation
+	const float delay_element_0{sample - _delay_element_1 *_a1 - _delay_element_2 * _a2};
+	const float output{delay_element_0 *_b0 + _delay_element_1 *_b1 + _delay_element_2 * _b2};
+
+	_delay_element_2 = _delay_element_1;
+	_delay_element_1 = delay_element_0;
+
+	return output;
+}
 
 TEST_F(SystemIdentificationTest, basicTest)
 {
@@ -100,6 +130,64 @@ TEST_F(SystemIdentificationTest, resetTest)
 
 	// THEN: the result should be exactly the same
 	EXPECT_TRUE((coefficients - _sys_id.getCoefficients()).abs().max() < 1e-8f);
+	coefficients.print();
+	_sys_id.getVariances().print();
+}
+
+TEST_F(SystemIdentificationTest, simulatedModelTest)
+{
+	constexpr float fs = 200.f;
+	const float gyro_lpf_cutoff = 30.f;
+
+	SystemIdentification _sys_id;
+	_sys_id.setHpfCutoffFrequency(fs, 0.05f);
+	_sys_id.setLpfCutoffFrequency(fs, gyro_lpf_cutoff);
+	_sys_id.setForgettingFactor(60.f, 1.f / fs);
+
+	math::LowPassFilter2p _gyro_lpf{fs, gyro_lpf_cutoff};
+
+	// Simulated model with integrator
+	const float a1 = -1.77f;
+	const float a2 = 0.77f;
+	const float b0 = 0.3812f;
+	const float b1 = -0.25f;
+	const float b2 = 0.2f;
+	setCoefficients(a1, a2, b0, b1, b2);
+
+	const float dt = 1.f / fs;
+	const float duration = 1.f;
+	float t = 0.f;
+	float u = 0.f;
+	float y_lpf = 0.f;
+
+	for (int i = 0; i < static_cast<int>(duration / dt); i++) {
+		t = i * dt;
+
+		// Generate square input signal
+		if (i % 30 == 0) {
+			if (u > 0.f) {
+				u = -1.f;
+
+			} else {
+				u = 1.f;
+			}
+		}
+
+		_sys_id.update(u, y_lpf); // apply new input and previous output
+
+		const float y = apply(u);
+		y_lpf = _gyro_lpf.apply(y); // simulate gyro filter
+
+		if (false) {
+			printf("%.6f, %.6f, %.6f\n", (double)t, (double)u, (double)y);
+		}
+	}
+
+	const Vector<float, 5> coefficients = _sys_id.getCoefficients();
+	float data_check[] = {a1, a2, b0, b1, b2};
+	const Vector<float, 5> coefficients_check(data_check);
+	float eps = 1e-3;
+	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
 	coefficients.print();
 	_sys_id.getVariances().print();
 }
