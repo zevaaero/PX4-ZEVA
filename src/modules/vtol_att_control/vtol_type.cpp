@@ -557,8 +557,9 @@ float VtolType::pusher_assist()
 		// limit forward actuation to [0, 0.9]
 		forward_thrust = math::constrain(forward_thrust, 0.0f, 0.9f);
 
-		// return the vehicle to level position
-		const float pitch_new = 0.0f;
+		// Set the pitch to 0 if the pitch limit is negative (pitch down), but allow a positive (pitch up) pitch.
+		// This can be used for tiltrotor to make them hover with a positive angle of attack
+		const float pitch_new = _params->down_pitch_max > 0.f ? _params->down_pitch_max : 0.f;
 
 		// create corrected desired body z axis in heading frame
 		const Dcmf R_tmp = Eulerf(roll_new, pitch_new, 0.0f);

@@ -60,10 +60,12 @@ PARAM_DEFINE_INT32(VT_FWD_THRUST_EN, 0);
 
 /**
  * Maximum allowed angle the vehicle is allowed to pitch down to generate forward force
- * when fixed-wing forward actuation is active (seeVT_FW_TRHUST_EN).
- * If demanded down pitch exceeds this limmit, the fixed-wing forward actuators are used instead.
+ * when fixed-wing forward actuation is active (see VT_FW_TRHUST_EN).
+ * If demanded down pitch exceeds this limit, the fixed-wing forward actuators are used instead.
+ * Also a negative value can be set, in which case the vehicle keeps a positive angle of attack
+ * in hover.
  *
- * @min 0.0
+ * @min -10.0
  * @max 45.0
  * @group VTOL Attitude Control
  */
