@@ -308,7 +308,7 @@ VtolAttitudeControl::parameters_update()
 
 	/* maximum down pitch allowed */
 	param_get(_params_handles.down_pitch_max, &v);
-	_params.down_pitch_max = math::radians(v);
+	_params.down_pitch_max = -math::radians(v); // a positive parameter setting corresponds to a negative pitch limit
 
 	/* scale for fixed wing thrust used for forward acceleration in multirotor mode */
 	param_get(_params_handles.forward_thrust_scale, &_params.forward_thrust_scale);

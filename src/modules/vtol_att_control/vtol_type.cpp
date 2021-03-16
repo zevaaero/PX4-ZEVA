@@ -541,23 +541,24 @@ float VtolType::pusher_assist()
 
 	// calculate the desired pitch seen in the heading frame
 	// this value corresponds to the amount the vehicle would try to pitch down
-	float pitch_down = atan2f(body_z_sp(0), body_z_sp(2));
+	const float pitch_setpoint = atan2f(body_z_sp(0), body_z_sp(2));
 
 	// normalized pusher support throttle (standard VTOL) or tilt (tiltrotor), initialize to 0
 	float forward_thrust = 0.0f;
 
 	// only allow pitching down up to threshold, the rest of the desired
 	// forward acceleration will be compensated by the pusher/tilt
-	if (pitch_down < -_params->down_pitch_max) {
-		// desired roll angle in heading frame stays the same
-		float roll_new = -asinf(body_z_sp(1));
 
-		forward_thrust = (sinf(-pitch_down) - sinf(_params->down_pitch_max)) * _params->forward_thrust_scale;
+	if (pitch_setpoint < _params->down_pitch_max) {
+		// desired roll angle in heading frame stays the same
+		const float roll_new = -asinf(body_z_sp(1));
+
+		forward_thrust = (sinf(-pitch_setpoint) - sinf(-_params->down_pitch_max)) * _params->forward_thrust_scale;
 		// limit forward actuation to [0, 0.9]
 		forward_thrust = math::constrain(forward_thrust, 0.0f, 0.9f);
 
 		// return the vehicle to level position
-		float pitch_new = 0.0f;
+		const float pitch_new = 0.0f;
 
 		// create corrected desired body z axis in heading frame
 		const Dcmf R_tmp = Eulerf(roll_new, pitch_new, 0.0f);
