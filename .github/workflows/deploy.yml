@@ -40,7 +40,7 @@ jobs:
     - name: update binaries in AuterionOS
       id: update_binaries
       run: |
-        yes | cp -rf build/*/*.px4 distro/src/fmu/binaries/
+        yes | cp -rf build/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/
         echo "::set-output name=timestamp::$(date)"
 
     - name: create PR to auterion_distro_resin repo
