@@ -101,6 +101,11 @@ bool FlightTaskAutoMapper::update()
 		break;
 	}
 
+	// Make sure the forced landing time state is reset in other modes
+	if (_type != WaypointType::land) {
+		_timestamp_first_below_alt1 = 0;
+	}
+
 	if (_param_com_obs_avoid.get()) {
 		_obstacle_avoidance.updateAvoidanceDesiredSetpoints(_position_setpoint, _velocity_setpoint, (int)_type);
 		_obstacle_avoidance.injectAvoidanceSetpoints(_position_setpoint, _velocity_setpoint, _yaw_setpoint,

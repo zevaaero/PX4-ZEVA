@@ -89,5 +89,5 @@ private:
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
 
 	hrt_abstime _timestamp_first_below_alt1{0};
-	bool _landing_forced_notified = false; /**< Set to true when user has been notified about forced landing */
+	bool _landing_forced_notified{false}; /**< Set to true when user has been notified about forced landing */
 };
