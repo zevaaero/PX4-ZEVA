@@ -141,7 +141,7 @@ void LoggedTopics::add_default_topics()
 	add_topic_multi("wind_estimate", 1000); // published by both ekf2 and airspeed_selector
 
 	// log all raw sensors at minimal rate (at least 1 Hz)
-	add_topic_multi("battery_status", 300, 2);
+	add_topic_multi("battery_status", 100, 2);
 	add_topic_multi("differential_pressure", 1000, 2);
 	add_topic_multi("distance_sensor", 1000);
 	add_topic_multi("optical_flow", 1000, 1);
