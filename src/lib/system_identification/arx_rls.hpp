@@ -104,6 +104,9 @@ public:
 		for (size_t i = 0; i < N + 1; i++) {
 			_y[i] = 0.f;
 		}
+
+		_nb_samples = 0;
+		_innovation = 0.f;
 	}
 
 	void update(float u, float y)
@@ -111,6 +114,7 @@ public:
 		const matrix::Vector < float, N + M + 1 > theta_prev = _theta_hat;
 
 		addInputOutput(u, y);
+
 		const matrix::Vector < float, N + M + 1 > phi = constructDesignVector();
 		const matrix::Matrix < float, 1, N + M + 1 > phi_t = phi.transpose();
 
@@ -187,5 +191,6 @@ private:
 	float _innovation{};
 	float _u[M + D + 1] {};
 	float _y[N + 1] {};
+	unsigned _nb_samples{0};
 	float _lambda{1.f};
 };

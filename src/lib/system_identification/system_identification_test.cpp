@@ -88,6 +88,10 @@ TEST_F(SystemIdentificationTest, basicTest)
 	_sys_id.setLpfCutoffFrequency(fs, 30.f);
 	_sys_id.setForgettingFactor(80.f, 1.f / fs);
 
+	while (!_sys_id.areFiltersInitialized()) {
+		_sys_id.updateFilters(0.f, 0.f);
+	}
+
 	for (int i = 0; i < 10; i += 2) {
 		_sys_id.update(float(i), float(i + 1));
 	}
@@ -110,6 +114,10 @@ TEST_F(SystemIdentificationTest, resetTest)
 	_sys_id.setLpfCutoffFrequency(fs, 30.f);
 	_sys_id.setForgettingFactor(80.f, 1.f / fs);
 
+	while (!_sys_id.areFiltersInitialized()) {
+		_sys_id.updateFilters(0.f, 0.f);
+	}
+
 	for (int i = 0; i < 10; i += 2) {
 		_sys_id.update(float(i), float(i + 1));
 	}
@@ -124,6 +132,11 @@ TEST_F(SystemIdentificationTest, resetTest)
 	EXPECT_TRUE(_sys_id.getVariances().min() > 9e3f);
 
 	// AND WHEN: running the same sequence of inputs-outputs
+
+	while (!_sys_id.areFiltersInitialized()) {
+		_sys_id.updateFilters(0.f, 0.f);
+	}
+
 	for (int i = 0; i < 10; i += 2) {
 		_sys_id.update(float(i), float(i + 1));
 	}
@@ -155,7 +168,7 @@ TEST_F(SystemIdentificationTest, simulatedModelTest)
 	setCoefficients(a1, a2, b0, b1, b2);
 
 	const float dt = 1.f / fs;
-	const float duration = 1.f;
+	const float duration = 2.f;
 	float t = 0.f;
 	float u = 0.f;
 	float y_lpf = 0.f;
@@ -164,7 +177,8 @@ TEST_F(SystemIdentificationTest, simulatedModelTest)
 		t = i * dt;
 
 		// Generate square input signal
-		if (i % 30 == 0) {
+		if (_sys_id.areFiltersInitialized()
+		    && (i % 30 == 0)) {
 			if (u > 0.f) {
 				u = -1.f;
 

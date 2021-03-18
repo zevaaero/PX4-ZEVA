@@ -47,21 +47,32 @@ void SystemIdentification::reset(const matrix::Vector<float, 5> &id_state_init)
 	_y_hpf = 0.f;
 	_u_prev = 0.f;
 	_y_prev = 0.f;
-	_fitness_lpf.reset(0.f);
+	_fitness_lpf.reset(10.f);
+	_filter_init_counter = 0;
 }
 
 void SystemIdentification::update(float u, float y)
+{
+	updateFilters(u, y);
+
+	if (areFiltersInitialized()) {
+		_rls.update(_u_hpf, _y_hpf);
+		updateFitness();
+	}
+}
+
+void SystemIdentification::updateFilters(float u, float y)
 {
 	const float u_lpf = _u_lpf.apply(u);
 	_u_hpf = _alpha_hpf * _u_hpf + _alpha_hpf * (u_lpf - _u_prev);
 	_y_hpf = _alpha_hpf * _y_hpf + _alpha_hpf * (y - _y_prev);
 
-	_rls.update(_u_hpf, _y_hpf);
-
 	_u_prev = u_lpf;
 	_y_prev = y;
 
-	updateFitness();
+	if (!areFiltersInitialized()) {
+		_filter_init_counter++;
+	}
 }
 
 void SystemIdentification::updateFitness()

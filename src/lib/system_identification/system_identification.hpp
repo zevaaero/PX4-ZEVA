@@ -55,6 +55,8 @@ public:
 
 	void reset(const matrix::Vector<float, 5> &id_state_init = {});
 	void update(float u, float y);
+	void updateFilters(float u, float y);
+	bool areFiltersInitialized() const { return _filter_init_counter > 200; }
 	void updateFitness();
 	const matrix::Vector<float, 5> &getCoefficients() const { return _rls.getCoefficients(); }
 	const matrix::Vector<float, 5> getVariances() const { return _rls.getVariances(); }
@@ -87,6 +89,8 @@ private:
 
 	float _u_prev{0.f};
 	float _y_prev{0.f};
+
+	int _filter_init_counter{0};
 
 	AlphaFilter<float> _fitness_lpf;
 	float _dt{0.1f};
