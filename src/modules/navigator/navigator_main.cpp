@@ -234,6 +234,7 @@ Navigator::run()
 		_land_detected_sub.update(&_land_detected);
 		_position_controller_status_sub.update();
 		_home_pos_sub.update(&_home_pos);
+		_wind_estimate_sub.update(&_wind);
 
 		if (_vehicle_cmd_ack_sub.update(&_vehicle_cmd_ack) &&
 		    _vehicle_cmd_ack.command == vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1) {
