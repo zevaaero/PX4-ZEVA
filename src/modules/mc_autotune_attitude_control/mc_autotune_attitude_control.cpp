@@ -166,7 +166,10 @@ void McAutotuneAttitudeControl::Run()
 		_attitude_p = pid_design::computePOuterGain(den, _sample_interval_avg, 10.f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
-		const Vector3f rate_sp = getIdentificationSignal();
+
+		const Vector3f rate_sp = _sys_id.areFiltersInitialized()
+					 ? getIdentificationSignal()
+					 : Vector3f();
 
 		autotune_attitude_control_status_s status{};
 		status.timestamp = now;
