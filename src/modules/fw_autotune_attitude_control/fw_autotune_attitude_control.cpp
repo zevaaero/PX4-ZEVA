@@ -173,7 +173,9 @@ void FwAutotuneAttitudeControl::Run()
 		_attitude_p = 8.f / (M_PI_F * (_kiff(2) + _kiff(0))); // Maximum control power at an attitude error of pi/8
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
-		const Vector3f &rate_sp = getIdentificationSignal();
+		const Vector3f rate_sp = _sys_id.areFiltersInitialized()
+					 ? getIdentificationSignal()
+					 : Vector3f();
 
 		autotune_attitude_control_status_s status{};
 		status.timestamp = now;
