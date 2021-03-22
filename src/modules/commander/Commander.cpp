@@ -2616,7 +2616,7 @@ Commander::run()
 						       (offboard_loss_actions_t)_param_com_obl_act.get(),
 						       (offboard_loss_rc_actions_t)_param_com_obl_rc_act.get(),
 						       (position_nav_loss_actions_t)_param_com_posctl_navl.get(),
-						       _param_com_rcl_act_t.get());
+						       _param_com_rcl_act_t.get(), _param_gps_fail_openloop_loiter_time.get());
 
 		if (nav_state_changed) {
 			_status.nav_state_timestamp = hrt_absolute_time();

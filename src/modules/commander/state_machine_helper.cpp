@@ -417,7 +417,7 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		   const link_loss_actions_t rc_loss_act, const offboard_loss_actions_t offb_loss_act,
 		   const offboard_loss_rc_actions_t offb_loss_rc_act,
 		   const position_nav_loss_actions_t posctl_nav_loss_act,
-		   const float param_com_rcl_act_t)
+		   const float param_com_rcl_act_t, const float gps_fail_openloop_loiter_time_s)
 {
 	const navigation_state_t nav_state_old = status->nav_state;
 
@@ -492,7 +492,7 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 			} else if (is_armed
 				   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags,
 						   !(posctl_nav_loss_act == position_nav_loss_actions_t::LAND_TERMINATE),
-						   status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING)) {
+						   status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING, gps_fail_openloop_loiter_time_s)) {
 				// nothing to do - everything done in check_invalid_pos_nav_state
 
 			} else {
@@ -508,7 +508,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		 * - if we have vtol transition failure
 		 * - on data and RC link loss */
 
-		if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true)) {
+		if (is_armed
+		    && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true,
+						   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 		} else if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
@@ -563,7 +565,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true,
+					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 		} else if (status->data_link_lost && data_link_loss_act_configured && !landed && is_armed) {
 			/* also go into failsafe if just datalink is lost, and we're actually in air */
@@ -597,7 +601,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true,
+					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 		} else {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
@@ -612,7 +618,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true,
+					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 
 		} else {
@@ -630,7 +638,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 			// is not possible and therefore the internal_state needs to be adjusted.
 			internal_state->main_state = commander_state_s::MAIN_STATE_POSCTL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true,
+					   gps_fail_openloop_loiter_time_s)) {
 			// failsafe: necessary position estimate lost; switching is done in check_invalid_pos_nav_state
 
 			// Orbit can only be started via vehicle_command (mavlink). Consequently, recovery from failsafe into orbit
@@ -672,7 +682,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false,
+					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 
 		} else {
@@ -689,7 +701,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false,
+					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 
 		} else {
@@ -705,7 +719,9 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 		if (status->engine_failure) {
 			status->nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (is_armed && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false)) {
+		} else if (is_armed
+			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false,
+					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 
 		} else {
@@ -740,7 +756,8 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 }
 
 bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, orb_advert_t *mavlink_log_pub,
-				 const vehicle_status_flags_s &status_flags, const bool use_rc, const bool using_global_pos)
+				 const vehicle_status_flags_s &status_flags, const bool use_rc, const bool using_global_pos,
+				 const float gps_fail_openloop_loiter_time_s)
 {
 	bool fallback_required = false;
 
@@ -776,7 +793,7 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 			} else  if (status_flags.condition_local_altitude_valid) {
 				// Switch to Descend state if MC or if FW and 5 min of loitering have passed
 				if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING ||
-				    hrt_elapsed_time(&status->failsafe_timestamp) > (300.0f * 1_s)) {
+				    hrt_elapsed_time(&status->failsafe_timestamp) > (gps_fail_openloop_loiter_time_s * 1_s)) {
 					status->nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 				} else {
