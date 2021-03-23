@@ -771,6 +771,14 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 	}
 
 	if (fallback_required) {
+
+		if (using_global_pos) {
+			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_global_position);
+
+		} else {
+			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_local_position);
+		}
+
 		if (use_rc) {
 			// fallback to a mode that gives the operator stick control
 			if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
@@ -794,6 +802,7 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 				// Switch to Descend state if MC or if FW and 5 min of loitering have passed
 				if (status->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING ||
 				    hrt_elapsed_time(&status->failsafe_timestamp) > (gps_fail_openloop_loiter_time_s * 1_s)) {
+
 					status->nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 				} else {
@@ -804,14 +813,6 @@ bool check_invalid_pos_nav_state(vehicle_status_s *status, bool old_failsafe, or
 				status->nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;
 			}
 		}
-
-		if (using_global_pos) {
-			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_global_position);
-
-		} else {
-			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_local_position);
-		}
-
 	}
 
 	return fallback_required;
