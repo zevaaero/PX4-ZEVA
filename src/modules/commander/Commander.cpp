@@ -3502,6 +3502,13 @@ Commander::update_control_mode()
 		control_mode.flag_control_velocity_enabled = true;
 		break;
 
+	case vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER:
+		control_mode.flag_control_rates_enabled = true;
+		control_mode.flag_control_attitude_enabled = true;
+		control_mode.flag_control_altitude_enabled = true;
+		control_mode.flag_control_climb_rate_enabled = true;
+		break;
+
 	case vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL:
 		control_mode.flag_control_rates_enabled = true;
 		control_mode.flag_control_attitude_enabled = true;
