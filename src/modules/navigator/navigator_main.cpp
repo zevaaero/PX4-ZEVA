@@ -890,9 +890,16 @@ Navigator::run()
 			//
 			// FIXME: a better solution would be to add reset where they are needed and remove
 			//        this general reset here.
-			if (navigation_mode_new != &_rtl && !(_navigation_mode == &_takeoff &&
-							      navigation_mode_new == &_loiter) && !(navigation_mode_new == &_loiter && _pos_sp_triplet.current.valid
-									      && _pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LOITER)) {
+
+			const bool current_mode_is_takeoff = _navigation_mode == &_takeoff;
+			const bool new_mode_is_loiter = navigation_mode_new == &_loiter;
+			const bool valid_loiter_setpoint = (_pos_sp_triplet.current.valid
+							    && _pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LOITER);
+
+			const bool did_not_switch_takeoff_to_loiter = !(current_mode_is_takeoff && new_mode_is_loiter);
+			const bool did_not_switch_to_loiter_with_valid_loiter_setpoint = !(new_mode_is_loiter && valid_loiter_setpoint);
+
+			if (did_not_switch_takeoff_to_loiter && did_not_switch_to_loiter_with_valid_loiter_setpoint) {
 				reset_triplets();
 			}
 		}
