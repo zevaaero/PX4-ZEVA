@@ -62,12 +62,18 @@ VtolTakeoff::on_active()
 	if (is_mission_item_reached()) {
 		switch	(_takeoff_state) {
 		case vtol_takeoff_state::TAKEOFF_HOVER: {
+				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
-				set_loiter_item(&_mission_item);
+				if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+					setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
+
+				} else {
+					setLoiterItemFromCurrentPosition(&_mission_item);
+				}
+
 				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
 				_mission_item.yaw = getClosestTransitionHeading();
 				_mission_item.force_heading = true;
-				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 				mission_apply_limitation(_mission_item);
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 				pos_sp_triplet->current.disable_weather_vane = true;
@@ -96,13 +102,19 @@ VtolTakeoff::on_active()
 			}
 
 		case vtol_takeoff_state::TRANSITION: {
+				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
-				set_loiter_item(&_mission_item);
+				if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+					setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
+
+				} else {
+					setLoiterItemFromCurrentPosition(&_mission_item);
+				}
+
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
 				_mission_item.loiter_radius = _navigator->get_loiter_radius(); // TODO: radius as part of takeoff command?
 				_mission_item.altitude = _loiter_alt_amsl;
 
-				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 				generate_waypoint_from_heading(&pos_sp_triplet->current, getClosestTransitionHeading());
 

@@ -114,8 +114,6 @@ protected:
 
 	void setLoiterItemCommonFields(struct mission_item_s *item);
 
-	void limitMinAltAboveHome(struct mission_item_s *item, float min_alt_above_home_m);
-
 	/**
 	 * Set a takeoff mission item
 	 */

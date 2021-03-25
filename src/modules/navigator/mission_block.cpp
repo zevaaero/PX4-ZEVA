@@ -691,14 +691,6 @@ MissionBlock::setLoiterItemCommonFields(struct mission_item_s *item)
 }
 
 void
-MissionBlock::limitMinAltAboveHome(struct mission_item_s *item, float min_alt_above_home_m)
-{
-	if (min_alt_above_home_m > 0.0f && item->altitude < _navigator->get_home_position()->alt + min_alt_above_home_m) {
-		item->altitude = _navigator->get_home_position()->alt + min_alt_above_home_m;
-	}
-}
-
-void
 MissionBlock::set_takeoff_item(struct mission_item_s *item, float abs_altitude, float min_pitch)
 {
 	item->nav_cmd = NAV_CMD_TAKEOFF;
