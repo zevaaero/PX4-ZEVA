@@ -856,7 +856,8 @@ Navigator::run()
 
 		if (_vstatus.nav_state != _previous_nav_state) {
 			if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER) {
-				PX4_WARN("GPS invalid, fixed-bank loitering for 5 min, then descend.");
+				PX4_WARN("GPS invalid, fixed-bank loitering for %.0f s, then descend if not recovered",
+					 (double)_param_nav_gpsf_lt.get());
 
 			} else if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_DESCEND) {
 				// if vehicle is a VTOL in fixed-wing mode, switch to hover for the DESCEND mode
