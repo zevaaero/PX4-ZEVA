@@ -113,7 +113,6 @@ Loiter::set_loiter_position()
 			setLoiterItemFromCurrentPosition(&_mission_item);
 		}
 
-		limitMinAltAboveHome(&_mission_item, _navigator->get_loiter_min_alt());
 	}
 
 	// convert mission item to current setpoint

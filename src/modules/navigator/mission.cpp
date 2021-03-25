@@ -781,7 +781,6 @@ Mission::set_mission_items()
 				setLoiterItemFromCurrentPosition(&_mission_item);
 			}
 
-			limitMinAltAboveHome(&_mission_item, _navigator->get_takeoff_min_alt());
 		}
 
 		/* update position setpoint triplet  */
