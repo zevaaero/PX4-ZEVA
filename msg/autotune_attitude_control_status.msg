@@ -30,5 +30,6 @@ uint8 STATE_APPLY = 9
 uint8 STATE_TEST = 10
 uint8 STATE_COMPLETE = 11
 uint8 STATE_FAIL = 12
+uint8 STATE_WAIT_FOR_DISARM = 13
 
 uint8 state

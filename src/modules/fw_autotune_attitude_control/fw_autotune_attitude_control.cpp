@@ -360,18 +360,23 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 	case state::apply:
 		if ((_param_fw_at_apply.get() == 1)) {
-			if (!_armed) {
-				saveGainsToParams();
-				_state = state::complete;
-				_state_start_time = now;
-			}
+			_state = state::wait_for_disarm;
 
 		} else if (_param_fw_at_apply.get() == 2) {
 			backupAndSaveGainsToParams();
 			_state = state::test;
-			_state_start_time = now;
 
 		} else {
+			_state = state::complete;
+		}
+
+		_state_start_time = now;
+
+		break;
+
+	case state::wait_for_disarm:
+		if (!_armed) {
+			saveGainsToParams();
 			_state = state::complete;
 			_state_start_time = now;
 		}
@@ -413,7 +418,7 @@ void FwAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	manual_control_setpoint_s manual_control_setpoint{};
 	_manual_control_setpoint_sub.copy(&manual_control_setpoint);
 
-	if (_state != state::apply
+	if (_state != state::wait_for_disarm
 	    && _state != state::idle
 	    && (((now - _state_start_time) > 20_s)
 		|| (fabsf(manual_control_setpoint.x) > 0.2f)
