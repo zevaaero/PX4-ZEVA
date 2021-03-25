@@ -133,7 +133,8 @@ private:
 		test = autotune_attitude_control_status_s::STATE_TEST,
 		verification = autotune_attitude_control_status_s::STATE_VERIFICATION,
 		complete = autotune_attitude_control_status_s::STATE_COMPLETE,
-		fail = autotune_attitude_control_status_s::STATE_FAIL
+		fail = autotune_attitude_control_status_s::STATE_FAIL,
+		wait_for_disarm = autotune_attitude_control_status_s::STATE_WAIT_FOR_DISARM
 	} _state{state::idle};
 
 	hrt_abstime _state_start_time{0};
