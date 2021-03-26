@@ -672,7 +672,7 @@ PARAM_DEFINE_INT32(COM_RC_OVERRIDE, 1);
  * @decimal 0
  * @increment 0.05
  */
-PARAM_DEFINE_FLOAT(COM_RC_STICK_OV, 30.0f);
+PARAM_DEFINE_FLOAT(COM_RC_STICK_OV, 12.0f);
 
 /**
  * Require valid mission to arm
