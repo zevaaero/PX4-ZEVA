@@ -375,7 +375,7 @@ void Sih::send_dist_snsr()
 	_distance_snsr.min_distance = _distance_snsr_min;
 	_distance_snsr.max_distance = _distance_snsr_max;
 	_distance_snsr.signal_quality = -1;
-	_distance_snsr.device_id = 0;
+	_distance_snsr.id = 0;
 
 	if (_distance_snsr_override >= 0.f) {
 		_distance_snsr.current_distance = _distance_snsr_override;
