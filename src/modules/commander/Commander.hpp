@@ -119,9 +119,17 @@ public:
 	void get_circuit_breaker_params();
 
 private:
+
+	enum class FlightModeChange {
+		FallbackDisabled = 0,
+		FallbackEnabled
+	};
+
 	void answer_command(const vehicle_command_s &cmd, uint8_t result);
 
 	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, arm_disarm_reason_t calling_reason);
+
+	transition_result_t try_mode_change(main_state_t desired_mode, const FlightModeChange enable_fallback);
 
 	void battery_status_check();
 
@@ -249,6 +257,7 @@ private:
 		(ParamInt<px4::params::COM_RC_IN_MODE>) _param_rc_in_off,
 		(ParamInt<px4::params::COM_RC_ARM_HYST>) _param_rc_arm_hyst,
 		(ParamFloat<px4::params::COM_RC_STICK_OV>) _param_com_rc_stick_ov,
+		(ParamInt<px4::params::RC_MAP_FLTM_BTN>) _param_rc_map_flightmode_buttons,
 
 		(ParamInt<px4::params::COM_FLTMODE1>) _param_fltmode_1,
 		(ParamInt<px4::params::COM_FLTMODE2>) _param_fltmode_2,
