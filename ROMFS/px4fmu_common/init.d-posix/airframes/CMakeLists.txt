@@ -56,6 +56,7 @@ px4_add_romfs_files(
 	1021_uuv_hippocampus
 	1022_uuv_bluerov2_heavy
 	1025_iris_depth_camera
+	1025_iris_depth_camera.post
 	1030_plane
 	1031_plane_cam
 	1032_plane_catapult
