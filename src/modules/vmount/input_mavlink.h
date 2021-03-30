@@ -51,7 +51,6 @@
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_roi.h>
 #include <uORB/topics/vehicle_global_position.h>
-#include <uORB/topics/vehicle_local_position.h>
 #include <lib/ecl/geo/geo.h>
 
 

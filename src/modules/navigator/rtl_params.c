@@ -143,6 +143,7 @@ PARAM_DEFINE_INT32(RTL_CONE_ANG, 45);
  * This is used to determine when the vehicle should be switched to RTL due to low battery.
  * Note, particularly for multirotors this should reflect flight time at cruise speed, not while stationary
  *
+ * @unit min
  * @group Commander
  */
 PARAM_DEFINE_FLOAT(RTL_FLT_TIME, 15);
@@ -158,3 +159,17 @@ PARAM_DEFINE_FLOAT(RTL_FLT_TIME, 15);
  * @group Return To Land
  */
 PARAM_DEFINE_INT32(RTL_PLD_MD, 0);
+
+/**
+ * Loiter radius for rtl descend
+ *
+ * Set the radius for loitering to a safe altitude for VTOL transition.
+ *
+ * @unit m
+ * @min 25
+ * @max 1000
+ * @decimal 1
+ * @increment 0.5
+ * @group Return Mode
+ */
+PARAM_DEFINE_FLOAT(RTL_LOITER_RAD, 50.0f);

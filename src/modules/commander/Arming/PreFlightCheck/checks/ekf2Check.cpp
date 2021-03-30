@@ -52,9 +52,6 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 	int32_t mag_strength_check = 1;
 	param_get(param_find("COM_ARM_MAG_STR"), &mag_strength_check);
 
-	int32_t arm_without_gps = 0;
-	param_get(param_find("COM_ARM_WO_GPS"), &arm_without_gps);
-
 	float hgt_test_ratio_limit = 1.f;
 	param_get(param_find("COM_ARM_EKF_HGT"), &hgt_test_ratio_limit);
 
@@ -66,6 +63,9 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 
 	float mag_test_ratio_limit = 1.f;
 	param_get(param_find("COM_ARM_EKF_YAW"), &mag_test_ratio_limit);
+
+	int32_t arm_without_gps = 0;
+	param_get(param_find("COM_ARM_WO_GPS"), &arm_without_gps);
 
 	bool gps_success = true;
 	bool gps_present = true;
@@ -92,7 +92,7 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 			} else if (status.pre_flt_fail_innov_vel_horiz) {
 				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: horizontal velocity estimate not stable");
 
-			} else if (status.pre_flt_fail_innov_vel_horiz) {
+			} else if (status.pre_flt_fail_innov_vel_vert) {
 				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: vertical velocity estimate not stable");
 
 			} else if (status.pre_flt_fail_innov_height) {
@@ -178,8 +178,8 @@ bool PreFlightCheck::ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 				} else if (status.gps_check_fail_flags & (1 << estimator_status_s::GPS_CHECK_FAIL_MIN_SAT_COUNT)) {
 					message = "Preflight%s: not enough GPS Satellites";
 
-				} else if (status.gps_check_fail_flags & (1 << estimator_status_s::GPS_CHECK_FAIL_MIN_PDOP)) {
-					message = "Preflight%s: GPS PDOP too low";
+				} else if (status.gps_check_fail_flags & (1 << estimator_status_s::GPS_CHECK_FAIL_MAX_PDOP)) {
+					message = "Preflight%s: GPS PDOP too high";
 
 				} else if (status.gps_check_fail_flags & (1 << estimator_status_s::GPS_CHECK_FAIL_MAX_HORZ_ERR)) {
 					message = "Preflight%s: GPS Horizontal Pos Error too high";
@@ -249,7 +249,7 @@ bool PreFlightCheck::ekf2CheckSensorBias(orb_advert_t *mavlink_log_pub, const bo
 
 		// check accelerometer bias estimates
 		if (bias.accel_bias_valid) {
-			const float ekf_ab_test_limit = 0.5f * bias.accel_bias_limit;
+			const float ekf_ab_test_limit = 0.75f * bias.accel_bias_limit;
 
 			for (uint8_t axis_index = 0; axis_index < 3; axis_index++) {
 				// allow for higher uncertainty in estimates for axes that are less observable to prevent false positives
@@ -270,7 +270,7 @@ bool PreFlightCheck::ekf2CheckSensorBias(orb_advert_t *mavlink_log_pub, const bo
 
 		// check gyro bias estimates
 		if (bias.gyro_bias_valid) {
-			const float ekf_gb_test_limit = 0.5f * bias.gyro_bias_limit;
+			const float ekf_gb_test_limit = 0.75f * bias.gyro_bias_limit;
 
 			for (uint8_t axis_index = 0; axis_index < 3; axis_index++) {
 				// allow for higher uncertainty in estimates for axes that are less observable to prevent false positives

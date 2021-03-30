@@ -405,6 +405,7 @@ MissionFeasibilityChecker::checkTakeoff(const mission_s &mission, float home_alt
 					  missionitem.nav_cmd != NAV_CMD_SET_CAMERA_MODE &&
 					  missionitem.nav_cmd != NAV_CMD_SET_CAMERA_ZOOM &&
 					  missionitem.nav_cmd != NAV_CMD_SET_CAMERA_FOCUS &&
+					  missionitem.nav_cmd != NAV_CMD_SET_CAMERA_FOCUS &&
 					  missionitem.nav_cmd != NAV_CMD_DO_VTOL_TRANSITION &&
 					  missionitem.nav_cmd != NAV_CMD_WAYPOINT_USER_1);
 		}
@@ -664,7 +665,7 @@ MissionFeasibilityChecker::checkDistanceToFirstWaypoint(const mission_s &mission
 		} else {
 			/* item is too far from home */
 			mavlink_log_critical(_navigator->get_mavlink_log_pub(),
-					     "First waypoint too far away: %d meters, %d max.",
+					     "First waypoint too far away: %dm, %d max",
 					     (int)dist_to_1wp, (int)max_distance);
 
 			_navigator->get_mission_result()->warning = true;

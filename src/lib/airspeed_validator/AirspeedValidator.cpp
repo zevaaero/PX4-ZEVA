@@ -80,18 +80,16 @@ AirspeedValidator::update_wind_estimator(const uint64_t time_now_usec, float air
 		const Vector3f vel_var{Dcmf(q) *Vector3f{lpos_evh, lpos_evh, lpos_evv}};
 		_wind_estimator.fuse_airspeed(time_now_usec, airspeed_true_raw, vI, Vector2f{vel_var(0), vel_var(1)});
 
-
-
 		// sideslip fusion
 		_wind_estimator.fuse_beta(time_now_usec, vI, q);
 	}
 }
 
 // this function returns the current states of the wind estimator to be published in the airspeed module
-wind_estimate_s
+airspeed_wind_s
 AirspeedValidator::get_wind_estimator_states(uint64_t timestamp)
 {
-	wind_estimate_s wind_est = {};
+	airspeed_wind_s wind_est = {};
 
 	wind_est.timestamp = timestamp;
 	float wind[2];

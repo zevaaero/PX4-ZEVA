@@ -84,6 +84,7 @@ ADC::~ADC()
 
 	perf_free(_sample_perf);
 	px4_arch_adc_uninit(_base_address);
+	close_gpio_devices();
 }
 
 int ADC::init()
@@ -126,6 +127,16 @@ void ADC::open_gpio_devices()
 #endif
 #ifdef BOARD_GPIO_VDD_5V_CAN1_GPS1_VALID
 	_5v_can1_gps1_valid_fd = open(BOARD_GPIO_VDD_5V_CAN1_GPS1_VALID, O_RDONLY);
+#endif
+}
+
+void ADC::close_gpio_devices()
+{
+#ifdef BOARD_GPIO_VDD_5V_COMP_VALID
+	close(_5v_comp_valid_fd);
+#endif
+#ifdef BOARD_GPIO_VDD_5V_CAN1_GPS1_VALID
+	close(_5v_can1_gps1_valid_fd);
 #endif
 }
 

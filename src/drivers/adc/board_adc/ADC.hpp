@@ -96,6 +96,7 @@ private:
 	void			update_system_power(hrt_abstime now);
 
 	void open_gpio_devices();
+	void close_gpio_devices();
 	uint8_t read_gpio_value(int fd);
 
 	static const hrt_abstime	kINTERVAL{10_ms};	/**< 100Hz base rate */

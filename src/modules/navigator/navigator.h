@@ -82,7 +82,7 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
-#include <uORB/topics/wind_estimate.h>
+#include <uORB/topics/wind.h>
 #include <uORB/uORB.h>
 
 using namespace time_literals;
@@ -173,7 +173,7 @@ public:
 	struct vehicle_local_position_s *get_local_position() { return &_local_pos; }
 	struct vehicle_status_s *get_vstatus() { return &_vstatus; }
 	struct vehicle_command_ack_s *get_cmd_ack() { return &_vehicle_cmd_ack; }
-	struct wind_estimate_s 		*get_wind() { return &_wind; }
+	struct wind_s 		*get_wind() { return &_wind; }
 	PrecLand *get_precland() { return &_precland; } /**< allow others, e.g. Mission, to use the precision land block */
 
 	bool getGroundSpeed(float &ground_speed);	// return true if groundspeed is valid
@@ -375,7 +375,7 @@ private:
 	uORB::Subscription _traffic_sub{ORB_ID(transponder_report)};		/**< traffic subscription */
 	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};	/**< vehicle commands (onboard and offboard) */
 	uORB::Subscription _vehicle_cmd_ack_sub{ORB_ID(vehicle_command_ack)};	/**< vehicle command acks (onboard and offboard) */
-	uORB::Subscription _wind_estimate_sub{ORB_ID(wind_estimate)};
+	uORB::Subscription _wind_sub{ORB_ID(wind)};
 
 	uORB::SubscriptionData<position_controller_status_s>	_position_controller_status_sub{ORB_ID(position_controller_status)};
 
@@ -399,7 +399,7 @@ private:
 	vehicle_local_position_s			_local_pos{};		/**< local vehicle position */
 	vehicle_status_s				_vstatus{};		/**< vehicle status */
 	vehicle_command_ack_s			_vehicle_cmd_ack{};		/**< vehicle command_ack */
-	wind_estimate_s 				_wind{};
+	wind_s 				_wind{};
 
 	uint8_t						_previous_nav_state{}; /**< nav_state of the previous iteration*/
 
@@ -458,7 +458,6 @@ private:
 	float _mission_cruising_speed_mc{-1.0f};
 	float _mission_cruising_speed_fw{-1.0f};
 	float _mission_throttle{NAN};
-
 
 	bool _mission_landing_in_progress{false};	// this flag gets set if the mission is currently executing on a landing pattern
 	// if mission mode is inactive, this flag will be cleared after 2 seconds

@@ -221,3 +221,4 @@ TEST_F(RangeRTL_tth, too_strong_crosswind_to_home)
 	// THEN: it should never get home
 	EXPECT_TRUE(std::isinf(tth)) << tth;
 }
+

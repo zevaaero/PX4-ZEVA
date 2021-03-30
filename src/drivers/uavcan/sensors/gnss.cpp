@@ -58,7 +58,6 @@ UavcanGnssBridge::UavcanGnssBridge(uavcan::INode &node) :
 	_sub_fix(node),
 	_sub_fix2(node),
 	_pub_rtcm(node),
-	_report_pub(nullptr),
 	_channel_using_fix2(new bool[_max_channels]),
 	_rtcm_perf(perf_alloc(PC_INTERVAL, "uavcan: gnss: rtcm pub"))
 {
@@ -477,7 +476,7 @@ bool UavcanGnssBridge::injectData(const uint8_t *const data, const size_t data_l
 		}
 
 		result = _pub_rtcm.broadcast(msg) >= 0;
-		msg.data = {};
+		msg.data.clear();
 	}
 
 	return result;

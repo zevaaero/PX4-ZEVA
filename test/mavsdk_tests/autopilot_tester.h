@@ -218,6 +218,31 @@ private:
 		}
 	}
 
+	template<typename Rep, typename Period>
+	void sleep_for(std::chrono::duration<Rep, Period> duration)
+	{
+		const std::chrono::microseconds duration_us(duration);
+
+		if (_telemetry && _telemetry->attitude_quaternion().timestamp_us != 0) {
+
+			const int64_t start_time_us = _telemetry->attitude_quaternion().timestamp_us;
+
+			while (true) {
+				// Hopefully this is often enough not to have PX4 time out on us.
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+				const int64_t elapsed_time_us = _telemetry->attitude_quaternion().timestamp_us - start_time_us;
+
+				if (elapsed_time_us > duration_us.count()) {
+					return;
+				}
+			}
+
+		} else {
+			std::this_thread::sleep_for(duration);
+		}
+	}
+
 	mavsdk::Mavsdk _mavsdk{};
 	std::unique_ptr<mavsdk::Action> _action{};
 	std::unique_ptr<mavsdk::Failure> _failure{};

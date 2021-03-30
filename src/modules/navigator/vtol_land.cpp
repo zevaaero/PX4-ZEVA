@@ -208,7 +208,7 @@ VtolLand::set_loiter_position()
 
 float VtolLand::getBestLandingHeading()
 {
-	wind_estimate_s *wind = _navigator->get_wind();
+	wind_s *wind = _navigator->get_wind();
 	const float wind_direction = atan2f(wind->windspeed_east, wind->windspeed_north);
 	uint8_t min_index = 0;
 	float delta_heading_prev = INFINITY;

@@ -314,3 +314,4 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	return OK;
 }
+
