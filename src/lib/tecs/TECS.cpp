@@ -89,12 +89,14 @@ void TECS::update_vehicle_state_estimates(float airspeed, const float speed_deri
 
 	// Update and average speed rate of change if airspeed is being measured
 	if (PX4_ISFINITE(airspeed) && airspeed_sensor_enabled()) {
+		_tas_rate_raw = speed_deriv_forward;
 		// Apply some noise filtering
 		_TAS_rate_filter.update(speed_deriv_forward);
-		_speed_derivative = _TAS_rate_filter.getState();
+		_tas_rate_filtered = _TAS_rate_filter.getState();
 
 	} else {
-		_speed_derivative = 0.0f;
+		_tas_rate_raw = 0.0f;
+		_tas_rate_filtered = 0.0f;
 	}
 
 	if (!_in_air) {
@@ -143,7 +145,7 @@ void TECS::_update_speed_states(float airspeed_setpoint, float indicated_airspee
 
 	// Update TAS state
 	_tas_rate_state = _tas_rate_state + tas_rate_state_input * dt;
-	float tas_state_input = _tas_rate_state + _speed_derivative + tas_error * _tas_estimate_freq * 1.4142f;
+	float tas_state_input = _tas_rate_state + _tas_rate_raw + tas_error * _tas_estimate_freq * 1.4142f;
 	_tas_state = _tas_state + tas_state_input * dt;
 
 	// Limit the airspeed state to a minimum of 3 m/s
@@ -269,7 +271,7 @@ void TECS::_update_energy_estimates()
 
 	// Calculate specific energy rates in units of (m**2/sec**3)
 	_SPE_rate = _vert_vel_state * CONSTANTS_ONE_G; // potential energy rate of change
-	_SKE_rate = _tas_state * _speed_derivative;// kinetic energy rate of change
+	_SKE_rate = _tas_state * _tas_rate_filtered;// kinetic energy rate of change
 }
 
 void TECS::_update_throttle_setpoint(const float throttle_cruise, const matrix::Dcmf &rotMat)
