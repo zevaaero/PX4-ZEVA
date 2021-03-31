@@ -1798,7 +1798,6 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("ADSB_VEHICLE", unlimited_rate);
 		configure_stream_local("ATTITUDE_TARGET", 2.0f);
 		configure_stream_local("BATTERY_STATUS", 0.5f);
-		configure_stream_local("CAMERA_CAPTURE", 2.0f);
 		configure_stream_local("COLLISION", unlimited_rate);
 		configure_stream_local("ESTIMATOR_STATUS", 1.0f);
 		configure_stream_local("EXTENDED_SYS_STATE", 1.0f);
