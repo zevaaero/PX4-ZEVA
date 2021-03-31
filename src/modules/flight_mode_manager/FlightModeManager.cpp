@@ -515,6 +515,11 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 	const bool flying = _takeoff.getTakeoffState() >= TakeoffState::flight;
 	const bool flying_but_ground_contact = flying && _vehicle_land_detected_sub.get().ground_contact;
 
+	// make sure takeoff ramp is not amended by acceleration feed-forward
+	if (!flying) {
+		setpoint.acceleration[2] = NAN;
+	}
+
 	if (not_taken_off || flying_but_ground_contact) {
 		// we are not flying yet and need to avoid any corrections
 		reset_setpoint_to_nan(setpoint);
