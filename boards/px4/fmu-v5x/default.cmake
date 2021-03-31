@@ -10,7 +10,6 @@ px4_add_board(
 	IO px4_io-v2_default
 	TESTING
 	UAVCAN_INTERFACES 2
-	ETHERNET
 	SERIAL_PORTS
 		GPS1:/dev/ttyS0
 		TEL1:/dev/ttyS6
@@ -30,7 +29,7 @@ px4_add_board(
 		gps
 		heater
 		#imu # all available imu drivers
-		imu/analog_devices/adis16448
+		#imu/analog_devices/adis16448
 		imu/bosch/bmi088
 		imu/invensense/icm20602
 		imu/invensense/icm42688p
@@ -108,7 +107,6 @@ px4_add_board(
 		motor_test
 		mtd
 		nshterm
-		netman
 		param
 		perf
 		pwm
@@ -125,19 +123,18 @@ px4_add_board(
 		usb_connected
 		ver
 		work_queue
-		serial_test
 	EXAMPLES
 		fake_gps
 		fake_gyro
 		fake_magnetometer
-		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
-		hello
-		hwtest # Hardware test
+		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
+		#hello
+		#hwtest # Hardware test
 		#matlab_csv_serial
 		ext_update_checker
-		px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
-		px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
-		rover_steering_control # Rover example app
-		uuv_example_app
-		work_item
+		#px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
+		#px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
+		#rover_steering_control # Rover example app
+		#uuv_example_app
+		#work_item
 	)
