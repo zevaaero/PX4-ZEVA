@@ -37,6 +37,7 @@
 #include "FlightTasks_generated.hpp"
 
 #include <drivers/drv_hrt.h>
+#include <lib/slew_rate/SlewRateYaw.hpp>
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
@@ -137,6 +138,7 @@ private:
 	WeatherVane *_wv_controller{nullptr};
 	int8_t _old_landing_gear_position{landing_gear_s::GEAR_KEEP};
 	uint8_t _old_takeoff_state{0};
+	SlewRate<float> _tilt_limit_slew_rate;
 	int _task_failure_count{0};
 	uint8_t _last_vehicle_nav_state{0};
 
@@ -164,6 +166,7 @@ private:
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::MPC_POS_MODE>) _param_mpc_pos_mode,
+		(ParamFloat<px4::params::MPC_TILTMAX_AIR>) _param_mpc_tiltmax_air,
 		(ParamFloat<px4::params::MPC_TILTMAX_LND>) _param_mpc_tiltmax_lnd,
 		(ParamFloat<px4::params::MPC_Z_VEL_MAX_UP>) _param_mpc_z_vel_max_up,
 		(ParamFloat<px4::params::COM_SPOOLUP_TIME>) _param_com_spoolup_time,

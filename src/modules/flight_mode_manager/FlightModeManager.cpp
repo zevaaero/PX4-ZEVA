@@ -52,6 +52,7 @@ FlightModeManager::FlightModeManager() :
 
 	// disable all tasks
 	_initTask(FlightTaskIndex::None);
+	_tilt_limit_slew_rate.setSlewRate(.2f);
 }
 
 FlightModeManager::~FlightModeManager()
@@ -550,9 +551,9 @@ void FlightModeManager::generateTrajectorySetpoint(const float dt,
 	}
 
 	// limit tilt during takeoff ramupup
-	if (_takeoff.getTakeoffState() < TakeoffState::flight) {
-		constraints.tilt = math::radians(_param_mpc_tiltmax_lnd.get());
-	}
+	const float tilt_limit_deg = (_takeoff.getTakeoffState() < TakeoffState::flight)
+				     ? _param_mpc_tiltmax_lnd.get() : _param_mpc_tiltmax_air.get();
+	constraints.tilt = _tilt_limit_slew_rate.update(math::radians(tilt_limit_deg), dt);
 
 	// handle smooth takeoff
 	_takeoff.updateTakeoffState(_vehicle_control_mode_sub.get().flag_armed, _vehicle_land_detected_sub.get().landed,
