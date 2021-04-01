@@ -109,7 +109,7 @@ px4_add_board(
 		reflect
 		sd_bench
 		system_time
-		tests # tests and test runner
+		#tests # tests and test runner
 		top
 		topic_listener
 		tune_control
