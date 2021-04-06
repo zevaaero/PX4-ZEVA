@@ -82,7 +82,7 @@ jobs:
         echo "::set-output name=release::${DISTRO_REF_BRANCH}"
         echo "::set-output name=timestamp::$(date)"
         cd distro
-        echo "::set-output name=branch::`sh -c \"if git ls-remote --heads https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi\"`"
+        echo "::set-output name=branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi\ | tail -1"`"
         cd ..
 
     - name: create PR to auterion_distro_resin repo
