@@ -186,9 +186,9 @@ void MagBiasEstimator::Run()
 				const Vector3f bias_rate = (bias - bias_prev) / dt;
 
 				Vector3f fitness;
-				fitness(0) = fabsf(angular_velocity(0)) / fmaxf(fabsf(bias_rate(1)) + fabsf(bias_rate(2)), 0.1f);
-				fitness(1) = fabsf(angular_velocity(1)) / fmaxf(fabsf(bias_rate(0)) + fabsf(bias_rate(2)), 0.1f);
-				fitness(2) = fabsf(angular_velocity(2)) / fmaxf(fabsf(bias_rate(0)) + fabsf(bias_rate(1)), 0.1f);
+				fitness(0) = fabsf(angular_velocity(0)) / fmaxf(fabsf(bias_rate(1)) + fabsf(bias_rate(2)), 0.02f);
+				fitness(1) = fabsf(angular_velocity(1)) / fmaxf(fabsf(bias_rate(0)) + fabsf(bias_rate(2)), 0.02f);
+				fitness(2) = fabsf(angular_velocity(2)) / fmaxf(fabsf(bias_rate(0)) + fabsf(bias_rate(1)), 0.02f);
 
 				if (!PX4_ISFINITE(bias(0)) || !PX4_ISFINITE(bias(1)) || !PX4_ISFINITE(bias(2)) || bias.longerThan(5.f)) {
 					_reset_field_estimator[mag_index] = true;
