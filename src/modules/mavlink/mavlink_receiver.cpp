@@ -3017,13 +3017,13 @@ MavlinkReceiver::handle_message_statustext(mavlink_message_t *msg)
 	mavlink_statustext_t msg_statustext;
 	mavlink_msg_statustext_decode(msg, &msg_statustext);
 
-	log_message_s log_msg;
-	log_msg.timestamp = hrt_absolute_time();
-	log_msg.severity = msg_statustext.severity;
-	memcpy(log_msg.text, msg_statustext.text, math::min(sizeof(log_msg.text), sizeof(msg_statustext.text)));
-	log_msg.text[sizeof(log_msg.text) - 1] = '\0';
+	if (_mavlink_statustext_handler.should_publish_previous(msg_statustext)) {
+		_log_message_incoming_pub.publish(_mavlink_statustext_handler.log_message());
+	}
 
-	_log_message_incoming_pub.publish(log_msg);
+	if (_mavlink_statustext_handler.should_publish_current(msg_statustext, hrt_absolute_time())) {
+		_log_message_incoming_pub.publish(_mavlink_statustext_handler.log_message());
+	}
 }
 
 void

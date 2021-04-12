@@ -59,6 +59,7 @@ px4_add_module(
 		mavlink_stream.cpp
 		mavlink_timesync.cpp
 		mavlink_ulog.cpp
+		MavlinkStatustextHandler.cpp
 		mavlink_terrain.cpp
 		tune_publisher.cpp
 		terrain.cpp
@@ -90,4 +91,11 @@ px4_add_functional_gtest(SRC mavlink_terrain_test.cpp
 	COMPILE_FLAGS
 		-DMODULE_NAME=\"mavlink\"
 		-Wno-address-of-packed-member # TODO: fix in c_library_v2
+	)
+
+px4_add_unit_gtest(SRC MavlinkStatustextHandlerTest.cpp
+	INCLUDES ${PX4_SOURCE_DIR}/mavlink/include/mavlink
+	COMPILE_FLAGS
+		-Wno-address-of-packed-member # TODO: fix in c_library_v2
+		LINKLIBS modules__mavlink
 	)
