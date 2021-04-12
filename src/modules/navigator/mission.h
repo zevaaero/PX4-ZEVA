@@ -256,6 +256,7 @@ private:
 	mission_s		_old_mission {};			/**< old mission is used as a backup and for comparison with a new mission */
 
 	int32_t _current_mission_index{-1};
+	int32_t _previous_custom_action_mission_index{-1};
 
 	TerrainFollowerWrapper &_terrain_follower;
 	hrt_abstime _time_last_terrain_checked{0};
@@ -285,8 +286,6 @@ private:
 	bool _need_mission_reset{false};
 	bool _mission_waypoints_changed{false};
 	bool _mission_changed{false};	/** < true if the mission changed since the mission mode was active */
-
-	bool _custom_action_set{false};	/** < true if custom action item was set */
 
 	enum work_item_type {
 		WORK_ITEM_TYPE_DEFAULT,		/**< default mission item */
