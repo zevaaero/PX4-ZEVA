@@ -251,34 +251,13 @@ Mission::on_active()
 		}
 
 		if (_mission_item.autocontinue) {
-			/* If a custom action exists, set it and make it available to the navigator
-			   main routine */
+			/* switch to next waypoint if 'autocontinue' flag set */
 
-			if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1 && !_custom_action_set
-			    && !_navigator->get_in_custom_action()) {
-				custom_action_s custom_action{};
-				custom_action.id = _mission_item.params[0];
-				custom_action.timeout = _mission_item.params[2] * 1000000;
-
-				_navigator->set_custom_action(custom_action);
-				_navigator->set_in_custom_action();
-
-				// This guarantees that each item is verified correctly
-				// and the setup of the custom action execution is done correctly
-				_custom_action_set = true;
+			if (!reload_mission_items) {
+				advance_mission();
 			}
 
-			if (!_navigator->get_in_custom_action()) {
-				/* switch to next waypoint if 'autocontinue' flag set */
-
-				_custom_action_set = false;
-
-				if (!reload_mission_items) {
-					advance_mission();
-				}
-
-				set_mission_items();
-			}
+			set_mission_items();
 		}
 
 	} else {
@@ -1126,6 +1105,21 @@ Mission::set_mission_items()
 		case mission_result_s::MISSION_EXECUTION_MODE_FAST_FORWARD: {
 				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
+				/* If a custom action exists, set it and make it available to the navigator
+				   main routine */
+				if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1
+				    && !_navigator->get_in_custom_action()
+				    && _current_mission_index != _previous_custom_action_mission_index) {
+					custom_action_s custom_action{};
+					custom_action.id = _mission_item.params[0];
+					custom_action.timeout = _mission_item.params[2] * 1000000;
+
+					_navigator->set_custom_action(custom_action);
+					_navigator->set_in_custom_action();
+
+					PX4_INFO("Processing custom action #%d", custom_action.id);
+				}
+
 				/* turn towards next waypoint before MC to FW transition */
 				if (_mission_item.nav_cmd == NAV_CMD_DO_VTOL_TRANSITION
 				    && _work_item_type == WORK_ITEM_TYPE_DEFAULT
@@ -1253,7 +1247,25 @@ Mission::set_mission_items()
 	}
 
 	/* issue command if ready (will do nothing for position mission items) */
-	issue_command(_mission_item);
+	if (_mission_item.nav_cmd != NAV_CMD_WAYPOINT_USER_1) {
+		issue_command(_mission_item);
+	}
+
+	/* In the case of NAV_CMD_WAYPOINT_USER_1 mission items (for custom actions)
+	 * it will not send the same MAV_CMD_WAYPOINT_USER_1 command if for some
+	 * reason we left Mission mode and returned back to it. This avoids that it
+	 * gets sent at least twice after getting back to Mission mode and before
+	 * advancing to the next waypoint.
+	 * (e.g. if a custom action command changes the FMU to another mode, this
+	 * will avoid that the same  gets sent again when the FMU changes back to
+	 * Mission mode).
+	 */
+	if (_mission_item.nav_cmd == NAV_CMD_WAYPOINT_USER_1
+	    && _current_mission_index != _previous_custom_action_mission_index) {
+		issue_command(_mission_item);
+	}
+
+	_previous_custom_action_mission_index = _current_mission_index;
 
 	/* set current work item type */
 	_work_item_type = new_work_item_type;

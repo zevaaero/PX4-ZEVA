@@ -93,7 +93,7 @@ using namespace time_literals;
 #define NAVIGATOR_MODE_ARRAY_SIZE 11
 
 struct custom_action_s {
-	int8_t id;
+	int8_t id{-1};
 	uint64_t timeout;
 	bool timer_started;
 	uint64_t start_time;

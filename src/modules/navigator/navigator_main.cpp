@@ -292,11 +292,11 @@ Navigator::run()
 
 					// send message to cancel the action process on the external system
 					// processing the action. Note that the external system component
-					// should be identified as MAV_COMP_ID_PATHPLANNER
+					// should be identified as MAV_COMP_ID_ONBOARD_COMPUTER
 					vehicle_command_cancel_s vcmd_cancel = {};
 					vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
 					vcmd_cancel.target_system = 0;
-					vcmd_cancel.target_component = 195; // MAV_COMP_ID_PATHPLANNER
+					vcmd_cancel.target_component = 191; // MAV_COMP_ID_ONBOARD_COMPUTER
 					publish_vehicle_cmd_cancel(&vcmd_cancel);
 
 					reset_custom_action();
@@ -316,11 +316,11 @@ Navigator::run()
 
 			// send message to cancel the action process on the external system
 			// processing the action. Note that the external system component
-			// should be identified as MAV_COMP_ID_PATHPLANNER
+			// should be identified as MAV_COMP_ID_ONBOARD_COMPUTER
 			vehicle_command_cancel_s vcmd_cancel = {};
 			vcmd_cancel.command = vehicle_command_s::VEHICLE_CMD_NAV_WAYPOINT_USER_1;
 			vcmd_cancel.target_system = 0;
-			vcmd_cancel.target_component = 195;
+			vcmd_cancel.target_component = 191; // MAV_COMP_ID_ONBOARD_COMPUTER
 			publish_vehicle_cmd_cancel(&vcmd_cancel);
 
 			reset_custom_action();
@@ -1608,6 +1608,10 @@ Navigator::publish_vehicle_cmd(vehicle_command_s *vcmd)
 	case NAV_CMD_VIDEO_START_CAPTURE:
 	case NAV_CMD_VIDEO_STOP_CAPTURE:
 		vcmd->target_component = 100; // MAV_COMP_ID_CAMERA
+		break;
+
+	case NAV_CMD_WAYPOINT_USER_1:
+		vcmd->target_component = 191; // MAV_COMP_ID_ONBOARD_COMPUTER
 		break;
 
 	default:
