@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2014-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2014-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -113,6 +113,21 @@ PARAM_DEFINE_FLOAT(MIS_DIST_1WP, 900);
  * @group Mission
  */
 PARAM_DEFINE_FLOAT(MIS_DIST_WPS, 900);
+
+/**
+ * Maximum allowed flight time
+ *
+ * Check to prevent missions that would take too long.
+ * Set a value of zero to disable. The mission will not be started if the total flight time
+ * is greater than MIS_FLIGHT_TIME. The default is 3540 seconds (59 minutes).
+ *
+ * @unit s
+ * @min 0
+ * @max 10000
+ * @value 0 Disable
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(MIS_FLIGHT_TIME, 3540);
 
 /**
 * Enable yaw control of the mount. (Only affects multicopters and ROI mission items)

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,7 +56,7 @@
 bool
 MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission,
 		float max_distance_to_1st_waypoint, float max_distance_between_waypoints,
-		bool land_start_req)
+		int max_flight_time, bool land_start_req)
 {
 	// trivial case: A mission with length zero cannot be valid
 	if ((int)mission.count <= 0) {
@@ -86,6 +86,10 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission,
 	failed = failed || !checkDistancesBetweenWaypoints(mission, max_distance_between_waypoints);
 	failed = failed || !checkGeofence(mission, home_alt, home_valid);
 	failed = failed || !checkHomePositionAltitude(mission, home_alt, home_alt_valid, warned);
+
+	if (max_flight_time > 0) {
+		failed = failed || !checkFlightTime(mission, max_flight_time);
+	}
 
 	if (_navigator->get_vstatus()->is_vtol) {
 		failed = failed || !checkVTOL(mission, home_alt, false);
@@ -748,4 +752,227 @@ MissionFeasibilityChecker::checkDistancesBetweenWaypoints(const mission_s &missi
 
 	/* We ran through all waypoints and have not found any distances between waypoints that are too far. */
 	return true;
+}
+
+bool
+MissionFeasibilityChecker::checkFlightTime(const mission_s &mission, int max_flight_time)
+{
+	bool success = true;
+
+	float hover_speed = 0.0f;
+	float cruise_speed = 0.0f;
+	float takeoff_speed = 0.0f;
+	float land_speed = 0.0f;
+
+	uint8_t vehicle_type = _navigator->get_vstatus()->vehicle_type;
+
+	if (_navigator->get_vstatus()->is_vtol) {
+		param_get(param_find("FW_AIRSPD_TRIM"), &cruise_speed);
+		param_get(param_find("MPC_XY_CRUISE"), &hover_speed);
+		param_get(param_find("MPC_Z_VEL_MAX_UP"), &takeoff_speed);
+		param_get(param_find("MPC_Z_VEL_MAX_DN"), &land_speed);
+
+		if ((cruise_speed <= 0) && (hover_speed <= 0) && (takeoff_speed <= 0) && (land_speed <= 0)) {
+			success = false;
+		}
+
+	} else {
+		switch (vehicle_type) {
+		case vehicle_status_s::VEHICLE_TYPE_ROTARY_WING:
+			param_get(param_find("MPC_XY_CRUISE"), &hover_speed);
+			param_get(param_find("MPC_Z_VEL_MAX_UP"), &takeoff_speed);
+			param_get(param_find("MPC_Z_VEL_MAX_DN"), &land_speed);
+
+			if ((hover_speed <= 0) && (takeoff_speed <= 0) && (land_speed <= 0)) {
+				success = false;
+			}
+
+			break;
+
+		case vehicle_status_s::VEHICLE_TYPE_FIXED_WING:
+			param_get(param_find("FW_AIRSPD_TRIM"), &cruise_speed);
+			param_get(param_find("FW_T_CLMB_MAX"), &takeoff_speed);
+			param_get(param_find("FW_T_SINK_MIN"), &land_speed);
+
+			if ((cruise_speed <= 0) && (takeoff_speed <= 0) && (land_speed <= 0)) {
+				success = false;
+			}
+
+			break;
+		}
+	}
+
+	if (!success) {
+
+		PX4_ERR("mission feasibility could not be determined due to parameter problem!");
+
+	} else {
+
+		float last_atlitude = (float)NAN;
+		float rtl_atlitude = (float)NAN;
+		double last_lat = (double)NAN;
+		double last_lon = (double)NAN;
+
+		float hover_time = 0.0f;
+		float cruise_time = 0.0f;
+		float takeoff_time = 0.0f;
+		float land_time = 0.0f;
+		float total_distance = 0.0f;
+		float loiter_radius = 0.0f;
+
+		bool is_first_waypoint = true;
+		bool is_received_rtl_cmd = false;
+		bool vtol_in_hover = false;
+
+		for (size_t i = 0; i < mission.count; i++) {
+
+			float distance = 0.0f;
+
+			struct mission_item_s mission_item {};
+
+			if (!(dm_read((dm_item_t)mission.dataman_id, i, &mission_item, sizeof(mission_item_s)) == sizeof(mission_item_s))) {
+				/* error reading, mission is invalid */
+				mavlink_log_info(_navigator->get_mavlink_log_pub(), "Error reading offboard mission.");
+				return false;
+			}
+
+			/* check only items with valid lat/lon */
+			if (MissionBlock::item_contains_position(mission_item)) {
+
+				/* check VTOL transition */
+				if (_navigator->get_vstatus()->is_vtol && (mission_item.nav_cmd == NAV_CMD_DO_VTOL_TRANSITION)) {
+					vtol_in_hover = !vtol_in_hover;
+				}
+
+				if ((mission_item.nav_cmd == NAV_CMD_TAKEOFF) || (mission_item.nav_cmd == NAV_CMD_VTOL_TAKEOFF)) {
+					float takeoff_altitude = mission_item.altitude;
+					takeoff_time = takeoff_altitude / takeoff_speed;
+				}
+
+				if (is_first_waypoint) {
+					/* check distance from current position to item */
+					distance = get_distance_to_next_waypoint(
+							   mission_item.lat, mission_item.lon,
+							   _navigator->get_home_position()->lat, _navigator->get_home_position()->lon);
+
+					is_first_waypoint = false;
+
+				} else if (mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
+					distance = get_distance_to_next_waypoint(
+							   mission_item.lat, mission_item.lon, last_lat, last_lon);
+
+					loiter_radius = mission_item.loiter_radius;
+
+				} else if ((mission_item.nav_cmd == NAV_CMD_LAND)  || (mission_item.nav_cmd == NAV_CMD_VTOL_LAND)) {
+
+					float distance_to_landpoint = get_distance_to_next_waypoint(
+									      mission_item.lat, mission_item.lon, last_lat, last_lon);
+
+					if (vtol_in_hover || (vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING)) {
+
+						land_time =  mission_item.altitude / land_speed;
+						distance = distance_to_landpoint;
+
+					} else {
+
+						if (loiter_radius > distance_to_landpoint) {
+							distance = distance_to_landpoint;
+
+						} else {
+							distance = sqrtf(powf(distance_to_landpoint, 2) - powf(loiter_radius, 2));
+							distance += loiter_radius;
+						}
+					}
+
+				} else {
+					distance += get_distance_to_next_waypoint(
+							    mission_item.lat, mission_item.lon, last_lat, last_lon);
+				}
+
+				total_distance += distance;
+				last_atlitude = mission_item.altitude;
+				last_lat = mission_item.lat;
+				last_lon = mission_item.lon;
+
+				if (_navigator->get_vstatus()->is_vtol) {
+
+					if (vtol_in_hover) {
+						hover_time += (distance / hover_speed);
+
+					} else {
+						cruise_time += (distance / cruise_speed);
+					}
+
+				} else {
+					hover_time += (distance / hover_speed);
+					cruise_time += (distance / cruise_speed);
+				}
+			}
+
+			if (mission_item.nav_cmd == NAV_CMD_RETURN_TO_LAUNCH) {
+				is_received_rtl_cmd = true;
+				rtl_atlitude = mission_item.altitude;
+			}
+		}
+
+		if (is_received_rtl_cmd) {
+			float diff_altitude = abs(last_atlitude - rtl_atlitude);
+
+			total_distance += get_distance_to_next_waypoint(
+						  _navigator->get_home_position()->lat, _navigator->get_home_position()->lon,
+						  last_lat, last_lon);
+
+			land_time = diff_altitude / land_speed;
+		}
+
+		float total_time = 0.0f;
+
+		if (_navigator->get_vstatus()->is_vtol) {
+
+			total_time = takeoff_time + hover_time + cruise_time + land_time;
+
+		} else {
+
+			switch (vehicle_type) {
+			case vehicle_status_s::VEHICLE_TYPE_ROTARY_WING:
+
+				hover_time = total_distance / hover_speed;
+				total_time = takeoff_time + hover_time + land_time;
+				break;
+
+			case vehicle_status_s::VEHICLE_TYPE_FIXED_WING:
+				total_time = cruise_time;
+				break;
+			}
+		}
+
+		float in_air_time = 0.0f;
+
+		if (_navigator->get_vstatus()->takeoff_time != 0) {
+			in_air_time = static_cast<float>(hrt_elapsed_time(&(_navigator->get_vstatus()->takeoff_time))) / 1000000.0f;;
+			total_time += in_air_time;
+		}
+
+		if (static_cast<int>(total_time) > max_flight_time) {
+			/* total time is over the limit */
+			mavlink_log_critical(_navigator->get_mavlink_log_pub(),
+					     "Total flight time: %d min and %d sec. \nFlight time is limmited to: %d min and %d sec ",
+					     ((int)total_time / 60), ((int)total_time % 60), ((int)max_flight_time / 60), ((int)max_flight_time % 60));
+
+			_navigator->get_mission_result()->warning = true;
+			success = false;
+		}
+
+		/*
+		// helpful for development
+		mavlink_log_info(_navigator->get_mavlink_log_pub(),
+					"Total distance: %d m \nTotal flight time: %02d:%02d:%02d \nIn the air: %02d:%02d:%02d",
+					(int)round(total_distance),
+					(int)total_time / 3600, (int)total_time / 60, (int)total_time % 60,
+					(int)in_air_time / 3600, (int)in_air_time / 60, (int)in_air_time % 60);
+		*/
+
+	}
+
+	return success;
 }
