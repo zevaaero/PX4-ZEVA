@@ -565,6 +565,7 @@ private:
 	mavlink_channel_t	_channel{MAVLINK_COMM_0};
 
 	pthread_t		_receive_thread {};
+	pthread_mutex_t		_radio_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	bool			_forwarding_on{false};
 	bool			_ftp_on{false};
