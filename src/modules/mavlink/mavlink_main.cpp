@@ -1492,6 +1492,9 @@ Mavlink::update_rate_mult()
 	}
 
 	float hardware_mult = 1.0f;
+	bool log_radio_timeout = false;
+
+	pthread_mutex_lock(&_radio_status_mutex);
 
 	/* scale down if we have a TX err rate suggesting link congestion */
 	if (_tstatus.rate_txerr > 0.0f && !_radio_status_critical) {
@@ -1502,8 +1505,8 @@ Mavlink::update_rate_mult()
 		// check for RADIO_STATUS timeout and reset
 		if (hrt_elapsed_time(&_rstatus.timestamp) > (_param_mav_radio_timeout.get() *
 				1_s)) {
-			PX4_ERR("instance %d: RADIO_STATUS timeout", _instance_id);
 			_radio_status_available = false;
+			log_radio_timeout = true;
 
 			if (_use_software_mav_throttling) {
 				_radio_status_critical = false;
@@ -1512,6 +1515,12 @@ Mavlink::update_rate_mult()
 		}
 
 		hardware_mult *= _radio_status_mult;
+	}
+
+	pthread_mutex_unlock(&_radio_status_mutex);
+
+	if (log_radio_timeout) {
+		PX4_ERR("instance %d: RADIO_STATUS timeout", _instance_id);
 	}
 
 	/* pick the minimum from bandwidth mult and hardware mult as limit */
@@ -1524,6 +1533,7 @@ Mavlink::update_rate_mult()
 void
 Mavlink::update_radio_status(const radio_status_s &radio_status)
 {
+	pthread_mutex_lock(&_radio_status_mutex);
 	_rstatus = radio_status;
 	_radio_status_available = true;
 
@@ -1545,6 +1555,8 @@ Mavlink::update_radio_status(const radio_status_s &radio_status)
 			_radio_status_mult *= 1.025f;
 		}
 	}
+
+	pthread_mutex_unlock(&_radio_status_mutex);
 }
 
 int
