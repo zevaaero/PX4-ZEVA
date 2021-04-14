@@ -1,0 +1,16 @@
+name: "Update Title & Label on Pull Request"
+on: pull_request
+
+jobs:
+  update_pr:
+    runs-on: ubuntu-latest
+    steps:
+    # Prefix PR title with [release/<version>] for PR's to release branches
+    - uses: tzkhan/pr-update-action@v2
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        base-branch-regex: 'release/[0-9\.]+'
+        title-template: '[%basebranch%] '
+    - uses: srvaroa/labeler@master
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
