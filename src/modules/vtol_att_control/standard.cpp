@@ -72,9 +72,8 @@ Standard::parameters_update()
 {
 	float v;
 
-	/* duration of a forwards transition to fw mode */
 	param_get(_params_handles_standard.pusher_ramp_dt, &v);
-	_params_standard.pusher_ramp_dt = math::constrain(v, 0.0f, 20.0f);
+	_params_standard.pusher_ramp_dt = math::max(0.0f, v);
 
 	/* MC ramp up during back transition to mc mode */
 	param_get(_params_handles_standard.back_trans_ramp, &v);
@@ -287,6 +286,8 @@ void Standard::update_transition_state()
 
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
+		updatePusherThrottleDuringBacktransition(time_since_trans_start);
+
 		if (_v_control_mode->flag_control_climb_rate_enabled) {
 			// control backtransition deceleration using pitch.
 			_v_att_sp->pitch_body = update_and_get_backtransition_pitch_sp();
@@ -299,15 +300,6 @@ void Standard::update_transition_state()
 
 		const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 		q_sp.copyTo(_v_att_sp->q_d);
-
-		_pusher_throttle = 0.0f;
-
-		if (time_since_trans_start >= _params_standard.reverse_delay) {
-			// Handle throttle reversal for active breaking
-			float thrscale = (time_since_trans_start - _params_standard.reverse_delay) / (_params_standard.pusher_ramp_dt);
-			thrscale = math::constrain(thrscale, 0.0f, 1.0f);
-			_pusher_throttle = thrscale * _params->back_trans_throttle;
-		}
 
 		// continually increase mc attitude control as we transition back to mc mode
 		if (_params_standard.back_trans_ramp > FLT_EPSILON) {
@@ -331,6 +323,46 @@ void Standard::update_transition_state()
 	_mc_throttle_weight = mc_weight;
 }
 
+void Standard::updatePusherThrottleDuringBacktransition(float time_since_trans_start_s)
+{
+	if (_params_standard.pusher_ramp_dt < 0.01f) {
+		_pusher_throttle = _params->back_trans_throttle;
+
+	} else if (_params->back_trans_throttle >= 0.0f) {
+
+		_pusher_throttle = rampDownThrottle(time_since_trans_start_s);
+
+	} else {
+		_pusher_throttle = getReverseThrottleForBraking(time_since_trans_start_s);
+	}
+
+}
+
+float Standard::rampDownThrottle(float time_since_trans_start_s)
+{
+	float scale = (1.0f - time_since_trans_start_s / _params_standard.pusher_ramp_dt);
+	scale = math::constrain(scale, 0.0f, 1.0f);
+	const float delta_throttle = _pusher_thr_btrans_start - _params->back_trans_throttle;
+	return _params->back_trans_throttle + scale * delta_throttle;
+
+
+}
+
+float Standard::getReverseThrottleForBraking(float time_since_trans_start_s)
+{
+	if (time_since_trans_start_s >= _params_standard.reverse_delay) {
+		// Handle throttle reversal for active breaking
+		float thrscale = (time_since_trans_start_s - _params_standard.reverse_delay) /
+				 _params_standard.pusher_ramp_dt;
+		thrscale = math::constrain(thrscale, 0.0f, 1.0f);
+		return thrscale * _params->back_trans_throttle;
+
+	} else {
+		// cut throttle while we are waiting for the ramp to begin
+		return 0.0f;
+	}
+}
+
 void Standard::update_mc_state()
 {
 	VtolType::update_mc_state();
@@ -343,6 +375,8 @@ void Standard::update_fw_state()
 	VtolType::update_fw_state();
 
 	VtolType::set_alternate_motor_state(motor_state::DISABLED);
+
+	_pusher_thr_btrans_start = _pusher_throttle;
 }
 
 /**
@@ -409,6 +443,7 @@ void Standard::fill_actuator_outputs()
 		mc_out[actuator_controls_s::INDEX_LANDING_GEAR] = 0;
 
 		// FW out = FW in
+		_pusher_throttle = fw_in[actuator_controls_s::INDEX_THROTTLE];
 		fw_out[actuator_controls_s::INDEX_ROLL]         = fw_in[actuator_controls_s::INDEX_ROLL];
 		fw_out[actuator_controls_s::INDEX_PITCH]        = fw_in[actuator_controls_s::INDEX_PITCH];
 		fw_out[actuator_controls_s::INDEX_YAW]          = fw_in[actuator_controls_s::INDEX_YAW];

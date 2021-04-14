@@ -64,6 +64,10 @@ public:
 	void fill_actuator_outputs() override;
 	void waiting_on_tecs() override;
 
+	void updatePusherThrottleDuringBacktransition(float time_since_trans_start_s);
+	float rampDownThrottle(float time_since_trans_start_s);
+	float getReverseThrottleForBraking(float time_since_trans_start_s);
+
 private:
 
 	struct {
@@ -95,6 +99,7 @@ private:
 	} _vtol_schedule;
 
 	float _pusher_throttle{0.0f};
+	float _pusher_thr_btrans_start{0.0f};
 	float _reverse_output{0.0f};
 	float _airspeed_trans_blend_margin{0.0f};
 
