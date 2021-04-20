@@ -9,13 +9,22 @@ mavlink start -d /dev/ttyACM0
 # if skynode base board is detected start Mavlink on Telem2
 if ver hwtypecmp V5X90 V5X91 V5Xa0 V5Xa1
 then
+	if param compare MAV_S_FORWARD 1
+	then
+		set S_FORWARD "-f"
+	else
+		set S_FORWARD ""
+	fi
+
 	# If protocol splitter is configured to start on TELEM2, do not start the mavlink stream
 	if param compare MAV_SKN_RTPS 1
 	then
 		protocol_splitter start /dev/ttyS4
-		mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z
+		mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z $S_FORWARD
 		micrortps_client start -d /dev/rtps -b 3000000 -h
 	else
-		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z
+		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z $S_FORWARD
 	fi
+
+	unset S_FORWARD
 fi
