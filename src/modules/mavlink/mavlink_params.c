@@ -202,3 +202,14 @@ PARAM_DEFINE_INT32(MAV_RADIO_TOUT, 25);
  * @reboot_required true
  */
 PARAM_DEFINE_INT32(MAV_SKN_RTPS, 0);
+
+/**
+ * Enable MAVLink forwarding on TELEM2
+ *
+ * TELEM2 on Skynode only.
+ *
+ * @boolean
+ * @group MAVLink
+ * @reboot_required true
+ */
+PARAM_DEFINE_INT32(MAV_S_FORWARD, 0);
