@@ -131,17 +131,6 @@ public:
 
 	static void *start_helper(void *context);
 
-	/**
-	 * Set the cruising speed in offboard control
-	 *
-	 * Passing a negative value or leaving the parameter away will reset the cruising speed
-	 * to its default value.
-	 *
-	 * Sets cruising speed for current flight mode only (resets on mode changes).
-	 *
-	 */
-	void set_offb_cruising_speed(float speed = -1.0f);
-
 private:
 
 	void acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result, uint8_t progress);
