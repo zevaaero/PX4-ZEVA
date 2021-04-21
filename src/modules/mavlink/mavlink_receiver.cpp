@@ -3337,7 +3337,7 @@ void MavlinkReceiver::start()
 	pthread_attr_setstacksize(&receiveloop_attr,
 				  PX4_STACK_ADJUSTED(sizeof(MavlinkReceiver) + 2840 + MAVLINK_RECEIVER_NET_ADDED_STACK));
 
-	pthread_create(_thread, &receiveloop_attr, MavlinkReceiver::start_trampoline, this);
+	pthread_create(&_thread, &receiveloop_attr, MavlinkReceiver::start_trampoline, (void *)this);
 
 	pthread_attr_destroy(&receiveloop_attr);
 }
@@ -3375,5 +3375,5 @@ void *MavlinkReceiver::start_trampoline(void *context)
 void MavlinkReceiver::stop()
 {
 	_should_exit.store(true);
-	pthread_join(*_thread, nullptr);
+	pthread_join(_thread, nullptr);
 }
