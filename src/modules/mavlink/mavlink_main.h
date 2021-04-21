@@ -80,6 +80,7 @@
 
 #include "mavlink_command_sender.h"
 #include "mavlink_messages.h"
+#include "mavlink_receiver.h"
 #include "mavlink_shell.h"
 #include "mavlink_ulog.h"
 
@@ -523,6 +524,7 @@ public:
 	bool radio_status_critical() const { return _radio_status_critical; }
 
 private:
+	MavlinkReceiver 	_receiver;
 	int			_instance_id{-1};
 
 	bool			_transmitting_enabled{true};
@@ -567,7 +569,6 @@ private:
 
 	mavlink_channel_t	_channel{MAVLINK_COMM_0};
 
-	pthread_t		_receive_thread {};
 	pthread_mutex_t		_radio_status_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	bool			_forwarding_on{false};
