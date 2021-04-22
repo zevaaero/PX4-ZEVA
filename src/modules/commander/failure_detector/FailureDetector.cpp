@@ -74,6 +74,10 @@ bool FailureDetector::update(const vehicle_status_s &vehicle_status)
 		updateHighWindStatus();
 	}
 
+	if (_param_fd_imb_prop_thr.get() > 0) {
+		updateImbalancedPropStatus();
+	}
+
 	return _status != previous_status;
 }
 
@@ -235,5 +239,60 @@ void FailureDetector::updateHighWindStatus()
 
 		const bool high_wind = wind.longerThan(_param_fd_wind_max.get());
 		_status = (_status & ~FAILURE_HIGH_WIND) | (high_wind * FAILURE_HIGH_WIND);
+	}
+}
+
+void FailureDetector::updateImbalancedPropStatus()
+{
+
+	if (_sensor_selection_sub.updated()) {
+		sensor_selection_s selection;
+
+		if (_sensor_selection_sub.copy(&selection)) {
+			_selected_accel_device_id = selection.accel_device_id;
+		}
+	}
+
+	const bool updated = _vehicle_imu_status_sub.updated(); // save before doing a copy
+
+	// Find the imu_status instance corresponding to the selected accelerometer
+	vehicle_imu_status_s imu_status{};
+	_vehicle_imu_status_sub.copy(&imu_status);
+
+	if (imu_status.accel_device_id != _selected_accel_device_id) {
+
+		for (unsigned i = 0; i < ORB_MULTI_MAX_INSTANCES; i++) {
+			if (!_vehicle_imu_status_sub.ChangeInstance(i)) {
+				continue;
+			}
+
+			if (_vehicle_imu_status_sub.copy(&imu_status)
+			    && (imu_status.accel_device_id == _selected_accel_device_id)) {
+				// instance found
+				break;
+			}
+		}
+	}
+
+	if (updated) {
+
+		if (_vehicle_imu_status_sub.copy(&imu_status)) {
+
+			if ((imu_status.accel_device_id != 0)
+			    && (imu_status.accel_device_id == _selected_accel_device_id)) {
+				const float dt = math::constrain((float)(imu_status.timestamp - _imu_status_timestamp_prev), 0.01f, 1.f);
+				_imbalanced_prop_lpf.setParameters(dt, _imbalanced_prop_lpf_time_constant);
+
+				const float var_x = imu_status.var_accel[0];
+				const float var_y = imu_status.var_accel[1];
+				const float var_z = imu_status.var_accel[2];
+
+				const float metric = var_x + var_y - var_z;
+				const float metric_lpf = _imbalanced_prop_lpf.update(metric);
+
+				const bool is_imbalanced = metric_lpf > _param_fd_imb_prop_thr.get();
+				_status = (_status & ~FAILURE_IMBALANCED_PROP) | (is_imbalanced * FAILURE_IMBALANCED_PROP);
+			}
+		}
 	}
 }
