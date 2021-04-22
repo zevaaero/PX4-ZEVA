@@ -290,6 +290,8 @@ void Tiltrotor::update_fw_state()
 {
 	VtolType::update_fw_state();
 
+	_v_att_sp->thrust_body[2] = -_v_att_sp->thrust_body[0];
+
 	select_fixed_wing_motors(); // check if main or alternate motors should be used (based on throttle sp)
 
 	if (_alternate_motor_on) {
@@ -382,6 +384,10 @@ void Tiltrotor::update_transition_state()
 
 		set_alternate_motor_state(motor_state::VALUE, ramp_down_value);
 
+
+		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
+		_v_att_sp->thrust_body[0] = _thrust_transition;
+
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {
 		// turn on all MC motors
 		set_all_motor_state(motor_state::ENABLED);
@@ -406,6 +412,11 @@ void Tiltrotor::update_transition_state()
 
 		// while we quickly rotate back the motors keep throttle at idle
 		if (time_since_trans_start < 1.0f) {
+			_mc_throttle_weight = 1.0f;
+			_thrust_transition = 0.0f;
+			blendThrottleDuringBacktransition(time_since_trans_start);
+
+		} else if (time_since_trans_start < 2.0f) {
 			_mc_throttle_weight = 0.0f;
 			_mc_roll_weight = 0.0f;
 			_mc_pitch_weight = 0.0f;
@@ -414,7 +425,7 @@ void Tiltrotor::update_transition_state()
 			_mc_roll_weight = 1.0f;
 			_mc_pitch_weight = 1.0f;
 			// slowly ramp up throttle to avoid step inputs
-			_mc_throttle_weight = (time_since_trans_start - 1.0f) / 1.0f;
+			_mc_throttle_weight = (time_since_trans_start - 2.0f) / 1.0f;
 		}
 	}
 
@@ -454,7 +465,6 @@ void Tiltrotor::fill_actuator_outputs()
 	float throttle_fw = fw_in[actuator_controls_s::INDEX_THROTTLE];
 
 	if (_vtol_schedule.flight_mode == vtol_mode::FW_MODE) {
-
 		// if we're currently using the alternate motors, adapt the throttle to account for difference in thrust to main ones
 		if (_alternate_motor_on) {
 			throttle_fw = alternate_motors_throttle_adaption(throttle_fw);
@@ -583,4 +593,16 @@ float Tiltrotor::alternate_motors_elevator_trim(const float throttle_alternate)
 	const float offset_blended = math::constrain(time_since_switch * offset / time_blend, offset, 0.0f);
 
 	return offset_blended + k_elev / dynamic_pressure * throttle_alternate;
+}
+
+void Tiltrotor::blendThrottleAfterFrontTransition(float scale)
+{
+	const float tecs_throttle = _v_att_sp->thrust_body[0];
+
+	_v_att_sp->thrust_body[0] = scale * tecs_throttle + (1.0f - scale) * _thrust_transition;
+}
+
+void Tiltrotor::blendThrottleDuringBacktransition(float scale)
+{
+	_v_att_sp->thrust_body[2] = -(scale * _thrust_transition + (1.0f - scale) * _last_thr_in_fw_mode);
 }
