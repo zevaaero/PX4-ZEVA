@@ -86,6 +86,7 @@ private:
 	void UpdateIntegratorConfiguration();
 	void UpdateGyroVibrationMetrics(const matrix::Vector3f &delta_angle);
 	void UpdateAccelVibrationMetrics(const matrix::Vector3f &delta_velocity);
+	void UpdateAccelSquaredErrorSum(const matrix::Vector3f &accel);
 
 	uORB::PublicationMulti<vehicle_imu_s> _vehicle_imu_pub{ORB_ID(vehicle_imu)};
 	uORB::PublicationMulti<vehicle_imu_status_s> _vehicle_imu_status_pub{ORB_ID(vehicle_imu_status)};
@@ -113,6 +114,7 @@ private:
 	unsigned _gyro_last_generation{0};
 	unsigned _consecutive_data_gap{0};
 
+	matrix::Vector3f _accel_squared_error_sum{};
 	matrix::Vector3f _accel_sum{};
 	matrix::Vector3f _gyro_sum{};
 	int _accel_sum_count{0};
