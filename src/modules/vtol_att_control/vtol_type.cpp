@@ -48,6 +48,8 @@
 
 using namespace matrix;
 
+#define THROTTLE_BLENDING_DUR_S 1.0f
+
 
 VtolType::VtolType(VtolAttitudeControl *att_controller) :
 	_attc(att_controller),
@@ -189,13 +191,13 @@ void VtolType::update_fw_state()
 		_throttle_blend_start_ts = hrt_absolute_time();
 
 	} else if (shouldBlendThrottleAfterFrontTransition()) {
-		const float scale = (float)(hrt_absolute_time() - _throttle_blend_start_ts) * 1e-6f / 1.0f;
+		const float progress = (float)(hrt_absolute_time() - _throttle_blend_start_ts) * 1e-6f / THROTTLE_BLENDING_DUR_S;
 
-		if (scale >= 1.0f) {
+		if (progress >= 1.0f) {
 			stopBlendingThrottleAfterFrontTransition();
 
 		} else {
-			blendThrottleAfterFrontTransition(scale);
+			blendThrottleAfterFrontTransition(progress);
 		}
 	}
 

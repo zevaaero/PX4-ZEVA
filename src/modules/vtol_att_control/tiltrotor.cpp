@@ -46,6 +46,10 @@ using namespace matrix;
 using namespace time_literals;
 
 #define ARSP_YAW_CTRL_DISABLE 7.0f	// airspeed at which we stop controlling yaw during a front transition
+#define  FRONTTRANS_THR_MIN 0.25f
+#define BACKTRANS_THROTTLE_DOWNRAMP_DUR_S 1.0f
+#define BACKTRANS_THROTTLE_UPRAMP_DUR_S 1.0f;
+#define BACKTRANS_MOTORS_UPTILT_DUR_S 1.0f;
 
 Tiltrotor::Tiltrotor(VtolAttitudeControl *attc) :
 	VtolType(attc)
@@ -290,6 +294,8 @@ void Tiltrotor::update_fw_state()
 {
 	VtolType::update_fw_state();
 
+	// this is needed to avoid a race condition when entering backtransition when the mc rate controller publishes
+	// a zero throttle value
 	_v_att_sp->thrust_body[2] = -_v_att_sp->thrust_body[0];
 
 	select_fixed_wing_motors(); // check if main or alternate motors should be used (based on throttle sp)
@@ -369,6 +375,9 @@ void Tiltrotor::update_transition_state()
 			_mc_yaw_weight = _mc_roll_weight;
 		}
 
+		_thrust_transition = math::max(-_mc_virtual_att_sp->thrust_body[2], FRONTTRANS_THR_MIN);
+		_v_att_sp->thrust_body[2] = -_thrust_transition;
+
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {
 		// the plane is ready to go into fixed wing mode, tilt the rotors forward completely
 		_tilt_control = _params_tiltrotor.tilt_transition +
@@ -385,7 +394,11 @@ void Tiltrotor::update_transition_state()
 		set_alternate_motor_state(motor_state::VALUE, ramp_down_value);
 
 
-		_thrust_transition = -_mc_virtual_att_sp->thrust_body[2];
+		_thrust_transition = math::max(-_mc_virtual_att_sp->thrust_body[2], FRONTTRANS_THR_MIN);
+		_v_att_sp->thrust_body[2] = -_thrust_transition;
+
+		// this line is needed such that the fw rate controller is initialized with the current throttle value.
+		// if this is not then then there is race condition where the fw rate controller still publishes a zero sample throttle after transition
 		_v_att_sp->thrust_body[0] = _thrust_transition;
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {
@@ -397,10 +410,12 @@ void Tiltrotor::update_transition_state()
 			_flag_idle_mc = set_idle_mc();
 		}
 
-		// tilt rotors back
-		if (_tilt_control > _params_tiltrotor.tilt_mc) {
-			_tilt_control = _params_tiltrotor.tilt_fw -
-					fabsf(_params_tiltrotor.tilt_fw - _params_tiltrotor.tilt_mc) * time_since_trans_start / 1.0f;
+		// tilt rotors back once motors are idle
+		if (time_since_trans_start > BACKTRANS_THROTTLE_DOWNRAMP_DUR_S) {
+
+			float progress = (time_since_trans_start - BACKTRANS_THROTTLE_DOWNRAMP_DUR_S) / BACKTRANS_MOTORS_UPTILT_DUR_S;
+			progress = math::constrain(progress, 0.0f, 1.0f);
+			_tilt_control = moveLinear(_params_tiltrotor.tilt_fw, _params_tiltrotor.tilt_mc, progress);
 		}
 
 		_mc_yaw_weight = 1.0f;
@@ -411,12 +426,12 @@ void Tiltrotor::update_transition_state()
 		}
 
 		// while we quickly rotate back the motors keep throttle at idle
-		if (time_since_trans_start < 1.0f) {
+		if (time_since_trans_start < BACKTRANS_THROTTLE_DOWNRAMP_DUR_S) {
 			_mc_throttle_weight = 1.0f;
-			_thrust_transition = 0.0f;
-			blendThrottleDuringBacktransition(time_since_trans_start);
+			const float target_throttle = 0.0f;
+			blendThrottleDuringBacktransition(time_since_trans_start, target_throttle);
 
-		} else if (time_since_trans_start < 2.0f) {
+		} else if (time_since_trans_start < timeUntilMotorsAreUp()) {
 			_mc_throttle_weight = 0.0f;
 			_mc_roll_weight = 0.0f;
 			_mc_pitch_weight = 0.0f;
@@ -425,7 +440,9 @@ void Tiltrotor::update_transition_state()
 			_mc_roll_weight = 1.0f;
 			_mc_pitch_weight = 1.0f;
 			// slowly ramp up throttle to avoid step inputs
-			_mc_throttle_weight = (time_since_trans_start - 2.0f) / 1.0f;
+			float progress = (time_since_trans_start - timeUntilMotorsAreUp()) / BACKTRANS_THROTTLE_UPRAMP_DUR_S;
+			progress = math::constrain(progress, 0.0f, 1.0f);
+			_mc_throttle_weight = moveLinear(0.0f, 1.0f, progress);
 		}
 	}
 
@@ -602,7 +619,18 @@ void Tiltrotor::blendThrottleAfterFrontTransition(float scale)
 	_v_att_sp->thrust_body[0] = scale * tecs_throttle + (1.0f - scale) * _thrust_transition;
 }
 
-void Tiltrotor::blendThrottleDuringBacktransition(float scale)
+void Tiltrotor::blendThrottleDuringBacktransition(float scale, float target_throttle)
 {
-	_v_att_sp->thrust_body[2] = -(scale * _thrust_transition + (1.0f - scale) * _last_thr_in_fw_mode);
+	_v_att_sp->thrust_body[2] = -(scale * target_throttle + (1.0f - scale) * _last_thr_in_fw_mode);
+}
+
+
+float Tiltrotor::timeUntilMotorsAreUp()
+{
+	return BACKTRANS_THROTTLE_DOWNRAMP_DUR_S + BACKTRANS_MOTORS_UPTILT_DUR_S;
+}
+
+float Tiltrotor::moveLinear(float start, float stop, float progress)
+{
+	return start + progress * (stop - start);
 }
