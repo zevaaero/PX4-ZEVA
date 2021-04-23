@@ -59,6 +59,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("commander_state");
 	add_topic("cpuload");
 	add_topic("esc_status", 250);
+	add_topic("failure_detector_status", 100);
 	add_topic("generator_status");
 	add_topic("home_position");
 	add_topic("hover_thrust_estimate", 100);
