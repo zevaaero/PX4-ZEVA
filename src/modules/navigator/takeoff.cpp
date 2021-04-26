@@ -65,7 +65,7 @@ Takeoff::on_active()
 		_navigator->get_mission_result()->finished = true;
 		_navigator->set_mission_result_updated();
 
-		struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+		position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 		// set loiter item so position controllers stop doing takeoff logic
 		if (_navigator->get_land_detected()->landed) {

@@ -100,7 +100,7 @@ Loiter::set_loiter_position()
 
 	_loiter_pos_set = true;
 
-	struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+	position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 	if (_navigator->get_land_detected()->landed) {
 		_mission_item.nav_cmd = NAV_CMD_IDLE;

@@ -62,7 +62,7 @@ VtolTakeoff::on_active()
 	if (is_mission_item_reached()) {
 		switch	(_takeoff_state) {
 		case vtol_takeoff_state::TAKEOFF_HOVER: {
-				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 				if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 					setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
@@ -102,7 +102,7 @@ VtolTakeoff::on_active()
 			}
 
 		case vtol_takeoff_state::TRANSITION: {
-				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 				if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 					setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
