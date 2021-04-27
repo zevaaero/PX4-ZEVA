@@ -2534,6 +2534,14 @@ Commander::run()
 					_status_changed = true;
 					mavlink_log_critical(&_mavlink_log_pub, "Too high wind abort operation and RTL");
 				}
+
+				if ((_status.failure_detector_status & vehicle_status_s::FAILURE_IMBALANCED_PROP)
+				    && !_imbalanced_propeller_check_triggered) {
+					_status_changed = true;
+					_imbalanced_propeller_check_triggered = true;
+					imbalanced_prop_failsafe(&_mavlink_log_pub, _status, _status_flags, &_internal_state,
+								 (imbalanced_propeller_action_t)_param_com_imb_prop_act.get());
+				}
 			}
 		}
 
@@ -2598,6 +2606,7 @@ Commander::run()
 		if (!_armed.armed) {
 			/* Reset the flag if disarmed. */
 			_have_taken_off_since_arming = false;
+			_imbalanced_propeller_check_triggered = false;
 		}
 
 		_was_armed = _armed.armed;
