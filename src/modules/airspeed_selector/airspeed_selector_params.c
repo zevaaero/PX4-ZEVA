@@ -7,6 +7,7 @@
  * @min 0
  * @max 1
  * @unit m/s^2
+ * @decimal 2
  * @group Airspeed Validator
  */
 PARAM_DEFINE_FLOAT(ASPD_W_P_NOISE, 0.1f);
@@ -19,9 +20,10 @@ PARAM_DEFINE_FLOAT(ASPD_W_P_NOISE, 0.1f);
  * @min 0
  * @max 0.1
  * @unit Hz
+ * @decimal 5
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_SC_P_NOISE, 0.0001);
+PARAM_DEFINE_FLOAT(ASPD_SC_P_NOISE, 0.0001f);
 
 /**
  * Airspeed Selector: Wind estimator true airspeed measurement noise
@@ -31,9 +33,10 @@ PARAM_DEFINE_FLOAT(ASPD_SC_P_NOISE, 0.0001);
  * @min 0
  * @max 4
  * @unit m/s
+ * @decimal 1
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_TAS_NOISE, 1.4);
+PARAM_DEFINE_FLOAT(ASPD_TAS_NOISE, 1.4f);
 
 /**
  * Airspeed Selector: Wind estimator sideslip measurement noise
@@ -43,9 +46,10 @@ PARAM_DEFINE_FLOAT(ASPD_TAS_NOISE, 1.4);
  * @min 0
  * @max 1
  * @unit rad
+ * @decimal 3
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_BETA_NOISE, 0.3);
+PARAM_DEFINE_FLOAT(ASPD_BETA_NOISE, 0.3f);
 
 /**
  * Airspeed Selector: Gate size for true airspeed fusion
@@ -90,6 +94,7 @@ PARAM_DEFINE_INT32(ASPD_SCALE_EST, 0);
  *
  * @min 0.5
  * @max 1.5
+ * @decimal 2
  * @group Airspeed Validator
  */
 PARAM_DEFINE_FLOAT(ASPD_SCALE, 1.0f);
@@ -142,6 +147,7 @@ PARAM_DEFINE_INT32(ASPD_FALLBACK_GW, 0);
 *
  * @min 0.5
  * @max 3.0
+ * @decimal 1
  * @group Airspeed Validator
  */
 PARAM_DEFINE_FLOAT(ASPD_FS_INNOV, 1.0f);
@@ -156,6 +162,7 @@ PARAM_DEFINE_FLOAT(ASPD_FS_INNOV, 1.0f);
  *
  * @unit s
  * @max 30.0
+ * @decimal 1
  * @group Airspeed Validator
  */
 PARAM_DEFINE_FLOAT(ASPD_FS_INTEG, 5.0f);
