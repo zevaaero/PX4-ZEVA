@@ -405,6 +405,7 @@ private:
 		(ParamFloat<px4::params::FW_L1_PERIOD>) _param_fw_l1_period,
 		(ParamFloat<px4::params::FW_L1_R_SLEW_MAX>) _param_fw_l1_r_slew_max,
 		(ParamFloat<px4::params::FW_R_LIM>) _param_fw_r_lim,
+		(ParamFloat<px4::params::FW_L1_OP_TAN_VEL>) _param_fw_l1_op_tan_vel,
 
 		(ParamFloat<px4::params::FW_LND_AIRSPD_SC>) _param_fw_lnd_airspd_sc,
 		(ParamFloat<px4::params::FW_LND_ANG>) _param_fw_lnd_ang,
