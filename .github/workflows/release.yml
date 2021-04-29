@@ -123,7 +123,7 @@ jobs:
         REF_BRANCH=$(git branch -a --contains tags/$TAG_BRANCH | grep release | sed "s/.*\(release\/.*\).*/\1/p" | head -n 1)
         DISTRO_REF_BRANCH=$(echo $REF_BRANCH | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
         RELEASE=$(echo $DISTRO_REF_BRANCH | sed -r 's/release-//')
-        echo "::set-output name=release::${DISTRO_REF_BRANCH}"
+        echo "::set-output name=release::${RELEASE}"
         echo "::set-output name=timestamp::$(date)"
         cd distro
         echo "::set-output name=branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
