@@ -497,10 +497,11 @@ bool McAutotuneAttitudeControl::areGainsGood() const
 
 void McAutotuneAttitudeControl::saveGainsToParams()
 {
-	_param_mc_rollrate_p.set(1.f);
-	_param_mc_rollrate_k.set(_rate_k(0));
-	_param_mc_rollrate_i.set(_rate_i(0));
-	_param_mc_rollrate_d.set(_rate_d(0));
+	// save as parallel form
+	_param_mc_rollrate_p.set(_rate_k(0));
+	_param_mc_rollrate_k.set(1.f);
+	_param_mc_rollrate_i.set(_rate_k(0) * _rate_i(0));
+	_param_mc_rollrate_d.set(_rate_k(0) * _rate_d(0));
 	_param_mc_roll_p.set(_att_p(0));
 	_param_mc_rollrate_p.commit_no_notification();
 	_param_mc_rollrate_k.commit_no_notification();
@@ -508,10 +509,10 @@ void McAutotuneAttitudeControl::saveGainsToParams()
 	_param_mc_rollrate_d.commit_no_notification();
 	_param_mc_roll_p.commit_no_notification();
 
-	_param_mc_pitchrate_p.set(1.f);
-	_param_mc_pitchrate_k.set(_rate_k(1));
-	_param_mc_pitchrate_i.set(_rate_i(1));
-	_param_mc_pitchrate_d.set(_rate_d(1));
+	_param_mc_pitchrate_p.set(_rate_k(1));
+	_param_mc_pitchrate_k.set(1.f);
+	_param_mc_pitchrate_i.set(_rate_k(1) * _rate_i(1));
+	_param_mc_pitchrate_d.set(_rate_k(1) * _rate_d(1));
 	_param_mc_pitch_p.set(_att_p(1));
 	_param_mc_pitchrate_p.commit_no_notification();
 	_param_mc_pitchrate_k.commit_no_notification();
@@ -519,10 +520,10 @@ void McAutotuneAttitudeControl::saveGainsToParams()
 	_param_mc_pitchrate_d.commit_no_notification();
 	_param_mc_pitch_p.commit_no_notification();
 
-	_param_mc_yawrate_p.set(1.f);
-	_param_mc_yawrate_k.set(_rate_k(2));
-	_param_mc_yawrate_i.set(_rate_i(2));
-	_param_mc_yawrate_d.set(_rate_d(2));
+	_param_mc_yawrate_p.set(_rate_k(2));
+	_param_mc_yawrate_k.set(1.f);
+	_param_mc_yawrate_i.set(_rate_k(2) * _rate_i(2));
+	_param_mc_yawrate_d.set(_rate_k(2) * _rate_d(2));
 	_param_mc_yaw_p.set(_att_p(2));
 	_param_mc_yawrate_p.commit_no_notification();
 	_param_mc_yawrate_k.commit_no_notification();
