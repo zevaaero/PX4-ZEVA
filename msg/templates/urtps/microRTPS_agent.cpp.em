@@ -22,7 +22,7 @@ recv_topics = [(alias[idx] if alias[idx] else s.short_name) for idx, s in enumer
 /****************************************************************************
  *
  * Copyright 2017 Proyectos y Sistemas de Mantenimiento SL (eProsima).
- * Copyright (c) 2018-2019 PX4 Development Team. All rights reserved.
+ * Copyright (c) 2018-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -120,8 +120,8 @@ static void usage(const char *name)
              "  -i <ip_address>         Target IP for UDP. Default 127.0.0.1\n"
              "  -n <namespace>          ROS 2 topics namespace. Identifies the vehicle in a multi-agent network\n"
              "  -p <poll_ms>            Time in ms to poll over UART. Default 1ms\n"
-             "  -r <reception port>     UDP port for receiving. Default 2019\n"
-             "  -s <sending port>       UDP port for sending. Default 2020\n"
+             "  -r <reception port>     UDP port for receiving. Default 2020\n"
+             "  -s <sending port>       UDP port for sending. Default 2019\n"
              "  -t <transport>          [UART|UDP] Default UART\n"
              "  -v <debug verbosity>    Add more verbosity\n"
              "  -w <sleep_time_us>      Time in us for which each iteration sleep. Default 1ms\n",
@@ -229,6 +229,11 @@ int main(int argc, char** argv)
 
     printf("\033[0;37m--- MicroRTPS Agent ---\033[0m\n");
     printf("[   micrortps_agent   ]\tStarting link...\n");
+
+    const char* localhost_only = std::getenv("ROS_LOCALHOST_ONLY");
+    if (localhost_only && strcmp(localhost_only, "1") == 0) {
+        printf("[   micrortps_agent   ]\tUsing only the localhost network for data sharing...\n");
+    }
 
     switch (_options.transport)
     {
