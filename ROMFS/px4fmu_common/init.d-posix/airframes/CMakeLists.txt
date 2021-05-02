@@ -47,8 +47,6 @@ px4_add_romfs_files(
 	1014_solo
 	1015_iris_obs_avoid
 	1015_iris_obs_avoid.post
-	1016_iris_rtps
-	1016_iris_rtps.post
 	1017_iris_opt_flow_mockup
 	1018_iris_vision_velocity
 	1019_iris_dual_gps
@@ -56,7 +54,6 @@ px4_add_romfs_files(
 	1021_uuv_hippocampus
 	1022_uuv_bluerov2_heavy
 	1025_iris_depth_camera
-	1025_iris_depth_camera.post
 	1030_plane
 	1031_plane_cam
 	1032_plane_catapult
