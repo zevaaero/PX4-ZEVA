@@ -593,6 +593,7 @@ Navigator::run()
 				if (cmd.param2 > FLT_EPSILON) {
 					// XXX not differentiating ground and airspeed yet
 					set_cruising_speed(cmd.param2);
+					store_cruising_speed(cmd.param2);
 
 				} else {
 					set_cruising_speed();
@@ -1198,6 +1199,38 @@ Navigator::reset_cruising_speed()
 {
 	_mission_cruising_speed_mc = -1.0f;
 	_mission_cruising_speed_fw = -1.0f;
+}
+
+void
+Navigator::store_cruising_speed(float speed)
+{
+	if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+		_mission_stored_cruising_speed_mc = speed;
+
+	} else {
+		_mission_stored_cruising_speed_fw = speed;
+	}
+}
+
+void
+Navigator::restore_cruising_speed()
+{
+	if (_mission_stored_cruising_speed_fw > 0.0f) {
+
+		_mission_cruising_speed_fw = _mission_stored_cruising_speed_fw;
+	}
+
+	if (_mission_stored_cruising_speed_mc > 0.0f) {
+
+		_mission_cruising_speed_mc = _mission_stored_cruising_speed_mc;
+	}
+}
+
+void
+Navigator::reset_stored_cruising_speed()
+{
+	_mission_stored_cruising_speed_fw = -1.0f;
+	_mission_stored_cruising_speed_mc = -1.0f;
 }
 
 void

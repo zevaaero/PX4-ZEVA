@@ -243,6 +243,27 @@ public:
 	void		reset_cruising_speed();
 
 	/**
+	 * Store cruising speed
+	 *
+	 * For VTOL: store cruising speed for current mode only (multirotor or fixed-wing).
+	 */
+	void		store_cruising_speed(float speed);
+
+	/**
+	 * Restore cruising speed from stored value
+	 *
+	 * For VTOL: restore both cruising speeds if speeds are stored.
+	 */
+	void		restore_cruising_speed();
+
+	/**
+	 * Reset stored cruising speed to default values
+	 *
+	 * For VTOL: resets both stored cruising speeds.
+	 */
+	void		reset_stored_cruising_speed();
+
+	/**
 	 *  Set triplets to invalid
 	 */
 	void 		reset_triplets();
@@ -457,6 +478,8 @@ private:
 
 	float _mission_cruising_speed_mc{-1.0f};
 	float _mission_cruising_speed_fw{-1.0f};
+	float _mission_stored_cruising_speed_mc{-1.0f};
+	float _mission_stored_cruising_speed_fw{-1.0f};
 	float _mission_throttle{NAN};
 
 

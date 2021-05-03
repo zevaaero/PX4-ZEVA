@@ -179,6 +179,13 @@ Mission::on_activation()
 		_mission_waypoints_changed = false;
 	}
 
+	if (_mission_changed) {
+		_navigator->reset_stored_cruising_speed();
+
+	} else {
+		_navigator->restore_cruising_speed();
+	}
+
 	// we already reset the mission items
 	_execution_mode_changed = false;
 
