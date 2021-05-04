@@ -288,7 +288,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	int hw_version = board_get_hw_version();
 
-	if (hw_version == 0x9 || hw_version == 0xa) {
+	if (hw_version == 0x9 || hw_version == 0xa || hw_version == 0x8) {
 		static MCP23009 mcp23009{3, 0x25};
 
 		// No USB
@@ -299,7 +299,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 			//ret = mcp23009.init(0xf1, 0xf0, 0x0f);
 		}
 
-		if (hw_version == 0xa) {
+		if (hw_version == 0xa || hw_version == 0x8) {
 			// < P6
 			//ret = mcp23009.init(0xf0, 0xf0, 0x0f);
 			// >= P6
