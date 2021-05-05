@@ -17,12 +17,13 @@ then
 	fi
 
 	# If protocol splitter is configured to start on TELEM2, do not start the mavlink stream
-	if param compare MAV_SKN_RTPS 1
+	if param compare MAV_SKN_RTPS 1 && protocol_splitter status > /dev/null 2>&1 && micrortps_client status > /dev/null 2>&1
 	then
 		protocol_splitter start /dev/ttyS4
 		mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z $S_FORWARD
 		micrortps_client start -d /dev/rtps -b 3000000 -h
 	else
+		# Fallback to start the mavlink stream when MAV_SKN_RTPS is 0 and the protocol_splitter and the micrortps_client modules were not built
 		mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z $S_FORWARD
 	fi
 
