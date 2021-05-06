@@ -622,6 +622,9 @@ void ICM42688P::ProcessAccel(const hrt_abstime &timestamp_sample, const FIFO::DA
 		}
 	}
 
+	// avoid scale changes for now as it's not handled correctly down the pipeline (fixed in upstream with 8478d1ea37d2bf)
+	scale_20bit = true;
+
 	if (!scale_20bit) {
 		// if highres enabled accel data is always 8192 LSB/g
 		_px4_accel.set_scale(CONSTANTS_ONE_G / 8192.f);
