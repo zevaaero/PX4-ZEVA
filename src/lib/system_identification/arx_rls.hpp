@@ -115,6 +115,12 @@ public:
 
 		addInputOutput(u, y);
 
+		if (!isBufferFull()) {
+			// Do not start to update the RLS algorithm when the
+			// buffer still contains zeros
+			return;
+		}
+
 		const matrix::Vector < float, N + M + 1 > phi = constructDesignVector();
 		const matrix::Matrix < float, 1, N + M + 1 > phi_t = phi.transpose();
 
@@ -135,6 +141,10 @@ private:
 		shiftRegisters();
 		_u[M + D] = u;
 		_y[N] = y;
+
+		if (!isBufferFull()) {
+			_nb_samples++;
+		}
 	}
 
 	void shiftRegisters()
@@ -147,6 +157,8 @@ private:
 			_u[i] = _u[i + 1];
 		}
 	}
+
+	bool isBufferFull() const { return _nb_samples > (M + N + D); }
 
 	matrix::Vector < float, N + M + 1 > constructDesignVector() const
 	{
