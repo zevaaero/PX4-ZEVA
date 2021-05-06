@@ -92,6 +92,11 @@ TEST_F(SystemIdentificationTest, basicTest)
 		_sys_id.updateFilters(0.f, 0.f);
 	}
 
+	for (int i = 0; i < 5; i++) {
+		// Fill the buffers with zeros
+		_sys_id.update(0.f, 0.f);
+	}
+
 	for (int i = 0; i < 10; i += 2) {
 		_sys_id.update(float(i), float(i + 1));
 	}
