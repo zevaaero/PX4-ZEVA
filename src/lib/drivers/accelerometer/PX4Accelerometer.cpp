@@ -174,5 +174,5 @@ void PX4Accelerometer::Publish(const hrt_abstime &timestamp_sample, float x, flo
 void PX4Accelerometer::UpdateClipLimit()
 {
 	// 99.9% of potential max
-	_clip_limit = fmaxf((_range / _scale) * 0.999f, INT16_MAX);
+	_clip_limit = math::constrain((_range / _scale) * 0.999f, 0.f, (float)INT16_MAX);
 }
