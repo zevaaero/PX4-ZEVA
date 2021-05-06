@@ -1743,6 +1743,7 @@ Commander::run()
 			_arm_requirements.esc_check = _param_escs_checks_required.get();
 			_arm_requirements.global_position = !_param_arm_without_gps.get();
 			_arm_requirements.mission = _param_arm_mission_required.get();
+			_arm_requirements.geofence = _param_geofence_action.get() > 0;
 
 			/* flight mode slots */
 			_flight_mode_slots[0] = _param_fltmode_1.get();
@@ -2126,6 +2127,7 @@ Commander::run()
 
 		/* start geofence result check */
 		_geofence_result_sub.update(&_geofence_result);
+		_status.geofence_violated = _geofence_result.geofence_violated;
 
 		const bool in_low_battery_failsafe = _battery_warning > battery_status_s::BATTERY_WARNING_LOW;
 
