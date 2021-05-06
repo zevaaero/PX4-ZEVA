@@ -876,7 +876,7 @@ PARAM_DEFINE_FLOAT(FW_L1_OP_TAN_VEL, 0.5f);
  * @increment 0.01
  * @group FW TECS
  */
-PARAM_DEFINE_FLOAT(FW_T_CLIMB_R_SP, 3.0f);
+PARAM_DEFINE_FLOAT(FW_T_CLMB_R_SP, 3.0f);
 
 /**
  * Default target sinkrate.
