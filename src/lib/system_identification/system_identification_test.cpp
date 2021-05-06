@@ -40,6 +40,7 @@
 #include <matrix/matrix/math.hpp>
 
 #include "system_identification.hpp"
+#include "test_data.h"
 
 using namespace matrix;
 
@@ -204,6 +205,54 @@ TEST_F(SystemIdentificationTest, simulatedModelTest)
 
 	const Vector<float, 5> coefficients = _sys_id.getCoefficients();
 	float data_check[] = {a1, a2, b0, b1, b2};
+	const Vector<float, 5> coefficients_check(data_check);
+	float eps = 1e-3;
+	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
+	coefficients.print();
+	_sys_id.getVariances().print();
+}
+
+TEST_F(SystemIdentificationTest, realDataTest)
+{
+	static constexpr int n_samples_dt_avg = 100;
+	static constexpr int n_samples_test_data = sizeof(u_data) / sizeof(u_data[0]);
+	float dt_sum = 0.f;
+
+	for (int i = 1; i <= n_samples_dt_avg; i++) {
+		dt_sum += t_data[i] - t_data[i - 1];
+	}
+
+	const float dt = dt_sum / n_samples_dt_avg;
+	const float fs = 1.f / dt;
+
+	printf("dt = %.6f fs = %.3f\n", (double)dt, (double)(1.f / dt));
+
+	const float gyro_lpf_cutoff = 30.f;
+
+	SystemIdentification _sys_id;
+	_sys_id.setHpfCutoffFrequency(fs, 0.05f);
+	_sys_id.setLpfCutoffFrequency(fs, gyro_lpf_cutoff);
+	_sys_id.setForgettingFactor(60.f, dt);
+
+	math::LowPassFilter2p _gyro_lpf{fs, gyro_lpf_cutoff};
+
+	float u = 0.f;
+	float y_lpf = 0.f;
+
+	for (int i = 0; i < n_samples_test_data; i++) {
+		u = u_data[i];
+		_sys_id.update(u, y_lpf); // apply new input and previous output
+
+		const float y = y_data[i];
+		y_lpf = _gyro_lpf.apply(y); // simulate gyro filter
+
+		if (false) {
+			printf("%.6f, %.6f, %.6f\n", (double)t_data[i], (double)u, (double)y);
+		}
+	}
+
+	const Vector<float, 5> coefficients = _sys_id.getCoefficients();
+	float data_check[] = {-1.934f, 0.934, -0.021f, 0.015f, 0.02f};
 	const Vector<float, 5> coefficients_check(data_check);
 	float eps = 1e-3;
 	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
