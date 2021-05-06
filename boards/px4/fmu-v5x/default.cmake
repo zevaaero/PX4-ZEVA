@@ -17,8 +17,8 @@ px4_add_board(
 		TEL3:/dev/ttyS1
 		GPS2:/dev/ttyS7
 	DRIVERS
-		adc/board_adc
 		adc/ads1115
+		adc/board_adc
 		barometer # all available barometer drivers
 		batt_smbus
 		camera_capture
@@ -27,22 +27,17 @@ px4_add_board(
 		distance_sensor # all available distance sensor drivers
 		dshot
 		gps
-		#heater
+		heater
 		#imu # all available imu drivers
-		imu/adis16448
-		imu/adis16477
-		imu/adis16497
+		#imu/analog_devices/adis16448
 		imu/bosch/bmi088
 		imu/invensense/icm20602
 		imu/invensense/icm42688p
 		irlock
-		lights/blinkm
-		lights/rgbled
-		lights/rgbled_ncp5623c
+		lights # all available light drivers
 		magnetometer # all available magnetometer drivers
-		mkblctrl
 		optical_flow # all available optical flow drivers
-		#osd
+		osd
 		pca9685
 		pca9685_pwm_out
 		power_monitor/ina226
@@ -55,7 +50,6 @@ px4_add_board(
 		roboclaw
 		rpm
 		safety_button
-		tap_esc
 		telemetry # all available telemetry drivers
 		test_ppm
 		tone_alarm
@@ -73,6 +67,8 @@ px4_add_board(
 		fw_att_control
 		fw_autotune_attitude_control
 		fw_pos_control_l1
+		gyro_calibration
+		gyro_fft
 		land_detector
 		landing_target_estimator
 		load_mon
@@ -92,6 +88,8 @@ px4_add_board(
 		sensors
 		sih
 		temperature_compensation
+		#uuv_att_control
+		#uuv_pos_control
 		vmount
 		vtol_att_control
 	SYSTEMCMDS
@@ -115,24 +113,28 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		serial_test
 		system_time
 		tests # tests and test runner
 		top
 		topic_listener
 		tune_control
+		uorb
 		usb_connected
 		ver
 		work_queue
-		serial_test
 	EXAMPLES
-		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
-		hello
-		hwtest # Hardware test
+		fake_gps
+		fake_gyro
+		fake_magnetometer
+		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
+		#hello
+		#hwtest # Hardware test
 		#matlab_csv_serial
 		ext_update_checker
-		px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
-		px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
-		rover_steering_control # Rover example app
-		uuv_example_app
-		work_item
+		#px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
+		#px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
+		#rover_steering_control # Rover example app
+		#uuv_example_app
+		#work_item
 	)

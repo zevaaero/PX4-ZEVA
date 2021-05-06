@@ -86,4 +86,3 @@ void FlightTaskManualAcceleration::_ekfResetHandlerVelocityXY()
 {
 	_stick_acceleration_xy.resetVelocity(_velocity.xy());
 }
-

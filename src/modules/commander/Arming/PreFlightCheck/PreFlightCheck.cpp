@@ -177,8 +177,10 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 	/* Perform airspeed check only if circuit breaker is not engaged and it's not a rotary wing */
 	if (!status_flags.circuit_breaker_engaged_airspd_check &&
 	    (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING || status.is_vtol)) {
-		int32_t optional = 0;
-		param_get(param_find("FW_ARSP_MODE"), &optional);
+
+		int32_t airspeed_mode = 0;
+		param_get(param_find("FW_ARSP_MODE"), &airspeed_mode);
+		const bool optional = (airspeed_mode == 1);
 
 		int32_t max_airspeed_check_en = 0;
 		param_get(param_find("COM_ARM_ARSP_EN"), &max_airspeed_check_en);
@@ -188,7 +190,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 		const float arming_max_airspeed_allowed = airspeed_stall / 2.0f; // set to half of stall speed
 
-		if (!airspeedCheck(mavlink_log_pub, status, (bool)optional, report_failures, prearm, (bool)max_airspeed_check_en,
+		if (!airspeedCheck(mavlink_log_pub, status, optional, report_failures, prearm, (bool)max_airspeed_check_en,
 				   arming_max_airspeed_allowed)
 		    && !(bool)optional) {
 			failed = true;

@@ -49,7 +49,6 @@
 #include <px4_platform_common/module_params.h>
 #include <hysteresis/hysteresis.h>
 
-
 // subscriptions
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionMultiArray.hpp>
@@ -58,10 +57,11 @@
 #include <uORB/topics/sensor_selection.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_imu_status.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/pwm_input.h>
-#include <uORB/topics/wind_estimate.h>
+#include <uORB/topics/wind.h>
 
 typedef enum {
 	FAILURE_NONE = vehicle_status_s::FAILURE_NONE,
@@ -82,12 +82,11 @@ class FailureDetector : public ModuleParams
 public:
 	FailureDetector(ModuleParams *parent);
 
-	bool update(const vehicle_status_s &vehicle_status);
+	bool update(const vehicle_status_s &vehicle_status, const vehicle_control_mode_s &vehicle_control_mode);
 	uint8_t getStatus() const { return _status; }
 	float getImbalancedPropMetric() const { return _imbalanced_prop_lpf.getState(); }
 
 private:
-	bool isAttitudeStabilized(const vehicle_status_s &vehicle_status);
 	void updateAttitudeStatus();
 	void updateExternalAtsStatus();
 	void updateBatteryStatus(const vehicle_status_s &vehicle_status);
@@ -115,7 +114,7 @@ private:
 	uORB::Subscription _pwm_input_sub{ORB_ID(pwm_input)};
 	uORB::Subscription _sensor_selection_sub{ORB_ID(sensor_selection)};
 	uORB::Subscription _vehicle_imu_status_sub{ORB_ID(vehicle_imu_status)};
-	uORB::Subscription _wind_estimate_sub{ORB_ID(wind_estimate)};
+	uORB::Subscription _wind_sub{ORB_ID(wind)};
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::FD_FAIL_P>) _param_fd_fail_p,

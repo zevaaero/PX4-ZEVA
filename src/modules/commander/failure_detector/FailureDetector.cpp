@@ -47,11 +47,11 @@ FailureDetector::FailureDetector(ModuleParams *parent) :
 {
 }
 
-bool FailureDetector::update(const vehicle_status_s &vehicle_status)
+bool FailureDetector::update(const vehicle_status_s &vehicle_status, const vehicle_control_mode_s &vehicle_control_mode)
 {
 	uint8_t previous_status = _status;
 
-	if (isAttitudeStabilized(vehicle_status)) {
+	if (vehicle_control_mode.flag_control_attitude_enabled) {
 		updateAttitudeStatus();
 
 		if (_param_fd_ext_ats_en.get()) {
@@ -79,25 +79,6 @@ bool FailureDetector::update(const vehicle_status_s &vehicle_status)
 	}
 
 	return _status != previous_status;
-}
-
-bool FailureDetector::isAttitudeStabilized(const vehicle_status_s &vehicle_status)
-{
-	bool attitude_is_stabilized{false};
-	const uint8_t vehicle_type = vehicle_status.vehicle_type;
-	const uint8_t nav_state = vehicle_status.nav_state;
-
-	if (vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-		attitude_is_stabilized =  nav_state != vehicle_status_s::NAVIGATION_STATE_ACRO &&
-					  nav_state != vehicle_status_s::NAVIGATION_STATE_RATTITUDE;
-
-	} else if (vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
-		attitude_is_stabilized =  nav_state != vehicle_status_s::NAVIGATION_STATE_MANUAL &&
-					  nav_state != vehicle_status_s::NAVIGATION_STATE_ACRO &&
-					  nav_state != vehicle_status_s::NAVIGATION_STATE_RATTITUDE;
-	}
-
-	return attitude_is_stabilized;
 }
 
 void FailureDetector::updateAttitudeStatus()
@@ -232,9 +213,9 @@ void FailureDetector::updateEscsStatus(const vehicle_status_s &vehicle_status)
 
 void FailureDetector::updateHighWindStatus()
 {
-	wind_estimate_s wind_estimate;
+	wind_s wind_estimate;
 
-	if (_wind_estimate_sub.update(&wind_estimate)) {
+	if (_wind_sub.update(&wind_estimate)) {
 		const matrix::Vector2f wind(wind_estimate.windspeed_north, wind_estimate.windspeed_east);
 
 		const bool high_wind = wind.longerThan(_param_fd_wind_max.get());

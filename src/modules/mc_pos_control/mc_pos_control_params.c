@@ -258,9 +258,7 @@ PARAM_DEFINE_FLOAT(MPC_XY_VEL_D_ACC, 0.2f);
 /**
  * Maximum horizontal velocity in mission
  *
- * Normal horizontal velocity in AUTO modes (includes
- * also RTL / hold / etc.) and endpoint for
- * position stabilized mode (POSCTRL).
+ * Horizontal velocity used when flying autonomously in e.g. Missions, RTL, Goto.
  *
  * @unit m/s
  * @min 3.0
@@ -301,6 +299,7 @@ PARAM_DEFINE_FLOAT(MPC_XY_ERR_MAX, 2.0f);
 
 /**
  * Maximum horizontal velocity setpoint for manual controlled mode
+ *
  * If velocity setpoint larger than MPC_XY_VEL_MAX is set, then
  * the setpoint will be capped to MPC_XY_VEL_MAX
  *
@@ -366,6 +365,7 @@ PARAM_DEFINE_FLOAT(MPC_LAND_SPEED, 0.7f);
 
 /**
  * Maximum horizontal position mode velocity when close to ground/home altitude
+ *
  * Set the value higher than the otherwise expected maximum to disable any slowdown.
  *
  * @unit m/s
@@ -441,6 +441,7 @@ PARAM_DEFINE_FLOAT(MPC_MAN_Y_MAX, 150.0f);
 
 /**
  * Manual yaw rate input filter time constant
+ *
  * Setting this parameter to 0 disables the filter
  *
  * @unit s
@@ -676,7 +677,7 @@ PARAM_DEFINE_FLOAT(MPC_YAWRAUTO_MAX, 45.0f);
  *
  * Below this altitude:
  * - descending velocity gets limited to a value
- * between "MPC_Z_VEL_MAX" and "MPC_LAND_SPEED"
+ * between "MPC_Z_VEL_MAX_DN" and "MPC_LAND_SPEED"
  * - horizontal velocity gets limited to a value
  * between "MPC_VEL_MANUAL" and "MPC_LAND_VEL_XY"
  * for a smooth descent and landing experience.
@@ -722,20 +723,14 @@ PARAM_DEFINE_FLOAT(MPC_TKO_RAMP_T, 3.0f);
  * Manual-Position control sub-mode
  *
  * The supported sub-modes are:
- * 0 Default position control where sticks map to position/velocity directly. Maximum speeds
- * 	 is MPC_VEL_MANUAL.
- * 1 Smooth position control where setpoints are adjusted based on acceleration limits
- * 	 and jerk limits.
- * 2 Sport mode that is the same Default position control but with velocity limits set to
- * 	 the maximum allowed speeds (MPC_XY_VEL_MAX)
- * 3 Smooth position control with maximum acceleration and jerk limits (different algorithm
- *   than 1).
+ * 0 Simple position control where sticks map directly to velocity setpoints
+ *   without smoothing. Useful for velocity control tuning.
+ * 3 Smooth position control with maximum acceleration and jerk limits based on
+ *   jerk optimized trajectory generator (different algorithm than 1).
  * 4 Smooth position control where sticks map to acceleration and there's a virtual brake drag
  *
  * @value 0 Simple position control
- * @value 1 Smooth position control
- * @value 3 Smooth position control (Velocity)
- * @value 4 Acceleration based input
+ * @value 3 Smooth position control (Jerk optimized)
  * @value 4 Acceleration based input
  * @group Multicopter Position Control
  */

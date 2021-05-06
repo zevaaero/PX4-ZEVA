@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2020-11-18
+    container: px4io/px4-dev-base-focal:2021-02-04
     steps:
       # see https://github.com/actions/checkout/issues/14
       - uses: actions/checkout@v1

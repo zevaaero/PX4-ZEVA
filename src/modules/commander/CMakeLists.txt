@@ -48,7 +48,9 @@ px4_add_module(
 		factory_calibration_storage.cpp
 		gyro_calibration.cpp
 		level_calibration.cpp
+		lm_fit.cpp
 		mag_calibration.cpp
+		ManualControl.cpp
 		rc_calibration.cpp
 		state_machine_helper.cpp
 		lm_fit.cpp

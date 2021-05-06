@@ -1,26 +1,7 @@
 #!/bin/sh
 #
-# PX4 FMUv5X specific board defaults
+# board specific defaults
 #------------------------------------------------------------------------------
-
-#
-# Bootloader upgrade
-#
-set BL_FILE /etc/extras/px4fmuv5x_bl.bin
-if [ -f $BL_FILE ]
-then
-	if param compare SYS_BL_UPDATE 1
-	then
-		param set SYS_BL_UPDATE 0
-		param save
-		echo "BL update..." >> $LOG_FILE
-		bl_update $BL_FILE
-		echo "BL update done" >> $LOG_FILE
-		reboot
-	fi
-fi
-unset BL_FILE
-
 #
 # External components flashing
 #
@@ -37,16 +18,7 @@ then
 	update_checker fake_fail
 fi
 
-if [ $AUTOCNF = yes ]
-then
-	# Multi-EKF
-	#param set EKF2_MULTI_IMU 3
-	#param set SENS_IMU_MODE 0
-
-	# Probe for LW20/c by default
-	param set SENS_EN_SF1XX 6
-fi
-
-set LOGGER_BUF 64
+# Probe for LW20/c by default
+param set-default SENS_EN_SF1XX 6
 
 safety_button start

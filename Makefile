@@ -174,6 +174,8 @@ define cmake-build
 	@$(call cmake-cache-check)
 	@# make sure to start from scratch when switching from GNU Make to Ninja
 	@if [ $(PX4_CMAKE_GENERATOR) = "Ninja" ] && [ -e $(BUILD_DIR)/Makefile ]; then rm -rf $(BUILD_DIR); fi
+	@# make sure to start from scratch if ninja build file is missing
+	@if [ $(PX4_CMAKE_GENERATOR) = "Ninja" ] && [ ! -f $(BUILD_DIR)/build.ninja ]; then rm -rf $(BUILD_DIR); fi
 	@# only excplicitly configure the first build, if cache file already exists the makefile will rerun cmake automatically if necessary
 	@if [ ! -e $(BUILD_DIR)/CMakeCache.txt ] || [ $(CMAKE_CACHE_CHECK) ]; then \
 		mkdir -p $(BUILD_DIR) \
@@ -274,9 +276,9 @@ px4fmu_firmware: \
 misc_qgc_extra_firmware: \
 	check_nxp_fmuk66-v3_default \
 	check_nxp_fmurt1062-v1_default \
-	check_intel_aerofc-v1_default \
 	check_mro_x21_default \
 	check_bitcraze_crazyflie_default \
+	check_bitcraze_crazyflie21_default \
 	check_airmind_mindpx-v2_default \
 	check_px4_fmu-v2_lpe \
 	sizes
@@ -307,7 +309,6 @@ check_%:
 	@echo
 
 uorb_graphs:
-	@./Tools/uorb_graph/create_from_startupscript.sh
 	@./Tools/uorb_graph/create.py --src-path src --exclude-path src/examples --file Tools/uorb_graph/graph_full
 	@$(MAKE) --no-print-directory px4_fmu-v2_default uorb_graph
 	@$(MAKE) --no-print-directory px4_fmu-v4_default uorb_graph
@@ -323,7 +324,7 @@ coverity_scan: px4_sitl_default
 .PHONY: parameters_metadata airframe_metadata module_documentation px4_metadata doxygen
 
 parameters_metadata:
-	@$(MAKE) --no-print-directory px4_sitl_default metadata_parameters
+	@$(MAKE) --no-print-directory px4_sitl_default metadata_parameters ver_gen
 
 airframe_metadata:
 	@$(MAKE) --no-print-directory px4_sitl_default metadata_airframes
@@ -371,6 +372,7 @@ tests_coverage:
 	@mkdir -p coverage
 	@lcov --directory build/px4_sitl_test --base-directory build/px4_sitl_test --gcov-tool gcov --capture -o coverage/lcov.info
 
+
 rostest: px4_sitl_default
 	@$(MAKE) --no-print-directory px4_sitl_default sitl_gazebo
 
@@ -387,13 +389,6 @@ tests_integration_coverage:
 	@"$(SRC_DIR)"/test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 test/mavsdk_tests/configs/sitl.json
 	@mkdir -p coverage
 	@lcov --directory build/px4_sitl_default --base-directory build/px4_sitl_default --gcov-tool gcov --capture -o coverage/lcov.info
-
-tests_all_coverage:
-	@$(MAKE) tests_coverage
-	@mv coverage/lcov.info coverage/unit_tests_lcov.info
-	@$(MAKE) tests_integration_coverage
-	@mv coverage/lcov.info coverage/integration_tests_lcov.info
-	@lcov -a coverage/unit_tests_lcov.info -a coverage/integration_tests_lcov.info -o coverage/lcov.info
 
 tests_mission: rostest
 	@"$(SRC_DIR)"/test/rostest_px4_run.sh mavros_posix_tests_missions.test

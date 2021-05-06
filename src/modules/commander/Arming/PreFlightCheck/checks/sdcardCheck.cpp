@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,7 @@
 #include "../PreFlightCheck.hpp"
 #include <lib/parameters/param.h>
 #include <systemlib/mavlink_log.h>
+
 #ifdef __PX4_DARWIN
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -79,3 +80,4 @@ bool PreFlightCheck::sdcardCheck(orb_advert_t *mavlink_log_pub, const bool repor
 
 	return success;
 }
+

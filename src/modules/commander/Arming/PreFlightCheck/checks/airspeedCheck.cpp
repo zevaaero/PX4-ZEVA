@@ -86,7 +86,7 @@ bool PreFlightCheck::airspeedCheck(orb_advert_t *mavlink_log_pub, vehicle_status
 	if (max_airspeed_check_en && fabsf(airspeed_validated.calibrated_airspeed_m_s) > arming_max_airspeed_allowed
 	    && prearm) {
 		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: check Airspeed Cal or Pitot");
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: check Airspeed Cal or pitot");
 		}
 
 		present = true;

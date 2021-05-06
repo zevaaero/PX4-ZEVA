@@ -122,6 +122,7 @@ bool EKF2Selector::SelectInstance(uint8_t ekf_instance)
 		PublishVehicleAttitude(true);
 		PublishVehicleLocalPosition(true);
 		PublishVehicleGlobalPosition(true);
+		PublishWindEstimate(true);
 
 		return true;
 	}
@@ -412,7 +413,7 @@ void EKF2Selector::PublishVehicleLocalPosition(bool reset)
 			// VZ reset
 			if (local_position.vz_reset_counter > _local_position_last.vz_reset_counter) {
 				++_vz_reset_counter;
-				_delta_z_reset = local_position.delta_vz;
+				_delta_vz_reset = local_position.delta_vz;
 			}
 
 			// heading reset
@@ -495,6 +496,25 @@ void EKF2Selector::PublishVehicleGlobalPosition(bool reset)
 			global_position.timestamp = hrt_absolute_time();
 			_vehicle_global_position_pub.publish(global_position);
 		}
+	}
+}
+
+void EKF2Selector::PublishWindEstimate(bool reset)
+{
+	wind_s wind;
+
+	if (_instance[_selected_instance].estimator_wind_sub.copy(&wind)) {
+		if (reset) {
+			// ensure monotonically increasing timestamp_sample through reset
+			wind.timestamp_sample = max(wind.timestamp_sample, _wind_last.timestamp_sample);
+		}
+
+		// save last primary wind
+		_wind_last = wind;
+
+		// republish with current timestamp
+		wind.timestamp = hrt_absolute_time();
+		_wind_pub.publish(wind);
 	}
 }
 
@@ -649,6 +669,11 @@ void EKF2Selector::Run()
 	// selected estimator_global_position -> vehicle_global_position
 	if (_instance[_selected_instance].estimator_global_position_sub.updated()) {
 		PublishVehicleGlobalPosition();
+	}
+
+	// selected estimator_wind -> wind
+	if (_instance[_selected_instance].estimator_wind_sub.updated()) {
+		PublishWindEstimate();
 	}
 
 	// selected estimator_odometry -> vehicle_odometry

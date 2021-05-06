@@ -68,7 +68,6 @@ protected:
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAuto,
 					(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed,
-					(ParamFloat<px4::params::MPC_TILTMAX_LND>) _param_mpc_tiltmax_lnd,
 					(ParamInt<px4::params::MPC_LAND_RC_HELP>) _param_mpc_land_rc_help,
 					(ParamFloat<px4::params::MPC_LAND_MAX_DUR>) _param_mpc_land_max_dur,
 					(ParamFloat<px4::params::MPC_LAND_ALT1>)
