@@ -446,7 +446,6 @@ private:
 		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad,
 
 		(ParamFloat<px4::params::FW_TKO_PITCH_MIN>) _takeoff_pitch_min,
-		(ParamFloat<px4::params::ASPD_STALL>) _param_fw_airspd_stall,
 
 		(ParamFloat<px4::params::FW_GPSF_R>) _param_fw_gpsf_r
 
