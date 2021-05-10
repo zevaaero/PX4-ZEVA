@@ -32,7 +32,7 @@ px4_add_board(
 		#imu/analog_devices/adis16448
 		imu/bosch/bmi088
 		imu/invensense/icm20602
-		imu/invensense/icm20649
+		#imu/invensense/icm20649
 		imu/invensense/icm42688p
 		irlock
 		lights # all available light drivers
