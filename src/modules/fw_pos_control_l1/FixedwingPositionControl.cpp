@@ -652,14 +652,22 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 	if (_manual_control_setpoint_altitude > deadBand) {
 		/* pitching down */
 		float pitch = -(_manual_control_setpoint_altitude - deadBand) / factor;
-		_hold_alt += (_param_sinkrate_target.get() * dt) * pitch;
-		_was_in_deadband = false;
+
+		if (pitch * _param_sinkrate_target.get() < _tecs.hgt_rate_setpoint()) {
+			_hold_alt += (_param_sinkrate_target.get() * dt) * pitch;
+			_manual_height_rate_setpoint_m_s = pitch * _param_sinkrate_target.get();
+			_was_in_deadband = false;
+		}
 
 	} else if (_manual_control_setpoint_altitude < - deadBand) {
 		/* pitching up */
 		float pitch = -(_manual_control_setpoint_altitude + deadBand) / factor;
-		_hold_alt += (_param_climbrate_target.get() * dt) * pitch;
-		_was_in_deadband = false;
+
+		if (pitch * _param_climbrate_target.get() > _tecs.hgt_rate_setpoint()) {
+			_hold_alt += (_param_climbrate_target.get() * dt) * pitch;
+			_manual_height_rate_setpoint_m_s = pitch * _param_climbrate_target.get();
+			_was_in_deadband = false;
+		}
 
 	} else if (!_was_in_deadband) {
 		/* store altitude at which manual.x was inside deadBand
@@ -668,6 +676,7 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 		_hold_alt = _current_altitude;
 		_althold_epv = _local_pos.epv;
 		_was_in_deadband = true;
+		_manual_height_rate_setpoint_m_s = NAN;
 	}
 
 	if (_vehicle_status.is_vtol) {
@@ -1097,7 +1106,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_thr_cruise.get(),
 					   false,
 					   pitch_limit_min,
-					   tecs_status_s::TECS_MODE_NORMAL);
+					   tecs_status_s::TECS_MODE_NORMAL,
+					   _manual_height_rate_setpoint_m_s);
 
 		/* heading control */
 		if (fabsf(_manual_control_setpoint.y) < HDG_HOLD_MAN_INPUT_THRESH &&
@@ -1196,7 +1206,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_thr_cruise.get(),
 					   false,
 					   pitch_limit_min,
-					   tecs_status_s::TECS_MODE_NORMAL);
+					   tecs_status_s::TECS_MODE_NORMAL,
+					   _manual_height_rate_setpoint_m_s);
 
 		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
 
