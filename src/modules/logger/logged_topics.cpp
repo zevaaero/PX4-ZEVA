@@ -70,15 +70,12 @@ void LoggedTopics::add_default_topics()
 	add_topic("hover_thrust_estimate", 100);
 	add_topic("input_rc", 500);
 	add_topic("log_message_incoming");
-	add_topic("mag_worker_data");
 	add_topic("magnetometer_bias_estimate", 200);
 	add_topic("manual_control_setpoint", 200);
 	add_topic("manual_control_switches");
-	add_topic("mission");
 	add_topic("mission_result");
 	add_topic("navigator_mission_item");
 	add_topic("offboard_control_mode", 100);
-	add_topic("onboard_computer_status", 10);
 	add_topic("parameter_update");
 	add_topic("onboard_computer_status", 10);
 	add_topic("autotune_attitude_control_status", 100);
@@ -92,13 +89,11 @@ void LoggedTopics::add_default_topics()
 	add_topic("sensor_combined");
 	add_topic("sensor_correction");
 	add_topic("sensor_gyro_fft", 50);
-	add_topic("sensor_preflight_mag", 500);
 	add_topic("sensor_selection");
 	add_topic("sensors_status_imu", 200);
 	add_topic("system_power", 500);
 	add_topic("takeoff_status", 1000);
 	add_topic("tecs_status", 200);
-	add_topic("test_motor", 500);
 	add_topic("trajectory_setpoint", 200);
 	add_topic("transponder_report");
 	add_topic("vehicle_acceleration", 50);
@@ -132,7 +127,6 @@ void LoggedTopics::add_default_topics()
 	// multi topics
 	add_topic_multi("actuator_outputs", 100, 3);
 	add_topic_multi("airspeed_wind", 1000);
-	add_topic_multi("logger_status", 0, 2);
 	add_topic_multi("multirotor_motor_limits", 1000, 2);
 	add_topic_multi("rate_ctrl_status", 200, 2);
 	add_topic_multi("telemetry_status", 1000, 4);
@@ -165,7 +159,7 @@ void LoggedTopics::add_default_topics()
 	// log all raw sensors at minimal rate (at least 1 Hz)
 	add_topic_multi("battery_status", 100, 2);
 	add_topic_multi("differential_pressure", 1000, 2);
-	add_topic_multi("distance_sensor", 1000);
+	add_topic_multi("distance_sensor", 1000, 4);
 	add_topic_multi("optical_flow", 1000, 1);
 	add_topic_multi("sensor_accel", 1000, 4);
 	add_topic_multi("sensor_baro", 1000, 4);
@@ -233,6 +227,9 @@ void LoggedTopics::add_debug_topics()
 	add_topic("debug_value");
 	add_topic("debug_vect");
 	add_topic_multi("satellite_info", 1000, 2);
+	add_topic("mag_worker_data");
+	add_topic("sensor_preflight_mag", 500);
+	add_topic("test_motor", 500);
 }
 
 void LoggedTopics::add_estimator_replay_topics()
