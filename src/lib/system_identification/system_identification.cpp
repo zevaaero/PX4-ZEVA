@@ -64,11 +64,12 @@ void SystemIdentification::update(float u, float y)
 void SystemIdentification::updateFilters(float u, float y)
 {
 	const float u_lpf = _u_lpf.apply(u);
+	const float y_lpf = _y_lpf.apply(y);
 	_u_hpf = _alpha_hpf * _u_hpf + _alpha_hpf * (u_lpf - _u_prev);
-	_y_hpf = _alpha_hpf * _y_hpf + _alpha_hpf * (y - _y_prev);
+	_y_hpf = _alpha_hpf * _y_hpf + _alpha_hpf * (y_lpf - _y_prev);
 
 	_u_prev = u_lpf;
-	_y_prev = y;
+	_y_prev = y_lpf;
 
 	if (!areFiltersInitialized()) {
 		_filter_init_counter++;

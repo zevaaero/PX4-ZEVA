@@ -64,7 +64,11 @@ public:
 	float getFitness() const { return _fitness_lpf.getState(); }
 	float getInnovation() const { return _rls.getInnovation(); }
 
-	void setLpfCutoffFrequency(float sample_freq, float cutoff) { _u_lpf.set_cutoff_frequency(sample_freq, cutoff); }
+	void setLpfCutoffFrequency(float sample_freq, float cutoff)
+	{
+		_u_lpf.set_cutoff_frequency(sample_freq, cutoff);
+		_y_lpf.set_cutoff_frequency(sample_freq, cutoff);
+	}
 	void setHpfCutoffFrequency(float sample_freq, float cutoff) { _alpha_hpf = sample_freq / (sample_freq + 2.f * M_PI_F * cutoff); }
 
 	void setForgettingFactor(float time_constant, float dt) { _rls.setForgettingFactor(time_constant, dt); }
@@ -80,7 +84,7 @@ public:
 private:
 	ArxRls<2, 2, 1> _rls;
 	math::LowPassFilter2p _u_lpf{400.f, 30.f};
-	//math::LowPassFilter2p _y_lpf; // measurements are already filtered
+	math::LowPassFilter2p _y_lpf{400.f, 30.f};
 
 	//TODO: replace by HighPassFilter class
 	float _alpha_hpf{0.f};
