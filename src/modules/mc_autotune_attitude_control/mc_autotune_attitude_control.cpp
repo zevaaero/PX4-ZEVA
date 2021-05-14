@@ -162,8 +162,8 @@ void McAutotuneAttitudeControl::Run()
 
 		const Vector3f num(coeff(2), coeff(3), coeff(4));
 		const Vector3f den(1.f, coeff(0), coeff(1));
-		_kid = pid_design::computePidGmvc(num, den, _sample_interval_avg, 0.08f, 0.f, 0.4f);
-		_attitude_p = pid_design::computePOuterGain(den, _sample_interval_avg, 10.f);
+		_kid = pid_design::computePidGmvc(num, den, _filter_dt, 0.08f, 0.f, 0.4f);
+		_attitude_p = pid_design::computePOuterGain(den, _filter_dt, 10.f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 
@@ -176,7 +176,7 @@ void McAutotuneAttitudeControl::Run()
 		coeff.copyTo(status.coeff);
 		coeff_var.copyTo(status.coeff_var);
 		status.fitness = _sys_id.getFitness();
-		status.dt_model = _sample_interval_avg;
+		status.dt_model = _filter_dt;
 		status.innov = _sys_id.getInnovation();
 		status.u_filt = _sys_id.getFilteredInputData();
 		status.y_filt = _sys_id.getFilteredOutputData();
@@ -199,22 +199,25 @@ void McAutotuneAttitudeControl::checkFilters()
 	if (_interval_count > 1000) {
 		// calculate sensor update rate
 		_sample_interval_avg = _interval_sum / _interval_count;
-		const float update_rate_hz = 1.f / _sample_interval_avg;
 
 		// check if sample rate error is greater than 1%
 		bool reset_filters = false;
 
-		if ((fabsf(update_rate_hz - _filter_sample_rate) / _filter_sample_rate) > 0.01f) {
+		if ((fabsf(_filter_dt - _sample_interval_avg) / _filter_dt) > 0.01f) {
 			reset_filters = true;
 		}
 
-		if (reset_filters) {
+		if (reset_filters && !_are_filters_initialized) {
+			_filter_dt = _sample_interval_avg;
+
+			const float filter_rate_hz = 1.f / _filter_dt;
+
+			_sys_id.setLpfCutoffFrequency(filter_rate_hz, _param_imu_gyro_cutoff.get());
+			_sys_id.setHpfCutoffFrequency(filter_rate_hz, .05f);
+			_sys_id.setForgettingFactor(60.f, _filter_dt);
+			_sys_id.setFitnessLpfTimeConstant(1.f, _filter_dt);
+
 			_are_filters_initialized = true;
-			_filter_sample_rate = update_rate_hz;
-			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
-			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
-			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
-			_sys_id.setFitnessLpfTimeConstant(1.f, _sample_interval_avg);
 		}
 
 		// reset sample interval accumulator

@@ -161,7 +161,7 @@ private:
 	float _interval_sum{0.f};
 	float _interval_count{0.f};
 	float _sample_interval_avg{0.01f};
-	float _filter_sample_rate{1.f};
+	float _filter_dt{0.01f};
 	bool _are_filters_initialized{false};
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
