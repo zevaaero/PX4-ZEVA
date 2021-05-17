@@ -290,6 +290,19 @@ private:
 		STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT = (1 << 1)
 	};
 
+	hrt_abstime _last_time_outside_of_band{0};
+
+	hrt_abstime _time_since_dash_mode_started{0};
+
+
+	enum FW_MODES {
+		CRUISE_MODE_NORMAL,
+		CRUISE_MODE_ECO,
+		CRUISE_MODE_DASH,
+	} _cruise_mode_current{CRUISE_MODE_NORMAL};		///< used to make flight mode based vehicle limit adaptions (e.g. airspeed setpoint)
+
+	float _last_airspeed_setpoint{NAN};
+
 
 	// Update our local parameter cache.
 	int		parameters_update();
@@ -358,8 +371,10 @@ private:
 	float		get_tecs_thrust();
 
 	float		get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
-			const Vector2f &ground_speed);
+			const Vector2f &ground_speed, float dt);
 	void		update_wind_mode();
+	void		update_cruise_mode(const hrt_abstime &now);
+	void		reset_cruise_mode(const hrt_abstime &now);
 
 	void		reset_takeoff_state(bool force = false);
 	void		reset_landing_state();
@@ -371,7 +386,7 @@ private:
 					float pitch_min_rad, float pitch_max_rad,
 					float throttle_min, float throttle_max, float throttle_cruise,
 					bool climbout_mode, float climbout_pitch_min_rad,
-					uint8_t mode = tecs_status_s::TECS_MODE_NORMAL, float hgt_rate_sp = NAN);
+					bool disable_underspeed_detection = false, float hgt_rate_sp = NAN);
 
 	DEFINE_PARAMETERS(
 
@@ -450,7 +465,21 @@ private:
 
 		(ParamFloat<px4::params::FW_TKO_PITCH_MIN>) _takeoff_pitch_min,
 
-		(ParamFloat<px4::params::FW_GPSF_R>) _param_fw_gpsf_r
+		(ParamFloat<px4::params::FW_GPSF_R>) _param_fw_gpsf_r,
+
+		(ParamFloat<px4::params::FW_T_ALT_TC_E>) _param_fw_t_h_error_tc_eco,
+		(ParamFloat<px4::params::FW_T_SPDWEIGHT_E>) _param_fw_t_spdweight_eco,
+		(ParamFloat<px4::params::FW_THR_MAX_E>) _param_fw_thr_max_eco,
+		(ParamFloat<px4::params::FW_T_CLMB_R_SP_E>) _param_climbrate_target_eco,
+
+		(ParamFloat<px4::params::FW_ECO_ALT_ERR_U>) _param_fw_eco_alt_err_u,
+		(ParamFloat<px4::params::FW_ECO_ALT_ERR_O>) _param_fw_eco_alt_err_o,
+		(ParamFloat<px4::params::FW_ECO_ALT_MIN>) _param_fw_eco_alt_min,
+		(ParamInt<px4::params::FW_ECO_BAND_T>) _param_fw_eco_band_t,
+
+		// these params are supposed to be replaced by mavlink messages
+		(ParamBool<px4::params::FW_ECO_EN>) _param_fw_eco_en_mavlink,
+		(ParamBool<px4::params::FW_DASH_EN>) _param_fw_dash_en_mavlink
 
 	)
 

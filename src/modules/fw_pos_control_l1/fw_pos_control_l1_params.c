@@ -894,3 +894,123 @@ PARAM_DEFINE_FLOAT(FW_T_CLMB_R_SP, 3.0f);
  * @group FW TECS
  */
 PARAM_DEFINE_FLOAT(FW_T_SINK_R_SP, 2.0f);
+
+/**
+ * Eco Mode: Throttle limit max
+ *
+ * @unit norm
+ * @min 0.0
+ * @max 1.0
+ * @decimal 2
+ * @increment 0.01
+ * @group FW L1 Control
+ */
+PARAM_DEFINE_FLOAT(FW_THR_MAX_E, 1.0f);
+
+/**
+ * Eco target climbrate.
+ *
+ * The rate at which the vehicle will climb in autonomous modes to achieve altitude setpoints in Eco mode.
+ *
+ * @unit m/s
+ * @min 0.5
+ * @max 15
+ * @decimal 2
+ * @increment 0.01
+ * @group FW TECS
+ */
+PARAM_DEFINE_FLOAT(FW_T_CLMB_R_SP_E, 3.0f);
+
+/**
+ * Eco Mode: Speed <--> Altitude priority
+ *
+ * @min 0.0
+ * @max 2.0
+ * @decimal 1
+ * @increment 1.0
+ * @group FW TECS
+ */
+PARAM_DEFINE_FLOAT(FW_T_SPDWEIGHT_E, 1.8f);
+
+/**
+ * Eco Mode: Altitude error time constant.
+ *
+ * Normally larger than FW_T_ALT_TC to have looser altitude control and in turn less throttle changes.
+ *
+ * @min 2.0
+ * @decimal 1
+ * @increment 0.5
+ * @group FW TECS
+ */
+PARAM_DEFINE_FLOAT(FW_T_ALT_TC_E, 10.0f);
+
+/**
+ * Eco TECS mode max altitude undershoot
+ *
+ * Eco mode is disabled if the current altitude is more than this value below the setpoint.
+ *
+ * @min 1.0
+ * @max 50.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW TECS
+ */
+PARAM_DEFINE_FLOAT(FW_ECO_ALT_ERR_U, 10.f);
+
+/**
+ * Eco TECS mode max altitude overshoot
+ *
+ * Eco mode is disabled if the current altitude is more than this value above the setpoint.
+ *
+ * @min 1.0
+ * @max 50.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW TECS
+ */
+PARAM_DEFINE_FLOAT(FW_ECO_ALT_ERR_O, 20.f);
+
+/**
+ * Eco TECS mode min altitude
+ *
+ * Eco mode can be enabled if above this relative altitude to home.
+ *
+ * @min -200.0
+ * @max 200.0
+ * @decimal 1
+ * @increment 0.1
+ * @group FW TECS
+ */
+PARAM_DEFINE_FLOAT(FW_ECO_ALT_MIN, 50.f);
+
+/**
+ * Minimum time in band to enable Eco
+ *
+ * Automatically switch to Eco mode if within Eco requirements (above FW_ECO_H_MIN, altitude smaller than FW_ECO_ALT_ERR).
+ * Set to negative value to disable automatic switch to Eco.
+ *
+ * @min -1
+ * @max 1000
+ * @group FW TECS
+ */
+PARAM_DEFINE_INT32(FW_ECO_BAND_T, -1);
+
+/**
+ * Enable/disable eco mode
+ *
+ * This is only an intermediate step, to be replaced by a mavlink message from the groundstation (action on button press)
+ *
+ * @boolean
+ * @group FW TECS
+ */
+PARAM_DEFINE_INT32(FW_ECO_EN, 1);
+
+/**
+ * Enable/disable dash mode (for 60s, then the param is automatically reset)
+ *
+ * This is only an intermediate step, to be replaced by a mavlink message from the groundstation (action on button press)
+ *
+ * @boolean
+ * @group FW TECS
+ */
+PARAM_DEFINE_INT32(FW_DASH_EN, 0);

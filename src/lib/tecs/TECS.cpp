@@ -515,7 +515,7 @@ void TECS::_update_STE_rate_lim()
 void TECS::update_pitch_throttle(float pitch, float baro_altitude, float hgt_setpoint,
 				 float EAS_setpoint, float equivalent_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout,
 				 float throttle_min, float throttle_max, float throttle_cruise, float pitch_limit_min, float pitch_limit_max,
-				 float target_climbrate, float target_sinkrate, float hgt_rate_sp)
+				 float target_climbrate, float target_sinkrate, float hgt_rate_sp, bool eco_mode_enabled)
 {
 	// Calculate the time since last update (seconds)
 	uint64_t now = hrt_absolute_time();
@@ -545,10 +545,12 @@ void TECS::update_pitch_throttle(float pitch, float baro_altitude, float hgt_set
 	// Detect an underspeed condition
 	_detect_underspeed();
 
-	_update_speed_height_weights();
-
 	// Detect an uncommanded descent caused by an unachievable airspeed demand
 	_detect_uncommanded_descent();
+
+	_eco_mode_enabled = eco_mode_enabled;
+
+	_adjust_settings_depending_on_mode();
 
 	// Calculate the demanded true airspeed
 	_update_speed_setpoint();
@@ -584,6 +586,9 @@ void TECS::update_pitch_throttle(float pitch, float baro_altitude, float hgt_set
 	} else if (_climbout_mode_active) {
 		_tecs_mode = ECL_TECS_MODE_CLIMBOUT;
 
+	} else if (_eco_mode_enabled) {
+		_tecs_mode = ECL_TECS_MODE_ECO;
+
 	} else {
 		// This is the default operation mode
 		_tecs_mode = ECL_TECS_MODE_NORMAL;
@@ -591,8 +596,14 @@ void TECS::update_pitch_throttle(float pitch, float baro_altitude, float hgt_set
 
 }
 
-void TECS::_update_speed_height_weights()
+
+void TECS::_adjust_settings_depending_on_mode()
 {
+	if (_eco_mode_enabled) {
+		_pitch_speed_weight = _pitch_speed_weight_eco;
+		_height_error_gain = _height_error_gain_eco;
+	}
+
 	// Calculate the weight applied to control of specific kinetic energy error
 	_SKE_weighting = constrain(_pitch_speed_weight, 0.0f, 2.0f);
 

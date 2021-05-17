@@ -178,10 +178,10 @@ PARAM_DEFINE_FLOAT(VT_ELEV_COMP_K, 0.0f);
  *
  * Pitch_actuator_offset = VT_ELEV_COMP_OFF + throttle_alt * comp_elev_k / p_dynamic.
  *
- * @min -1
- * @max 1
- * @increment 0.1
- * @decimal 1
+ * @min -1.0
+ * @max 1.0
+ * @increment 0.01
+ * @decimal 2
  * @group VTOL Attitude Control
  */
 PARAM_DEFINE_FLOAT(VT_ELEV_COMP_OFF, 0.0f);
