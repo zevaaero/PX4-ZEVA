@@ -40,6 +40,7 @@
 #include "vtol_takeoff.h"
 #include "navigator.h"
 
+using matrix::wrap_2pi;
 using matrix::wrap_pi;
 
 VtolTakeoff::VtolTakeoff(Navigator *navigator) :
@@ -53,35 +54,69 @@ VtolTakeoff::on_activation()
 {
 	set_takeoff_position();
 	_takeoff_state = vtol_takeoff_state::TAKEOFF_HOVER;
+	_skip_align_heading = false;
 
+}
+
+bool VtolTakeoff::isMissionItemReached()
+{
+	if (_takeoff_state == vtol_takeoff_state::TAKEOFF_HOVER) {
+		float alt_error = _mission_item.altitude - _navigator->get_global_position()->alt;
+
+		if (fabsf(alt_error) < 5.0f && isCurrentHeadingClear()) {
+			_skip_align_heading = true;
+			return true;
+
+
+		} else {
+			return is_mission_item_reached();
+		}
+
+	} else {
+		return is_mission_item_reached();
+	}
 }
 
 void
 VtolTakeoff::on_active()
 {
-	if (is_mission_item_reached()) {
+	if (isMissionItemReached()) {
 		switch	(_takeoff_state) {
 		case vtol_takeoff_state::TAKEOFF_HOVER: {
-				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
-				if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-					setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
+
+				if (_skip_align_heading) {
+					set_vtol_transition_item(&_mission_item, vtol_vehicle_status_s::VEHICLE_VTOL_STATE_FW);
+					position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+					pos_sp_triplet->previous = pos_sp_triplet->current;
+					generate_waypoint_from_heading(&pos_sp_triplet->current, _mission_item.yaw);
+					_navigator->set_position_setpoint_triplet_updated();
+
+					issue_command(_mission_item);
+
+					_takeoff_state = vtol_takeoff_state::TRANSITION;
 
 				} else {
-					setLoiterItemFromCurrentPosition(&_mission_item);
+					position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
+
+					if (pos_sp_triplet->current.valid && pos_sp_triplet->current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+						setLoiterItemFromCurrentPositionSetpoint(&_mission_item);
+
+					} else {
+						setLoiterItemFromCurrentPosition(&_mission_item);
+					}
+
+					_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
+					_mission_item.yaw = getClosestTransitionHeading();
+					_mission_item.force_heading = true;
+					mission_apply_limitation(_mission_item);
+					mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
+					pos_sp_triplet->current.disable_weather_vane = true;
+					_navigator->set_position_setpoint_triplet_updated();
+					reset_mission_item_reached();
+
+					_takeoff_state = vtol_takeoff_state::ALIGN_HEADING;
 				}
-
-				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
-				_mission_item.yaw = getClosestTransitionHeading();
-				_mission_item.force_heading = true;
-				mission_apply_limitation(_mission_item);
-				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
-				pos_sp_triplet->current.disable_weather_vane = true;
-				_navigator->set_position_setpoint_triplet_updated();
-				reset_mission_item_reached();
-
-				_takeoff_state = vtol_takeoff_state::ALIGN_HEADING;
-
 
 				break;
 			}
@@ -211,4 +246,15 @@ float VtolTakeoff::getClosestTransitionHeading()
 void VtolTakeoff::updateLoiterAltitudeAbsolute()
 {
 	_loiter_alt_amsl = _navigator->get_home_position()->alt + _param_loiter_alt.get();
+}
+
+bool VtolTakeoff::isCurrentHeadingClear()
+{
+	const float heading_offset = wrap_2pi(_navigator->get_local_position()->heading - math::radians(_offset_degrees));
+	uint8_t sector_index;
+	const float sector_angle = 2 * M_PI_F / _num_sectors;
+	sector_index = heading_offset / sector_angle;
+
+	return _sector_bitmap & (1 << sector_index);
+
 }
