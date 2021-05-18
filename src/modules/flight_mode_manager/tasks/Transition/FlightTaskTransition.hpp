@@ -40,6 +40,7 @@
 #pragma once
 
 #include "FlightTask.hpp"
+#include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
 
 class FlightTaskTransition : public FlightTask
 {
@@ -50,4 +51,15 @@ public:
 	bool activate(const vehicle_local_position_setpoint_s &last_setpoint) override;
 	bool updateInitialize() override;
 	bool update() override;
+
+private:
+
+	static constexpr float _vel_z_filter_time_const = 2.0f;
+
+	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTask,
+					(ParamFloat<px4::params::FW_PSP_OFF>) _param_pitch_cruise_degrees
+				       )
+
+	AlphaFilter<float> _vel_z_filter;
+
 };

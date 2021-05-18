@@ -81,8 +81,6 @@ private:
 	float 	_offset_degrees{0};			// offset of first sector relative to north
 	static constexpr uint8_t _num_sectors = 8;
 
-	bool _skip_align_heading{false};
-
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::VTO_SAFE_AREA_R>) _param_safe_area_radius_m,
 		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt,
@@ -97,9 +95,5 @@ private:
 
 	float getClosestTransitionHeading();
 
-	bool isMissionItemReached();
-
-	bool isHeadingClear();
-
-
+	bool isCurrentHeadingClear();
 };
