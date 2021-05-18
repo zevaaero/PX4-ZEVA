@@ -66,14 +66,7 @@ VtolTakeoff::on_active()
 				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
-
-				if (isCurrentHeadingClear()) {
-					_mission_item.yaw = _navigator->get_local_position()->heading;
-
-				} else {
-					_mission_item.yaw = getClosestTransitionHeading();
-				}
-
+				_mission_item.yaw = getClosestTransitionHeading();
 				_mission_item.force_heading = true;
 				mission_apply_limitation(_mission_item);
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
