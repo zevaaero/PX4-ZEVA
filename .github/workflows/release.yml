@@ -5,20 +5,20 @@ on:
     types: [created]
 
 jobs:
-  build:
+  release:
    runs-on: ubuntu-latest
    container: px4io/px4-dev-nuttx-focal:2021-02-04
    steps:
     - uses: actions/checkout@v1
-    - name: disable the keychain credential helper
+    - name: Disable the keychain credential helper
       run: git config --global credential.helper ""
-    - name: enable the local store credential helper
+    - name: Enable the local store credential helper
       run: git config --global --add credential.helper store
-    - name: add credential
+    - name: Add credential
       run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
-    - name: tell git to use https instead of ssh whenever it encounters it
+    - name: Tell git to use https instead of ssh whenever it encounters it
       run: 'git config --global url."https://github.com/".insteadof git@github.com:'
-    - name: get submodules
+    - name: Get submodules
       run: 'git submodule update --init --recursive'
 
     - name: Prepare ccache timestamp
@@ -33,7 +33,7 @@ jobs:
         path: ~/.ccache
         key: release-nuttx-${{steps.ccache_cache_timestamp.outputs.timestamp}}
         restore-keys: release-nuttx-
-    - name: setup ccache
+    - name: Setup ccache
       run: |
           mkdir -p ~/.ccache
           echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
@@ -43,38 +43,82 @@ jobs:
           ccache -s
           ccache -z
 
-    - name: make relevant nuttx targets
+    - name: Make Nuttx development targets
       run: |
-        make px4_fmu-v3_default
-        make px4_fmu-v4_default
+        ## Create target directory
+        mkdir development
+        ## Build targets
         make px4_fmu-v5_default
         make px4_fmu-v5_rtps
         make px4_fmu-v5x_default
         make px4_fmu-v5x_rtps
+        ## Move target resulting artifacts to the development folder
+        mv build/* development/
 
-    - name: build zip
-      run: zip nuttx-targets.zip build/*/*.elf build/*/*.map build/*/*.px4 build/*/*.bin
-    - name: Upload NuttX targets artifact
+    - name: Make Nuttx production targets
+      run: |
+        ## Create target directory
+        mkdir production
+        ## Build targets
+        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5_default
+        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5_rtps
+        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5x_default
+        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5x_rtps
+        ## Move target resulting artifacts to the production folder
+        mv build/* production/
+
+    - name: Create .zip for development targets
+      run: |
+        zip development-nuttx-targets.zip \
+          development/*/*.elf \
+          development/*/*.map \
+          development/*/*.px4 \
+          development/*/*.bin
+
+    - name: Create .zip for production targets
+      run: |
+        zip production-nuttx-targets.zip \
+          production/*/*.elf \
+          production/*/*.map \
+          production/*/*.px4 \
+          production/*/*.bin
+
+    - name: Upload development artifacts
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url:  ${{ github.event.release.upload_url }}
-        asset_path: nuttx-targets.zip
-        asset_name: nuttx-targets.zip
+        asset_path: development-nuttx-targets.zip
+        asset_name: development-nuttx-targets.zip
         asset_content_type: binary/octet-stream
 
-    - name: clone auterion_distro_resin
+    - name: Upload production artifacts
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url:  ${{ github.event.release.upload_url }}
+        asset_path: production-nuttx-targets.zip
+        asset_name: production-nuttx-targets.zip
+        asset_content_type: binary/octet-stream
+
+    # Note: The stages bellow will eventually disappear as soon as the
+    # AuterionOS release container fetches the binaries directly from
+    # Artifactory
+
+    - name: Clone AuterionOS
       uses: actions/checkout@v2
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
-        repository: Auterion/auterion_distro_resin
+        repository: Auterion/AuterionOS
         path: distro/
 
-    - name: update binaries in AuterionOS
+    - name: Update binaries in AuterionOS
       id: update_binaries
       run: |
-        yes | cp -rf build/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/
+        yes | cp -rf development/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/dev
+        yes | cp -rf production/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/prod
         TAG_BRANCH=$(echo $GITHUB_REF | sed -e 's#refs/tags/##g')
         REF_BRANCH=$(git branch -a --contains tags/$TAG_BRANCH | grep release | sed "s/.*\(release\/.*\).*/\1/p" | head -n 1)
         DISTRO_REF_BRANCH=$(echo $REF_BRANCH | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
@@ -85,7 +129,7 @@ jobs:
         echo "::set-output name=branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
         cd ..
 
-    - name: create PR to auterion_distro_resin repo
+    - name: Create PR to AuterionOS repo
       uses: peter-evans/create-pull-request@v3
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
