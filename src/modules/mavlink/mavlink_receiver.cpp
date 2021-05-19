@@ -132,13 +132,25 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_parameters_manager(parent),
 	_mavlink_timesync(parent)
 {
+	_handle_sens_flow_maxhgt = param_find("SENS_FLOW_MAXHGT");
+	_handle_sens_flow_maxr = param_find("SENS_FLOW_MAXR");
+	_handle_sens_flow_minhgt = param_find("SENS_FLOW_MINHGT");
+	_handle_sens_flow_rot = param_find("SENS_FLOW_ROT");
+	_handle_tf_terrain_en = param_find("TF_TERRAIN_EN");
+
+	if (_handle_tf_terrain_en != PARAM_INVALID) {
+		param_get(_handle_tf_terrain_en, &_param_tf_terrain_en);
+	}
+
+
 	// let the main instance initialize the terrain uploader, if enabled
-	if (_mavlink->get_instance_id() == 0 && _param_tf_terrain_en.get() > 0) {
-		if (!_terrain_uploader.init(_param_tf_terrain_en.get())) {
+	if (_mavlink->get_instance_id() == 0 && _param_tf_terrain_en > 0) {
+		if (!_terrain_uploader.init(_param_tf_terrain_en)) {
 			PX4_ERR("Terrain uploader init failed");
 		}
 	}
 }
+
 
 void
 MavlinkReceiver::acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result, uint8_t progress)
@@ -829,12 +841,12 @@ MavlinkReceiver::handle_message_optical_flow_rad(mavlink_message_t *msg)
 	f.ground_distance_m     = flow.distance;
 	f.quality               = flow.quality;
 	f.sensor_id             = flow.sensor_id;
-	f.max_flow_rate         = _param_sens_flow_maxr.get();
-	f.min_ground_distance   = _param_sens_flow_minhgt.get();
-	f.max_ground_distance   = _param_sens_flow_maxhgt.get();
+	f.max_flow_rate         = _param_sens_flow_maxr;
+	f.min_ground_distance   = _param_sens_flow_minhgt;
+	f.max_ground_distance   = _param_sens_flow_maxhgt;
 
 	/* read flow sensor parameters */
-	const Rotation flow_rot = (Rotation)_param_sens_flow_rot.get();
+	const Rotation flow_rot = (Rotation)_param_sens_flow_rot;
 
 	/* rotate measurements according to parameter */
 	float zero_val = 0.0f;
@@ -3394,4 +3406,27 @@ MavlinkReceiver::receive_start(pthread_t *thread, Mavlink *parent)
 	pthread_create(thread, &receiveloop_attr, MavlinkReceiver::start_helper, (void *)parent);
 
 	pthread_attr_destroy(&receiveloop_attr);
+}
+
+void
+MavlinkReceiver::updateParams()
+{
+	// update parameters from storage
+	ModuleParams::updateParams();
+
+	if (_handle_sens_flow_maxhgt != PARAM_INVALID) {
+		param_get(_handle_sens_flow_maxhgt, &_param_sens_flow_maxhgt);
+	}
+
+	if (_handle_sens_flow_maxr != PARAM_INVALID) {
+		param_get(_handle_sens_flow_maxr, &_param_sens_flow_maxr);
+	}
+
+	if (_handle_sens_flow_minhgt != PARAM_INVALID) {
+		param_get(_handle_sens_flow_minhgt, &_param_sens_flow_minhgt);
+	}
+
+	if (_handle_sens_flow_rot != PARAM_INVALID) {
+		param_get(_handle_sens_flow_rot, &_param_sens_flow_rot);
+	}
 }
