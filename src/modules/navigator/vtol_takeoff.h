@@ -94,6 +94,4 @@ private:
 	bool transitionHeadingReached() {return false;}
 
 	float getClosestTransitionHeading();
-
-	bool isCurrentHeadingClear();
 };

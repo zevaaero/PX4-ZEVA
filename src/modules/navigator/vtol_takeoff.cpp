@@ -205,12 +205,3 @@ void VtolTakeoff::updateLoiterAltitudeAbsolute()
 {
 	_loiter_alt_amsl = _navigator->get_home_position()->alt + _param_loiter_alt.get();
 }
-
-bool VtolTakeoff::isCurrentHeadingClear()
-{
-	const float heading_offset = wrap_2pi(_navigator->get_local_position()->heading - math::radians(_offset_degrees));
-	uint8_t sector_index;
-	const float sector_angle = 2 * M_PI_F / _num_sectors;
-	sector_index = heading_offset / sector_angle;
-	return _sector_bitmap & (1 << sector_index);
-}
