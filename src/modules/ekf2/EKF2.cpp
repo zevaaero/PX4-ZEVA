@@ -243,7 +243,7 @@ void EKF2::Run()
 		_ekf.set_min_required_gps_health_time(_param_ekf2_req_gps_h.get() * 1_s);
 
 		// The airspeed scale factor correcton is only available via parameter as used by the airspeed module
-		param_t param_aspd_scale = param_find("ASPD_SCALE");
+		param_t param_aspd_scale = param_find("ASPD_SCALE_0");
 
 		if (param_aspd_scale != PARAM_INVALID) {
 			param_get(param_aspd_scale, &_airspeed_scale_factor);
@@ -1281,7 +1281,7 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 
 	if (_airspeed_sub.update(&airspeed)) {
 		// The airspeed measurement received via the airspeed.msg topic has not been corrected
-		// for scale favtor errors and requires the ASPD_SCALE correction to be applied.
+		// for scale factor errors and requires the ASPD_SCALE_0 correction to be applied.
 		// This could be avoided if true_airspeed_m_s from the airspeed-validated.msg topic
 		// was used instead, however this would introduce a potential circular dependency
 		// via the wind estimator that uses EKF velocity estimates.

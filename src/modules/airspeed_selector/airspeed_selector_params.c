@@ -80,7 +80,7 @@ PARAM_DEFINE_INT32(ASPD_BETA_GATE, 1);
  *
  * Turns the automatic airspeed scale (scale from IAS to CAS) on or off. It is recommended to fly level
  * altitude while performing the estimation. Set to 1 to start estimation (best when already flying).
- * Set to 0 to end scale estimation. The estimated scale is then saved using the ASPD_SCALE parameter.
+ * Set to 0 to end scale estimation. The estimated scale is then saved using the ASPD_SCALE_x parameter.
  *
  * @boolean
  * @group Airspeed Validator
@@ -88,16 +88,16 @@ PARAM_DEFINE_INT32(ASPD_BETA_GATE, 1);
 PARAM_DEFINE_INT32(ASPD_SCALE_EST, 0);
 
 /**
- * Airspeed scale (scale from IAS to CAS)
+ * Airspeed scale sensor 0
  *
- * Scale can either be entered manually, or estimated in-flight by setting ASPD_SCALE_EST to 1.
+ * This is the scale IAS --> CAS of the first airspeed sensor instance
  *
  * @min 0.5
  * @max 1.5
  * @decimal 2
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_SCALE, 1.0f);
+PARAM_DEFINE_FLOAT(ASPD_SCALE_0, 1.0f);
 
 /**
  * Index or primary airspeed measurement source

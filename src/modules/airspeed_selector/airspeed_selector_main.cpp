@@ -162,7 +162,7 @@ private:
 		(ParamInt<px4::params::ASPD_TAS_GATE>) _param_west_tas_gate,
 		(ParamInt<px4::params::ASPD_BETA_GATE>) _param_west_beta_gate,
 		(ParamInt<px4::params::ASPD_SCALE_EST>) _param_west_scale_estimation_on,
-		(ParamFloat<px4::params::ASPD_SCALE>) _param_west_airspeed_scale,
+		(ParamFloat<px4::params::ASPD_SCALE_0>) _param_west_airspeed_scale_0,
 		(ParamInt<px4::params::ASPD_PRIMARY>) _param_airspeed_primary_index,
 		(ParamInt<px4::params::ASPD_DO_CHECKS>) _param_airspeed_checks_on,
 		(ParamInt<px4::params::ASPD_FALLBACK_GW>) _param_airspeed_fallback_gw,
@@ -405,7 +405,7 @@ void AirspeedModule::update_params()
 
 		// only apply manual entered airspeed scale to first airspeed measurement
 		// TODO: enable multiple airspeed sensors
-		_airspeed_validator[0].set_airspeed_scale_manual(_param_west_airspeed_scale.get());
+		_airspeed_validator[0].set_airspeed_scale_manual(_param_west_airspeed_scale_0.get());
 
 		_airspeed_validator[i].set_tas_innov_threshold(_tas_innov_threshold.get());
 		_airspeed_validator[i].set_tas_innov_integ_threshold(_tas_innov_integ_threshold.get());
@@ -430,11 +430,11 @@ void AirspeedModule::update_params()
 	} else if (_scale_estimation_previously_on && !_param_west_scale_estimation_on.get()) {
 		if (_valid_airspeed_index > 0) {
 
-			_param_west_airspeed_scale.set(_airspeed_validator[_valid_airspeed_index - 1].get_CAS_scale());
-			_param_west_airspeed_scale.commit_no_notification();
-			_airspeed_validator[_valid_airspeed_index - 1].set_airspeed_scale_manual(_param_west_airspeed_scale.get());
+			_param_west_airspeed_scale_0.set(_airspeed_validator[_valid_airspeed_index - 1].get_CAS_scale());
+			_param_west_airspeed_scale_0.commit_no_notification();
+			_airspeed_validator[_valid_airspeed_index - 1].set_airspeed_scale_manual(_param_west_airspeed_scale_0.get());
 
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed: estimated scale (ASPD_SCALE): %0.2f",
+			mavlink_log_info(&_mavlink_log_pub, "Airspeed: estimated scale (ASPD_SCALE_0): %0.2f",
 					 (double)_airspeed_validator[_valid_airspeed_index - 1].get_CAS_scale());
 
 		} else {
