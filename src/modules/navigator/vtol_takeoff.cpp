@@ -40,7 +40,6 @@
 #include "vtol_takeoff.h"
 #include "navigator.h"
 
-using matrix::wrap_2pi;
 using matrix::wrap_pi;
 
 VtolTakeoff::VtolTakeoff(Navigator *navigator) :
