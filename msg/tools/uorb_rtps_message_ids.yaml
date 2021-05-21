@@ -63,7 +63,6 @@ rtps:
     id: 29
   - msg: input_rc
     id: 30
-    send: true
   - msg: iridiumsbd_status
     id: 31
   - msg: irlock_report
@@ -130,7 +129,6 @@ rtps:
     id: 60
   - msg: satellite_info
     id: 61
-    send: true
   - msg: sensor_accel
     id: 62
   - msg: sensor_baro
@@ -139,7 +137,6 @@ rtps:
     id: 64
   - msg: sensor_combined
     id: 65
-    send: true
   - msg: sensor_correction
     id: 66
   - msg: sensor_gyro
@@ -215,7 +212,6 @@ rtps:
     id: 98
   - msg: vehicle_odometry
     id: 99
-    send: true
   - msg: vehicle_rates_setpoint
     id: 100
   - msg: vehicle_roi
@@ -394,11 +390,9 @@ rtps:
   - msg: vehicle_mocap_odometry
     alias: vehicle_odometry
     id: 181
-    receive: true
   - msg: vehicle_visual_odometry
     id: 182
     alias: vehicle_odometry
-    receive: true
   - msg: vehicle_trajectory_waypoint_desired
     id: 183
     alias: vehicle_trajectory_waypoint
