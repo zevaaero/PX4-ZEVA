@@ -495,11 +495,11 @@ void AirspeedModule::update_wind_estimator_sideslip()
 	_wind_estimator_sideslip.get_wind_var(wind_cov);
 	_wind_estimate_sideslip.variance_north = wind_cov[0];
 	_wind_estimate_sideslip.variance_east = wind_cov[1];
-	_wind_estimate_sideslip.tas_innov = _wind_estimator_sideslip.get_tas_innov();
-	_wind_estimate_sideslip.tas_innov_var = _wind_estimator_sideslip.get_tas_innov_var();
+	_wind_estimate_sideslip.tas_innov = NAN;
+	_wind_estimate_sideslip.tas_innov_var = NAN;
 	_wind_estimate_sideslip.beta_innov = _wind_estimator_sideslip.get_beta_innov();
 	_wind_estimate_sideslip.beta_innov_var = _wind_estimator_sideslip.get_beta_innov_var();
-	_wind_estimate_sideslip.tas_scale = _wind_estimator_sideslip.get_tas_scale();
+	_wind_estimate_sideslip.tas_scale = NAN;
 	_wind_estimate_sideslip.source = airspeed_wind_s::SOURCE_AS_BETA_ONLY;
 }
 
