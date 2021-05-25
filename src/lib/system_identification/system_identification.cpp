@@ -43,26 +43,36 @@ void SystemIdentification::reset(const matrix::Vector<float, 5> &id_state_init)
 {
 	_rls.reset(id_state_init);
 	_u_lpf.reset(0.f);
+	_u_lpf.reset(0.f);
 	_u_hpf = 0.f;
 	_y_hpf = 0.f;
 	_u_prev = 0.f;
 	_y_prev = 0.f;
 	_fitness_lpf.reset(10.f);
-	_filter_init_counter = 0;
+	_are_filters_initialized = false;
 }
 
 void SystemIdentification::update(float u, float y)
 {
 	updateFilters(u, y);
 
-	if (areFiltersInitialized()) {
-		_rls.update(_u_hpf, _y_hpf);
-		updateFitness();
-	}
+	_rls.update(_u_hpf, _y_hpf);
+	updateFitness();
 }
 
 void SystemIdentification::updateFilters(float u, float y)
 {
+	if (!_are_filters_initialized) {
+		_u_lpf.reset(u);
+		_y_lpf.reset(y);
+		_u_hpf = 0.f;
+		_y_hpf = 0.f;
+		_u_prev = u;
+		_y_prev = y;
+		_are_filters_initialized = true;
+		return;
+	}
+
 	const float u_lpf = _u_lpf.apply(u);
 	const float y_lpf = _y_lpf.apply(y);
 	_u_hpf = _alpha_hpf * _u_hpf + _alpha_hpf * (u_lpf - _u_prev);
@@ -70,10 +80,6 @@ void SystemIdentification::updateFilters(float u, float y)
 
 	_u_prev = u_lpf;
 	_y_prev = y_lpf;
-
-	if (!areFiltersInitialized()) {
-		_filter_init_counter++;
-	}
 }
 
 void SystemIdentification::updateFitness()

@@ -89,10 +89,6 @@ TEST_F(SystemIdentificationTest, basicTest)
 	_sys_id.setLpfCutoffFrequency(fs, 30.f);
 	_sys_id.setForgettingFactor(80.f, 1.f / fs);
 
-	while (!_sys_id.areFiltersInitialized()) {
-		_sys_id.updateFilters(0.f, 0.f);
-	}
-
 	for (int i = 0; i < 5; i++) {
 		// Fill the buffers with zeros
 		_sys_id.update(0.f, 0.f);
@@ -120,10 +116,6 @@ TEST_F(SystemIdentificationTest, resetTest)
 	_sys_id.setLpfCutoffFrequency(fs, 30.f);
 	_sys_id.setForgettingFactor(80.f, 1.f / fs);
 
-	while (!_sys_id.areFiltersInitialized()) {
-		_sys_id.updateFilters(0.f, 0.f);
-	}
-
 	for (int i = 0; i < 10; i += 2) {
 		_sys_id.update(float(i), float(i + 1));
 	}
@@ -138,10 +130,6 @@ TEST_F(SystemIdentificationTest, resetTest)
 	EXPECT_TRUE(_sys_id.getVariances().min() > 9e3f);
 
 	// AND WHEN: running the same sequence of inputs-outputs
-
-	while (!_sys_id.areFiltersInitialized()) {
-		_sys_id.updateFilters(0.f, 0.f);
-	}
 
 	for (int i = 0; i < 10; i += 2) {
 		_sys_id.update(float(i), float(i + 1));
@@ -163,8 +151,6 @@ TEST_F(SystemIdentificationTest, simulatedModelTest)
 	_sys_id.setLpfCutoffFrequency(fs, gyro_lpf_cutoff);
 	_sys_id.setForgettingFactor(60.f, 1.f / fs);
 
-	math::LowPassFilter2p _gyro_lpf{fs, gyro_lpf_cutoff};
-
 	// Simulated model with integrator
 	const float a1 = -1.77f;
 	const float a2 = 0.77f;
@@ -172,6 +158,8 @@ TEST_F(SystemIdentificationTest, simulatedModelTest)
 	const float b1 = -0.25f;
 	const float b2 = 0.2f;
 	setCoefficients(a1, a2, b0, b1, b2);
+	const float u_bias = -0.1f; // constant control offset
+	const float y_bias = 0.2f; // measurement bias
 
 	const float dt = 1.f / fs;
 	const float duration = 2.f;
@@ -191,7 +179,7 @@ TEST_F(SystemIdentificationTest, simulatedModelTest)
 			}
 		}
 
-		_sys_id.update(u, y); // apply new input and previous output
+		_sys_id.update(u + u_bias, y + y_bias); // apply new input and previous output
 
 		y = apply(u);
 #if 0
@@ -246,7 +234,7 @@ TEST_F(SystemIdentificationTest, realDataTest)
 	}
 
 	const Vector<float, 5> coefficients = _sys_id.getCoefficients();
-	float data_check[] = {-1.934f, 0.934, -0.021f, 0.015f, 0.02f};
+	float data_check[] = {-1.916f, 0.916, -0.017f, -0.001f, 0.036f};
 	const Vector<float, 5> coefficients_check(data_check);
 	float eps = 1e-3;
 	EXPECT_TRUE((coefficients - coefficients_check).abs().max() < eps);
