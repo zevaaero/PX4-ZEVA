@@ -300,11 +300,11 @@ void TECS::_update_throttle_setpoint(const float throttle_cruise)
 
 		// Add proportional and derivative control feedback to the predicted throttle and constrain to throttle limits
 		throttle_setpoint = (_STE_rate_error * _throttle_damping_gain) * STE_rate_to_throttle + throttle_predicted;
-		throttle_setpoint = constrain(throttle_setpoint, _throttle_setpoint_min, _throttle_setpoint_max);
+		throttle_setpoint = constrain(throttle_setpoint, _throttle_setpoint_min, _throttle_limit_max);
 
 		if (airspeed_sensor_enabled()) {
 			if (_integrator_gain_throttle > 0.0f) {
-				float integ_state_max = _throttle_setpoint_max - throttle_setpoint;
+				float integ_state_max = _throttle_limit_max - throttle_setpoint;
 				float integ_state_min = _throttle_setpoint_min - throttle_setpoint;
 
 				float throttle_integ_input = (_STE_rate_error * _integrator_gain_throttle) * _dt *
@@ -352,7 +352,7 @@ void TECS::_update_throttle_setpoint(const float throttle_cruise)
 					      _last_throttle_setpoint + throttle_increment_limit);
 	}
 
-	_last_throttle_setpoint = constrain(throttle_setpoint, _throttle_setpoint_min, _throttle_setpoint_max);
+	_last_throttle_setpoint = constrain(throttle_setpoint, _throttle_setpoint_min, _throttle_limit_max);
 }
 
 void TECS::_detect_uncommanded_descent()
@@ -516,7 +516,8 @@ void TECS::_update_STE_rate_lim()
 
 void TECS::update_pitch_throttle(float pitch, float baro_altitude, float hgt_setpoint,
 				 float EAS_setpoint, float equivalent_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout,
-				 float throttle_min, float throttle_max, float throttle_cruise, float pitch_limit_min, float pitch_limit_max,
+				 float throttle_min, float throttle_max, float throttle_cruise, float throttle_lim, float pitch_limit_min,
+				 float pitch_limit_max,
 				 float target_climbrate, float target_sinkrate, float hgt_rate_sp, bool eco_mode_enabled)
 {
 	// Calculate the time since last update (seconds)
@@ -529,6 +530,7 @@ void TECS::update_pitch_throttle(float pitch, float baro_altitude, float hgt_set
 	_pitch_setpoint_max = pitch_limit_max;
 	_pitch_setpoint_min = pitch_limit_min;
 	_climbout_mode_active = climb_out_setpoint;
+	_throttle_limit_max = throttle_lim;
 
 	// Initialize selected states and variables as required
 	_initialize_states(pitch, throttle_cruise, baro_altitude, pitch_min_climbout, eas_to_tas);

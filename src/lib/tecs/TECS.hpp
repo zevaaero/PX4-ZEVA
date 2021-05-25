@@ -84,6 +84,7 @@ public:
 	void update_pitch_throttle(float pitch, float baro_altitude, float hgt_setpoint,
 				   float EAS_setpoint, float equivalent_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout,
 				   float throttle_min, float throttle_setpoint_max, float throttle_cruise,
+				   float throttle_lim_max,
 				   float pitch_limit_min, float pitch_limit_max, float target_climbrate, float target_sinkrate, float hgt_rate_sp = NAN,
 				   bool eco_mode_enabled = false);
 
@@ -272,6 +273,7 @@ private:
 	float _STE_rate_min{0.0f};					///< specific total energy rate lower limit acheived when throttle is at _throttle_setpoint_min (m**2/sec**3)
 	float _throttle_setpoint_max{0.0f};				///< normalised throttle upper limit
 	float _throttle_setpoint_min{0.0f};				///< normalised throttle lower limit
+	float _throttle_limit_max{0.0f};				///< extra throttle limit, can be changed in air without having an effect on STE_rate_max
 	float _pitch_setpoint_max{0.5f};				///< pitch demand upper limit (rad)
 	float _pitch_setpoint_min{-0.5f};				///< pitch demand lower limit (rad)
 

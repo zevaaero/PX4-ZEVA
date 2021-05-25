@@ -958,7 +958,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		} else {
 			tecs_fw_thr_min = _param_fw_thr_min.get();
-			tecs_fw_thr_max = _cruise_mode_current == CRUISE_MODE_ECO ? _param_fw_thr_max_eco.get() : _param_fw_thr_max.get();
+			tecs_fw_thr_max = _param_fw_thr_max.get();
 			tecs_fw_mission_throttle = mission_throttle;
 		}
 
@@ -1194,7 +1194,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		do_takeoff_help(&_hold_alt, &pitch_limit_min);
 
 		/* throttle limiting */
-		throttle_max = _cruise_mode_current == CRUISE_MODE_ECO ? _param_fw_thr_max_eco.get() : _param_fw_thr_max.get();
+		throttle_max = _param_fw_thr_max.get();
 
 		if (_landed && (fabsf(_manual_control_setpoint_airspeed) < THROTTLE_THRESH)) {
 			throttle_max = 0.0f;
@@ -2218,12 +2218,16 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const hrt_abstime &now, flo
 		}
 	}
 
+	const float throttle_limit_max = _cruise_mode_current == CRUISE_MODE_ECO ? _param_fw_thr_max_eco.get() :
+					 _param_fw_thr_max.get();
+
 	_tecs.update_pitch_throttle(_pitch - radians(_param_fw_psp_off.get()),
 				    _current_altitude, alt_sp,
 				    airspeed_sp, _airspeed, _eas2tas,
 				    climbout_mode,
 				    climbout_pitch_min_rad - radians(_param_fw_psp_off.get()),
 				    throttle_min, throttle_max, throttle_cruise,
+				    throttle_limit_max,
 				    pitch_min_rad - radians(_param_fw_psp_off.get()),
 				    pitch_max_rad - radians(_param_fw_psp_off.get()),
 				    _cruise_mode_current == CRUISE_MODE_ECO ? _param_climbrate_target_eco.get() : _param_climbrate_target.get(),
