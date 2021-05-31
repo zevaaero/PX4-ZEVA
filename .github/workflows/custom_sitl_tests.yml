@@ -34,14 +34,9 @@ jobs:
     - name: Install MAVSDK
       run: dpkg -i "mavsdk_$(cat test/mavsdk_tests/MAVSDK_VERSION)_ubuntu20.04_amd64.deb"
 
-    #Clone model database
+    # Clone model database
     - name: Clone model database
-      run: |
-        git clone git@github.com:Auterion/ci_gazebo_models.git $HOME/ci_gazebo_models
-        cd $HOME/ci_gazebo_models
-        git checkout 9ca5d92
-        git submodule update --init --recursive
-      shell: bash
+      run: git clone --recursive git@github.com:Auterion/ci_gazebo_models.git $HOME/ci_gazebo_models
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       shell: cmake -P {0}
