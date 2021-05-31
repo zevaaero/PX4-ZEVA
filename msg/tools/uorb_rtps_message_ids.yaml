@@ -183,7 +183,6 @@ rtps:
     id: 86
   - msg: vehicle_attitude
     id: 87
-    send: true
   - msg: vehicle_attitude_setpoint
     id: 88
   - msg: vehicle_command
@@ -204,7 +203,6 @@ rtps:
     id: 95
   - msg: vehicle_local_position
     id: 96
-    send: true
   - msg: vehicle_local_position_setpoint
     id: 97
     receive: true
@@ -212,6 +210,7 @@ rtps:
     id: 98
   - msg: vehicle_odometry
     id: 99
+    send: true
   - msg: vehicle_rates_setpoint
     id: 100
   - msg: vehicle_roi
@@ -241,7 +240,6 @@ rtps:
     id: 111
   - msg: vehicle_angular_velocity
     id: 112
-    send: true
   - msg: vehicle_acceleration
     id: 113
   - msg: airspeed_validated
@@ -390,9 +388,11 @@ rtps:
   - msg: vehicle_mocap_odometry
     alias: vehicle_odometry
     id: 181
+    receive: true
   - msg: vehicle_visual_odometry
     id: 182
     alias: vehicle_odometry
+    receive: true
   - msg: vehicle_trajectory_waypoint_desired
     id: 183
     alias: vehicle_trajectory_waypoint
