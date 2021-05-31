@@ -867,6 +867,12 @@ void EKF2::PublishOdometry(const hrt_abstime &timestamp, const imuSample &imu)
 	odom.vy = velocity(1);
 	odom.vz = velocity(2);
 
+	// Vehicle odometry linear accelerarion of body origin in local frame
+	const Vector3f vel_deriv{_ekf.getVelocityDerivative()};
+	odom.ax = vel_deriv(0);
+	odom.ay = vel_deriv(1);
+	odom.az = vel_deriv(2);
+
 	// Vehicle odometry quaternion
 	_ekf.getQuaternion().copyTo(odom.q);
 

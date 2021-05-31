@@ -45,10 +45,10 @@ float32[21] pose_covariance
 # Reference frame of the velocity data
 uint8 velocity_frame
 
-# Velocity in meters/sec. Frame of reference defined by velocity_frame variable. NaN if invalid/unknown
-float32 vx 			# North velocity
-float32 vy			# East velocity
-float32 vz			# Down velocity
+# Linear velocity in meters/sec. Frame of reference defined by velocity_frame variable. NaN if invalid/unknown
+float32 vx 			# North linear velocity
+float32 vy			# East linear velocity
+float32 vz			# Down linear velocity
 
 # Angular rate in body-fixed frame (rad/s). NaN if invalid/unknown
 float32 rollspeed		# Angular velocity about X body axis
@@ -61,6 +61,11 @@ float32 yawspeed		# Angular velocity about Z body axis
 # If linear velocity covariance invalid/unknown, first cell is NaN
 # If angular velocity covariance invalid/unknown, 16th cell is NaN
 float32[21] velocity_covariance
+
+# Linear acceleration in meters/sec^2. Frame of reference defined by local_frame variable. NaN if invalid/unknown
+float32 ax 	# North linear acceleration
+float32 ay	# East linear acceleration
+float32 az	# Down linear acceleration
 
 # TOPICS vehicle_odometry vehicle_mocap_odometry vehicle_visual_odometry
 # TOPICS estimator_odometry estimator_visual_odometry_aligned
