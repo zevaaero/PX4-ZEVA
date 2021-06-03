@@ -515,7 +515,7 @@ PARAM_DEFINE_FLOAT(MPC_ACC_HOR_MAX, 5.0f);
 /**
  * Acceleration for auto and for manual
  *
- * Note: In manual, this parameter is only used in MPC_POS_MODE 1.
+ * Note: In manual, this parameter is only used in MPC_POS_MODE 4.
  *
  * @unit m/s^2
  * @min 2.0
@@ -560,7 +560,7 @@ PARAM_DEFINE_FLOAT(MPC_ACC_DOWN_MAX, 3.0f);
  *
  * Setting this to the maximum value essentially disables the limit.
  *
- * Note: This is only used when MPC_POS_MODE is set to a smoothing mode 1, 3 or 4.
+ * Note: This is only used when MPC_POS_MODE is set to a smoothing mode 3 or 4.
  *
  * @unit m/s^3
  * @min 0.5
