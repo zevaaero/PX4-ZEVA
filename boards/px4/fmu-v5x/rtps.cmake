@@ -16,6 +16,7 @@ px4_add_board(
 		TEL2:/dev/ttyS4
 		TEL3:/dev/ttyS1
 		GPS2:/dev/ttyS7
+		PPB:/dev/ttyS3
 	DRIVERS
 		adc/ads1115
 		adc/board_adc
