@@ -1653,7 +1653,7 @@ Navigator::publish_vehicle_cmd(vehicle_command_s *vcmd)
 		break;
 
 	case NAV_CMD_WAYPOINT_USER_1:
-		vcmd->target_component = 191; // MAV_COMP_ID_ONBOARD_COMPUTER
+		vcmd->target_component = 193; // MAV_COMP_ID_ONBOARD_COMPUTER3 (arbitrarily selected)
 		break;
 
 	default:
