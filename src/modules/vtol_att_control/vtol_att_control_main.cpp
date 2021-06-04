@@ -177,8 +177,7 @@ void VtolAttitudeControl::vehicle_cmd_poll()
 
 		} else if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_PREFLIGHT_ACTUATOR_TEST) {
 			const actuator_test_type test_type = (actuator_test_type)static_cast<int>(vehicle_command.param1 + 0.5f);
-			const actuator_test_direction direction = (actuator_test_direction)static_cast<int>(vehicle_command.param2 + 0.5f);
-			_vtol_type->activate_actuator_test_mode(test_type, direction);
+			_vtol_type->activate_actuator_test_mode(test_type);
 		}
 	}
 }

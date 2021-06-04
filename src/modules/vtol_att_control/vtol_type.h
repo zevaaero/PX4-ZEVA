@@ -49,6 +49,10 @@
 
 using namespace time_literals;
 
+static constexpr float ACTUATOR_POSITIVE_DIRECTION{1.0f};
+static constexpr float ACTUATOR_CENTRAL_DIRECTION{0.0f};
+static constexpr float ACTUATOR_NEGATIVE_DIRECTION{-1.0f};
+
 struct Params {
 	int32_t idle_pwm_mc;			// pwm value for idle in mc mode
 	int32_t vtol_motor_id;
@@ -129,15 +133,24 @@ enum class pwm_limit_type {
 // defines the pre-flight control surface and tilting mechanism test types
 enum class actuator_test_type {
 	TYPE_NONE = 0,
-	TYPE_AILERON,
-	TYPE_ELEVATOR,
-	TYPE_RUDDER,
-	TYPE_TILT
+	TYPE_TILT,
+	TYPE_CONTROL_SURFACES
 };
 
-enum class actuator_test_direction {
-	DIRECTION_POSITIVE = 0,
-	DIRECTION_NEGATIVE
+enum class control_surfaces_test_state {
+	STATE_TEST_AILERON = 0,
+	STATE_TEST_ELEVATOR,
+	STATE_TEST_RUDDER,
+	STATE_TEST_END
+};
+
+enum class actuator_test_position_state {
+	STATE_POSITION_POSITIVE = 0,	//!< The actuator is moving from central to positive position
+	STATE_POSITION_NEGATIVE,		//!< The actuator is moving from central to negative position
+	STATE_POSITION_CENTRAL,			//!< The actuator is moving from positive to central position
+	STATE_POSITION_WAIT_1,			//!< The actuator is waiting in positive position
+	STATE_POSITION_WAIT_2,			//!< The actuator is waiting in negative position
+	STATE_POSITION_END				//!< The actuator is moving to end position (central)
 };
 
 class VtolAttitudeControl;
@@ -206,7 +219,7 @@ public:
 	/**
 	 * Activate a pre-flight control surface or tilt mechanism functionality check, according to test_type.
 	 */
-	void activate_actuator_test_mode(actuator_test_type test_type, actuator_test_direction direction);
+	void activate_actuator_test_mode(actuator_test_type test_type);
 
 	/**
 	 * Returns true if we are currently executing a control surface or tilt mechanism functionality check.
@@ -277,8 +290,11 @@ protected:
 
 	bool _in_actuator_test_mode{false};
 	hrt_abstime _actuator_test_start_ts{0};
+	hrt_abstime _timestamp_new_state{0};
+	float _actuator_control_value_target{ACTUATOR_CENTRAL_DIRECTION};
 	actuator_test_type _actuator_test_type{actuator_test_type::TYPE_NONE};
-	actuator_test_direction _actuator_test_dir{actuator_test_direction::DIRECTION_POSITIVE};
+	control_surfaces_test_state _control_surfaces_test_state{control_surfaces_test_state::STATE_TEST_AILERON};
+	actuator_test_position_state _actuator_test_position_state{actuator_test_position_state::STATE_POSITION_POSITIVE};
 
 	/**
 	 * @brief      Sets mc motor minimum pwm to VT_IDLE_PWM_MC which ensures

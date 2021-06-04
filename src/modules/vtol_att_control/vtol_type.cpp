@@ -629,33 +629,109 @@ bool VtolType::override_controls_for_test_mode()
 		return false;
 	}
 
-	const int64_t deflection_hold_time = 2_s;
-	const float time_since_test_start = (hrt_absolute_time() - _actuator_test_start_ts);
+	hrt_abstime total_test_time =
+		19_s; // 3x (1s up + 1s wait + 1s center + 1s down + 1s wait + 1s center) = 18s + 1s for reset test
 
-	const float actuator_control_value_target = (_actuator_test_dir == actuator_test_direction::DIRECTION_POSITIVE ? 1.0f :
-			-1.0f);
+	const hrt_abstime time_since_test_start = hrt_elapsed_time(&_actuator_test_start_ts);
 
-	if (_actuator_test_type == actuator_test_type::TYPE_AILERON) {
-		_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = actuator_control_value_target;
+	/* 1_s is time for a user to move eyes from screen to the vehicle */
+	if (time_since_test_start > 1_s) {
 
-	} else if (_actuator_test_type == actuator_test_type::TYPE_ELEVATOR) {
-		_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] = actuator_control_value_target;
+		/* Change actuator position every 1_s*/
+		if (hrt_elapsed_time(&_timestamp_new_state) >= 1_s) {
+			_timestamp_new_state = hrt_absolute_time();
 
-	} else if (_actuator_test_type == actuator_test_type::TYPE_RUDDER) {
-		_actuators_out_1->control[actuator_controls_s::INDEX_YAW] = actuator_control_value_target;
+			switch (_actuator_test_position_state) {
+			case actuator_test_position_state::STATE_POSITION_POSITIVE:
+				_actuator_control_value_target = ACTUATOR_POSITIVE_DIRECTION;
+				_actuator_test_position_state = actuator_test_position_state::STATE_POSITION_WAIT_1;
+				break;
 
-	} else if (_actuator_test_type == actuator_test_type::TYPE_TILT) {
-		_actuators_out_1->control[4] = actuator_control_value_target;
+			case actuator_test_position_state::STATE_POSITION_NEGATIVE:
+				_actuator_control_value_target = ACTUATOR_NEGATIVE_DIRECTION;
+				_actuator_test_position_state = actuator_test_position_state::STATE_POSITION_WAIT_2;
+				break;
+
+			case actuator_test_position_state::STATE_POSITION_CENTRAL:
+				_actuator_control_value_target = ACTUATOR_CENTRAL_DIRECTION;
+				_actuator_test_position_state = actuator_test_position_state::STATE_POSITION_NEGATIVE;
+				break;
+
+			case actuator_test_position_state::STATE_POSITION_WAIT_1:
+				_actuator_test_position_state = actuator_test_position_state::STATE_POSITION_CENTRAL;
+				break;
+
+			case actuator_test_position_state::STATE_POSITION_WAIT_2:
+				_actuator_test_position_state = actuator_test_position_state::STATE_POSITION_END;
+				break;
+
+			case actuator_test_position_state::STATE_POSITION_END:
+
+				_actuator_control_value_target = ACTUATOR_CENTRAL_DIRECTION;
+
+				/* After end reinitialize to STATE_POSITION_POSITIVE for new round of tests */
+				_actuator_test_position_state = actuator_test_position_state::STATE_POSITION_POSITIVE;
+				break;
+
+			default:
+				break;
+			}
+		}
+
+		if (_actuator_test_type == actuator_test_type::TYPE_CONTROL_SURFACES) {
+
+			switch (_control_surfaces_test_state) {
+
+			case control_surfaces_test_state::STATE_TEST_AILERON:
+				_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = _actuator_control_value_target;
+				_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] = ACTUATOR_CENTRAL_DIRECTION;
+				_actuators_out_1->control[actuator_controls_s::INDEX_YAW] = ACTUATOR_CENTRAL_DIRECTION;
+
+				if (_actuator_test_position_state == actuator_test_position_state::STATE_POSITION_END) {
+					_control_surfaces_test_state = control_surfaces_test_state::STATE_TEST_ELEVATOR;
+				}
+
+				break;
+
+			case control_surfaces_test_state::STATE_TEST_ELEVATOR:
+				_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = ACTUATOR_CENTRAL_DIRECTION;
+				_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] = _actuator_control_value_target;
+				_actuators_out_1->control[actuator_controls_s::INDEX_YAW] = ACTUATOR_CENTRAL_DIRECTION;
+
+				if (_actuator_test_position_state == actuator_test_position_state::STATE_POSITION_END) {
+					_control_surfaces_test_state = control_surfaces_test_state::STATE_TEST_RUDDER;
+				}
+
+				break;
+
+			case control_surfaces_test_state::STATE_TEST_RUDDER:
+				_actuators_out_1->control[actuator_controls_s::INDEX_ROLL] = ACTUATOR_CENTRAL_DIRECTION;
+				_actuators_out_1->control[actuator_controls_s::INDEX_PITCH] = ACTUATOR_CENTRAL_DIRECTION;
+				_actuators_out_1->control[actuator_controls_s::INDEX_YAW] = _actuator_control_value_target;
+
+				if (_actuator_test_position_state == actuator_test_position_state::STATE_POSITION_END) {
+					_control_surfaces_test_state = control_surfaces_test_state::STATE_TEST_AILERON;
+				}
+
+				break;
+
+			default:
+				break;
+			}
+
+		} else if (_actuator_test_type == actuator_test_type::TYPE_TILT) {
+			total_test_time = 6_s; // (1s up + 1s wait + 1s center + 1s down + 1s wait + 1s center) = 6s
+			_actuators_out_1->control[4] = _actuator_control_value_target;
+		}
 	}
 
-
-	// return false as soon as we held the control for the specified amount of time, this will deactivate the test mode
-	return time_since_test_start < deflection_hold_time;
+	// return false as soon as we performed the test for the specified amount of time, this will deactivate the test mode
+	return time_since_test_start < total_test_time;
 }
 
-void VtolType::activate_actuator_test_mode(actuator_test_type test_type, actuator_test_direction direction)
+void VtolType::activate_actuator_test_mode(actuator_test_type test_type)
 {
-	if (test_type > actuator_test_type::TYPE_TILT || test_type <= actuator_test_type::TYPE_NONE
+	if (test_type > actuator_test_type::TYPE_CONTROL_SURFACES || test_type <= actuator_test_type::TYPE_NONE
 	    || _v_control_mode->flag_armed) {
 		return;
 	}
@@ -667,5 +743,4 @@ void VtolType::activate_actuator_test_mode(actuator_test_type test_type, actuato
 	_in_actuator_test_mode = true;
 	_actuator_test_start_ts = hrt_absolute_time();
 	_actuator_test_type = test_type;
-	_actuator_test_dir = direction;
 }
