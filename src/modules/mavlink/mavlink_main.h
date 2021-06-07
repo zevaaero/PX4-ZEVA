@@ -523,7 +523,7 @@ public:
 	bool radio_status_critical() const { return _radio_status_critical; }
 
 private:
-	int			_instance_id{0};
+	int			_instance_id{-1};
 
 	bool			_transmitting_enabled{true};
 	bool			_transmitting_enabled_commanded{false};
