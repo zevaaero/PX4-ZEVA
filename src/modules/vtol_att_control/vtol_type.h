@@ -145,12 +145,13 @@ enum class control_surfaces_test_state {
 };
 
 enum class actuator_test_position_state {
-	STATE_POSITION_POSITIVE = 0,	//!< The actuator is moving from central to positive position
+	STATE_POSITION_WAIT = 0,		//!< Wait, do not output any actuator setpoint
+	STATE_POSITION_POSITIVE,		//!< The actuator is moving from central to positive position
 	STATE_POSITION_NEGATIVE,		//!< The actuator is moving from central to negative position
 	STATE_POSITION_CENTRAL,			//!< The actuator is moving from positive to central position
 	STATE_POSITION_WAIT_1,			//!< The actuator is waiting in positive position
 	STATE_POSITION_WAIT_2,			//!< The actuator is waiting in negative position
-	STATE_POSITION_END				//!< The actuator is moving to end position (central)
+	STATE_POSITION_END			//!< The actuator is moving to end position (central)
 };
 
 class VtolAttitudeControl;
