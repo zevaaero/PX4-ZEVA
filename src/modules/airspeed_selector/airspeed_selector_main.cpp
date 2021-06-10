@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2018-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -500,6 +500,7 @@ void AirspeedModule::update_wind_estimator_sideslip()
 	_wind_estimate_sideslip.beta_innov = _wind_estimator_sideslip.get_beta_innov();
 	_wind_estimate_sideslip.beta_innov_var = _wind_estimator_sideslip.get_beta_innov_var();
 	_wind_estimate_sideslip.tas_scale = NAN;
+	_wind_estimate_sideslip.tas_scale_var = NAN;
 	_wind_estimate_sideslip.source = airspeed_wind_s::SOURCE_AS_BETA_ONLY;
 }
 

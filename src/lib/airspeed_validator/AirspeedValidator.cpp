@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -105,6 +105,7 @@ AirspeedValidator::get_wind_estimator_states(uint64_t timestamp)
 	wind_est.beta_innov = _wind_estimator.get_beta_innov();
 	wind_est.beta_innov_var = _wind_estimator.get_beta_innov_var();
 	wind_est.tas_scale = _wind_estimator.get_tas_scale();
+	wind_est.tas_scale_var = _wind_estimator.get_tas_scale_var();
 	return wind_est;
 }
 
