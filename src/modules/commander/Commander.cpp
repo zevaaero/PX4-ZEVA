@@ -2586,6 +2586,7 @@ Commander::run()
 			    && !in_low_battery_failsafe && !_geofence_warning_action_on && !in_mag_fault_failsafe
 			    && _armed.armed
 			    && !_status_flags.rc_input_blocked
+			    && manual_control_setpoint.valid
 			    && manual_control_setpoint.user_override
 			    && override_enabled) {
 				const transition_result_t posctl_result =
