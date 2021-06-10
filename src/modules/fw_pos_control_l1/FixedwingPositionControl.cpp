@@ -1102,7 +1102,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 			/* reset setpoints from other modes (auto) otherwise we won't
 			 * level out without new manual input */
-			_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
+			_att_sp.roll_body = _manual_control_setpoint.chosen_input.y * radians(_param_fw_man_r_max.get());
 			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 		}
 
@@ -1144,8 +1144,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   height_rate_sp);
 
 		/* heading control */
-		if (fabsf(_manual_control_setpoint.y) < HDG_HOLD_MAN_INPUT_THRESH &&
-		    fabsf(_manual_control_setpoint.r) < HDG_HOLD_MAN_INPUT_THRESH) {
+		if (fabsf(_manual_control_setpoint.chosen_input.y) < HDG_HOLD_MAN_INPUT_THRESH &&
+		    fabsf(_manual_control_setpoint.chosen_input.r) < HDG_HOLD_MAN_INPUT_THRESH) {
 
 			/* heading / roll is zero, lock onto current heading */
 			if (fabsf(_yawrate) < HDG_HOLD_YAWRATE_THRESH && !_yaw_lock_engaged) {
@@ -1196,14 +1196,14 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 		}
 
-		if (!_yaw_lock_engaged || fabsf(_manual_control_setpoint.y) >= HDG_HOLD_MAN_INPUT_THRESH ||
-		    fabsf(_manual_control_setpoint.r) >= HDG_HOLD_MAN_INPUT_THRESH) {
+		if (!_yaw_lock_engaged || fabsf(_manual_control_setpoint.chosen_input.y) >= HDG_HOLD_MAN_INPUT_THRESH ||
+		    fabsf(_manual_control_setpoint.chosen_input.r) >= HDG_HOLD_MAN_INPUT_THRESH) {
 
 			_hdg_hold_enabled = false;
 			_yaw_lock_engaged = false;
 
 			// do slew rate limiting on roll if enabled
-			float roll_sp_new = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
+			float roll_sp_new = _manual_control_setpoint.chosen_input.y * radians(_param_fw_man_r_max.get());
 			const float roll_rate_slew_rad = radians(_param_fw_l1_r_slew_max.get());
 
 			if (dt > 0.f && roll_rate_slew_rad > 0.f) {
@@ -1258,7 +1258,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   false,
 					   height_rate_sp);
 
-		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
+		_att_sp.roll_body = _manual_control_setpoint.chosen_input.y * radians(_param_fw_man_r_max.get());
 
 		_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
