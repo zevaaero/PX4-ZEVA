@@ -603,9 +603,9 @@ class uploader(object):
                 print("sn: ", end='')
                 for byte in range(0, 12, 4):
                     x = self.__getSN(byte)
-                    x = x[::-1]  # reverse the bytes
                     self.sn = self.sn + x
-                    print(binascii.hexlify(x).decode('Latin-1'), end='')  # show user
+
+                print(binascii.hexlify(self.sn ).decode('Latin-1'), end='')  # show user
                 print('')
                 print("chip: %08x" % self.__getCHIP())
 
