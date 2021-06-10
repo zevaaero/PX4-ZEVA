@@ -46,7 +46,8 @@ AirspeedValidator::update_airspeed_validator(const airspeed_validator_update_dat
 	// get indicated airspeed from input data (raw airspeed)
 	_IAS = input_data.airspeed_indicated_raw;
 
-	update_CAS_scale();
+	update_CAS_scale_estimated(input_data.lpos_valid, input_data.lpos_vx, input_data.lpos_vy, input_data.lpos_vz);
+	update_CAS_scale_applied();
 	update_CAS_TAS(input_data.air_pressure_pa, input_data.air_temperature_celsius);
 	update_wind_estimator(input_data.timestamp, input_data.airspeed_true_raw, input_data.lpos_valid, input_data.lpos_vx,
 			      input_data.lpos_vy,
@@ -110,27 +111,101 @@ AirspeedValidator::get_wind_estimator_states(uint64_t timestamp)
 }
 
 void
-AirspeedValidator::set_airspeed_scale_manual(float airspeed_scale_manual)
+AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float vy, float vz)
 {
-	_airspeed_scale_manual = airspeed_scale_manual;
-	_wind_estimator.enforce_airspeed_scale(1.0f / airspeed_scale_manual); // scale is inverted inside the wind estimator
+	if (!_in_fixed_wing_flight) {
+		return;
+	}
+
+	// reset every 100s as we assume that all the samples for current check are in similar wind conditions
+	if (hrt_elapsed_time(&_begin_current_scale_check) > 100_s) {
+		reset_CAS_scale_check();
+	}
+
+	const float groundspeed = sqrt(vx * vx + vy * vy + vz * vz);
+	const float course_over_ground_rad = matrix::wrap_2pi(atan2f(vy, vx));
+	const int index = int(SCALE_CHECK_SAMPLES * course_over_ground_rad / (2.f * M_PI_F));
+
+	_scale_check_groundspeed[index] = groundspeed;
+	_scale_check_TAS[index] = _TAS;
+
+	float ground_speed_sum = 0.f;
+	float TAS_sum = 0.f;
+
+	for (int i = 0; i < SCALE_CHECK_SAMPLES; i++) {
+		if (_scale_check_TAS[i] < FLT_EPSILON) {
+			_scale_check_TAS[i] = NAN; //needed to find uninitialized array
+			_scale_check_groundspeed[i] = NAN;
+		}
+
+		if (_scale_check_groundspeed[i] < FLT_EPSILON) {
+			_scale_check_groundspeed[i] = NAN; //needed to find uninitialized array
+		}
+
+		ground_speed_sum += _scale_check_groundspeed[i];
+		TAS_sum += _scale_check_TAS[i];
+	}
+
+	const bool full_array = PX4_ISFINITE(ground_speed_sum) && PX4_ISFINITE(TAS_sum);
+
+	if (full_array) {
+		const float average_ground_speed = ground_speed_sum / SCALE_CHECK_SAMPLES;
+		const float average_TAS = TAS_sum / SCALE_CHECK_SAMPLES;
+		const float average_TAS_with_scale = average_TAS * _wind_estimator.get_tas_scale();
+
+		const float error_without_scale = abs(average_ground_speed - average_TAS);
+		const float error_with_scale = abs(average_ground_speed - average_TAS_with_scale);
+
+		// check passes if the average airspeed with the scale applied is closer to groundspeed than without
+		if (error_with_scale < error_without_scale) {
+
+			// this is an info only for the initial phase, should remove it once the scale estimator is validated
+			PX4_INFO("_CAS_scale_estimated updated: %.2f --> %.2f", (double)_CAS_scale_estimated,
+				 (double)_wind_estimator.get_tas_scale());
+
+			_CAS_scale_estimated = _wind_estimator.get_tas_scale();
+		}
+
+		reset_CAS_scale_check();
+	}
 }
 
 void
-AirspeedValidator::update_CAS_scale()
+AirspeedValidator::reset_CAS_scale_check()
 {
-	if (_wind_estimator.is_estimate_valid()) {
-		_CAS_scale = 1.0f / math::constrain(_wind_estimator.get_tas_scale(), 0.5f, 2.0f);
 
-	} else {
-		_CAS_scale = _airspeed_scale_manual;
+	// reset arrays to NAN
+	for (int i = 0; i < SCALE_CHECK_SAMPLES; i++) {
+		_scale_check_groundspeed[i] = NAN;
+		_scale_check_TAS[i] = NAN;
+	}
+
+	_begin_current_scale_check = hrt_absolute_time();
+}
+
+void
+AirspeedValidator::update_CAS_scale_applied()
+{
+	switch (_tas_scale_apply) {
+	case 0:
+	case 1:
+		_CAS_scale_applied = _tas_scale_init;
+		break;
+
+	case 2:
+		_CAS_scale_applied = _tas_scale_init;
+		break;
+
+	case 3:
+		_CAS_scale_applied = _CAS_scale_estimated;
+		break;
 	}
 }
 
 void
 AirspeedValidator::update_CAS_TAS(float air_pressure_pa, float air_temperature_celsius)
 {
-	_CAS = calc_CAS_from_IAS(_IAS, _CAS_scale);
+	_CAS = calc_CAS_from_IAS(_IAS, _CAS_scale_applied);
 	_TAS = calc_TAS_from_CAS(_CAS, air_pressure_pa, air_temperature_celsius);
 }
 

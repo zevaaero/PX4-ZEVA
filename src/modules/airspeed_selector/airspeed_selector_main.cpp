@@ -143,12 +143,12 @@ private:
 	int _valid_airspeed_index{-2}; /**< index of currently chosen (valid) airspeed sensor */
 	int _prev_airspeed_index{-2}; /**< previously chosen airspeed sensor index */
 	bool _initialized{false}; /**< module initialized*/
+	bool _scale_initialized{false};
 	bool _vehicle_local_position_valid{false}; /**< local position (from GPS) valid */
 	bool _in_takeoff_situation{true}; /**< in takeoff situation (defined as not yet stall speed reached) */
 	float _ground_minus_wind_TAS{0.0f}; /**< true airspeed from groundspeed minus windspeed */
 	float _ground_minus_wind_CAS{0.0f}; /**< calibrated airspeed from groundspeed minus windspeed */
-
-	bool _scale_estimation_previously_on{false}; /**< scale_estimation was on in the last cycle */
+	bool _armed_prev{false};
 
 	hrt_abstime _time_last_airspeed_update[MAX_NUM_AIRSPEED_SENSORS] {};
 
@@ -161,8 +161,8 @@ private:
 		(ParamFloat<px4::params::ASPD_BETA_NOISE>) _param_west_beta_noise,
 		(ParamInt<px4::params::ASPD_TAS_GATE>) _param_west_tas_gate,
 		(ParamInt<px4::params::ASPD_BETA_GATE>) _param_west_beta_gate,
-		(ParamInt<px4::params::ASPD_SCALE_EST>) _param_west_scale_estimation_on,
-		(ParamFloat<px4::params::ASPD_SCALE_0>) _param_west_airspeed_scale_0,
+		(ParamInt<px4::params::ASPD_SCALE_APPLY>) _param_aspd_scale_apply,
+		(ParamFloat<px4::params::ASPD_SCALE_0>) _param_airspeed_scale_0,
 		(ParamInt<px4::params::ASPD_PRIMARY>) _param_airspeed_primary_index,
 		(ParamInt<px4::params::ASPD_DO_CHECKS>) _param_airspeed_checks_on,
 		(ParamInt<px4::params::ASPD_FALLBACK_GW>) _param_airspeed_fallback_gw,
@@ -287,6 +287,12 @@ AirspeedModule::Run()
 
 	if (!_initialized) {
 		init(); // initialize airspeed validator instances
+
+		for (int i = 0; i < MAX_NUM_AIRSPEED_SENSORS; i++) {
+			_airspeed_validator[i].set_CAS_scale_estimated(_param_airspeed_scale_0.get()); //TODO multi airspeed
+			_airspeed_validator[i].set_scale_init(_param_airspeed_scale_0.get()); //TODO multi airspeed
+		}
+
 		_initialized = true;
 	}
 
@@ -296,7 +302,7 @@ AirspeedModule::Run()
 		update_params();
 	}
 
-	bool armed = (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
+	const bool armed = (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
 
 	// check for new connected airspeed sensors as long as we're disarmed
 	if (!armed) {
@@ -371,10 +377,29 @@ AirspeedModule::Run()
 				_airspeed_validator[i].reset_airspeed_to_invalid(_time_now_usec);
 
 			}
+
+			// save estimated airspeed scale after disarm
+			if (!armed && _armed_prev) {
+				if (_param_aspd_scale_apply.get() > 1) {
+					// TODO: multi airspeed
+					if (abs(_airspeed_validator[i].get_CAS_scale_estimated() - _param_airspeed_scale_0.get()) > 0.01f) {
+						// apply the new scale if changed more than 0.01
+						const float scale_prev = _param_airspeed_scale_0.get();
+						_param_airspeed_scale_0.set(_airspeed_validator[i].get_CAS_scale_estimated());
+						_param_airspeed_scale_0.commit_no_notification();
+						PX4_INFO("Airspeed sensor Nr. %d ASPD_SCALE updated: %.2f --> %.2f", i, (double)scale_prev,
+							 (double)_param_airspeed_scale_0.get());
+					}
+				}
+
+				_airspeed_validator[i].set_scale_init(_param_airspeed_scale_0.get()); //TODO multi airspeed
+			}
 		}
 	}
 
 	select_airspeed_and_publish();
+
+	_armed_prev = armed;
 
 	perf_end(_perf_elapsed);
 
@@ -401,11 +426,10 @@ void AirspeedModule::update_params()
 		_airspeed_validator[i].set_wind_estimator_beta_noise(_param_west_beta_noise.get());
 		_airspeed_validator[i].set_wind_estimator_tas_gate(_param_west_tas_gate.get());
 		_airspeed_validator[i].set_wind_estimator_beta_gate(_param_west_beta_gate.get());
-		_airspeed_validator[i].set_wind_estimator_scale_estimation_on(_param_west_scale_estimation_on.get());
 
-		// only apply manual entered airspeed scale to first airspeed measurement
-		// TODO: enable multiple airspeed sensors
-		_airspeed_validator[0].set_airspeed_scale_manual(_param_west_airspeed_scale_0.get());
+		_airspeed_validator[i].set_tas_scale_apply(_param_aspd_scale_apply.get());
+
+		_airspeed_validator[i].set_wind_estimator_tas_scale_init(1.f); // TODO: multi airspeed
 
 		_airspeed_validator[i].set_tas_innov_threshold(_tas_innov_threshold.get());
 		_airspeed_validator[i].set_tas_innov_integ_threshold(_tas_innov_integ_threshold.get());
@@ -414,36 +438,7 @@ void AirspeedModule::update_params()
 		_airspeed_validator[i].set_airspeed_stall(_param_fw_airspd_stall.get());
 	}
 
-	// if the airspeed scale estimation is enabled and the airspeed is valid,
-	// then set the scale inside the wind estimator to -1 such that it starts to estimate it
-	if (!_scale_estimation_previously_on && _param_west_scale_estimation_on.get()) {
-		if (_valid_airspeed_index > 0) {
-			// set it to a negative value to start estimation inside wind estimator
-			_airspeed_validator[0].set_airspeed_scale_manual(-1.0f);
-
-		} else {
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed: can't estimate scale as no valid sensor.");
-			_param_west_scale_estimation_on.set(0); // reset this param to 0 as estimation was not turned on
-			_param_west_scale_estimation_on.commit_no_notification();
-		}
-
-	} else if (_scale_estimation_previously_on && !_param_west_scale_estimation_on.get()) {
-		if (_valid_airspeed_index > 0) {
-
-			_param_west_airspeed_scale_0.set(_airspeed_validator[_valid_airspeed_index - 1].get_CAS_scale());
-			_param_west_airspeed_scale_0.commit_no_notification();
-			_airspeed_validator[_valid_airspeed_index - 1].set_airspeed_scale_manual(_param_west_airspeed_scale_0.get());
-
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed: estimated scale (ASPD_SCALE_0): %0.2f",
-					 (double)_airspeed_validator[_valid_airspeed_index - 1].get_CAS_scale());
-
-		} else {
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed: can't estimate scale as no valid sensor.");
-		}
-	}
-
-	_scale_estimation_previously_on = _param_west_scale_estimation_on.get();
-
+	_airspeed_validator[0].set_wind_estimator_tas_scale_init(_param_airspeed_scale_0.get()); // TODO: multi airspeed
 }
 
 void AirspeedModule::poll_topics()

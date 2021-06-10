@@ -76,16 +76,15 @@ PARAM_DEFINE_INT32(ASPD_TAS_GATE, 3);
 PARAM_DEFINE_INT32(ASPD_BETA_GATE, 1);
 
 /**
- * Automatic airspeed scale estimation on
+ * Controls when to apply the new esstimated airspeed scale
  *
- * Turns the automatic airspeed scale (scale from IAS to CAS) on or off. It is recommended to fly level
- * altitude while performing the estimation. Set to 1 to start estimation (best when already flying).
- * Set to 0 to end scale estimation. The estimated scale is then saved using the ASPD_SCALE_x parameter.
- *
- * @boolean
+ * @value 0 Disable airspeed scale estimation completely
+ * @value 1 Do not apply the new gains (logging and inside wind estimator)
+ * @value 2 Apply the new scale after disarm
+ * @value 3 Apply the new gains in air
  * @group Airspeed Validator
  */
-PARAM_DEFINE_INT32(ASPD_SCALE_EST, 0);
+PARAM_DEFINE_INT32(ASPD_SCALE_APPLY, 0);
 
 /**
  * Airspeed scale sensor 0
