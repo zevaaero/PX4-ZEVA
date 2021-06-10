@@ -136,12 +136,12 @@ RoverPositionControl::manual_control_setpoint_poll()
 
 					} else {
 						const float yaw_rate = math::radians(_param_gnd_man_y_max.get());
-						_att_sp.yaw_sp_move_rate = _manual_control_setpoint.y * yaw_rate;
+						_att_sp.yaw_sp_move_rate = _manual_control_setpoint.chosen_input.y * yaw_rate;
 						_manual_yaw_sp = wrap_pi(_manual_yaw_sp + _att_sp.yaw_sp_move_rate * dt);
 					}
 
 					_att_sp.yaw_body = _manual_yaw_sp;
-					_att_sp.thrust_body[0] = _manual_control_setpoint.z;
+					_att_sp.thrust_body[0] = _manual_control_setpoint.chosen_input.z;
 
 					Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
 					q.copyTo(_att_sp.q_d);
@@ -152,10 +152,10 @@ RoverPositionControl::manual_control_setpoint_poll()
 					_attitude_sp_pub.publish(_att_sp);
 
 				} else {
-					_act_controls.control[actuator_controls_s::INDEX_ROLL] = _manual_control_setpoint.r;
-					_act_controls.control[actuator_controls_s::INDEX_PITCH] = -_manual_control_setpoint.x;
-					_act_controls.control[actuator_controls_s::INDEX_YAW] = _manual_control_setpoint.y;
-					_act_controls.control[actuator_controls_s::INDEX_THROTTLE] = (_manual_control_setpoint.z - 0.5f) * 2.f;
+					_act_controls.control[actuator_controls_s::INDEX_ROLL] = _manual_control_setpoint.chosen_input.r;
+					_act_controls.control[actuator_controls_s::INDEX_PITCH] = -_manual_control_setpoint.chosen_input.x;
+					_act_controls.control[actuator_controls_s::INDEX_YAW] = _manual_control_setpoint.chosen_input.y;
+					_act_controls.control[actuator_controls_s::INDEX_THROTTLE] = (_manual_control_setpoint.chosen_input.z - 0.5f) * 2.f;
 					_reset_yaw_sp = true;
 				}
 
