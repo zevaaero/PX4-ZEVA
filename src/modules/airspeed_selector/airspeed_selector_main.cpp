@@ -154,6 +154,8 @@ private:
 
 	perf_counter_t _perf_elapsed{};
 
+	float _param_airspeed_scale[MAX_NUM_AIRSPEED_SENSORS] {}; /** array to save the airspeed scale params in */
+
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::ASPD_W_P_NOISE>) _param_west_w_p_noise,
 		(ParamFloat<px4::params::ASPD_SC_P_NOISE>) _param_west_sc_p_noise,
@@ -162,7 +164,9 @@ private:
 		(ParamInt<px4::params::ASPD_TAS_GATE>) _param_west_tas_gate,
 		(ParamInt<px4::params::ASPD_BETA_GATE>) _param_west_beta_gate,
 		(ParamInt<px4::params::ASPD_SCALE_APPLY>) _param_aspd_scale_apply,
-		(ParamFloat<px4::params::ASPD_SCALE_0>) _param_airspeed_scale_0,
+		(ParamFloat<px4::params::ASPD_SCALE_1>) _param_airspeed_scale_1,
+		(ParamFloat<px4::params::ASPD_SCALE_2>) _param_airspeed_scale_2,
+		(ParamFloat<px4::params::ASPD_SCALE_3>) _param_airspeed_scale_3,
 		(ParamInt<px4::params::ASPD_PRIMARY>) _param_airspeed_primary_index,
 		(ParamInt<px4::params::ASPD_DO_CHECKS>) _param_airspeed_checks_on,
 		(ParamInt<px4::params::ASPD_FALLBACK_GW>) _param_airspeed_fallback_gw,
@@ -289,8 +293,8 @@ AirspeedModule::Run()
 		init(); // initialize airspeed validator instances
 
 		for (int i = 0; i < MAX_NUM_AIRSPEED_SENSORS; i++) {
-			_airspeed_validator[i].set_CAS_scale_estimated(_param_airspeed_scale_0.get()); //TODO multi airspeed
-			_airspeed_validator[i].set_scale_init(_param_airspeed_scale_0.get()); //TODO multi airspeed
+			_airspeed_validator[i].set_CAS_scale_estimated(_param_airspeed_scale[i]);
+			_airspeed_validator[i].set_scale_init(_param_airspeed_scale[i]);
 		}
 
 		_initialized = true;
@@ -381,18 +385,31 @@ AirspeedModule::Run()
 			// save estimated airspeed scale after disarm
 			if (!armed && _armed_prev) {
 				if (_param_aspd_scale_apply.get() > 1) {
-					// TODO: multi airspeed
-					if (abs(_airspeed_validator[i].get_CAS_scale_estimated() - _param_airspeed_scale_0.get()) > 0.01f) {
+					if (abs(_airspeed_validator[i].get_CAS_scale_estimated() - _param_airspeed_scale[i]) > 0.01f) {
 						// apply the new scale if changed more than 0.01
-						const float scale_prev = _param_airspeed_scale_0.get();
-						_param_airspeed_scale_0.set(_airspeed_validator[i].get_CAS_scale_estimated());
-						_param_airspeed_scale_0.commit_no_notification();
-						PX4_INFO("Airspeed sensor Nr. %d ASPD_SCALE updated: %.2f --> %.2f", i, (double)scale_prev,
-							 (double)_param_airspeed_scale_0.get());
+						PX4_INFO("Airspeed sensor Nr. %d ASPD_SCALE updated: %.2f --> %.2f", i, (double)_param_airspeed_scale[i],
+							 (double)_airspeed_validator[i].get_CAS_scale_estimated());
+
+						switch (i) {
+						case 0:
+							_param_airspeed_scale_1.set(_airspeed_validator[i].get_CAS_scale_estimated());
+							_param_airspeed_scale_1.commit_no_notification();
+							break;
+
+						case 1:
+							_param_airspeed_scale_2.set(_airspeed_validator[i].get_CAS_scale_estimated());
+							_param_airspeed_scale_2.commit_no_notification();
+							break;
+
+						case 2:
+							_param_airspeed_scale_3.set(_airspeed_validator[i].get_CAS_scale_estimated());
+							_param_airspeed_scale_3.commit_no_notification();
+							break;
+						}
 					}
 				}
 
-				_airspeed_validator[i].set_scale_init(_param_airspeed_scale_0.get()); //TODO multi airspeed
+				_airspeed_validator[i].set_scale_init(_param_airspeed_scale[i]);
 			}
 		}
 	}
@@ -412,6 +429,10 @@ void AirspeedModule::update_params()
 {
 	updateParams();
 
+	_param_airspeed_scale[0] = _param_airspeed_scale_1.get();
+	_param_airspeed_scale[1] = _param_airspeed_scale_2.get();
+	_param_airspeed_scale[2] = _param_airspeed_scale_3.get();
+
 	_wind_estimator_sideslip.set_wind_p_noise(_param_west_w_p_noise.get());
 	_wind_estimator_sideslip.set_tas_scale_p_noise(_param_west_sc_p_noise.get());
 	_wind_estimator_sideslip.set_tas_noise(_param_west_tas_noise.get());
@@ -428,8 +449,7 @@ void AirspeedModule::update_params()
 		_airspeed_validator[i].set_wind_estimator_beta_gate(_param_west_beta_gate.get());
 
 		_airspeed_validator[i].set_tas_scale_apply(_param_aspd_scale_apply.get());
-
-		_airspeed_validator[i].set_wind_estimator_tas_scale_init(1.f); // TODO: multi airspeed
+		_airspeed_validator[i].set_wind_estimator_tas_scale_init(_param_airspeed_scale[i]);
 
 		_airspeed_validator[i].set_tas_innov_threshold(_tas_innov_threshold.get());
 		_airspeed_validator[i].set_tas_innov_integ_threshold(_tas_innov_integ_threshold.get());
@@ -437,8 +457,6 @@ void AirspeedModule::update_params()
 		_airspeed_validator[i].set_checks_clear_delay(_checks_clear_delay.get());
 		_airspeed_validator[i].set_airspeed_stall(_param_fw_airspd_stall.get());
 	}
-
-	_airspeed_validator[0].set_wind_estimator_tas_scale_init(_param_airspeed_scale_0.get()); // TODO: multi airspeed
 }
 
 void AirspeedModule::poll_topics()

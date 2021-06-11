@@ -181,6 +181,14 @@ bool param_modify_on_import(bson_node_t node)
 		}
 	}
 
+	// 2021-06-10: translate ASPD_SCALE to ASPD_SCALE_1
+	{
+		if (strcmp("ASPD_SCALE", node->name) == 0) {
+			strcpy(node->name, "ASPD_SCALE_1");
+			PX4_INFO("copying %s -> %s", "ASPD_SCALE", "ASPD_SCALE_1");
+		}
+	}
+
 	// translate (SPI) calibration ID parameters. This can be removed after the next release (current release=1.10)
 
 	if (node->type != BSON_INT32) {

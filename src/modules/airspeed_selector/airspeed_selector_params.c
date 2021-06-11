@@ -87,16 +87,43 @@ PARAM_DEFINE_INT32(ASPD_BETA_GATE, 1);
 PARAM_DEFINE_INT32(ASPD_SCALE_APPLY, 0);
 
 /**
- * Airspeed scale sensor 0
+ * Scale of airspeed sensor 1
  *
  * This is the scale IAS --> CAS of the first airspeed sensor instance
  *
  * @min 0.5
- * @max 1.5
+ * @max 2.0
  * @decimal 2
+ * @reboot_required true
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_SCALE_0, 1.0f);
+PARAM_DEFINE_FLOAT(ASPD_SCALE_1, 1.0f);
+
+/**
+ * Scale of airspeed sensor 2
+ *
+ * This is the scale IAS --> CAS of the second airspeed sensor instance
+ *
+ * @min 0.5
+ * @max 2.0
+ * @decimal 2
+ * @reboot_required true
+ * @group Airspeed Validator
+ */
+PARAM_DEFINE_FLOAT(ASPD_SCALE_2, 1.0f);
+
+/**
+ * Scale of airspeed sensor 3
+ *
+ * This is the scale IAS --> CAS of the third airspeed sensor instance
+ *
+ * @min 0.5
+ * @max 2.0
+ * @decimal 2
+ * @reboot_required true
+ * @group Airspeed Validator
+ */
+PARAM_DEFINE_FLOAT(ASPD_SCALE_3, 1.0f);
 
 /**
  * Index or primary airspeed measurement source
