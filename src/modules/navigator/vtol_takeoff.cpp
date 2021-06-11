@@ -53,6 +53,31 @@ VtolTakeoff::on_activation()
 {
 	set_takeoff_position();
 	_takeoff_state = vtol_takeoff_state::TAKEOFF_HOVER;
+
+	mission_stats_entry_s stats;
+	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
+	int num_safe_points = 0;
+
+	if (ret == sizeof(mission_stats_entry_s)) {
+		num_safe_points = stats.num_items;
+	}
+
+	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
+		mission_safe_point_s mission_safe_point;
+
+		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
+		    sizeof(mission_safe_point_s)) {
+			PX4_ERR("dm_read failed");
+			continue;
+		}
+
+		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
+			setSectorBitmap(mission_safe_point.safe_area_sector_clear_bitmap);
+			setSectorOffsetDegrees(mission_safe_point.safe_area_first_sector_offset_degrees);
+			break;
+		}
+
+	}
 }
 
 void

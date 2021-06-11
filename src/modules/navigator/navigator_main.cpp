@@ -551,17 +551,8 @@ Navigator::run()
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_VTOL_TAKEOFF) {
 
-
-				const uint8_t sector_bitmap = static_cast<uint8_t>(cmd.param1);
-				const int offsetDegrees = static_cast<int>(cmd.param3);
-
-				_vtol_takeoff.setTakeoffPosition(cmd.param5, cmd.param6);
 				_vtol_takeoff.setTransitionAltitudeAbsolute(cmd.param7);
 				_vtol_takeoff.updateLoiterAltitudeAbsolute();
-				_vtol_takeoff.setSectorBitmap(sector_bitmap);
-				_vtol_land.setSectorBitmap(sector_bitmap);
-				_vtol_takeoff.setSectorOffsetDegrees(offsetDegrees);
-				_vtol_land.setSectorOffsetDegrees(offsetDegrees);
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 
@@ -686,7 +677,7 @@ Navigator::run()
 								 && rtl_type() > RTL::RTL_HOME;
 
 
-				if (!use_mission_landing && _vtol_land.hasSafeArea()) {
+				if (!use_mission_landing && _vtol_takeoff.hasSafeArea()) {
 					if (!rtl_activated && _rtl.getClimbDone()) {
 						navigation_mode_new = &_vtol_land;
 

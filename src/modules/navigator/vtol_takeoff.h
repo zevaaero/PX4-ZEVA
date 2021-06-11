@@ -63,6 +63,8 @@ public:
 
 	matrix::Vector2<double> getTakeoffPosition() { return _takeoff_pos_lat_lon; }
 
+	bool hasSafeArea() { return _sector_bitmap > 0; }
+
 private:
 
 	enum class vtol_takeoff_state {
