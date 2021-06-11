@@ -143,7 +143,6 @@ private:
 	int _valid_airspeed_index{-2}; /**< index of currently chosen (valid) airspeed sensor */
 	int _prev_airspeed_index{-2}; /**< previously chosen airspeed sensor index */
 	bool _initialized{false}; /**< module initialized*/
-	bool _scale_initialized{false};
 	bool _vehicle_local_position_valid{false}; /**< local position (from GPS) valid */
 	bool _in_takeoff_situation{true}; /**< in takeoff situation (defined as not yet stall speed reached) */
 	float _ground_minus_wind_TAS{0.0f}; /**< true airspeed from groundspeed minus windspeed */
