@@ -67,6 +67,8 @@ jobs:
 
     - name: make ${{matrix.config}}
       run: make ${{matrix.config}}
+    - name: PX4_RESTRICTED_BUILD=1 make ${{matrix.config}}
+      run: PX4_RESTRICTED_BUILD=1 make ${{matrix.config}}
     #- name: Upload px4 binary
       #uses: actions/upload-artifact@v2
       #with:
