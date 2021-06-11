@@ -122,11 +122,11 @@ AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float v
 		reset_CAS_scale_check();
 	}
 
-	const float groundspeed = sqrt(vx * vx + vy * vy + vz * vz);
+
 	const float course_over_ground_rad = matrix::wrap_2pi(atan2f(vy, vx));
 	const int index = int(SCALE_CHECK_SAMPLES * course_over_ground_rad / (2.f * M_PI_F));
 
-	_scale_check_groundspeed[index] = groundspeed;
+	_scale_check_groundspeed[index] = sqrt(vx * vx + vy * vy + vz * vz);
 	_scale_check_TAS[index] = _TAS;
 
 	float ground_speed_sum = 0.f;
@@ -159,11 +159,15 @@ AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float v
 		// check passes if the average airspeed with the scale applied is closer to groundspeed than without
 		if (error_with_scale < error_without_scale) {
 
+			// constrain the scale update to max 0.01 at a time
+			const float new_scale_constrained = math::constrain(_wind_estimator.get_tas_scale(), _CAS_scale_estimated - 0.01f,
+							    _CAS_scale_estimated + 0.01f);
+
 			// this is an info only for the initial phase, should remove it once the scale estimator is validated
 			PX4_INFO("_CAS_scale_estimated updated: %.2f --> %.2f", (double)_CAS_scale_estimated,
-				 (double)_wind_estimator.get_tas_scale());
+				 (double)new_scale_constrained);
 
-			_CAS_scale_estimated = _wind_estimator.get_tas_scale();
+			_CAS_scale_estimated = new_scale_constrained;
 		}
 
 		reset_CAS_scale_check();

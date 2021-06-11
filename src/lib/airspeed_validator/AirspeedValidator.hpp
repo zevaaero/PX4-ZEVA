@@ -123,7 +123,7 @@ private:
 	WindEstimator _wind_estimator{}; ///< wind estimator instance running in this particular airspeedValidator
 
 	// constants
-	static constexpr int SCALE_CHECK_SAMPLES = 12;
+	static constexpr int SCALE_CHECK_SAMPLES = 12; ///< take samples from 12 segments (every 360/12=30°)
 
 	// general states
 	bool _in_fixed_wing_flight{false}; ///< variable to bypass innovation and load factor checks
