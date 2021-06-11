@@ -131,7 +131,7 @@ endif
 
 ifdef PX4_RESTRICTED_BUILD
 	CMAKE_ARGS += -DPX4_RESTRICTED_BUILD=ON
-	BUILD_DIR_SUFFIX += _restricted
+	BUILD_DIR_SUFFIX := $(BUILD_DIR_SUFFIX)_restricted
 endif
 
 # additional config parameters passed to cmake
