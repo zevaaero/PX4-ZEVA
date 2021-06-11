@@ -100,6 +100,8 @@ enum NAV_CMD {
 	NAV_CMD_FENCE_POLYGON_VERTEX_EXCLUSION = 5002,
 	NAV_CMD_FENCE_CIRCLE_INCLUSION = 5003,
 	NAV_CMD_FENCE_CIRCLE_EXCLUSION = 5004,
+	NAV_CMD_RALLY_POINT = 5100,
+	NAV_CMD_VTOL_SAFE_AREA = 5101,
 	NAV_CMD_CONDITION_GATE = 4501,
 	NAV_CMD_WAYPOINT_USER_1 = 31000,
 	NAV_CMD_INVALID = UINT16_MAX /* ensure that casting a large number results in a specific error */
@@ -231,9 +233,13 @@ struct mission_safe_point_s {
 	double lat;
 	double lon;
 	float alt;
+	float safe_area_radius;
+	uint16_t safe_area_sector_clear_bitmap;
+	int16_t safe_area_first_sector_offset_degrees;
+	uint16_t nav_cmd;				/**< navigation command					*/
+	uint8_t safe_area_sector_count;
 	uint8_t frame;					/**< MAV_FRAME */
-
-	uint8_t _padding0[3];				/**< padding struct size to alignment boundary  */
+	//uint8_t _padding0[8];				/**< padding struct size to alignment boundary  */
 };
 
 #if (__GNUC__ >= 5) || __clang__

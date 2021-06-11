@@ -337,8 +337,12 @@ MavlinkMissionManager::send_mission_item(uint8_t sysid, uint8_t compid, uint16_t
 			read_result = dm_read(DM_KEY_SAFE_POINTS, seq + 1, &mission_safe_point, sizeof(mission_safe_point_s)) ==
 				      sizeof(mission_safe_point_s);
 
-			mission_item.nav_cmd = MAV_CMD_NAV_RALLY_POINT;
+			mission_item.nav_cmd = mission_safe_point.nav_cmd;
 			mission_item.frame = mission_safe_point.frame;
+			mission_item.params[0] = mission_safe_point.safe_area_sector_clear_bitmap;
+			mission_item.params[1] = mission_safe_point.safe_area_first_sector_offset_degrees;
+			mission_item.params[2] = mission_safe_point.safe_area_radius;
+			mission_item.params[3] = mission_safe_point.safe_area_sector_count;
 			mission_item.lat = mission_safe_point.lat;
 			mission_item.lon = mission_safe_point.lon;
 			mission_item.altitude = mission_safe_point.alt;
@@ -1106,7 +1110,8 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 				    mission_item.nav_cmd == MAV_CMD_NAV_FENCE_POLYGON_VERTEX_EXCLUSION ||
 				    mission_item.nav_cmd == MAV_CMD_NAV_FENCE_CIRCLE_INCLUSION ||
 				    mission_item.nav_cmd == MAV_CMD_NAV_FENCE_CIRCLE_EXCLUSION ||
-				    mission_item.nav_cmd == MAV_CMD_NAV_RALLY_POINT) {
+				    mission_item.nav_cmd == MAV_CMD_NAV_RALLY_POINT ||
+				    mission_item.nav_cmd == MAV_CMD_NAV_RALLY_POINT + 1) {
 					check_failed = true;
 
 				} else {
@@ -1158,10 +1163,21 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 
 		case MAV_MISSION_TYPE_RALLY: { // Write a safe point / rally point
 				mission_safe_point_s mission_safe_point;
+
 				mission_safe_point.lat = mission_item.lat;
 				mission_safe_point.lon = mission_item.lon;
 				mission_safe_point.alt = mission_item.altitude;
 				mission_safe_point.frame = mission_item.frame;
+
+				mission_safe_point.nav_cmd = mission_item.nav_cmd;
+
+				if (mission_item.nav_cmd == MAV_CMD_NAV_RALLY_POINT + 1) {
+					mission_safe_point.safe_area_sector_clear_bitmap = static_cast<uint16_t>(mission_item.params[0]);
+					mission_safe_point.safe_area_first_sector_offset_degrees = static_cast<uint16_t>(mission_item.params[1]);
+					mission_safe_point.safe_area_radius = mission_item.params[2];
+					mission_safe_point.safe_area_sector_count =  static_cast<uint8_t>(mission_item.params[3]);
+				}
+
 				write_failed = dm_write(DM_KEY_SAFE_POINTS, wp.seq + 1, DM_PERSIST_POWER_ON_RESET, &mission_safe_point,
 							sizeof(mission_safe_point_s)) != sizeof(mission_safe_point_s);
 			}
@@ -1435,6 +1451,14 @@ MavlinkMissionManager::parse_mavlink_mission_item(const mavlink_mission_item_t *
 
 		case MAV_CMD_NAV_RALLY_POINT:
 			mission_item->nav_cmd = (NAV_CMD)mavlink_mission_item->command;
+			break;
+
+		case MAV_CMD_NAV_RALLY_POINT+1:
+			mission_item->nav_cmd = (NAV_CMD)mavlink_mission_item->command;
+			mission_item->params[0] = mavlink_mission_item->param1;
+			mission_item->params[1] = mavlink_mission_item->param2;
+			mission_item->params[2] = mavlink_mission_item->param3;
+			mission_item->params[3] = mavlink_mission_item->param4;
 			break;
 
 		default:
@@ -1715,6 +1739,13 @@ MavlinkMissionManager::format_mavlink_mission_item(const struct mission_item_s *
 			break;
 
 		case MAV_CMD_NAV_RALLY_POINT:
+			break;
+
+		case MAV_CMD_NAV_RALLY_POINT+1:
+			mavlink_mission_item->param1 = mission_item->params[0];
+			mavlink_mission_item->param2 = mission_item->params[1];
+			mavlink_mission_item->param3 = mission_item->params[2];
+			mavlink_mission_item->param4 = mission_item->params[3];
 			break;
 
 
