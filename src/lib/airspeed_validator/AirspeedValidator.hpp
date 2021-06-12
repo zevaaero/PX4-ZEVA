@@ -73,7 +73,7 @@ struct airspeed_validator_update_data {
 class AirspeedValidator
 {
 public:
-	AirspeedValidator() = default;
+	AirspeedValidator();
 	~AirspeedValidator() = default;
 
 	void update_airspeed_validator(const airspeed_validator_update_data &input_data);
@@ -161,8 +161,8 @@ private:
 	int _tas_scale_apply{0};
 	float _tas_scale_init{1.f};
 
-	float _scale_check_groundspeed[SCALE_CHECK_SAMPLES] {};
-	float _scale_check_TAS[SCALE_CHECK_SAMPLES] {};
+	matrix::Vector<float, SCALE_CHECK_SAMPLES> _scale_check_TAS {};
+	matrix::Vector<float, SCALE_CHECK_SAMPLES> _scale_check_groundspeed {};
 
 	void update_in_fixed_wing_flight(bool in_fixed_wing_flight) { _in_fixed_wing_flight = in_fixed_wing_flight; }
 

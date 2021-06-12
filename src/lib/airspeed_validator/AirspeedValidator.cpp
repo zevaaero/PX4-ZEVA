@@ -39,6 +39,10 @@
 
 #include "AirspeedValidator.hpp"
 
+AirspeedValidator::AirspeedValidator()
+{
+	reset_CAS_scale_check(); //this resets all elements of the Vectors to NAN
+}
 
 void
 AirspeedValidator::update_airspeed_validator(const airspeed_validator_update_data &input_data)
@@ -122,39 +126,25 @@ AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float v
 		reset_CAS_scale_check();
 	}
 
-
 	const float course_over_ground_rad = matrix::wrap_2pi(atan2f(vy, vx));
-	const int index = int(SCALE_CHECK_SAMPLES * course_over_ground_rad / (2.f * M_PI_F));
+	const int segment_index = int(SCALE_CHECK_SAMPLES * course_over_ground_rad / (2.f * M_PI_F));
 
-	_scale_check_groundspeed[index] = sqrt(vx * vx + vy * vy + vz * vz);
-	_scale_check_TAS[index] = _TAS;
+	_scale_check_groundspeed(segment_index) = sqrt(vx * vx + vy * vy + vz * vz);
+	_scale_check_TAS(segment_index) = _TAS;
 
-	float ground_speed_sum = 0.f;
-	float TAS_sum = 0.f;
+	// run check if all segments are filled
+	if (PX4_ISFINITE(_scale_check_groundspeed.length())) {
 
-	for (int i = 0; i < SCALE_CHECK_SAMPLES; i++) {
-		if (_scale_check_TAS[i] < FLT_EPSILON) {
-			_scale_check_TAS[i] = NAN; //needed to find uninitialized array
-			_scale_check_groundspeed[i] = NAN;
+		float ground_speed_sum = 0.f;
+		float TAS_sum = 0.f;
+
+		for (int i = 0; i < SCALE_CHECK_SAMPLES; i++) {
+			ground_speed_sum += _scale_check_groundspeed(i);
+			TAS_sum += _scale_check_TAS(i);
 		}
 
-		if (_scale_check_groundspeed[i] < FLT_EPSILON) {
-			_scale_check_groundspeed[i] = NAN; //needed to find uninitialized array
-		}
-
-		ground_speed_sum += _scale_check_groundspeed[i];
-		TAS_sum += _scale_check_TAS[i];
-	}
-
-	const bool full_array = PX4_ISFINITE(ground_speed_sum) && PX4_ISFINITE(TAS_sum);
-
-	if (full_array) {
-		const float average_ground_speed = ground_speed_sum / SCALE_CHECK_SAMPLES;
-		const float average_TAS = TAS_sum / SCALE_CHECK_SAMPLES;
-		const float average_TAS_with_scale = average_TAS * _wind_estimator.get_tas_scale();
-
-		const float error_without_scale = abs(average_ground_speed - average_TAS);
-		const float error_with_scale = abs(average_ground_speed - average_TAS_with_scale);
+		const float error_without_scale = fabsf(ground_speed_sum - TAS_sum);
+		const float error_with_scale = fabsf(ground_speed_sum - TAS_sum * _wind_estimator.get_tas_scale());
 
 		// check passes if the average airspeed with the scale applied is closer to groundspeed than without
 		if (error_with_scale < error_without_scale) {
@@ -177,11 +167,10 @@ AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float v
 void
 AirspeedValidator::reset_CAS_scale_check()
 {
-
 	// reset arrays to NAN
 	for (int i = 0; i < SCALE_CHECK_SAMPLES; i++) {
-		_scale_check_groundspeed[i] = NAN;
-		_scale_check_TAS[i] = NAN;
+		_scale_check_groundspeed(i) = NAN;
+		_scale_check_TAS(i) = NAN;
 	}
 
 	_begin_current_scale_check = hrt_absolute_time();
