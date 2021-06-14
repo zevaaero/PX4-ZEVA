@@ -10,11 +10,19 @@ on:
     - '**'
 
 jobs:
-  build:
+  sitl_tests:
+    name: ${{ matrix.config.org }} ${{ matrix.config.airframe }}
     runs-on: ubuntu-latest
     container:
       image: px4io/px4-dev-simulation-focal:2021-02-04
       options: --privileged --ulimit core=-1 --security-opt seccomp=unconfined
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {org: Freefly, airframe: Astro, model: "astro_without_camera" }
+          - {org: Avy, airframe: Aera, model: "aera_without_camera" }
+          - {org: Quantum Systems, airframe: Vector, model: "vector_without_camera" }
     steps:
     # see https://github.com/actions/checkout/issues/14
     - uses: actions/checkout@v1
@@ -89,4 +97,4 @@ jobs:
     - name: Run SITL tests
       env:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      run: test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early $HOME/ci_gazebo_models/configs/sitl.json
+      run: test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early --model ${{ matrix.config.model }} $HOME/ci_gazebo_models/configs/sitl.json
