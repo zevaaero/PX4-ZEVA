@@ -133,7 +133,7 @@ AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float v
 	_scale_check_TAS(segment_index) = _TAS;
 
 	// run check if all segments are filled
-	if (PX4_ISFINITE(_scale_check_groundspeed.length())) {
+	if (PX4_ISFINITE(_scale_check_groundspeed.norm_squared())) {
 
 		float ground_speed_sum = 0.f;
 		float TAS_sum = 0.f;
@@ -165,11 +165,9 @@ AirspeedValidator::update_CAS_scale_estimated(bool lpos_valid, float vx, float v
 void
 AirspeedValidator::reset_CAS_scale_check()
 {
-	// reset arrays to NAN
-	for (int i = 0; i < SCALE_CHECK_SAMPLES; i++) {
-		_scale_check_groundspeed(i) = NAN;
-		_scale_check_TAS(i) = NAN;
-	}
+
+	_scale_check_groundspeed.setAll(NAN);
+	_scale_check_TAS.setAll(NAN);
 
 	_begin_current_scale_check = hrt_absolute_time();
 }
@@ -178,11 +176,15 @@ void
 AirspeedValidator::update_CAS_scale_applied()
 {
 	switch (_tas_scale_apply) {
-	case 0:
-	case 1:
-		_CAS_scale_applied = _tas_scale_init;
-		break;
+	default:
 
+	/* fallthrough */
+	case 0:
+
+	/* fallthrough */
+	case 1:
+
+	/* fallthrough */
 	case 2:
 		_CAS_scale_applied = _tas_scale_init;
 		break;
