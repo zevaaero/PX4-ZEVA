@@ -455,6 +455,7 @@ void AirspeedModule::update_params()
 		_airspeed_validator[i].set_checks_fail_delay(_checks_fail_delay.get());
 		_airspeed_validator[i].set_checks_clear_delay(_checks_clear_delay.get());
 		_airspeed_validator[i].set_airspeed_stall(_param_fw_airspd_stall.get());
+		_airspeed_validator[i].set_disable_tas_scale_estimate(_param_aspd_scale_apply.get() == 0);
 	}
 }
 

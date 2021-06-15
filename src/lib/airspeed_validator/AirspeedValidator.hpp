@@ -117,6 +117,7 @@ public:
 	void set_tas_scale_apply(int tas_scale_apply) { _tas_scale_apply = tas_scale_apply; }
 	void set_CAS_scale_estimated(float scale) { _CAS_scale_estimated = scale; }
 	void set_scale_init(float scale) { _wind_estimator.set_scale_init(scale); }
+	void set_disable_tas_scale_estimate(bool disable_scale_est) {_wind_estimator.set_disable_tas_scale_estimate(disable_scale_est); }
 
 private:
 
