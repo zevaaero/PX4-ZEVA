@@ -2358,6 +2358,14 @@ Commander::run()
 
 					} else {
 						mavlink_log_critical(&_mavlink_log_pub, kill_switch_string);
+
+						// Trigger real termination.
+						if (!_flight_termination_triggered) {
+							_armed.force_failsafe = true;
+							_flight_termination_triggered = true;
+							PX4_WARN("kill switch triggered termination");
+							send_parachute_command();
+						}
 					}
 
 					_status_changed = true;
