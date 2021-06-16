@@ -2378,6 +2378,13 @@ Commander::run()
 					_status_changed = true;
 					_armed.manual_lockdown = false;
 				}
+
+				if (_armed.force_failsafe) {
+					// Un-terminate, not a good idea if a parachute has been deployed in the meantime.
+					_armed.force_failsafe = false;
+					_flight_termination_triggered = false;
+					_status_changed = true;
+				}
 			}
 
 			/* no else case: do not change lockdown flag in unconfigured case */
