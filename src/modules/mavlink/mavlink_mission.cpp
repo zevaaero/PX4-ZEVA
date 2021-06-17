@@ -1172,10 +1172,10 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 				mission_safe_point.nav_cmd = mission_item.nav_cmd;
 
 				if (mission_item.nav_cmd == MAV_CMD_NAV_RALLY_POINT + 1) {
-					mission_safe_point.safe_area_sector_clear_bitmap = static_cast<uint16_t>(mission_item.params[0]);
-					mission_safe_point.safe_area_first_sector_offset_degrees = static_cast<uint16_t>(mission_item.params[1]);
-					mission_safe_point.safe_area_radius = mission_item.params[2];
-					mission_safe_point.safe_area_sector_count =  static_cast<uint8_t>(mission_item.params[3]);
+					mission_safe_point.safe_area_sector_clear_bitmap = static_cast<uint16_t>(mission_item.params[0] + 0.5f);
+					mission_safe_point.safe_area_first_sector_offset_degrees = static_cast<uint16_t>(mission_item.params[1] + 0.5f);
+					mission_safe_point.safe_area_radius = mission_item.params[2] + 0.5f;
+					mission_safe_point.safe_area_sector_count =  static_cast<uint8_t>(mission_item.params[3] + 0.5f);
 				}
 
 				write_failed = dm_write(DM_KEY_SAFE_POINTS, wp.seq + 1, DM_PERSIST_POWER_ON_RESET, &mission_safe_point,
