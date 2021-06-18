@@ -3841,7 +3841,12 @@ void Commander::battery_status_check()
 	_rtl_flight_time_sub.update();
 	float battery_usage_to_home = 0;
 
-	if (hrt_absolute_time() - _rtl_flight_time_sub.get().timestamp < 2_s) {
+	const bool is_rtl_planned = (low_battery_action_t)_param_com_low_bat_act.get() == low_battery_action_t::RETURN_OR_LAND
+				    || (low_battery_action_t)_param_com_low_bat_act.get() == low_battery_action_t::RETURN;
+
+	const bool is_rtl_flight_time_up_to_date = hrt_absolute_time() - _rtl_flight_time_sub.get().timestamp < 2_s;
+
+	if (is_rtl_planned && is_rtl_flight_time_up_to_date) {
 		battery_usage_to_home = _rtl_flight_time_sub.get().rtl_limit_fraction;
 	}
 
