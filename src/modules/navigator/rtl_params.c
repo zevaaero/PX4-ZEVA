@@ -138,9 +138,10 @@ PARAM_DEFINE_INT32(RTL_TYPE, 0);
 PARAM_DEFINE_INT32(RTL_CONE_ANG, 45);
 
 /**
- * Maximum allowed RTL flight in minutes
+ * Maximum allowed overall flight time.
  *
- * This is used to determine when the vehicle should be switched to RTL due to low battery.
+ * Based on this and current distance to home, RTL will be triggered earlier for battery failsafe.
+ *
  * Note, particularly for multirotors this should reflect flight time at cruise speed, not while stationary
  *
  * @unit min
