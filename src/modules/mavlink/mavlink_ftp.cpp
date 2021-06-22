@@ -166,7 +166,7 @@ MavlinkFTP::_process_request(
 	// basic sanity checks; must validate length before use
 	if (payload->size > kMaxDataLength) {
 		errorCode = kErrInvalidDataSize;
-		PX4_DEBUG("invalid data size");
+		PX4_WARN("invalid data size");
 		goto out;
 	}
 
@@ -508,7 +508,7 @@ MavlinkFTP::_workOpen(PayloadHeader *payload, int oflag)
 		// fail only if requested open for read
 		if (oflag & O_RDONLY) {
 			_our_errno = errno;
-			PX4_DEBUG("stat failed read: %s", strerror(_our_errno));
+			PX4_ERR("stat failed read: %s", strerror(_our_errno));
 			return kErrFailErrno;
 
 		} else {
@@ -524,7 +524,7 @@ MavlinkFTP::_workOpen(PayloadHeader *payload, int oflag)
 
 	if (fd < 0) {
 		_our_errno = errno;
-		PX4_DEBUG("open failed: %s", strerror(_our_errno));
+		PX4_ERR("open failed: %s", strerror(_our_errno));
 		return kErrFailErrno;
 	}
 
@@ -1068,7 +1068,7 @@ void MavlinkFTP::send()
 		if (error_code == kErrNone) {
 			if (lseek(_session_info.fd, payload->offset, SEEK_SET) < 0) {
 				error_code = kErrFailErrno;
-				PX4_DEBUG("stream download: seek fail");
+				PX4_WARN("stream download: seek fail");
 			}
 		}
 
@@ -1078,7 +1078,7 @@ void MavlinkFTP::send()
 			if (bytes_read < 0) {
 				// Negative return indicates error other than eof
 				error_code = kErrFailErrno;
-				PX4_DEBUG("stream download: read fail");
+				PX4_WARN("stream download: read fail");
 
 			} else {
 				payload->size = bytes_read;
