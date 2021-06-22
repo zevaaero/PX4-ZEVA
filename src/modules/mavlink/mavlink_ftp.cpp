@@ -362,7 +362,7 @@ MavlinkFTP::_workList(PayloadHeader *payload)
 
 	if (dp == nullptr) {
 		_our_errno = errno;
-		PX4_WARN("Dir open failed %s: %s", _work_buffer1, strerror(_our_errno));
+		PX4_DEBUG("Dir open failed %s: %s", _work_buffer1, strerror(_our_errno));
 		return kErrFileNotFound;
 	}
 
@@ -832,6 +832,8 @@ MavlinkFTP::_workRename(PayloadHeader *payload)
 		return kErrNone;
 
 	} else {
+		_our_errno = errno;
+		PX4_ERR("rename failed: %d %s", _our_errno, strerror(_our_errno));
 		return kErrFailErrno;
 	}
 }
@@ -853,7 +855,7 @@ MavlinkFTP::_workRemoveDirectory(PayloadHeader *payload)
 
 	} else {
 		_our_errno = errno;
-		PX4_ERR("remove dir failed: %d %s", _our_errno, strerror(_our_errno));
+		PX4_DEBUG("remove dir failed: %d %s", _our_errno, strerror(_our_errno));
 		return kErrFailErrno;
 	}
 }
