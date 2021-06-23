@@ -167,6 +167,19 @@ PARAM_DEFINE_INT32(ASPD_DO_CHECKS, 1);
 PARAM_DEFINE_INT32(ASPD_FALLBACK_GW, 0);
 
 /**
+ * Airspeed data stuck timeout
+ *
+ * If the airspeed data is exactly equal for this amount of time, the airspeed sensor is declared invalid.
+ * Set to 0 to disable this check.
+ *
+ * @unit s
+ * @min 0
+ * @max 1000
+ * @group Airspeed Validator
+ */
+PARAM_DEFINE_INT32(ASPD_STUCK_T, 5);
+
+/**
  * Airspeed failsafe consistency threshold
  *
  * This specifies the minimum airspeed test ratio required to trigger a failsafe. Larger values make the check less sensitive,

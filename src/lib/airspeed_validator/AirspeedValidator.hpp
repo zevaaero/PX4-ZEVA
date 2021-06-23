@@ -68,6 +68,7 @@ struct airspeed_validator_update_data {
 	float vel_test_ratio;
 	float mag_test_ratio;
 	bool in_fixed_wing_flight;
+	int data_stuck_check_t;
 };
 
 class AirspeedValidator
@@ -123,7 +124,7 @@ private:
 
 	WindEstimator _wind_estimator{}; ///< wind estimator instance running in this particular airspeedValidator
 
-	// constants
+	// airspeed scale validity check
 	static constexpr int SCALE_CHECK_SAMPLES = 12; ///< take samples from 12 segments (every 360/12=30°)
 
 	// general states
@@ -133,6 +134,11 @@ private:
 	float _TAS{0.0f}; ///< true airspeed in m/s
 	float _CAS_scale_applied{1.0f}; ///< scale factor from IAS to CAS (currently applied value)
 	float _CAS_scale_estimated{1.0f}; ///< scale factor from IAS to CAS (currently estimated value)
+
+	// data stuck check
+	uint64_t _time_last_unequal_data{0};
+	bool _data_stuck_test_failed{false};
+	float _CAS_prev{0.f};
 
 	// states of innovation check
 	float _tas_gate{1.0f}; ///< gate size of airspeed innovation (to calculate tas_test_ratio)
@@ -174,6 +180,7 @@ private:
 	void update_CAS_scale_estimated(bool lpos_valid, float vx, float vy, float vz);
 	void update_CAS_scale_applied();
 	void update_CAS_TAS(float air_pressure_pa, float air_temperature_celsius);
+	void check_airspeed_data_stuck(uint64_t timestamp, int data_stuck_check_t);
 	void check_airspeed_innovation(uint64_t timestamp, float estimator_status_vel_test_ratio,
 				       float estimator_status_mag_test_ratio);
 	void check_load_factor(float accel_z);

@@ -57,6 +57,7 @@ AirspeedValidator::update_airspeed_validator(const airspeed_validator_update_dat
 			      input_data.lpos_vy,
 			      input_data.lpos_vz, input_data.lpos_evh, input_data.lpos_evv, input_data.att_q);
 	update_in_fixed_wing_flight(input_data.in_fixed_wing_flight);
+	check_airspeed_data_stuck(input_data.timestamp, input_data.data_stuck_check_t);
 	check_airspeed_innovation(input_data.timestamp, input_data.vel_test_ratio, input_data.mag_test_ratio);
 	check_load_factor(input_data.accel_z);
 	update_airspeed_valid_status(input_data.timestamp);
@@ -203,6 +204,18 @@ AirspeedValidator::update_CAS_TAS(float air_pressure_pa, float air_temperature_c
 }
 
 void
+AirspeedValidator::check_airspeed_data_stuck(uint64_t time_now, int data_stuck_check_t)
+{
+	// save the time where the airspeed reading changed to previous
+	if (data_stuck_check_t <= 0 || fabsf(_CAS - _CAS_prev) > FLT_EPSILON) {
+		_time_last_unequal_data = time_now;
+		_CAS_prev = _CAS;
+	}
+
+	_data_stuck_test_failed = hrt_elapsed_time(&_time_last_unequal_data) > data_stuck_check_t * 1_s;
+}
+
+void
 AirspeedValidator::check_airspeed_innovation(uint64_t time_now, float estimator_status_vel_test_ratio,
 		float estimator_status_mag_test_ratio)
 {
@@ -273,12 +286,12 @@ AirspeedValidator::check_load_factor(float accel_z)
 void
 AirspeedValidator::update_airspeed_valid_status(const uint64_t timestamp)
 {
-	if (_innovations_check_failed || _load_factor_check_failed) {
-		// either innovation or load factor check failed, so record timestamp
+	if (_data_stuck_test_failed || _innovations_check_failed || _load_factor_check_failed) {
+		// at least one check (data stuck, innovation or load factor) failed, so record timestamp
 		_time_checks_failed = timestamp;
 
-	} else if (!_innovations_check_failed && !_load_factor_check_failed) {
-		// both innovation or load factor checks must pass to declare airspeed good
+	} else if (! _data_stuck_test_failed && !_innovations_check_failed && !_load_factor_check_failed) {
+		// all checks(data stuck, innovation and load factor) must pass to declare airspeed good
 		_time_checks_passed = timestamp;
 	}
 
@@ -291,7 +304,7 @@ AirspeedValidator::update_airspeed_valid_status(const uint64_t timestamp)
 		// a timeout period is applied.
 		const bool single_check_fail_timeout = (timestamp - _time_checks_passed) > _checks_fail_delay * 1_s;
 
-		if (both_checks_failed || single_check_fail_timeout) {
+		if (both_checks_failed || single_check_fail_timeout || _data_stuck_test_failed) {
 
 			_airspeed_valid = false;
 		}

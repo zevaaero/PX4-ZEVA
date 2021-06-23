@@ -170,6 +170,7 @@ private:
 		(ParamInt<px4::params::ASPD_DO_CHECKS>) _param_airspeed_checks_on,
 		(ParamInt<px4::params::ASPD_FALLBACK_GW>) _param_airspeed_fallback_gw,
 
+		(ParamInt<px4::params::ASPD_STUCK_T>) _param_aspd_stuck_t,
 		(ParamFloat<px4::params::ASPD_FS_INNOV>) _tas_innov_threshold, /**< innovation check threshold */
 		(ParamFloat<px4::params::ASPD_FS_INTEG>) _tas_innov_integ_threshold, /**< innovation check integrator threshold */
 		(ParamInt<px4::params::ASPD_FS_T_STOP>) _checks_fail_delay, /**< delay to declare airspeed invalid */
@@ -342,6 +343,7 @@ AirspeedModule::Run()
 		input_data.accel_z = _accel.xyz[2];
 		input_data.vel_test_ratio = _estimator_status.vel_test_ratio;
 		input_data.mag_test_ratio = _estimator_status.mag_test_ratio;
+		input_data.data_stuck_check_t = _param_aspd_stuck_t.get();
 
 		// iterate through all airspeed sensors, poll new data from them and update their validators
 		for (int i = 0; i < _number_of_airspeed_sensors; i++) {
