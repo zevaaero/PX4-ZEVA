@@ -210,6 +210,14 @@ void Tiltrotor::update_vtol_state()
 					_vtol_schedule.transition_start = hrt_absolute_time();
 				}
 
+				// check front transition timeout
+				if (_params->front_trans_timeout > FLT_EPSILON) {
+					if (time_since_trans_start > _params->front_trans_timeout) {
+						// transition timeout occured, abort transition
+						_attc->quadchute("Transition timeout");
+					}
+				}
+
 				break;
 			}
 
