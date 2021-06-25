@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/module.h>
@@ -196,7 +197,7 @@ void write_test(int fd, uint8_t *block, int block_size)
 			}
 
 			if ((int)written != block_size) {
-				PX4_ERR("Write error");
+				PX4_ERR("Write error: %d->%s", errno, strerror(errno));
 				return;
 			}
 
