@@ -49,4 +49,5 @@ then
 	set PRT_TEL2_ 1
 
 	unset S_FORWARD
+	unset MAVLINK_STREAM_ONLY
 fi
