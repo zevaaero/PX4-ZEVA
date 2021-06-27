@@ -187,9 +187,6 @@ BST::BST(I2CSPIBusOption bus_option, const int bus, int address, int bus_frequen
 
 int BST::probe()
 {
-	int retries_prev = _retries;
-	_retries = 3;
-
 	BSTPacket<BSTDeviceInfoRequest> dev_info_req = {};
 	dev_info_req.type = 0x0A;
 	dev_info_req.payload.cmd = 0x04;
@@ -215,7 +212,7 @@ int BST::probe()
 		  (int)swap_uint32(dev_info_reply.payload.hw_id), (int)swap_uint16(dev_info_reply.payload.fw_id),
 		  dev_info_reply.payload.dev_name);
 
-	_retries = retries_prev;
+	_retries = 1;
 
 	return OK;
 }
