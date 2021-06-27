@@ -69,8 +69,8 @@ VL53L0X::VL53L0X(I2CSPIBusOption bus_option, const int bus, const uint8_t rotati
 	_px4_rangefinder.set_max_distance(2.f);
 	_px4_rangefinder.set_fov(math::radians(25.f));
 
-	// Allow 3 retries as the device typically misses the first measure attempts.
-	I2C::_retries = 3;
+	// Allow retries as the device typically misses the first measure attempts.
+	I2C::_retries = 1;
 
 	_px4_rangefinder.set_device_type(DRV_DIST_DEVTYPE_VL53L0X);
 }
