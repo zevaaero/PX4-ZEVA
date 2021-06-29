@@ -208,7 +208,7 @@ AirspeedValidator::check_airspeed_data_stuck(uint64_t time_now)
 {
 	// data stuck test: trigger when IAS is not changing for DATA_STUCK_TIMEOUT (2s)
 
-	if (fabsf(_IAS - _IAS_prev) > FLT_EPSILON) {
+	if (fabsf(_IAS - _IAS_prev) > FLT_EPSILON || _time_last_unequal_data == 0) {
 		_time_last_unequal_data = time_now;
 		_IAS_prev = _IAS;
 	}

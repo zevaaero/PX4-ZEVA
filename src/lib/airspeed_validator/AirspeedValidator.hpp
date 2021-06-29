@@ -68,7 +68,6 @@ struct airspeed_validator_update_data {
 	float vel_test_ratio;
 	float mag_test_ratio;
 	bool in_fixed_wing_flight;
-	int data_stuck_check_t;
 };
 
 class AirspeedValidator
