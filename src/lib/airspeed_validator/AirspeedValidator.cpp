@@ -57,7 +57,7 @@ AirspeedValidator::update_airspeed_validator(const airspeed_validator_update_dat
 			      input_data.lpos_vy,
 			      input_data.lpos_vz, input_data.lpos_evh, input_data.lpos_evv, input_data.att_q);
 	update_in_fixed_wing_flight(input_data.in_fixed_wing_flight);
-	check_airspeed_data_stuck(input_data.timestamp, input_data.data_stuck_check_t);
+	check_airspeed_data_stuck(input_data.timestamp);
 	check_airspeed_innovation(input_data.timestamp, input_data.vel_test_ratio, input_data.mag_test_ratio);
 	check_load_factor(input_data.accel_z);
 	update_airspeed_valid_status(input_data.timestamp);
@@ -204,15 +204,16 @@ AirspeedValidator::update_CAS_TAS(float air_pressure_pa, float air_temperature_c
 }
 
 void
-AirspeedValidator::check_airspeed_data_stuck(uint64_t time_now, int data_stuck_check_t)
+AirspeedValidator::check_airspeed_data_stuck(uint64_t time_now)
 {
-	// save the time where the airspeed reading changed to previous
-	if (data_stuck_check_t <= 0 || fabsf(_CAS - _CAS_prev) > FLT_EPSILON) {
+	// data stuck test: trigger when IAS is not changing for DATA_STUCK_TIMEOUT (2s)
+
+	if (fabsf(_IAS - _IAS_prev) > FLT_EPSILON) {
 		_time_last_unequal_data = time_now;
-		_CAS_prev = _CAS;
+		_IAS_prev = _IAS;
 	}
 
-	_data_stuck_test_failed = hrt_elapsed_time(&_time_last_unequal_data) > data_stuck_check_t * 1_s;
+	_data_stuck_test_failed = hrt_elapsed_time(&_time_last_unequal_data) > DATA_STUCK_TIMEOUT;
 }
 
 void

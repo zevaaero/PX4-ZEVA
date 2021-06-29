@@ -138,7 +138,8 @@ private:
 	// data stuck check
 	uint64_t _time_last_unequal_data{0};
 	bool _data_stuck_test_failed{false};
-	float _CAS_prev{0.f};
+	float _IAS_prev{0.f};
+	static constexpr uint64_t DATA_STUCK_TIMEOUT{2_s}; ///< timeout after which data stuck check triggers when data is flat
 
 	// states of innovation check
 	float _tas_gate{1.0f}; ///< gate size of airspeed innovation (to calculate tas_test_ratio)
@@ -180,7 +181,7 @@ private:
 	void update_CAS_scale_estimated(bool lpos_valid, float vx, float vy, float vz);
 	void update_CAS_scale_applied();
 	void update_CAS_TAS(float air_pressure_pa, float air_temperature_celsius);
-	void check_airspeed_data_stuck(uint64_t timestamp, int data_stuck_check_t);
+	void check_airspeed_data_stuck(uint64_t timestamp);
 	void check_airspeed_innovation(uint64_t timestamp, float estimator_status_vel_test_ratio,
 				       float estimator_status_mag_test_ratio);
 	void check_load_factor(float accel_z);
