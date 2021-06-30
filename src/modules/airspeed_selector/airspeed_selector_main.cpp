@@ -386,8 +386,9 @@ AirspeedModule::Run()
 				if (_param_aspd_scale_apply.get() > 1) {
 					if (fabsf(_airspeed_validator[i].get_CAS_scale_estimated() - _param_airspeed_scale[i]) > 0.01f) {
 						// apply the new scale if changed more than 0.01
-						PX4_INFO("Airspeed sensor Nr. %d ASPD_SCALE updated: %.2f --> %.2f", i, (double)_param_airspeed_scale[i],
-							 (double)_airspeed_validator[i].get_CAS_scale_estimated());
+						mavlink_log_info(&_mavlink_log_pub, "Airspeed sensor Nr. %d ASPD_SCALE updated: %.2f --> %.2f", i,
+								 (double)_param_airspeed_scale[i],
+								 (double)_airspeed_validator[i].get_CAS_scale_estimated());
 
 						switch (i) {
 						case 0:
