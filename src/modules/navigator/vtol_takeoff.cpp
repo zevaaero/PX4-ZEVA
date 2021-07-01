@@ -130,7 +130,7 @@ VtolTakeoff::on_active()
 				}
 
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
-				_mission_item.loiter_radius = _navigator->get_loiter_radius(); // TODO: radius as part of takeoff command?
+				_mission_item.loiter_radius = _navigator->get_loiter_radius();
 				_mission_item.altitude = _loiter_alt_amsl;
 
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);

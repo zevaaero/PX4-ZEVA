@@ -41,6 +41,7 @@
 #include "navigator.h"
 
 using matrix::wrap_pi;
+using matrix::sign;
 
 VtolLand::VtolLand(Navigator *navigator) :
 	MissionBlock(navigator),
@@ -91,6 +92,19 @@ VtolLand::on_active()
 		case vtol_land_state::MOVE_TO_LOITER: {
 				_mission_item.altitude = _navigator->get_home_position()->alt + _param_descend_alt_rel_m.get();
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
+				_mission_item.loiter_radius = _navigator->get_loiter_radius();
+
+
+
+				float bearing_from_loiter_to_land_rad = get_bearing_to_next_waypoint(_loiter_pos_lat_lon(0), _loiter_pos_lat_lon(1),
+									_land_pos_lat_lon(0), _land_pos_lat_lon(1));
+
+				const float loiter_radius_to_exit_turn_radius_ratio =
+					2.0f;	// the radius of the circle we join to exit the loiter circle is half as wide as the loiter itself
+
+				const float ratio = 1.0f / (loiter_radius_to_exit_turn_radius_ratio + 1.0f);
+				_mission_item.yaw = wrap_pi(bearing_from_loiter_to_land_rad - sign(_mission_item.loiter_radius) * asinf(ratio) + sign(
+								    _mission_item.loiter_radius) * M_PI_2_F);
 
 				_navigator->get_mission_result()->finished = false;
 				_navigator->set_mission_result_updated();
