@@ -60,6 +60,7 @@ public:
 	void setLoiterAltitudeAbsolute(const float alt_amsl) {_loiter_alt_amsl = alt_amsl; }
 	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
 	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
+	void setSafeAreaRadiusMeter(float radius) { _safe_area_radius_m = radius; }
 	bool hasSafeArea();
 
 private:
@@ -78,13 +79,13 @@ private:
 	float _transition_alt_amsl{0.f};
 	float _loiter_alt_amsl{0.f};
 	float 	_offset_degrees{0};
+	float _safe_area_radius_m = 300.0f;
 
 	uint8_t _sector_bitmap{0};
 	static constexpr uint8_t _num_sectors = 8;
 	static constexpr float _min_loiter_time_before_land = 10.0f;
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::VTO_SAFE_AREA_R>) _param_safe_area_radius_m,
 		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt,
 		(ParamFloat<px4::params::RTL_DESCEND_ALT>) _param_descend_alt_rel_m,
 		(ParamFloat<px4::params::RTL_RETURN_ALT>) _param_return_alt_rel_m,

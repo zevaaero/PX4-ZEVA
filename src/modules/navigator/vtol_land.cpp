@@ -71,6 +71,7 @@ VtolLand::on_activation()
 		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
 			setSectorBitmap(mission_safe_point.safe_area_sector_clear_bitmap);
 			setSectorOffsetDegrees(mission_safe_point.safe_area_first_sector_offset_degrees);
+			setSafeAreaRadiusMeter(mission_safe_point.safe_area_radius);
 			break;
 		}
 
@@ -181,7 +182,7 @@ void VtolLand::generate_waypoint_from_heading(struct position_setpoint_s *setpoi
 {
 	waypoint_from_heading_and_distance(
 		_navigator->get_global_position()->lat, _navigator->get_global_position()->lon,
-		yaw, _param_safe_area_radius_m.get(),
+		yaw, _safe_area_radius_m,
 		&(setpoint->lat), &(setpoint->lon));
 	setpoint->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 	setpoint->yaw = yaw;
@@ -194,7 +195,7 @@ VtolLand::set_loiter_position()
 
 	waypoint_from_heading_and_distance(
 		_land_pos_lat_lon(0), _land_pos_lat_lon(1),
-		getBestLandingHeading(), _param_safe_area_radius_m.get() * cosf(M_PI_F / _num_sectors) -
+		getBestLandingHeading(), _safe_area_radius_m * cosf(M_PI_F / _num_sectors) -
 		_param_loiter_radius_m.get(),
 		&lat, &lon);
 

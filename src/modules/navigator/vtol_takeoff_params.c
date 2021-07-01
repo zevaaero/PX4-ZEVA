@@ -38,22 +38,6 @@
  *
  */
 
-
-/**
- * Safe area radius.
- *
- * Radius of safe area centered around home position.
- *
- * @unit m
- * @min 50
- * @max 500
- * @decimal 1
- * @increment 1
- * @group VTOL Takeoff
- */
-PARAM_DEFINE_FLOAT(VTO_SAFE_AREA_R, 200);
-
-
 /**
  * VTOL Takeoff relative loiter altitude.
  *
