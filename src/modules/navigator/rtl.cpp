@@ -178,15 +178,18 @@ void RTL::find_RTL_destination(bool force_update)
 			continue;
 		}
 
-		// TODO: take altitude into account for distance measurement
-		dlat = mission_safe_point.lat - global_position.lat;
-		dlon = mission_safe_point.lon - global_position.lon;
-		double dist_squared = coord_dist_sq(dlat, dlon);
+		if (mission_safe_point.nav_cmd == NAV_CMD_RALLY_POINT) {
 
-		if (dist_squared < min_dist_squared) {
-			closest_index = current_seq;
-			min_dist_squared = dist_squared;
-			closest_safe_point = mission_safe_point;
+			// TODO: take altitude into account for distance measurement
+			dlat = mission_safe_point.lat - global_position.lat;
+			dlon = mission_safe_point.lon - global_position.lon;
+			double dist_squared = coord_dist_sq(dlat, dlon);
+
+			if (dist_squared < min_dist_squared) {
+				closest_index = current_seq;
+				min_dist_squared = dist_squared;
+				closest_safe_point = mission_safe_point;
+			}
 		}
 	}
 
