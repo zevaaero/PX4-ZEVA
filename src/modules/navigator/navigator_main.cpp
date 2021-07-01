@@ -678,7 +678,7 @@ Navigator::run()
 
 
 				if (!use_mission_landing && _vtol_takeoff.hasSafeArea()) {
-					if (!rtl_activated && _rtl.getClimbDone()) {
+					if (!rtl_activated && _rtl.getClimbDone() && _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
 						navigation_mode_new = &_vtol_land;
 
 					} else {
