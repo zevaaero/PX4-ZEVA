@@ -962,9 +962,31 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			tecs_fw_mission_throttle = mission_throttle;
 		}
 
+		float loiter_radius = pos_sp_curr.loiter_radius;
+		int8_t loiter_direction = pos_sp_curr.loiter_direction;
+
+		if (fabsf(loiter_radius) < FLT_EPSILON) {
+			loiter_radius = _param_nav_loiter_rad.get();
+			loiter_direction = (loiter_radius > 0) ? 1 : -1;
+		}
+
 		const float acc_rad = _l1_control.switch_distance(500.0f);
 
 		uint8_t position_sp_type = pos_sp_curr.type;
+
+		if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+
+			orbit_status_s orbit_status{};
+			orbit_status.timestamp = hrt_absolute_time();
+			orbit_status.radius = static_cast<float>(loiter_direction) * loiter_radius;
+			orbit_status.frame = 0; // MAV_FRAME::MAV_FRAME_GLOBAL
+			orbit_status.x = static_cast<double>(curr_wp(0));
+			orbit_status.y = static_cast<double>(curr_wp(1));
+			orbit_status.z = pos_sp_curr.alt;
+			orbit_status.yaw_behaviour = orbit_status_s::ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TANGENT_TO_CIRCLE;
+			_orbit_status_pub.publish(orbit_status);
+
+		}
 
 		if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
 			// TAKEOFF: handle like a regular POSITION setpoint if already flying
@@ -989,7 +1011,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				// close to waypoint, but altitude error greater than twice acceptance
 				if ((dist >= 0.f)
 				    && (dist_z > 2.f * _param_fw_clmbout_diff.get())
-				    && (dist_xy < 2.f * math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius)))) {
+				    && (dist_xy < 2.f * math::max(acc_rad, fabsf(loiter_radius)))) {
 					// SETPOINT_TYPE_POSITION -> SETPOINT_TYPE_LOITER
 					position_sp_type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 				}
@@ -997,7 +1019,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 				// LOITER: use SETPOINT_TYPE_POSITION to get to SETPOINT_TYPE_LOITER
 				if ((dist >= 0.f)
-				    && (dist_xy > 2.f * math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius)))) {
+				    && (dist_xy > 2.f * math::max(acc_rad, fabsf(loiter_radius)))) {
 					// SETPOINT_TYPE_LOITER -> SETPOINT_TYPE_POSITION
 					position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 				}
@@ -1026,7 +1048,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 							  pos_sp_prev.lat, pos_sp_prev.lon);
 
 				// Do not try to find a solution if the last waypoint is inside the acceptance radius of the current one
-				if (d_curr_prev > math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius))) {
+				if (d_curr_prev > math::max(acc_rad, fabsf(loiter_radius))) {
 					// Calculate distance to current waypoint
 					const float d_curr = get_distance_to_next_waypoint((double)curr_wp(0), (double)curr_wp(1),
 							     _current_latitude, _current_longitude);
@@ -1037,11 +1059,11 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 					// if the minimal distance is smaller than the acceptance radius, we should be at waypoint alt
 					// navigator will soon switch to the next waypoint item (if there is one) as soon as we reach this altitude
-					if (_min_current_sp_distance_xy > math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius))) {
+					if (_min_current_sp_distance_xy > math::max(acc_rad, fabsf(loiter_radius))) {
 						// The setpoint is set linearly and such that the system reaches the current altitude at the acceptance
 						// radius around the current waypoint
 						const float delta_alt = (pos_sp_curr.alt - pos_sp_prev.alt);
-						const float grad = -delta_alt / (d_curr_prev - math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius)));
+						const float grad = -delta_alt / (d_curr_prev - math::max(acc_rad, fabsf(loiter_radius)));
 						const float a = pos_sp_prev.alt - grad * d_curr_prev;
 
 						position_sp_alt = a + grad * _min_current_sp_distance_xy;
@@ -1070,26 +1092,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 						   radians(_param_fw_p_lim_min.get()));
 
 		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-			/* waypoint is a loiter waypoint */
-			float loiter_radius = pos_sp_curr.loiter_radius;
-			int8_t loiter_direction = pos_sp_curr.loiter_direction;
-
-			if (fabsf(pos_sp_curr.loiter_radius) < FLT_EPSILON) {
-				loiter_radius = _param_nav_loiter_rad.get();
-				loiter_direction = (loiter_radius > 0) ? 1 : -1;
-
-			}
-
-			orbit_status_s orbit_status{};
-			orbit_status.timestamp = hrt_absolute_time();
-			orbit_status.radius = static_cast<float>(loiter_direction) * loiter_radius;
-			orbit_status.frame = 0; // MAV_FRAME::MAV_FRAME_GLOBAL
-			orbit_status.x = static_cast<double>(curr_wp(0));
-			orbit_status.y = static_cast<double>(curr_wp(1));
-			orbit_status.z = pos_sp_curr.alt;
-			orbit_status.yaw_behaviour = orbit_status_s::ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TANGENT_TO_CIRCLE;
-			_orbit_status_pub.publish(orbit_status);
-
 			_l1_control.navigate_loiter(curr_wp, curr_pos, loiter_radius, loiter_direction, nav_speed_2d);
 
 			_att_sp.roll_body = _l1_control.get_roll_setpoint();
