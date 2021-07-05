@@ -340,7 +340,9 @@ main_state_transition(const vehicle_status_s &status, const main_state_t new_mai
 		break;
 
 	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF:
-		if (is_vtol(status) && status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+		if (is_vtol(status) && status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING &&
+		    status_flags.condition_global_position_valid &&
+		    status_flags.condition_home_position_valid) {
 			ret = TRANSITION_CHANGED;
 		}
 
