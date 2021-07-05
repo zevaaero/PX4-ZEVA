@@ -131,7 +131,7 @@ VtolTakeoff::on_active()
 
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
 				_mission_item.loiter_radius = _navigator->get_loiter_radius();
-				_mission_item.altitude = _loiter_alt_amsl;
+				_mission_item.altitude = _navigator->get_home_position()->alt + _param_loiter_alt.get();
 
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 				generate_waypoint_from_heading(&pos_sp_triplet->current, getClosestTransitionHeading());
@@ -224,9 +224,4 @@ float VtolTakeoff::getClosestTransitionHeading()
 	}
 
 	return wrap_pi(sector_angle * min_index + math::radians(_offset_degrees) + sector_angle * 0.5f);
-}
-
-void VtolTakeoff::updateLoiterAltitudeAbsolute()
-{
-	_loiter_alt_amsl = _navigator->get_home_position()->alt + _param_loiter_alt.get();
 }

@@ -552,7 +552,6 @@ Navigator::run()
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_VTOL_TAKEOFF) {
 
 				_vtol_takeoff.setTransitionAltitudeAbsolute(cmd.param7);
-				_vtol_takeoff.updateLoiterAltitudeAbsolute();
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 

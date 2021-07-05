@@ -58,7 +58,6 @@ public:
 	void setTakeoffPosition(const double lat, const double lon) {_takeoff_pos_lat_lon = matrix::Vector2<double>(lat, lon);}
 	void setTransitionAltitudeAbsolute(const float alt_amsl) {_transition_alt_amsl = alt_amsl; }
 	void setSafeAreaRadiusMeter(float radius) { _safe_area_radius_m = radius; }
-	void updateLoiterAltitudeAbsolute();
 	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
 	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
 
@@ -78,7 +77,6 @@ private:
 
 	matrix::Vector2<double> _takeoff_pos_lat_lon;
 	float _transition_alt_amsl{0.f};	// absolute altitude at which vehicle will transition to forward flight
-	float _loiter_alt_amsl{0.f};		// absolute altitude at which vehicel will loiter after transition to forward flight
 	float _safe_area_radius_m{300.0f};
 
 	uint8_t _sector_bitmap{0};			// bit set: sector is clear of objects

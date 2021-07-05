@@ -57,7 +57,6 @@ public:
 
 	void setLandPosition(const double lat, const double lon) { _land_pos_lat_lon = matrix::Vector2<double>(lat, lon);}
 	void setTransitionAltitudeAbsolute(const float alt_amsl) {_transition_alt_amsl = alt_amsl; }
-	void setLoiterAltitudeAbsolute(const float alt_amsl) {_loiter_alt_amsl = alt_amsl; }
 	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
 	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
 	void setSafeAreaRadiusMeter(float radius) { _safe_area_radius_m = radius; }
@@ -77,7 +76,6 @@ private:
 	matrix::Vector2<double> _loiter_pos_lat_lon;
 
 	float _transition_alt_amsl{0.f};
-	float _loiter_alt_amsl{0.f};
 	float 	_offset_degrees{0};
 	float _safe_area_radius_m = 300.0f;
 
