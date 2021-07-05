@@ -673,12 +673,16 @@ Navigator::run()
 
 				const bool rtl_activated = _previous_nav_state != vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
 
+				if (rtl_activated) {
+					_use_vtol_land_navigation_mode_for_rtl = _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
+				}
+
 				const bool use_mission_landing = _mission.get_land_start_available() && !_rtl.denyMissionLanding()
 								 && rtl_type() > RTL::RTL_HOME;
 
 
-				if (!use_mission_landing && _vtol_takeoff.hasSafeArea()) {
-					if (!rtl_activated && _rtl.getClimbDone() && _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING) {
+				if (!use_mission_landing && _vtol_takeoff.hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
+					if (!rtl_activated && _rtl.getClimbDone()) {
 						navigation_mode_new = &_vtol_land;
 
 					} else {

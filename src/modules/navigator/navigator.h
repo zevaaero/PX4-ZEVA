@@ -461,6 +461,8 @@ private:
 	uint64_t	_custom_action_ack_last_time{0};	/**< last time an ack for the custom action command was received **/
 	bool		_reset_custom_action{false};		/**< reset custom action status flag **/
 
+	bool 		_use_vtol_land_navigation_mode_for_rtl = false;
+
 	NavigatorMode	*_navigation_mode{nullptr};		/**< abstract pointer to current navigation mode class */
 	Mission		_mission;			/**< class that handles the missions */
 	Loiter		_loiter;			/**< class that handles loiter */
