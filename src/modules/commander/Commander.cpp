@@ -2279,13 +2279,16 @@ Commander::run()
 		_status.geofence_violated = _geofence_result.geofence_violated;
 
 		const bool in_low_battery_failsafe = _battery_warning > battery_status_s::BATTERY_WARNING_LOW;
+		const bool in_mag_fault_failsafe = (_estimator_status_sub.get().control_mode_flags
+						    & (1 << estimator_status_s::CS_MAG_FAULT));
 
 		// Geofence actions
 		const bool geofence_action_enabled = _geofence_result.geofence_action != geofence_result_s::GF_ACTION_NONE;
 
 		if (_armed.armed
 		    && geofence_action_enabled
-		    && !in_low_battery_failsafe) {
+		    && !in_low_battery_failsafe
+		    && !in_mag_fault_failsafe) {
 
 			// check for geofence violation transition
 			if (_geofence_result.geofence_violated && !_geofence_violated_prev) {
@@ -2456,7 +2459,7 @@ Commander::run()
 
 			// abort autonomous mode and switch to position mode if sticks are moved significantly
 			if ((_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING)
-			    && !in_low_battery_failsafe && !_geofence_warning_action_on
+			    && !in_low_battery_failsafe && !_geofence_warning_action_on && !in_mag_fault_failsafe
 			    && _manual_control.wantsOverride(_vehicle_control_mode, _status)) {
 				const transition_result_t posctl_result =
 					main_state_transition(_status, commander_state_s::MAIN_STATE_POSCTL, _status_flags, _internal_state);
