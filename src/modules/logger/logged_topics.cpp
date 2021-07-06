@@ -59,7 +59,6 @@ void LoggedTopics::add_default_topics()
 	add_topic("baro_bias_estimate", 500);
 	add_topic("camera_capture");
 	add_topic("camera_trigger");
-	add_topic("camera_trigger_secondary");
 	add_topic("cellular_status", 200);
 	add_topic("commander_state");
 	add_topic("cpuload");
