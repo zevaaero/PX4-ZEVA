@@ -92,7 +92,7 @@ jobs:
     - name: Copy Custom airframe configs
       run: |
           cd $HOME/ci_gazebo_models
-          source $HOME/ci_gazebo_models/setup.bash $HOME/ci_gazebo_models $GITHUB_WORKSPACE
+          source $HOME/ci_gazebo_models/setup.bash $HOME/ci_gazebo_models $GITHUB_WORKSPACE build/px4_sitl_rtps
       shell: bash
     - name: Run SITL tests
       env:
