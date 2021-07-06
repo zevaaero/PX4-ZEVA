@@ -1086,3 +1086,20 @@ PARAM_DEFINE_INT32(COM_ARM_SDCARD, 1);
  * @unit s
  */
 PARAM_DEFINE_FLOAT(COM_SPOOLUP_TIME, 1.0f);
+
+/**
+ * Wind speed warning threshold
+ *
+ * A warning is triggered if the currently estimated wind speed is above this value.
+ * Warning is sent periodically (every 1min).
+ *
+ * A negative value disables the feature.
+ *
+ * @min -1
+ * @max 30
+ * @decimal 1
+ * @increment 0.1
+ * @group Commander
+ * @unit m/s
+ */
+PARAM_DEFINE_FLOAT(COM_WIND_WARN, -1.f);
