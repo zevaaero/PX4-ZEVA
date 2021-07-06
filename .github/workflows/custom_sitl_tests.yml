@@ -73,20 +73,20 @@ jobs:
     - name: Build PX4
       env:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      run: make px4_sitl_default
+      run: make px4_sitl_rtps
     - name: ccache post-run px4/firmware
       run: ccache -s
     - name: Build SITL Gazebo
       env:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      run: make px4_sitl_default sitl_gazebo
+      run: make px4_sitl_rtps sitl_gazebo
     - name: ccache post-run sitl_gazebo
       run: ccache -s
     - name: Build MAVSDK tests
       env:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
         DONT_RUN: 1
-      run: make px4_sitl_default gazebo mavsdk_tests
+      run: make px4_sitl_rtps gazebo mavsdk_tests
     - name: ccache post-run mavsdk_tests
       run: ccache -s
     - name: Copy Custom airframe configs
@@ -97,4 +97,10 @@ jobs:
     - name: Run SITL tests
       env:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
-      run: test/mavsdk_tests/mavsdk_test_runner.py --speed-factor 20 --abort-early --model ${{ matrix.config.model }} $HOME/ci_gazebo_models/configs/sitl.json
+      run: |
+          test/mavsdk_tests/mavsdk_test_runner.py \
+            --speed-factor 20 \
+            --abort-early \
+            --model ${{ matrix.config.model }} \
+            --build-dir build/px4_sitl_rtps/ \
+            $HOME/ci_gazebo_models/configs/sitl.json
