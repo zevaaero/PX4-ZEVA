@@ -41,7 +41,6 @@
 #include "navigator.h"
 
 using matrix::wrap_pi;
-using matrix::sign;
 
 VtolLand::VtolLand(Navigator *navigator) :
 	MissionBlock(navigator),
@@ -94,18 +93,6 @@ VtolLand::on_active()
 				_mission_item.nav_cmd = NAV_CMD_LOITER_TO_ALT;
 				_mission_item.loiter_radius = _navigator->get_loiter_radius();
 
-
-
-				float bearing_from_loiter_to_land_rad = get_bearing_to_next_waypoint(_loiter_pos_lat_lon(0), _loiter_pos_lat_lon(1),
-									_land_pos_lat_lon(0), _land_pos_lat_lon(1));
-
-				const float loiter_radius_to_exit_turn_radius_ratio =
-					2.0f;	// the radius of the circle we join to exit the loiter circle is half as wide as the loiter itself
-
-				const float ratio = 1.0f / (loiter_radius_to_exit_turn_radius_ratio + 1.0f);
-				_mission_item.yaw = wrap_pi(bearing_from_loiter_to_land_rad - sign(_mission_item.loiter_radius) * asinf(ratio) + sign(
-								    _mission_item.loiter_radius) * M_PI_2_F);
-
 				_navigator->get_mission_result()->finished = false;
 				_navigator->set_mission_result_updated();
 				reset_mission_item_reached();
@@ -118,7 +105,6 @@ VtolLand::on_active()
 				pos_sp_triplet->next.valid = true;
 				pos_sp_triplet->next.lat = _land_pos_lat_lon(0);
 				pos_sp_triplet->next.lon = _land_pos_lat_lon(1);
-
 
 				pos_sp_triplet->previous.valid = false;
 				pos_sp_triplet->current.yaw_valid = true;
@@ -136,6 +122,12 @@ VtolLand::on_active()
 
 				struct position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
+
+				// set previous item location to loiter location such that vehicle tracks line between loiter
+				// location and land location after exiting the loiter circle
+				pos_sp_triplet->previous.lat = _loiter_pos_lat_lon(0);
+				pos_sp_triplet->previous.lon = _loiter_pos_lat_lon(1);
+				pos_sp_triplet->previous.valid = true;
 
 				//publish_navigator_mission_item(); // for logging
 				_navigator->set_position_setpoint_triplet_updated();
