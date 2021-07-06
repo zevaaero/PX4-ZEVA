@@ -81,7 +81,7 @@ jobs:
         PX4_CMAKE_BUILD_TYPE: ${{matrix.config.build_type}}
       run: |
         export
-        ./test/rostest_px4_run.sh ${{matrix.config.test_file}} vehicle:=${{matrix.config.vehicle}}
+        ./test/rostest_px4_run.sh ${{matrix.config.test_file}} vehicle:=${{matrix.config.vehicle}} build_dir:=build/px4_sitl_rtps
 
     - name: Look at core files
       if: failure()

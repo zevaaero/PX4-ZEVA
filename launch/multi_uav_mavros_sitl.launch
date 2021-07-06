@@ -6,6 +6,7 @@
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
     <arg name="world" default="$(find mavlink_sitl_gazebo)/worlds/empty.world"/>
+    <arg name="build_dir" default="build/px4_sitl_default"/>
     <!-- gazebo configs -->
     <arg name="gui" default="true"/>
     <arg name="debug" default="false"/>
@@ -33,6 +34,7 @@
             <arg name="P" value="0"/>
             <arg name="Y" value="0"/>
             <arg name="vehicle" value="$(arg vehicle)"/>
+            <arg name="build_dir" value="$(arg build_dir)"/>
             <arg name="mavlink_udp_port" value="14560"/>
             <arg name="mavlink_tcp_port" value="4560"/>
             <arg name="ID" value="$(arg ID)"/>
@@ -62,6 +64,7 @@
             <arg name="P" value="0"/>
             <arg name="Y" value="0"/>
             <arg name="vehicle" value="$(arg vehicle)"/>
+            <arg name="build_dir" value="$(arg build_dir)"/>
             <arg name="mavlink_udp_port" value="14561"/>
             <arg name="mavlink_tcp_port" value="4561"/>
             <arg name="ID" value="$(arg ID)"/>
@@ -91,6 +94,7 @@
             <arg name="P" value="0"/>
             <arg name="Y" value="0"/>
             <arg name="vehicle" value="$(arg vehicle)"/>
+            <arg name="build_dir" value="$(arg build_dir)"/>
             <arg name="mavlink_udp_port" value="14562"/>
             <arg name="mavlink_tcp_port" value="4562"/>
             <arg name="ID" value="$(arg ID)"/>

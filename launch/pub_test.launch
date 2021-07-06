@@ -1,8 +1,10 @@
 <launch>
+    <arg name="build_dir" default="build/px4_sitl_default"/>
     <!-- Test mavros posix sitl publishes pose at 30 Hz -->
     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
         <arg name="gui" value="false"/>
         <arg name="interactive" value="false"/>
+        <arg name="build_dir" value="$(arg build_dir)"/>
         <arg name="verbose" value="true"/>
     </include>
     <param name="pub_test/topic" value="/mavros/local_position/pose"/>
