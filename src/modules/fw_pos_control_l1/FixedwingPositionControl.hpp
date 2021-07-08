@@ -378,6 +378,7 @@ private:
 
 	void		reset_takeoff_state(bool force = false);
 	void		reset_landing_state();
+	void 		reset_transition_waypoint();
 
 	/*
 	 * Call TECS : a wrapper function to call the TECS implementation

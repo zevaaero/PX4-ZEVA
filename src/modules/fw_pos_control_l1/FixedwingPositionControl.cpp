@@ -825,6 +825,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
 
+		reset_transition_waypoint();
+
 		return false;
 	}
 
@@ -929,8 +931,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 
 			/* reset transition waypoint, will be set upon entering front transition */
-			_transition_waypoint(0) = static_cast<double>(NAN);
-			_transition_waypoint(1) = static_cast<double>(NAN);
+			reset_transition_waypoint();
 		}
 
 		/* Initialize attitude controller integrator reset flags to 0 */
@@ -2120,6 +2121,13 @@ FixedwingPositionControl::reset_landing_state()
 
 		abort_landing(false);
 	}
+}
+
+void
+FixedwingPositionControl::reset_transition_waypoint()
+{
+	_transition_waypoint(0) = static_cast<double>(NAN);
+	_transition_waypoint(1) = static_cast<double>(NAN);
 }
 
 void
