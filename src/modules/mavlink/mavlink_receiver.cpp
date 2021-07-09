@@ -460,8 +460,11 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 	uint8_t progress = 0; // TODO: should be 255, 0 for backwards compatibility
 
 	if (!target_ok) {
-		// No acknowledgement for mavlink commands targeting other systems or other components in our system.
-		// The target systems and target components are in charge of acknowledging the command, not us.
+		if (!_mavlink->get_forwarding_on()) {
+			// Reject alien commands only if there is no forwarding enabled
+			acknowledge(msg->sysid, msg->compid, cmd_mavlink.command, vehicle_command_ack_s::VEHICLE_RESULT_FAILED, 0);
+		}
+
 		return;
 	}
 
