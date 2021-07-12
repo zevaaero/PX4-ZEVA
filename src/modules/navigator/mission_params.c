@@ -68,6 +68,18 @@ PARAM_DEFINE_FLOAT(MIS_TAKEOFF_ALT, 2.5f);
 PARAM_DEFINE_INT32(MIS_TAKEOFF_REQ, 0);
 
 /**
+ * Mission landing required
+ *
+ * If set, the mission feasibility checker will check for a planned misson landing at the end of the mission.
+ *
+ * @value 0 Do not require a mission landing
+ * @value 1 Always require a mission landing
+ * @value 2 Require a mission landing unless there exists a VTOL safe area
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(MIS_LAND_REQ, 0);
+
+/**
  * Minimum Loiter altitude
  *
  * This is the minimum altitude the system will always obey. The intent is to stay out of ground effect.
