@@ -55,12 +55,9 @@ public:
 	void on_activation() override;
 	void on_active() override;
 
-	void setLandPosition(const double lat, const double lon) { _land_pos_lat_lon = matrix::Vector2<double>(lat, lon);}
-	void setTransitionAltitudeAbsolute(const float alt_amsl) {_transition_alt_amsl = alt_amsl; }
 	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
 	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
 	void setSafeAreaRadiusMeter(float radius) { _safe_area_radius_m = radius; }
-	bool hasSafeArea();
 
 private:
 
@@ -75,7 +72,6 @@ private:
 	matrix::Vector2<double> _land_pos_lat_lon;
 	matrix::Vector2<double> _loiter_pos_lat_lon;
 
-	float _transition_alt_amsl{0.f};
 	float 	_offset_degrees{0};
 	float _safe_area_radius_m = 300.0f;
 
@@ -93,8 +89,6 @@ private:
 	void set_loiter_position();
 
 	void generate_waypoint_from_heading(struct position_setpoint_s *setpoint, float yaw);
-
-	bool transitionHeadingReached() {return false;}
 
 	float getBestLandingHeading();
 

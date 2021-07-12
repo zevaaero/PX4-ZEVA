@@ -77,7 +77,7 @@ VtolLand::on_activation()
 
 	}
 
-	_land_pos_lat_lon = _navigator->getTakeoffPosition();
+	_land_pos_lat_lon = matrix::Vector2<double>(_navigator->get_home_position()->lat, _navigator->get_home_position()->lon);
 	set_loiter_position();
 	_land_state = vtol_land_state::MOVE_TO_LOITER;
 
@@ -260,9 +260,4 @@ float VtolLand::getBestLandingHeading()
 	}
 
 	return wrap_pi(sector_angle * min_index + math::radians(_offset_degrees) + sector_angle * 0.5f);
-}
-
-bool VtolLand::hasSafeArea()
-{
-	return _sector_bitmap > 0;
 }

@@ -91,7 +91,8 @@ VtolTakeoff::on_active()
 				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
-				_mission_item.yaw = getClosestTransitionHeading();
+				_front_trans_heading_sp_rad = getClosestTransitionHeading();
+				_mission_item.yaw = _front_trans_heading_sp_rad;
 				_mission_item.force_heading = true;
 				mission_apply_limitation(_mission_item);
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
@@ -134,12 +135,11 @@ VtolTakeoff::on_active()
 				_mission_item.altitude = _navigator->get_home_position()->alt + _param_loiter_alt.get();
 
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
-				generate_waypoint_from_heading(&pos_sp_triplet->current, getClosestTransitionHeading());
+				generate_waypoint_from_heading(&pos_sp_triplet->current, _front_trans_heading_sp_rad);
 
 				//publish_navigator_mission_item(); // for logging
 				_navigator->set_position_setpoint_triplet_updated();
 
-				// issue_command(_mission_item);
 				reset_mission_item_reached();
 
 				_takeoff_state = vtol_takeoff_state::CLIMB;
@@ -182,8 +182,6 @@ VtolTakeoff::set_takeoff_position()
 
 	_mission_item.lat = _navigator->get_home_position()->lat;
 	_mission_item.lon = _navigator->get_home_position()->lon;
-
-	_takeoff_pos_lat_lon = matrix::Vector2<double>(_mission_item.lat, _mission_item.lon);
 
 	_navigator->get_mission_result()->finished = false;
 	_navigator->set_mission_result_updated();
