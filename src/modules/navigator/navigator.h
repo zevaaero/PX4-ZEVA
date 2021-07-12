@@ -332,8 +332,6 @@ public:
 	double 	get_mission_landing_lon() { return _mission.get_landing_lon(); }
 	float 	get_mission_landing_alt() { return _mission.get_landing_alt(); }
 
-	matrix::Vector2<double> getTakeoffPosition() { return _vtol_takeoff.getTakeoffPosition(); }
-
 	TerrainFollowerWrapper &getTerrainFollower() { return _terrain_follower; }
 
 	// RTL
