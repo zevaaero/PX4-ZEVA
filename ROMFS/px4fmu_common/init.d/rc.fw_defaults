@@ -43,6 +43,7 @@ param set-default NAV_ACC_RAD 10
 
 param set-default MIS_DIST_WPS 5000
 param set-default MIS_LTRMIN_ALT 25
+param set-default MIS_LAND_REQ 1
 param set-default MIS_TAKEOFF_ALT 25
 
 param set-default PWM_MAIN_RATE 50

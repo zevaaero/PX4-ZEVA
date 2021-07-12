@@ -92,7 +92,7 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission,
 	}
 
 	if (_navigator->get_vstatus()->is_vtol) {
-		failed = failed || !checkVTOL(mission, home_alt, false);
+		failed = failed || !checkVTOL(mission, home_alt, land_start_req);
 
 	} else if (_navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
 		failed = failed || !checkRotarywing(mission, home_alt);
