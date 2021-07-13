@@ -239,7 +239,7 @@ then
 		. ${R}etc/init.d-posix/rc.rtps_override
 	else
 		# shellcheck disable=SC2154
-		micrortps_client start -t UDP $((2019+2*px4_instance)) -s $((2020+2*px4_instance))
+		micrortps_client start -t UDP -r $((2019+2*px4_instance)) -s $((2020+2*px4_instance))
 	fi
 fi
 
