@@ -585,20 +585,27 @@ float VtolType::pusher_assist()
 	// normalized pusher support throttle (standard VTOL) or tilt (tiltrotor), initialize to 0
 	float forward_thrust = 0.0f;
 
+	float pitch_setpoint_min = _params->pitch_min_rad;
+
+	if (_attc->get_pos_sp_triplet()->current.valid
+	    && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND) {
+		pitch_setpoint_min = _params->land_pitch_min_rad; // set min pitch during LAND (usually lower to generate less lift)
+	}
+
 	// only allow pitching down up to threshold, the rest of the desired
 	// forward acceleration will be compensated by the pusher/tilt
 
-	if (pitch_setpoint < _params->down_pitch_max) {
+	if (pitch_setpoint < pitch_setpoint_min) {
 		// desired roll angle in heading frame stays the same
 		const float roll_new = -asinf(body_z_sp(1));
 
-		forward_thrust = (sinf(-pitch_setpoint) - sinf(-_params->down_pitch_max)) * _params->forward_thrust_scale;
+		forward_thrust = (sinf(pitch_setpoint_min) - sinf(pitch_setpoint)) * _params->forward_thrust_scale;
 		// limit forward actuation to [0, 0.9]
 		forward_thrust = math::constrain(forward_thrust, 0.0f, 0.9f);
 
 		// Set the pitch to 0 if the pitch limit is negative (pitch down), but allow a positive (pitch up) pitch.
 		// This can be used for tiltrotor to make them hover with a positive angle of attack
-		const float pitch_new = _params->down_pitch_max > 0.f ? _params->down_pitch_max : 0.f;
+		const float pitch_new = pitch_setpoint_min > 0.f ? pitch_setpoint_min : 0.f;
 
 		// create corrected desired body z axis in heading frame
 		const Dcmf R_tmp = Eulerf(roll_new, pitch_new, 0.0f);
