@@ -352,6 +352,8 @@ rtps:
     id: 166
   - msg: failure_detector_status
     id: 167
+  - msg: camera_status
+    id: 168
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 180
