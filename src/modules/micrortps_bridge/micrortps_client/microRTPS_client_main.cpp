@@ -158,10 +158,14 @@ static int micrortps_start(int argc, char *argv[])
 		return -1;
 	}
 
+	// Set the system ID to FMU, in order to identify the client side
+	const uint8_t sys_id = static_cast<uint8_t>(MicroRtps::System::FMU);
+
 	switch (_options.transport) {
 	case options::eTransports::UART: {
 			transport_node = new UART_node(_options.device, _options.baudrate, _options.poll_ms,
-						       _options.sw_flow_control, _options.hw_flow_control, _options.verbose_debug);
+						       _options.sw_flow_control, _options.hw_flow_control, sys_id,
+						       _options.verbose_debug);
 			PX4_INFO("UART transport: device: %s; baudrate: %d; sleep: %dms; poll: %dms; flow_control: %s",
 				 _options.device, _options.baudrate, _options.sleep_us, _options.poll_ms,
 				 _options.sw_flow_control ? "SW enabled" : (_options.hw_flow_control ? "HW enabled" : "No"));
@@ -170,7 +174,7 @@ static int micrortps_start(int argc, char *argv[])
 
 	case options::eTransports::UDP: {
 			transport_node = new UDP_node(_options.ip, _options.recv_port, _options.send_port,
-						      _options.verbose_debug);
+						      sys_id, _options.verbose_debug);
 			PX4_INFO("UDP transport: ip address: %s; recv port: %u; send port: %u; sleep: %dms",
 				 _options.ip, _options.recv_port, _options.send_port, _options.sleep_us);
 
