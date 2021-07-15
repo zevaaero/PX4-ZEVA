@@ -101,11 +101,6 @@ bool FlightTaskAutoMapper::update()
 		break;
 	}
 
-	// Make sure the forced landing time state is reset in other modes
-	if (_type != WaypointType::land) {
-		_timestamp_first_below_alt1 = 0;
-	}
-
 	if (_param_com_obs_avoid.get()) {
 		_obstacle_avoidance.updateAvoidanceDesiredSetpoints(_position_setpoint, _velocity_setpoint, (int)_type);
 		_obstacle_avoidance.injectAvoidanceSetpoints(_position_setpoint, _velocity_setpoint, _yaw_setpoint,
@@ -126,7 +121,6 @@ void FlightTaskAutoMapper::_reset()
 	// Set setpoints equal current state.
 	_velocity_setpoint = _velocity;
 	_position_setpoint = _position;
-	_timestamp_first_below_alt1 = 0;
 }
 
 void FlightTaskAutoMapper::_prepareIdleSetpoints()
@@ -153,47 +147,10 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 		_stick_acceleration_xy.resetPosition(Vector2f(_target(0), _target(1)));
 	}
 
-	// save the first time that the vehicle is below the mpc_land_alt1, such that we can limit the landing duration if required
-	const bool below_alt1 = _dist_to_ground < _param_mpc_land_alt1.get();
-
-	if (below_alt1) {
-		if (_timestamp_first_below_alt1 == 0) {
-			_timestamp_first_below_alt1 = hrt_absolute_time();
-			_landing_forced_notified = false;
-		}
-
-	} else {
-		_timestamp_first_below_alt1 = 0;
-	}
-
 	// User input assisted landing
 	if (_param_mpc_land_rc_help.get() && _sticks.checkAndSetStickInputs()) {
 		// Stick full up -1 -> stop, stick full down 1 -> double the speed
 		land_speed *= (1 + _sticks.getPositionExpo()(2));
-
-		// constrain landing duration if MPC_LAND_MAX_DUR is set to a positive value
-		if (_param_mpc_land_max_dur.get() > 0 && below_alt1) {
-			const float time_landing_elapsed = hrt_elapsed_time(&_timestamp_first_below_alt1) * 1e-6f;
-			const float time_remaining = _param_mpc_land_max_dur.get() - time_landing_elapsed;
-
-			// current land speed average (descended altitude divided by duration)
-			const float v_avg_cur = (_param_mpc_land_alt1.get() - _dist_to_ground) / math::max(time_landing_elapsed, 0.01f);
-
-			// minimal land speed to meet time limit
-			const float v_avg_min = _dist_to_ground / math::max(time_remaining, 0.01f);
-
-			// check if we currently (in average) descend slower than we should to meet max land duration
-			if (v_avg_cur < v_avg_min) {
-				// constrain to be between minimal land speed to meet time limit and max double land speed
-				land_speed = math::constrain(land_speed, v_avg_min, 2.f * _param_mpc_land_speed.get());
-
-				if (!_landing_forced_notified) {
-					orb_advert_t mavlink_log_pub{nullptr};
-					mavlink_log_info(&mavlink_log_pub, "Maximum landing duration reached, descending.");
-					_landing_forced_notified = true;
-				}
-			}
-		}
 
 		_stick_yaw.generateYawSetpoint(_yawspeed_setpoint, _land_heading,
 					       _sticks.getPositionExpo()(3) * math::radians(_param_mpc_man_y_max.get()), _yaw, _deltatime);
