@@ -704,6 +704,9 @@ void ICM42688P::ProcessGyro(const hrt_abstime &timestamp_sample, const FIFO::DAT
 		gyro.samples++;
 	}
 
+	// avoid scale changes for now as it's not handled correctly down the pipeline (fixed in upstream with 8478d1ea37d2bf)
+	scale_20bit = true;
+
 	if (!scale_20bit) {
 		// if highres enabled gyro data is always 131 LSB/dps
 		_px4_gyro.set_scale(math::radians(1.f / 131.f));
