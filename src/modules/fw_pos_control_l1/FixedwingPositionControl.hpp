@@ -76,7 +76,6 @@
 #include <uORB/topics/position_controller_landing_status.h>
 #include <uORB/topics/position_controller_status.h>
 #include <uORB/topics/position_setpoint_triplet.h>
-#include <uORB/topics/tecs_status.h>
 #include <uORB/topics/vehicle_air_data.h>
 #include <uORB/topics/vehicle_angular_velocity.h>
 #include <uORB/topics/vehicle_attitude.h>
@@ -159,7 +158,6 @@ private:
 	uORB::Publication<vehicle_attitude_setpoint_s>		_attitude_sp_pub;
 	uORB::Publication<position_controller_status_s>		_pos_ctrl_status_pub{ORB_ID(position_controller_status)};			///< navigation capabilities publication
 	uORB::Publication<position_controller_landing_status_s>	_pos_ctrl_landing_status_pub{ORB_ID(position_controller_landing_status)};	///< landing status publication
-	uORB::Publication<tecs_status_s>			_tecs_status_pub{ORB_ID(tecs_status)};						///< TECS status publication
 	uORB::PublicationMulti<orbit_status_s>			_orbit_status_pub{ORB_ID(orbit_status)};
 
 	manual_control_setpoint_s	_manual_control_setpoint {};			///< r/c channel data
@@ -318,7 +316,6 @@ private:
 
 	void		status_publish();
 	void		landing_status_publish();
-	void		tecs_status_publish();
 
 	void		abort_landing(bool abort);
 

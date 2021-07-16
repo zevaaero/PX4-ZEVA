@@ -43,6 +43,10 @@
 #include <matrix/math.hpp>
 #include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
 
+#include <uORB/Publication.hpp>
+#include <uORB/topics/tecs_status.h>
+#include <uORB/uORB.h>
+
 class TECS
 {
 public:
@@ -87,10 +91,6 @@ public:
 				   float throttle_lim_max,
 				   float pitch_limit_min, float pitch_limit_max, float target_climbrate, float target_sinkrate, float hgt_rate_sp = NAN,
 				   bool eco_mode_enabled = false);
-
-	float get_throttle_setpoint() { return _last_throttle_setpoint; }
-	float get_pitch_setpoint() { return _last_pitch_setpoint; }
-	bool get_underspeed_detected() { return _underspeed_detected; }
 
 	void reset_state() { _states_initialized = false; }
 
@@ -142,50 +142,22 @@ public:
 	void set_height_error_time_constant_eco(float time_const_eco) { _height_error_gain_eco = 1.0f / math::max(time_const_eco, 0.1f); }
 
 
-	// TECS status
-	uint64_t timestamp() { return _pitch_update_timestamp; }
-	ECL_TECS_MODE tecs_mode() { return _tecs_mode; }
+	// getters
+	float get_throttle_setpoint() { return _last_throttle_setpoint; }
+	float get_pitch_setpoint() { return _last_pitch_setpoint; }
 
-	float hgt_setpoint() { return _hgt_setpoint; }
-	float vert_pos_state() { return _vert_pos_state; }
+	float get_hgt_setpoint() { return _hgt_setpoint; }
+	float get_hgt_rate_setpoint() { return _hgt_rate_setpoint; }
+	float get_STE() { return _SPE_estimate + _SKE_estimate; }
+	float get_STE_setpoint() { return _SPE_setpoint + _SKE_setpoint; }
+	float get_STE_rate() { return _SPE_rate + _SKE_rate; }
+	float get_STE_rate_setpoint() { return _SPE_rate_setpoint + _SKE_rate_setpoint; }
+	float get_SEB() { return _SPE_estimate * _SPE_weighting - _SKE_estimate * _SKE_weighting; }
+	float get_SEB_setpoint() { return _SPE_setpoint * _SPE_weighting - _SKE_setpoint * _SKE_weighting; }
+	float get_SEB_rate() { return _SPE_rate * _SPE_weighting - _SKE_rate * _SKE_weighting; }
+	float get_SEB_rate_setpoint() { return _SPE_rate_setpoint * _SPE_weighting - _SKE_rate_setpoint * _SKE_weighting; }
 
-	float TAS_setpoint_adj() { return _TAS_setpoint_adj; }
-	float tas_state() { return _tas_state; }
-	float getTASInnovation() { return _tas_innov; }
-
-	float hgt_rate_setpoint() { return _hgt_rate_setpoint; }
-	float vert_vel_state() { return _vert_vel_state; }
-
-	float get_EAS_setpoint() { return _EAS_setpoint; };
-	float TAS_rate_setpoint() { return _TAS_rate_setpoint; }
-	float speed_derivative() { return _tas_rate_filtered; }
-	float speed_derivative_raw() { return _tas_rate_raw; }
-
-	float STE_error() { return _STE_error; }
-	float STE_rate_error() { return _STE_rate_error; }
-
-	float SEB_error() { return _SEB_error; }
-	float SEB_rate_error() { return _SEB_rate_error; }
-
-	float throttle_integ_state() { return _throttle_integ_state; }
-	float pitch_integ_state() { return _pitch_integ_state; }
-
-	float STE() { return _SPE_estimate + _SKE_estimate; }
-
-	float STE_setpoint() { return _SPE_setpoint + _SKE_setpoint; }
-
-	float STE_rate() { return _SPE_rate + _SKE_rate; }
-
-	float STE_rate_setpoint() { return _SPE_rate_setpoint + _SKE_rate_setpoint; }
-
-	float SEB() { return _SPE_estimate * _SPE_weighting - _SKE_estimate * _SKE_weighting; }
-
-	float SEB_setpoint() { return _SPE_setpoint * _SPE_weighting - _SKE_setpoint * _SKE_weighting; }
-
-	float SEB_rate() { return _SPE_rate * _SPE_weighting - _SKE_rate * _SKE_weighting; }
-
-	float SEB_rate_setpoint() { return _SPE_rate_setpoint * _SPE_weighting - _SKE_rate_setpoint * _SKE_weighting; }
-
+	void tecs_status_publish(const hrt_abstime &now);
 
 	/**
 	 * Handle the altitude reset
@@ -203,6 +175,8 @@ public:
 	}
 
 private:
+
+	uORB::Publication<tecs_status_s>	_tecs_status_pub{ORB_ID(tecs_status)};	///< TECS status publication
 
 	enum ECL_TECS_MODE _tecs_mode {ECL_TECS_MODE_NORMAL};
 
