@@ -300,7 +300,7 @@ rtps:
     id: 140
   - msg: estimator_status_flags
     id: 141
-  - msg: rtl_flight_time
+  - msg: rtl_time_estimate
     id: 142
   - msg: vehicle_angular_acceleration_setpoint
     id: 143

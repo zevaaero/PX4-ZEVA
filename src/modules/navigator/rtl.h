@@ -49,7 +49,7 @@
 
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/home_position.h>
-#include <uORB/topics/rtl_flight_time.h>
+#include <uORB/topics/rtl_time_estimate.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/wind.h>
 #include <matrix/math.hpp>
@@ -116,8 +116,8 @@ private:
 	 */
 	void advance_rtl();
 
-
 	float calculate_return_alt_from_cone_half_angle(float cone_half_angle_deg);
+	void calc_and_pub_rtl_time_estimate();
 
 	void publishMissionItem();
 
@@ -174,9 +174,12 @@ private:
 		(ParamFloat<px4::params::RTL_MIN_DIST>) _param_rtl_min_dist,
 		(ParamInt<px4::params::RTL_TYPE>) _param_rtl_type,
 		(ParamInt<px4::params::RTL_CONE_ANG>) _param_rtl_cone_half_angle_deg,
-		(ParamFloat<px4::params::RTL_FLT_TIME>) _param_rtl_flt_time,
 		(ParamInt<px4::params::RTL_PLD_MD>) _param_rtl_pld_md,
-		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad
+		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad,
+		(ParamFloat<px4::params::MPC_Z_VEL_MAX_UP>) _param_mpc_z_vel_max_up,
+		(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) _param_mpc_z_vel_max_dn,
+		(ParamFloat<px4::params::MPC_XY_CRUISE>) _param_mpc_xy_cruise,
+		(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed
 	)
 
 	// These need to point at different parameters depending on vehicle type.
@@ -187,7 +190,7 @@ private:
 	param_t _param_rtl_descent_speed{PARAM_INVALID};
 
 	uORB::SubscriptionData<wind_s>		_wind_sub{ORB_ID(wind)};
-	uORB::Publication<rtl_flight_time_s>		_rtl_flight_time_pub{ORB_ID(rtl_flight_time)};
+	uORB::Publication<rtl_time_estimate_s> _rtl_time_estimate_pub{ORB_ID(rtl_time_estimate)};
 };
 
 float time_to_home(const matrix::Vector3f &to_home_vec,
