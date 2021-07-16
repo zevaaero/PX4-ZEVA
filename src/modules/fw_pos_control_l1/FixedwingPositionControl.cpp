@@ -464,9 +464,9 @@ FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
 {
 	// Fixed-wing cruise mode selection logic. This
 
-	const float eco_altitude_amsl_min = max(_tecs.hgt_setpoint() - _param_fw_eco_alt_err_u.get(),
+	const float eco_altitude_amsl_min = max(_tecs.get_hgt_setpoint() - _param_fw_eco_alt_err_u.get(),
 						_local_pos.ref_alt + _param_fw_eco_alt_min.get());
-	const float eco_altitude_amsl_max = _tecs.hgt_setpoint() + _param_fw_eco_alt_err_o.get();
+	const float eco_altitude_amsl_max = _tecs.get_hgt_setpoint() + _param_fw_eco_alt_err_o.get();
 
 	const bool within_safe_altitude_band = _current_altitude <= eco_altitude_amsl_max
 					       && _current_altitude >= eco_altitude_amsl_min;
@@ -529,74 +529,6 @@ FixedwingPositionControl::reset_cruise_mode(const hrt_abstime &now)
 {
 	_cruise_mode_current = CRUISE_MODE_NORMAL;
 	_last_time_outside_of_band = now;
-}
-
-void
-FixedwingPositionControl::tecs_status_publish()
-{
-	tecs_status_s t{};
-
-	switch (_tecs.tecs_mode()) {
-	case TECS::ECL_TECS_MODE_NORMAL:
-		t.mode = tecs_status_s::TECS_MODE_NORMAL;
-		break;
-
-	case TECS::ECL_TECS_MODE_UNDERSPEED:
-		t.mode = tecs_status_s::TECS_MODE_UNDERSPEED;
-		break;
-
-	case TECS::ECL_TECS_MODE_BAD_DESCENT:
-		t.mode = tecs_status_s::TECS_MODE_BAD_DESCENT;
-		break;
-
-	case TECS::ECL_TECS_MODE_CLIMBOUT:
-		t.mode = tecs_status_s::TECS_MODE_CLIMBOUT;
-		break;
-
-	case TECS::ECL_TECS_MODE_ECO:
-		t.mode = tecs_status_s::TECS_MODE_ECO;
-	}
-
-	t.altitude_sp = _tecs.hgt_setpoint();
-	t.altitude_filtered = _tecs.vert_pos_state();
-
-	t.true_airspeed_sp = _tecs.TAS_setpoint_adj();
-	t.true_airspeed_filtered = _tecs.tas_state();
-
-	t.height_rate_setpoint = _tecs.hgt_rate_setpoint();
-	t.height_rate = _tecs.vert_vel_state();
-
-	t.equivalent_airspeed_sp = _tecs.get_EAS_setpoint();
-	t.true_airspeed_derivative_sp = _tecs.TAS_rate_setpoint();
-	t.true_airspeed_derivative = _tecs.speed_derivative();
-	t.true_airspeed_derivative_raw = _tecs.speed_derivative_raw();
-	t.true_airspeed_innovation = _tecs.getTASInnovation();
-
-	t.total_energy_error = _tecs.STE_error();
-	t.total_energy_rate_error = _tecs.STE_rate_error();
-
-	t.energy_distribution_error = _tecs.SEB_error();
-	t.energy_distribution_rate_error = _tecs.SEB_rate_error();
-
-	t.total_energy = _tecs.STE();
-	t.total_energy_rate = _tecs.STE_rate();
-	t.total_energy_balance = _tecs.SEB();
-	t.total_energy_balance_rate = _tecs.SEB_rate();
-
-	t.total_energy_sp = _tecs.STE_setpoint();
-	t.total_energy_rate_sp = _tecs.STE_rate_setpoint();
-	t.total_energy_balance_sp = _tecs.SEB_setpoint();
-	t.total_energy_balance_rate_sp = _tecs.SEB_rate_setpoint();
-
-	t.throttle_integ = _tecs.throttle_integ_state();
-	t.pitch_integ = _tecs.pitch_integ_state();
-
-	t.throttle_sp = _tecs.get_throttle_setpoint();
-	t.pitch_sp_rad = _tecs.get_pitch_setpoint();
-
-	t.timestamp = hrt_absolute_time();
-
-	_tecs_status_pub.publish(t);
 }
 
 void
@@ -748,7 +680,7 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 		/* pitching down */
 		float pitch = -(_manual_control_setpoint_altitude - deadBand) / factor;
 
-		if (pitch * _param_sinkrate_target.get() < _tecs.hgt_rate_setpoint()) {
+		if (pitch * _param_sinkrate_target.get() < _tecs.get_hgt_rate_setpoint()) {
 			_hold_alt += (_param_sinkrate_target.get() * dt) * pitch;
 			_manual_height_rate_setpoint_m_s = pitch * _param_sinkrate_target.get();
 			_was_in_deadband = false;
@@ -760,7 +692,7 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 		const float climb_rate_target = (_cruise_mode_current == CRUISE_MODE_ECO) ? _param_climbrate_target_eco.get() :
 						_param_climbrate_target.get();
 
-		if (pitch * climb_rate_target > _tecs.hgt_rate_setpoint()) {
+		if (pitch * climb_rate_target > _tecs.get_hgt_rate_setpoint()) {
 
 			_hold_alt += (climb_rate_target * dt) * pitch;
 			_manual_height_rate_setpoint_m_s = pitch * climb_rate_target;
@@ -2254,8 +2186,6 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const hrt_abstime &now, flo
 				    _param_sinkrate_target.get(),
 				    hgt_rate_sp,
 				    _cruise_mode_current == CRUISE_MODE_ECO);
-
-	tecs_status_publish();
 }
 
 int FixedwingPositionControl::task_spawn(int argc, char *argv[])
