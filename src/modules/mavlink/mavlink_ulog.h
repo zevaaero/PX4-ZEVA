@@ -138,7 +138,7 @@ private:
 	int _current_num_msgs = 0;  ///< number of messages sent within the current time interval
 	hrt_abstime _next_rate_check; ///< next timestamp at which to update the rate
 
-	perf_counter_t _msg_missed_ulog_stream_perf{perf_alloc(PC_COUNT, MODULE_NAME": ulog_stream messages missed")};;
+	perf_counter_t _msg_missed_ulog_stream_perf{perf_alloc(PC_COUNT, MODULE_NAME": ulog_stream messages missed")};
 
 	/* do not allow copying this class */
 	MavlinkULog(const MavlinkULog &) = delete;
