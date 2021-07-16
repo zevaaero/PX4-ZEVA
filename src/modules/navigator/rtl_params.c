@@ -138,18 +138,6 @@ PARAM_DEFINE_INT32(RTL_TYPE, 0);
 PARAM_DEFINE_INT32(RTL_CONE_ANG, 45);
 
 /**
- * Maximum allowed overall flight time.
- *
- * Based on this and current distance to home, RTL will be triggered earlier for battery failsafe.
- *
- * Note, particularly for multirotors this should reflect flight time at cruise speed, not while stationary
- *
- * @unit min
- * @group Commander
- */
-PARAM_DEFINE_FLOAT(RTL_FLT_TIME, 15);
-
-/**
  * RTL precision land mode
  *
  * Use precision landing when doing an RTL landing phase.
