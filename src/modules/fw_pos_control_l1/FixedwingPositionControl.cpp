@@ -479,6 +479,9 @@ FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
 	const bool auto_switch_to_eco = _param_fw_eco_band_t.get() >= 0
 					&& hrt_elapsed_time(&_last_time_outside_of_band) > (_param_fw_eco_band_t.get() * 1_s);
 
+	const bool disable_eco_climb_descend = !_param_fw_eco_c_d_en_mavlink.get() &&
+					       _tecs.get_flight_phase() != tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
+
 	bool switch_to_dash = false;
 	bool switch_out_of_dash = false;
 
@@ -499,7 +502,7 @@ FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
 		if (switch_to_dash) {
 			_cruise_mode_current = CRUISE_MODE_DASH;
 
-		} else if (auto_switch_to_eco && _param_fw_eco_en_mavlink.get()) {
+		} else if (auto_switch_to_eco && !disable_eco_climb_descend) {
 			_cruise_mode_current = CRUISE_MODE_ECO;
 		}
 
@@ -509,7 +512,7 @@ FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
 		if (switch_to_dash) {
 			_cruise_mode_current = CRUISE_MODE_DASH;
 
-		} else if (!within_safe_altitude_band || !_param_fw_eco_en_mavlink.get()) {
+		} else if (!within_safe_altitude_band || disable_eco_climb_descend) {
 			_cruise_mode_current = CRUISE_MODE_NORMAL;
 		}
 

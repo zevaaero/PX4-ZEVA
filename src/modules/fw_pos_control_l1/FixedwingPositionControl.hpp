@@ -476,7 +476,7 @@ private:
 		(ParamInt<px4::params::FW_ECO_BAND_T>) _param_fw_eco_band_t,
 
 		// these params are supposed to be replaced by mavlink messages
-		(ParamBool<px4::params::FW_ECO_EN>) _param_fw_eco_en_mavlink,
+		(ParamBool<px4::params::FW_ECO_C_D_EN>) _param_fw_eco_c_d_en_mavlink,
 		(ParamBool<px4::params::FW_DASH_EN>) _param_fw_dash_en_mavlink
 
 	)
