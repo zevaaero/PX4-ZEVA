@@ -184,14 +184,17 @@ void TECS::updateHeightRateSetpoint(float alt_sp_amsl_m, float target_climbrate_
 
 	if (fabsf(alt_sp_amsl_m - _hgt_setpoint) < math::max(target_sinkrate_m_s, target_climbrate_m_s) * _dt) {
 		_hgt_setpoint = alt_sp_amsl_m;
+		_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
 
 	} else if (alt_sp_amsl_m > _hgt_setpoint) {
 		_hgt_setpoint += target_climbrate_m_s * _dt;
 		feedforward_height_rate = target_climbrate_m_s;
+		_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_CLIMB;
 
 	} else if (alt_sp_amsl_m < _hgt_setpoint) {
 		_hgt_setpoint -= target_sinkrate_m_s * _dt;
 		feedforward_height_rate = -target_sinkrate_m_s;
+		_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_DESCEND;
 	}
 
 	// Use a first order system to calculate a height rate setpoint from the current height error.
@@ -206,6 +209,16 @@ void TECS::setHeightRateSetpoint(float hgt_rate_sp)
 	// Limit the rate of change of height demand to respect vehicle performance limits
 	_hgt_rate_setpoint = math::constrain(hgt_rate_sp, -_max_sink_rate, _max_climb_rate);
 	_hgt_setpoint = _vert_pos_state;
+
+	if (hgt_rate_sp > FLT_EPSILON) {
+		_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_CLIMB;
+
+	} else if (hgt_rate_sp < FLT_EPSILON) {
+		_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_DESCEND;
+
+	} else {
+		_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
+	}
 }
 
 void TECS::_detect_underspeed()
@@ -656,6 +669,7 @@ TECS::tecs_status_publish(const hrt_abstime &now)
 	tecs_status.energy_distribution_error = _SEB_error;
 	tecs_status.energy_distribution_rate_error = _SEB_rate_error;
 	tecs_status.equivalent_airspeed_sp = _EAS_setpoint;
+	tecs_status.flight_phase = _flight_phase;
 	tecs_status.height_rate_setpoint = _hgt_rate_setpoint;
 	tecs_status.height_rate = _vert_vel_state;
 	tecs_status.pitch_integ = _pitch_integ_state;
