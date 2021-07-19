@@ -996,14 +996,14 @@ PARAM_DEFINE_FLOAT(FW_ECO_ALT_MIN, 50.f);
 PARAM_DEFINE_INT32(FW_ECO_BAND_T, -1);
 
 /**
- * Enable/disable eco mode
+ * Enable/disable eco mode in climb / descend
  *
  * This is only an intermediate step, to be replaced by a mavlink message from the groundstation (action on button press)
  *
  * @boolean
  * @group FW TECS
  */
-PARAM_DEFINE_INT32(FW_ECO_EN, 1);
+PARAM_DEFINE_INT32(FW_ECO_C_D_EN, 0);
 
 /**
  * Enable/disable dash mode (for 60s, then the param is automatically reset)
