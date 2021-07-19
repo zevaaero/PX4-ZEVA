@@ -177,6 +177,7 @@ jobs:
         rm -rf px4_msgs
 
   ROS2_bridge:
+    needs: ROS_msgs
     runs-on: ubuntu-latest
     container: px4io/px4-dev-base-focal:2021-02-04
     steps:
