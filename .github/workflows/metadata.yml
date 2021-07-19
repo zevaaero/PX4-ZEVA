@@ -198,7 +198,8 @@ jobs:
         cd px4_ros_com
         git fetch
         if git rev-parse --verify origin/${GITHUB_REF#refs/heads/}; then git checkout ${GITHUB_REF#refs/heads/}; else git checkout -b ${GITHUB_REF#refs/heads/}; fi
-        python3 ../msg/tools/uorb_to_ros_rtps_ids.py -i ../msg/tools/uorb_rtps_message_ids.yaml -o templates/uorb_rtps_message_ids.yaml
+        cd ..
+        python3 msg/tools/uorb_to_ros_rtps_ids.py -i msg/tools/uorb_rtps_message_ids.yaml -o px4_ros_com/templates/uorb_rtps_message_ids.yaml
         cp msg/tools/uorb_rtps_classifier.py px4_ros_com/scripts/uorb_rtps_classifier.py
         cp msg/tools/generate_microRTPS_bridge.py px4_ros_com/scripts/generate_microRTPS_bridge.py
         cp msg/tools/px_generate_uorb_topic_files.py px4_ros_com/scripts/px_generate_uorb_topic_files.py
