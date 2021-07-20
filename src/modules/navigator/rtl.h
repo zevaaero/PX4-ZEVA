@@ -90,7 +90,6 @@ public:
 
 	int rtl_destination();
 
-	void get_rtl_xy_z_speed(float &xy, float &z, bool &is_windspeed);
 	matrix::Vector2f get_wind();
 
 	void setClimbAndReturnDone(bool done) { _climb_and_return_done = done; }
@@ -118,6 +117,16 @@ private:
 
 	float calculate_return_alt_from_cone_half_angle(float cone_half_angle_deg);
 	void calc_and_pub_rtl_time_estimate();
+
+	float getCruiseGroundSpeed();
+
+	float getClimbRate();
+
+	float getDescendRate();
+
+	float getCruiseSpeed();
+
+	float getHoverLandSpeed();
 
 	void publishMissionItem();
 
@@ -175,19 +184,18 @@ private:
 		(ParamInt<px4::params::RTL_TYPE>) _param_rtl_type,
 		(ParamInt<px4::params::RTL_CONE_ANG>) _param_rtl_cone_half_angle_deg,
 		(ParamInt<px4::params::RTL_PLD_MD>) _param_rtl_pld_md,
-		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad,
-		(ParamFloat<px4::params::MPC_Z_VEL_MAX_UP>) _param_mpc_z_vel_max_up,
-		(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) _param_mpc_z_vel_max_dn,
-		(ParamFloat<px4::params::MPC_XY_CRUISE>) _param_mpc_xy_cruise,
-		(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed
+		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad
 	)
 
-	// These need to point at different parameters depending on vehicle type.
-	// Can't hard-code them because we have non-MC/FW/Rover builds
-	uint8_t _rtl_vehicle_type{vehicle_status_s::VEHICLE_TYPE_UNKNOWN};
+	param_t		_param_mpc_z_vel_max_up{PARAM_INVALID};
+	param_t		_param_mpc_z_vel_max_down{PARAM_INVALID};
+	param_t		_param_mpc_land_speed{PARAM_INVALID};
+	param_t		_param_fw_climb_rate{PARAM_INVALID};
+	param_t		_param_fw_sink_rate{PARAM_INVALID};
 
-	param_t _param_rtl_xy_speed{PARAM_INVALID};
-	param_t _param_rtl_descent_speed{PARAM_INVALID};
+	param_t 	_param_fw_airspeed_trim{PARAM_INVALID};
+	param_t 	_param_mpc_xy_cruise{PARAM_INVALID};
+	param_t 	_param_rover_cruise_speed{PARAM_INVALID};
 
 	uORB::SubscriptionData<wind_s>		_wind_sub{ORB_ID(wind)};
 	uORB::Publication<rtl_time_estimate_s> _rtl_time_estimate_pub{ORB_ID(rtl_time_estimate)};
