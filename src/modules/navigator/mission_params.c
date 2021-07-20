@@ -73,7 +73,7 @@ PARAM_DEFINE_INT32(MIS_TAKEOFF_REQ, 0);
  * If set, the mission feasibility checker will check for a planned misson landing at the end of the mission.
  *
  * @value 0 Do not require a mission landing
- * @value 1 Always require a mission landing
+ * @value 1 Always require a mission landing if RTL_TYPE is set to 1
  * @value 2 Require a mission landing unless there exists a VTOL safe area
  * @group Mission
  */
