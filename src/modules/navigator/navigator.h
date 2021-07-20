@@ -42,7 +42,6 @@
 #pragma once
 
 #include "enginefailure.h"
-#include "follow_target.h"
 #include "geofence.h"
 #include "gpsfailure.h"
 #include "land.h"
@@ -90,7 +89,7 @@ using namespace time_literals;
 /**
  * Number of navigation modes that need on_active/on_inactive calls
  */
-#define NAVIGATOR_MODE_ARRAY_SIZE 11
+#define NAVIGATOR_MODE_ARRAY_SIZE 10
 
 struct custom_action_s {
 	int8_t id{-1};
@@ -488,7 +487,6 @@ private:
 	RTL 		_rtl;				/**< class that handles RTL */
 	EngineFailure	_engineFailure;			/**< class that handles the engine failure mode (FW only!) */
 	GpsFailure	_gpsFailure;			/**< class that handles the OBC gpsfailure loss mode */
-	FollowTarget	_follow_target;
 
 	NavigatorMode *_navigation_mode_array[NAVIGATOR_MODE_ARRAY_SIZE];	/**< array of navigation modes */
 
