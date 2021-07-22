@@ -571,7 +571,7 @@ void AirspeedModule::select_airspeed_and_publish()
 	    (_number_of_airspeed_sensors > 0 || !_vehicle_land_detected.landed) &&
 	    _valid_airspeed_index != _prev_airspeed_index) {
 		if (_prev_airspeed_index > 0) {
-			mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor failure detected (%i, %i)", _prev_airspeed_index,
+			mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor failure detected. Return to launch (RTL) is advised.", _prev_airspeed_index,
 					     _valid_airspeed_index);
 
 		} else if (_prev_airspeed_index == 0 && _valid_airspeed_index == -1) {
