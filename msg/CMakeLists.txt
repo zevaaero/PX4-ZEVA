@@ -125,6 +125,7 @@ set(msg_files
 	pwm_input.msg
 	px4io_status.msg
 	radio_status.msg
+	radio_status_extensions.msg
 	rate_ctrl_status.msg
 	rc_channels.msg
 	rc_parameter_map.msg

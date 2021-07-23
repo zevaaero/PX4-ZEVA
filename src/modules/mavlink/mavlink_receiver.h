@@ -91,6 +91,7 @@
 #include <uORB/topics/ping.h>
 #include <uORB/topics/position_setpoint_triplet.h>
 #include <uORB/topics/radio_status.h>
+#include <uORB/topics/radio_status_extensions.h>
 #include <uORB/topics/rc_channels.h>
 #include <uORB/topics/sensor_gps.h>
 #include <uORB/topics/telemetry_status.h>
@@ -183,6 +184,7 @@ private:
 	void handle_message_play_tune(mavlink_message_t *msg);
 	void handle_message_play_tune_v2(mavlink_message_t *msg);
 	void handle_message_radio_status(mavlink_message_t *msg);
+	void handle_message_radio_status_extensions(mavlink_message_t *msg);
 	void handle_message_rc_channels(mavlink_message_t *msg);
 	void handle_message_rc_channels_override(mavlink_message_t *msg);
 	void handle_message_serial_control(mavlink_message_t *msg);
@@ -311,7 +313,8 @@ private:
 	uORB::Publication<vehicle_rates_setpoint_s>		_rates_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_trajectory_bezier_s>		_trajectory_bezier_pub{ORB_ID(vehicle_trajectory_bezier)};
 	uORB::Publication<vehicle_trajectory_waypoint_s>	_trajectory_waypoint_pub{ORB_ID(vehicle_trajectory_waypoint)};
-	uORB::Publication<log_message_s>	_log_message_incoming_pub{ORB_ID(log_message_incoming)};
+	uORB::Publication<log_message_s>			_log_message_incoming_pub{ORB_ID(log_message_incoming)};
+	uORB::Publication<radio_status_extensions_s>		_radio_status_extensions_pub{ORB_ID(radio_status_extensions)};
 
 #if !defined(CONSTRAINED_FLASH)
 	uORB::Publication<debug_array_s>			_debug_array_pub {ORB_ID(debug_array)};

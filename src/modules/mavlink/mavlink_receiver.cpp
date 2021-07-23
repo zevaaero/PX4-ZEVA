@@ -191,6 +191,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_radio_status(msg);
 		break;
 
+	case MAVLINK_MSG_ID_RADIO_STATUS_EXTENSIONS:
+		handle_message_radio_status_extensions(msg);
+		break;
+
 	case MAVLINK_MSG_ID_MANUAL_CONTROL:
 		handle_message_manual_control(msg);
 		break;
@@ -1685,6 +1689,25 @@ MavlinkReceiver::handle_message_radio_status(mavlink_message_t *msg)
 
 		_radio_status_pub.publish(status);
 	}
+}
+
+void
+MavlinkReceiver::handle_message_radio_status_extensions(mavlink_message_t *msg)
+{
+	mavlink_radio_status_extensions_t rstatus;
+	mavlink_msg_radio_status_extensions_decode(msg, &rstatus);
+
+	radio_status_extensions_s status{};
+
+	status.timestamp = hrt_absolute_time();
+	status.rssi = rstatus.rssi;
+	status.snr = rstatus.snr;
+	status.mcs_index = rstatus.mcs_index;
+	status.number_spatial_streams = rstatus.number_spatial_streams;
+	status.queue_size = rstatus.queue_size;
+	status.air_time = rstatus.air_time;
+
+	_radio_status_extensions_pub.publish(status);
 }
 
 void
