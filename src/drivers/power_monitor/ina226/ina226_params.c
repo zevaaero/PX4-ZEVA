@@ -33,6 +33,17 @@
 
 
 /**
+ * Enable INA226 Power Monitor
+ *
+ * For systems without an INA226 Power Monitor, this should be set to false
+ *
+ * @group Sensors
+ * @boolean
+ * @reboot_required true
+*/
+PARAM_DEFINE_INT32(INA226_ENABLE, 1);
+
+/**
  * INA226 Power Monitor Config
  *
  * @group Sensors
