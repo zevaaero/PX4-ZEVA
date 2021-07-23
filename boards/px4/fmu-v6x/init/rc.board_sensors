@@ -4,9 +4,12 @@
 #------------------------------------------------------------------------------
 board_adc start
 
-# Start Digital power monitors
-ina226 -X -b 1 -t 1 -k start
-ina226 -X -b 2 -t 2 -k start
+if param compare INA226_ENABLE 1
+then
+	# Start Digital power monitors
+	ina226 -X -b 1 -t 1 -k start
+	ina226 -X -b 2 -t 2 -k start
+fi
 
 # Internal SPI BMI088
 bmi088 -A -R 4 -s start
