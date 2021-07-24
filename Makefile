@@ -504,7 +504,7 @@ distclean: gazeboclean
 	@git submodule deinit -f .
 	@git clean -ff -x -d -e ".project" -e ".cproject" -e ".idea" -e ".settings" -e ".vscode"
 
-# Help / Error
+# Help / Error / Misc
 # --------------------------------------------------------------------
 
 # All other targets are handled by PX4_MAKE. Add a rule here to avoid printing an error.
@@ -538,3 +538,18 @@ check_px4: $(call make_list,nuttx,"px4") \
 
 check_nxp: $(call make_list,nuttx,"nxp") \
 	sizes
+
+ifneq ($(ROS2_WS_DIR),)
+  ROS2_WS_DIR := $(basename ${ROS2_WS_DIR})
+else
+  ROS2_WS_DIR := ~/colcon_ws
+endif
+
+update_ros2_bridge:
+	@Tools/update_px4_ros2_bridge.sh --ws_dir ${ROS2_WS_DIR} --all
+
+update_px4_ros_com:
+	@Tools/update_px4_ros2_bridge.sh --ws_dir ${ROS2_WS_DIR} --px4_ros_com
+
+update_px4_msgs:
+	@Tools/update_px4_ros2_bridge.sh --ws_dir ${ROS2_WS_DIR} --px4_msgs
