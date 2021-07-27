@@ -40,10 +40,10 @@
 */
 
 extern uint32_t _vectors[];
-extern const int *_boot_signature_start_adr;
+extern const int *_boot_signature;
 
 #define APP_ADDR_START _vectors
-#define APP_ADDR_END ((const void *)&_boot_signature_start_adr)
+#define APP_ADDR_END ((const void *)&_boot_signature)
 
 /* Boot signature start and end are defined by the
  * signature definition below
@@ -59,7 +59,7 @@ extern const int *_boot_signature_start_adr;
 /* RD certifcate may follow boot signature */
 
 #define RDCT_ADDR_START OEM_SIG_ADDR_END
-#define RDCT_ADDR_END ((const void *)((const uint8_t*)RDCT_ADDR_START+sizeof(image_rnd_cert_t)))
+#define RDCT_ADDR_END ((const void *)((const uint8_t*)RDCT_ADDR_START+sizeof(image_cert_t)))
 
 
 
@@ -68,11 +68,11 @@ extern const int *_boot_signature_start_adr;
 IMAGE_MAIN_TOC(6) = {
 	{TOC_START_MAGIC, TOC_VERSION},
 	{
-		{"MSTR", APP_ADDR_START, APP_ADDR_END, 0, 0, 0, 0, TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE},
+		{"MSTR", APP_ADDR_START, APP_ADDR_END, 0, 1, 0, 0, TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE},
 		{"SIG1", MSTR_SIG_ADDR_START, MSTR_SIG_ADDR_END, 0, 0, 0, 0, 0},
-		{"OEM",  APP_ADDR_START, APP_ADDR_END, 0, 1, 0, 0, TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE},
+		{"OEM",  APP_ADDR_START, APP_ADDR_END, 0, 3, 0, 0, TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE},
 		{"SIG2", OEM_SIG_ADDR_START, OEM_SIG_ADDR_END, 0, 0, 0, 0, 0},
-		{"RDCT", APP_ADDR_START, APP_ADDR_END, 0, 2, 0, 0, TOC_FLAG1_RDCT | TOC_FLAG1_BOOT},
+		{"RDCT", APP_ADDR_START, APP_ADDR_END, 0, 5, 0, 0, TOC_FLAG1_RDCT | TOC_FLAG1_BOOT},
 		{"RDSG", RDCT_ADDR_START, RDCT_ADDR_END, 0, 0, 0, 0, 0},
 	},
 	TOC_END_MAGIC
