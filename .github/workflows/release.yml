@@ -21,124 +21,140 @@ jobs:
     - name: Get submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Prepare ccache timestamp
-      id: ccache_cache_timestamp
-      shell: cmake -P {0}
-      run: |
-        string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
-        message("::set-output name=timestamp::${current_date}")
-    - name: ccache cache files
-      uses: actions/cache@v2
-      with:
-        path: ~/.ccache
-        key: release-nuttx-${{steps.ccache_cache_timestamp.outputs.timestamp}}
-        restore-keys: release-nuttx-
-    - name: Setup ccache
-      run: |
-          mkdir -p ~/.ccache
-          echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
-          echo "compression = true" >> ~/.ccache/ccache.conf
-          echo "compression_level = 6" >> ~/.ccache/ccache.conf
-          echo "max_size = 400M" >> ~/.ccache/ccache.conf
-          ccache -s
-          ccache -z
-
-    - name: Make Nuttx development targets
-      run: |
-        ## Create target directory
-        mkdir development
-        ## Build targets
-        make px4_fmu-v5_default
-        make px4_fmu-v5_rtps
-        make px4_fmu-v5x_default
-        make px4_fmu-v5x_rtps
-        ## Move target resulting artifacts to the development folder
-        mv build/* development/
-
-    - name: Make Nuttx production targets
-      run: |
-        ## Create target directory
-        mkdir production
-        ## Build targets
-        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5_default
-        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5_rtps
-        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5x_default
-        PX4_RESTRICTED_BUILD=1 make px4_fmu-v5x_rtps
-        ## Move target resulting artifacts to the production folder
-        mv build/* production/
-
-    - name: Create .zip for development targets
-      run: |
-        zip development-nuttx-targets.zip \
-          development/*/*.elf \
-          development/*/*.map \
-          development/*/*.px4 \
-          development/*/*.bin
-
-    - name: Create .zip for production targets
-      run: |
-        zip production-nuttx-targets.zip \
-          production/*/*.elf \
-          production/*/*.map \
-          production/*/*.px4 \
-          production/*/*.bin
-
-    - name: Upload development artifacts
-      uses: actions/upload-release-asset@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url:  ${{ github.event.release.upload_url }}
-        asset_path: development-nuttx-targets.zip
-        asset_name: development-nuttx-targets.zip
-        asset_content_type: binary/octet-stream
-
-    - name: Upload production artifacts
-      uses: actions/upload-release-asset@v1.0.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url:  ${{ github.event.release.upload_url }}
-        asset_path: production-nuttx-targets.zip
-        asset_name: production-nuttx-targets.zip
-        asset_content_type: binary/octet-stream
+    # - name: Prepare ccache timestamp
+    #   id: ccache_cache_timestamp
+    #   shell: cmake -P {0}
+    #   run: |
+    #     string(TIMESTAMP current_date "%Y-%m-%d-%H;%M;%S" UTC)
+    #     message("::set-output name=timestamp::${current_date}")
+    # - name: ccache cache files
+    #   uses: actions/cache@v2
+    #   with:
+    #     path: ~/.ccache
+    #     key: release-nuttx-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+    #     restore-keys: release-nuttx-
+    # - name: Setup ccache
+    #   run: |
+    #       mkdir -p ~/.ccache
+    #       echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
+    #       echo "compression = true" >> ~/.ccache/ccache.conf
+    #       echo "compression_level = 6" >> ~/.ccache/ccache.conf
+    #       echo "max_size = 400M" >> ~/.ccache/ccache.conf
+    #       ccache -s
+    #       ccache -z
+    #
+    # - name: Make Nuttx development targets
+    #   run: |
+    #     ## Create target directory
+    #     mkdir development
+    #     ## Build targets
+    #     make px4_fmu-v5_default
+    #     make px4_fmu-v5_rtps
+    #     make px4_fmu-v5x_default
+    #     make px4_fmu-v5x_rtps
+    #     ## Move target resulting artifacts to the development folder
+    #     mv build/* development/
+    #
+    # - name: Make Nuttx production targets
+    #   run: |
+    #     ## Create target directory
+    #     mkdir production
+    #     ## Build targets
+    #     PX4_RESTRICTED_BUILD=1 make px4_fmu-v5_default
+    #     PX4_RESTRICTED_BUILD=1 make px4_fmu-v5_rtps
+    #     PX4_RESTRICTED_BUILD=1 make px4_fmu-v5x_default
+    #     PX4_RESTRICTED_BUILD=1 make px4_fmu-v5x_rtps
+    #     ## Move target resulting artifacts to the production folder
+    #     mv build/* production/
+    #
+    # - name: Create .zip for development targets
+    #   run: |
+    #     zip development-nuttx-targets.zip \
+    #       development/*/*.elf \
+    #       development/*/*.map \
+    #       development/*/*.px4 \
+    #       development/*/*.bin
+    #
+    # - name: Create .zip for production targets
+    #   run: |
+    #     zip production-nuttx-targets.zip \
+    #       production/*/*.elf \
+    #       production/*/*.map \
+    #       production/*/*.px4 \
+    #       production/*/*.bin
+    #
+    # - name: Upload development artifacts
+    #   uses: actions/upload-release-asset@v1.0.1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url:  ${{ github.event.release.upload_url }}
+    #     asset_path: development-nuttx-targets.zip
+    #     asset_name: development-nuttx-targets.zip
+    #     asset_content_type: binary/octet-stream
+    #
+    # - name: Upload production artifacts
+    #   uses: actions/upload-release-asset@v1.0.1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     upload_url:  ${{ github.event.release.upload_url }}
+    #     asset_path: production-nuttx-targets.zip
+    #     asset_name: production-nuttx-targets.zip
+    #     asset_content_type: binary/octet-stream
 
     # Note: The stages bellow will eventually disappear as soon as the
     # AuterionOS release container fetches the binaries directly from
     # Artifactory
 
-    - name: Clone AuterionOS
-      uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.ACCESS_TOKEN }}
-        repository: Auterion/AuterionOS
-        path: distro/
-
-    - name: Update binaries in AuterionOS
-      id: update_binaries
+    - name: Set initial references
+      id: references
       run: |
-        yes | cp -rf development/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/dev
-        yes | cp -rf production/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/prod
         TAG_BRANCH=$(echo $GITHUB_REF | sed -e 's#refs/tags/##g')
         REF_BRANCH=$(git branch -a --contains tags/$TAG_BRANCH | grep release | sed "s/.*\(release\/.*\).*/\1/p" | head -n 1)
-        DISTRO_REF_BRANCH=$(echo $REF_BRANCH | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
-        RELEASE=$(echo $DISTRO_REF_BRANCH | sed -r 's/release-//')
+        VALID_RELEASE="v([0-9]+)\.([0-9]+)\.([0-9]+)-([0-9]+)\.([0-9]+)\.([0-9]+)?$"
+        RELEASE=$(echo $REF_BRANCH | sed -r 's/release\///')
+        echo "::set-output name=valid_release::${VALID_RELEASE}"
+        echo "::set-output name=ref_branch::${REF_BRANCH}"
+        echo "::set-output name=tag_branch::${TAG_BRANCH}"
         echo "::set-output name=release::${RELEASE}"
         echo "::set-output name=timestamp::$(date)"
-        cd distro
-        echo "::set-output name=branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
-        cd ..
 
-    - name: Create PR to AuterionOS repo
-      uses: peter-evans/create-pull-request@v3
-      with:
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: distro/
-        title: "Release ${{ steps.update_binaries.outputs.release }} FMU binaries update | ${{ steps.update_binaries.outputs.timestamp }}"
-        body: "Updates FMU binaries for release ${{ steps.update_binaries.outputs.release }}, created in ${{ steps.update_binaries.outputs.timestamp }}."
-        reviewers: DanielePettenuzzo,QuentinVecchio
-        commit-message: "src: fmu: update binaries for release ${{ steps.update_binaries.outputs.release }}"
-        author: auterionci <ci@auterion.com>
-        committer: auterionci <ci@auterion.com>
-        base: ${{ steps.update_binaries.outputs.branch }}
-        branch: pr-update_fmu_binaries_release_${{ steps.update_binaries.outputs.release }}
+    # - name: Clone AuterionOS
+    #   uses: actions/checkout@v2
+    #   with:
+    #     token: ${{ secrets.ACCESS_TOKEN }}
+    #     repository: Auterion/AuterionOS
+    #     path: distro/
+    #
+    # - name: Update binaries in AuterionOS
+    #   id: update_binaries
+    #   run: |
+    #     yes | cp -rf development/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/dev
+    #     yes | cp -rf production/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/prod
+    #     DISTRO_REF_BRANCH=$(echo ${{ steps.references.outputs.ref_branch }} | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
+    #     cd distro
+    #     echo "::set-output name=branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
+    #     cd ..
+
+    - name: Push release branch to PX4_firmware_quantum_systems
+      run: |
+        # Only push if it is a final release
+        /bin/bash -c "if [[ \"${{ steps.references.outputs.tag_branch }}\" =~ \"${{ steps.references.outputs.valid_release }}\" ]]; then \
+          git remote add quantum-systems https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/PX4_firmware_quantum_systems.git; \
+          git push -u quantum-systems auterion/pr-ADO-85 || true; \
+        fi"
+
+    # - name: Create PR to AuterionOS repo
+    #   uses: peter-evans/create-pull-request@v3
+    #   with:
+    #     token: ${{ secrets.ACCESS_TOKEN }}
+    #     path: distro/
+    #     title: "Release ${{ steps.references.outputs.release }} FMU binaries update | ${{ steps.references.outputs.timestamp }}"
+    #     body: "Updates FMU binaries for release ${{ steps.references.outputs.release }}, created in ${{ steps.references.outputs.timestamp }}."
+    #     reviewers: DanielePettenuzzo,QuentinVecchio
+    #     commit-message: "src: fmu: update binaries for release ${{ steps.references.outputs.release }}"
+    #     author: auterionci <ci@auterion.com>
+    #     committer: auterionci <ci@auterion.com>
+    #     base: ${{ steps.update_binaries.outputs.branch }}
+    #     branch: pr-update_fmu_binaries_release_${{ steps.references.outputs.release }}
