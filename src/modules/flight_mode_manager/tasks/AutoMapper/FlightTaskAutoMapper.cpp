@@ -141,8 +141,8 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 					 _param_mpc_land_speed.get(), _constraints.speed_down);
 
 	if (_type_previous != WaypointType::land) {
-		_land_position = Vector3f(_target(0), _target(1),
-					  NAN); // initialize xy-position to waypoint such that home is reached exactly in RTL
+		// initialize xy-position and yaw to waypoint such that home is reached exactly without user input
+		_land_position = Vector3f(_target(0), _target(1), NAN);
 		_land_heading = _yaw_setpoint;
 		_stick_acceleration_xy.resetPosition(Vector2f(_target(0), _target(1)));
 	}
