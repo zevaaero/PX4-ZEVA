@@ -6,8 +6,13 @@ on:
 
 jobs:
   release:
+   name: Build and deploy Nuttx targets for the release
    runs-on: ubuntu-latest
    container: px4io/px4-dev-nuttx-focal:2021-02-04
+   outputs:
+     release: ${{ steps.references.outputs.release }}
+     tag: ${{ steps.references.outputs.tag_branch }}
+     valid_tag: ${{ steps.references.outputs.valid_tag }}
    steps:
     - uses: actions/checkout@v1
     - name: Disable the keychain credential helper
@@ -103,10 +108,21 @@ jobs:
         asset_name: production-nuttx-targets.zip
         asset_content_type: binary/octet-stream
 
-    # Note: The stages bellow will eventually disappear as soon as the
-    # AuterionOS release container fetches the binaries directly from
-    # Artifactory
+    - name: Set initial references
+      id: references
+      run: |
+        TAG_BRANCH=$(echo $GITHUB_REF | sed -e 's#refs/tags/##g')
+        REF_BRANCH=$(git branch -a --contains tags/$TAG_BRANCH | grep release | sed "s/.*\(release\/.*\).*/\1/p" | head -n 1)
+        VALID_RELEASE="v([0-9]+)\.([0-9]+)\.([0-9]+)-([0-9]+)\.([0-9]+)\.([0-9]+)?$"
+        RELEASE=$(echo $REF_BRANCH | sed -r 's/release\///')
+        echo "::set-output name=valid_tag::${VALID_RELEASE}"
+        echo "::set-output name=ref_branch::${REF_BRANCH}"
+        echo "::set-output name=tag_branch::${TAG_BRANCH}"
+        echo "::set-output name=release::${RELEASE}"
+        echo "::set-output name=timestamp::$(date)"
 
+    # Note: The stages bellow for AOS will eventually disappear as soon as the
+    # AuterionOS release container fetches the binaries directly from Artifactory
     - name: Clone AuterionOS
       uses: actions/checkout@v2
       with:
@@ -115,18 +131,13 @@ jobs:
         path: distro/
 
     - name: Update binaries in AuterionOS
-      id: update_binaries
+      id: update_aos_binaries
       run: |
         yes | cp -rf development/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/dev
         yes | cp -rf production/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/prod
-        TAG_BRANCH=$(echo $GITHUB_REF | sed -e 's#refs/tags/##g')
-        REF_BRANCH=$(git branch -a --contains tags/$TAG_BRANCH | grep release | sed "s/.*\(release\/.*\).*/\1/p" | head -n 1)
-        DISTRO_REF_BRANCH=$(echo $REF_BRANCH | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
-        RELEASE=$(echo $DISTRO_REF_BRANCH | sed -r 's/release-//')
-        echo "::set-output name=release::${RELEASE}"
-        echo "::set-output name=timestamp::$(date)"
+        DISTRO_REF_BRANCH=$(echo ${{ steps.references.outputs.ref_branch }} | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
         cd distro
-        echo "::set-output name=branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
+        echo "::set-output name=aos_branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
         cd ..
 
     - name: Create PR to AuterionOS repo
@@ -134,11 +145,46 @@ jobs:
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
         path: distro/
-        title: "Release ${{ steps.update_binaries.outputs.release }} FMU binaries update | ${{ steps.update_binaries.outputs.timestamp }}"
-        body: "Updates FMU binaries for release ${{ steps.update_binaries.outputs.release }}, created in ${{ steps.update_binaries.outputs.timestamp }}."
+        title: "Release ${{ steps.references.outputs.release }} FMU binaries update | ${{ steps.references.outputs.timestamp }}"
+        body: "Updates FMU binaries for release ${{ steps.references.outputs.release }}, created in ${{ steps.references.outputs.timestamp }}."
         reviewers: DanielePettenuzzo,QuentinVecchio
-        commit-message: "src: fmu: update binaries for release ${{ steps.update_binaries.outputs.release }}"
+        commit-message: "src: fmu: update binaries for release ${{ steps.references.outputs.release }}"
         author: auterionci <ci@auterion.com>
         committer: auterionci <ci@auterion.com>
-        base: ${{ steps.update_binaries.outputs.branch }}
-        branch: pr-update_fmu_binaries_release_${{ steps.update_binaries.outputs.release }}
+        base: ${{ steps.update_aos_binaries.outputs.aos_branch }}
+        branch: pr-update_fmu_binaries_release_${{ steps.references.outputs.release }}
+
+  deploy-release-branches:
+    name: Create v${{ needs.release.outputs.release }} release branch in customer repos
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-nuttx-focal:2021-02-04
+    needs: release
+    steps:
+      - uses: actions/checkout@v1
+      - name: Disable the keychain credential helper
+        run: git config --global credential.helper ""
+      - name: Enable the local store credential helper
+        run: git config --global --add credential.helper store
+      - name: Add credential
+        run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+      - name: Tell git to use https instead of ssh whenever it encounters it
+        run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+      - name: Get submodules
+        run: 'git submodule update --init --recursive'
+
+      - name: Push release branch to customers repos
+        shell: bash
+        env:
+          CUSTOM_LIST: ${{ secrets.CUSTOM_LIST }}
+        run: |
+          # Only push if it is a final release
+          if [[ "${{ needs.release.outputs.tag }}" =~ ${{ needs.release.outputs.valid_tag }} ]]; then
+            printf $CUSTOM_LIST > tmp_list
+            perl -0pe 's/,/\n/g' tmp_list > list
+            while read url; do
+              remote=$(echo $url | awk -F'/' ' { print $NF } ')
+              git remote add $remote $url
+              git push -u $remote HEAD:refs/heads/auterion/v${{ needs.release.outputs.release }}
+              git remote remove $remote
+            done < list
+          fi
