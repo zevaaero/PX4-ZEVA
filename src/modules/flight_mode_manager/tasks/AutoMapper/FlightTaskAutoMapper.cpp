@@ -158,6 +158,11 @@ void FlightTaskAutoMapper::_prepareLandSetpoints()
 				_velocity_setpoint_feedback.xy(), _deltatime);
 		_stick_acceleration_xy.getSetpoints(_land_position, _velocity_setpoint, _acceleration_setpoint);
 
+		// Hack to make sure the MPC_YAW_MODE 4 alignment doesn't stop the vehicle from descending when there's yaw input
+		if (fabsf(_yawspeed_setpoint) > FLT_EPSILON) {
+			_yaw_sp_aligned = true;
+		}
+
 	} else {
 		// Make sure we have a valid land position even in the case we loose RC while amending it
 		if (!PX4_ISFINITE(_land_position(0))) {
