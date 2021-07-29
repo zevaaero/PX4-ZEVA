@@ -164,21 +164,22 @@ jobs:
       run: mkdir -p colcon_ws/src
     - name: PX4 ROS msgs (px4_msgs) deploy
       run: |
-        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_msgs.git
+        mkdir -p colcon_ws/src
+        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_msgs.git ${GITHUB_WORKSPACE}/colcon_ws/src/px4_msgs
         git config --global user.name "auterion-ci"
         git config --global user.email "ci@auterion.com"
-        cd px4_msgs
+        cd colcon_ws/src/px4_msgs
         git fetch
         if git rev-parse --verify origin/${GITHUB_REF#refs/heads/}; then git checkout ${GITHUB_REF#refs/heads/}; else git checkout -b ${GITHUB_REF#refs/heads/}; fi
-        cd ..
+        cd ${GITHUB_WORKSPACE}
         ROS2_WS_DIR=${GITHUB_WORKSPACE}/colcon_ws/ make update_px4_msgs
-        cd px4_msgs
+        cd colcon_ws/src/px4_msgs
         git status
         git add .
         git commit -a -m "Update message definitions `date`" || true
         git push -u origin HEAD:${GITHUB_REF#refs/heads/} || true
-        cd ..
-        rm -rf px4_msgs
+        cd ${GITHUB_WORKSPACE}
+        rm -rf colcon_ws
 
   ROS2_bridge:
     needs: ROS_msgs
@@ -198,18 +199,19 @@ jobs:
       run: mkdir -p colcon_ws/src
     - name: PX4 ROS2 bridge (px4_ros_com) deploy
       run: |
-        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_ros_com.git
+        mkdir -p colcon_ws/src
+        git clone https://auterion-ci:${{ secrets.ACCESS_TOKEN }}@github.com/Auterion/px4_ros_com.git ${GITHUB_WORKSPACE}/colcon_ws/src/px4_ros_com
         git config --global user.name "auterion-ci"
         git config --global user.email "ci@auterion.com"
-        cd px4_ros_com
+        cd colcon_ws/src/px4_ros_com
         git fetch
         if git rev-parse --verify origin/${GITHUB_REF#refs/heads/}; then git checkout ${GITHUB_REF#refs/heads/}; else git checkout -b ${GITHUB_REF#refs/heads/}; fi
-        cd ..
+        cd ${GITHUB_WORKSPACE}
         ROS2_WS_DIR=${GITHUB_WORKSPACE}/colcon_ws/ make update_px4_ros_com
-        cd px4_ros_com
+        cd colcon_ws/src/px4_ros_com
         git status
         git add .
         git commit -a -m "Update uORB RTPS code generation tools, templates and ID map `date`" || true
         git push origin HEAD:${GITHUB_REF#refs/heads/} || true
-        cd ..
-        rm -rf px4_ros_com
+        cd ${GITHUB_WORKSPACE}
+        rm -rf colcon_ws
