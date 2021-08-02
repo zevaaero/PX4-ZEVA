@@ -809,7 +809,8 @@ void RTL::calc_and_pub_rtl_time_estimate()
 		rtl_time_estimate.time_estimate = math::max(0.f, rtl_time_estimate.time_estimate);
 
 		// Use actual time estimate to compute the safer time estimate with additional scale factor and a margin
-		rtl_time_estimate.safe_time_estimate = 1.1f * rtl_time_estimate.time_estimate + 110.f;
+		rtl_time_estimate.safe_time_estimate = _param_rtl_time_factor.get() * rtl_time_estimate.time_estimate
+						       + _param_rtl_time_margin.get();
 	}
 
 	// Publish message

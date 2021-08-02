@@ -184,7 +184,9 @@ private:
 		(ParamInt<px4::params::RTL_TYPE>) _param_rtl_type,
 		(ParamInt<px4::params::RTL_CONE_ANG>) _param_rtl_cone_half_angle_deg,
 		(ParamInt<px4::params::RTL_PLD_MD>) _param_rtl_pld_md,
-		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad
+		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad,
+		(ParamFloat<px4::params::RTL_TIME_FACTOR>) _param_rtl_time_factor,
+		(ParamInt<px4::params::RTL_TIME_MARGIN>) _param_rtl_time_margin
 	)
 
 	param_t		_param_mpc_z_vel_max_up{PARAM_INVALID};
