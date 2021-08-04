@@ -63,5 +63,3 @@ px4_add_module(
 		motion_planning
 		terrain_follower
 	)
-
-px4_add_functional_gtest(SRC RangeRTLTest.cpp LINKLIBS modules__navigator modules__dataman)
