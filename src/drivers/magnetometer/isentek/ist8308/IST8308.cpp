@@ -98,7 +98,7 @@ int IST8308::probe()
 		}
 	}
 
-	return PX4_OK;
+	return PX4_ERROR;
 }
 
 void IST8308::RunImpl()
