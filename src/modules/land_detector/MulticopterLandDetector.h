@@ -130,7 +130,7 @@ private:
 	hrt_abstime _min_thrust_start{0};	///< timestamp when minimum trust was applied first
 	hrt_abstime _landed_time{0};
 
-	bool _in_descend{false};		///< vehicle is desending
+	bool _in_descend{false};		///< vehicle is commanded to desend
 	bool _horizontal_movement{false};	///< vehicle is moving horizontally
 	bool _below_gnd_effect_hgt{false};	///< vehicle height above ground is below height where ground effect occurs
 	bool _vertical_movement{false};
