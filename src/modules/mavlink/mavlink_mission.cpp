@@ -1060,8 +1060,15 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 			if (wp.seq != _transfer_seq) {
 				PX4_DEBUG("WPM: MISSION_ITEM ERROR: seq %u was not the expected %u", wp.seq, _transfer_seq);
 
-				/* request next item again */
-				send_mission_request(_transfer_partner_sysid, _transfer_partner_compid, _transfer_seq);
+				// We should just ignore this as we will just re-request the item after a timeout.
+				//
+				// It seems like a good idea to immediately re-send a mission_request here, however,
+				// this can lead to a situation where we are "out of sync" and have a hard time
+				// recovering.
+				// What happens in that case is that we create more traffic by re-sending the request
+				// even though the correct mission item might already be "on the way" and arrive next.
+				// So by re-questing it yet again, we can cause this case to happen again in the next
+				// iteration, and even worse we add latency into the interation by having more traffic.
 				return;
 			}
 
