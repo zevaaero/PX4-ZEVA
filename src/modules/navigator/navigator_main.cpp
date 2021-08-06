@@ -697,11 +697,7 @@ Navigator::run()
 					_vtol_takeoff.readSafeAreaFromStorage();
 				}
 
-				const bool use_mission_landing = _mission.get_land_start_available() && !_rtl.denyMissionLanding()
-								 && rtl_type() > RTL::RTL_HOME;
-
-
-				if (!use_mission_landing && _vtol_takeoff.hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
+				if (_vtol_takeoff.hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
 					if (!rtl_activated && _rtl.getClimbDone()) {
 						navigation_mode_new = &_vtol_land;
 
