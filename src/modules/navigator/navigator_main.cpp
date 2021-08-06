@@ -694,6 +694,7 @@ Navigator::run()
 
 				if (rtl_activated) {
 					_use_vtol_land_navigation_mode_for_rtl = _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
+					_vtol_takeoff.readSafeAreaFromStorage();
 				}
 
 				const bool use_mission_landing = _mission.get_land_start_available() && !_rtl.denyMissionLanding()

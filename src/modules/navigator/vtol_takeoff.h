@@ -62,6 +62,9 @@ public:
 
 	bool hasSafeArea() { return _sector_bitmap > 0; }
 
+	void readSafeAreaFromStorage();
+	void clearSafeAreaFromStorage();
+
 private:
 
 	enum class vtol_takeoff_state {
