@@ -260,7 +260,7 @@ float Battery::computeRemainingTime(float current_a)
 	float time_remaining_s = -1.f;
 
 	// Only estimate remaining time with useful in flight current measurements
-	if (_current_filter_a.getState() > 1.f) {
+	if (_current_filter_a.getState() > 5.f) {
 		// Initialize strongly filtered current to an estimated average consumption
 		if (_current_average_filter_a.getState() < 0.f) {
 			// TODO: better initial value based on "average current" from last flight
