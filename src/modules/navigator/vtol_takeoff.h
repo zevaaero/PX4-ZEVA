@@ -56,14 +56,6 @@ public:
 	void on_active() override;
 
 	void setTransitionAltitudeAbsolute(const float alt_amsl) {_transition_alt_amsl = alt_amsl; }
-	void setSafeAreaRadiusMeter(float radius) { _safe_area_radius_m = radius; }
-	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
-	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
-
-	bool hasSafeArea() { return _sector_bitmap > 0; }
-
-	void readSafeAreaFromStorage();
-	void clearSafeAreaFromStorage();
 
 private:
 
@@ -76,12 +68,7 @@ private:
 	} _takeoff_state;
 
 	float _transition_alt_amsl{0.f};	// absolute altitude at which vehicle will transition to forward flight
-	float _safe_area_radius_m{300.0f};
 	float _front_trans_heading_sp_rad{0.0f};
-
-	uint8_t _sector_bitmap{0};			// bit set: sector is clear of objects
-	float 	_offset_degrees{0};			// offset of first sector relative to north
-	static constexpr uint8_t _num_sectors = 8;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt,

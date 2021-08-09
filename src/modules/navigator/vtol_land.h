@@ -54,11 +54,6 @@ public:
 
 	void on_activation() override;
 	void on_active() override;
-
-	void setSectorBitmap(uint8_t bitmap) { _sector_bitmap = bitmap; }
-	void setSectorOffsetDegrees(int offset) { _offset_degrees = offset; }
-	void setSafeAreaRadiusMeter(float radius) { _safe_area_radius_m = radius; }
-
 private:
 
 	enum class vtol_land_state {
@@ -72,11 +67,6 @@ private:
 	matrix::Vector2<double> _land_pos_lat_lon;
 	matrix::Vector2<double> _loiter_pos_lat_lon;
 
-	float 	_offset_degrees{0};
-	float _safe_area_radius_m = 300.0f;
-
-	uint8_t _sector_bitmap{0};
-	static constexpr uint8_t _num_sectors = 8;
 	static constexpr float _min_loiter_time_before_land = 10.0f;
 
 	DEFINE_PARAMETERS(

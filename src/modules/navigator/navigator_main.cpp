@@ -112,6 +112,8 @@ Navigator::Navigator() :
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 
 	reset_triplets();
+
+	clearSafeAreaFromStorage();
 }
 
 Navigator::~Navigator()
@@ -571,6 +573,7 @@ Navigator::run()
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_VTOL_TAKEOFF) {
 
+				readSafeAreaFromStorage();
 				_vtol_takeoff.setTransitionAltitudeAbsolute(cmd.param7);
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
@@ -694,10 +697,10 @@ Navigator::run()
 
 				if (rtl_activated) {
 					_use_vtol_land_navigation_mode_for_rtl = _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
-					_vtol_takeoff.readSafeAreaFromStorage();
+					readSafeAreaFromStorage();
 				}
 
-				if (_vtol_takeoff.hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
+				if (hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
 					if (!rtl_activated && _rtl.getClimbDone()) {
 						navigation_mode_new = &_vtol_land;
 
@@ -1800,6 +1803,79 @@ bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)
 	}
 
 	return true;
+}
+
+void Navigator::readSafeAreaFromStorage()
+{
+
+	_sector_bitmap = 0;
+	_offset_degrees = 0;
+
+	mission_stats_entry_s stats;
+	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
+	int num_safe_points = 0;
+
+	if (ret == sizeof(mission_stats_entry_s)) {
+		num_safe_points = stats.num_items;
+	}
+
+	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
+		mission_safe_point_s mission_safe_point;
+
+		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
+		    sizeof(mission_safe_point_s)) {
+			PX4_ERR("dm_read failed");
+			continue;
+		}
+
+		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
+			_sector_bitmap = mission_safe_point.safe_area_sector_clear_bitmap;
+			_offset_degrees = mission_safe_point.safe_area_first_sector_offset_degrees;
+			_safe_area_radius_m = mission_safe_point.safe_area_radius;
+			break;
+		}
+
+	}
+}
+
+void Navigator::clearSafeAreaFromStorage()
+{
+	mission_stats_entry_s stats;
+	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
+	int num_safe_points = 0;
+
+	if (ret == sizeof(mission_stats_entry_s)) {
+		num_safe_points = stats.num_items;
+	}
+
+	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
+		mission_safe_point_s mission_safe_point;
+
+		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
+		    sizeof(mission_safe_point_s)) {
+			PX4_ERR("dm_read failed");
+			continue;
+		}
+
+		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
+			mission_safe_point.safe_area_sector_clear_bitmap = 0;
+			mission_safe_point.safe_area_first_sector_offset_degrees = 0;
+			mission_safe_point.safe_area_radius = -1;
+			_sector_bitmap = mission_safe_point.safe_area_sector_clear_bitmap;
+			_offset_degrees = mission_safe_point.safe_area_first_sector_offset_degrees;
+			_safe_area_radius_m = mission_safe_point.safe_area_radius;
+
+			const bool write_failed = dm_write(DM_KEY_SAFE_POINTS, current_seq, DM_PERSIST_POWER_ON_RESET, &mission_safe_point,
+							   sizeof(struct mission_safe_point_s)) != sizeof(struct mission_safe_point_s);
+
+			if (write_failed) {
+				PX4_ERR("Failed to clear VTOL safe area");
+			}
+
+			break;
+		}
+
+	}
 }
 
 int Navigator::print_usage(const char *reason)
