@@ -776,7 +776,7 @@ void VtolType::activate_actuator_test_mode(actuator_test_type test_type)
 		return;
 	}
 
-	if (_actuator_test_type == actuator_test_type::TYPE_TILT && _params->vtol_type != (int32_t)vtol_type::TILTROTOR) {
+	if (test_type == actuator_test_type::TYPE_TILT && _params->vtol_type != (int32_t)vtol_type::TILTROTOR) {
 		return;
 	}
 
