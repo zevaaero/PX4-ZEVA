@@ -486,7 +486,8 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 
 			}
 
-			if (!_vehicle_control_mode.flag_control_climb_rate_enabled && !_manual_control.isThrottleLow()) {
+			if (!_vehicle_control_mode.flag_control_climb_rate_enabled && !_manual_control.isThrottleLow()
+			    && _status.vehicle_type != vehicle_status_s::VEHICLE_TYPE_ROVER) {
 				mavlink_log_critical(&_mavlink_log_pub, "Arming denied: high throttle");
 				tune_negative(true);
 				return TRANSITION_DENIED;
