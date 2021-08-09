@@ -113,6 +113,7 @@ Navigator::Navigator() :
 
 	reset_triplets();
 
+	// for safety we require the user to upload a new vtol safe area on every boot to make sure
 	clearSafeAreaFromStorage();
 }
 
