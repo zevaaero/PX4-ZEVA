@@ -51,32 +51,6 @@ VtolLand::VtolLand(Navigator *navigator) :
 void
 VtolLand::on_activation()
 {
-	mission_stats_entry_s stats;
-	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
-	int num_safe_points = 0;
-
-	if (ret == sizeof(mission_stats_entry_s)) {
-		num_safe_points = stats.num_items;
-	}
-
-	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
-		mission_safe_point_s mission_safe_point;
-
-		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
-		    sizeof(mission_safe_point_s)) {
-			PX4_ERR("dm_read failed");
-			continue;
-		}
-
-		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
-			setSectorBitmap(mission_safe_point.safe_area_sector_clear_bitmap);
-			setSectorOffsetDegrees(mission_safe_point.safe_area_first_sector_offset_degrees);
-			setSafeAreaRadiusMeter(mission_safe_point.safe_area_radius);
-			break;
-		}
-
-	}
-
 	_land_pos_lat_lon = matrix::Vector2<double>(_navigator->get_home_position()->lat, _navigator->get_home_position()->lon);
 	set_loiter_position();
 	_land_state = vtol_land_state::MOVE_TO_LOITER;
@@ -188,7 +162,7 @@ void VtolLand::generate_waypoint_from_heading(struct position_setpoint_s *setpoi
 {
 	waypoint_from_heading_and_distance(
 		_navigator->get_global_position()->lat, _navigator->get_global_position()->lon,
-		yaw, _safe_area_radius_m,
+		yaw, _navigator->getSafeAreaRadiusMeter(),
 		&(setpoint->lat), &(setpoint->lon));
 	setpoint->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 	setpoint->yaw = yaw;
@@ -201,7 +175,7 @@ VtolLand::set_loiter_position()
 
 	waypoint_from_heading_and_distance(
 		_land_pos_lat_lon(0), _land_pos_lat_lon(1),
-		getBestLandingHeading(), _safe_area_radius_m * cosf(M_PI_F / _num_sectors) -
+		getBestLandingHeading(), _navigator->getSafeAreaRadiusMeter() * cosf(M_PI_F / _navigator->getNumSectors()) -
 		_param_loiter_radius_m.get(),
 		&lat, &lon);
 
@@ -244,12 +218,13 @@ float VtolLand::getBestLandingHeading()
 	const float wind_direction = atan2f(wind->windspeed_east, wind->windspeed_north);
 	uint8_t min_index = 0;
 	float delta_heading_prev = INFINITY;
-	const float sector_angle = 2 * M_PI_F / _num_sectors;
+	const float sector_angle = 2 * M_PI_F / _navigator->getNumSectors();
 
 	for (int i = 0; i < 8; i++) {
-		if (_sector_bitmap & (1 << i)) {
+		if (_navigator->getSafeAreaSectorClearBitmap() & (1 << i)) {
 
-			const float center_heading_sector = sector_angle * i + math::radians(_offset_degrees) + sector_angle * 0.5f;
+			const float center_heading_sector = sector_angle * i + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) +
+							    sector_angle * 0.5f;
 			const float delta_heading = wrap_pi(wind_direction - center_heading_sector);
 
 			if (fabsf(delta_heading) < delta_heading_prev) {
@@ -259,5 +234,6 @@ float VtolLand::getBestLandingHeading()
 		}
 	}
 
-	return wrap_pi(sector_angle * min_index + math::radians(_offset_degrees) + sector_angle * 0.5f);
+	return wrap_pi(sector_angle * min_index + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) + sector_angle *
+		       0.5f);
 }

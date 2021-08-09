@@ -222,6 +222,16 @@ public:
 	 */
 	float		get_altitude_acceptance_radius();
 
+	uint8_t getSafeAreaSectorClearBitmap() { return _sector_bitmap; }
+
+	float getSafeAreaSectorOffsetDegrees() { return _offset_degrees; }
+
+	float getSafeAreaRadiusMeter() { return _safe_area_radius_m; }
+
+	uint8_t getNumSectors() { return _num_sectors; }
+
+	bool hasSafeArea() { return _sector_bitmap > 0; }
+
 	/**
 	 * Get the cruising speed
 	 *
@@ -358,8 +368,6 @@ public:
 	void		acquire_gimbal_control();
 	void		release_gimbal_control();
 	void 		set_gimbal_neutral();
-
-	bool		get_has_vtol_safe_area() { return _vtol_takeoff.hasSafeArea(); }
 
 private:
 	DEFINE_PARAMETERS(
@@ -500,6 +508,12 @@ private:
 
 	traffic_buffer_s _traffic_buffer;
 
+	// VTOL safe area (used by vtol_takeoff and vtol_land navigation mode)
+	uint8_t _sector_bitmap{0};			// bit set: sector is clear of objects
+	float 	_offset_degrees{0};			// offset of first sector relative to north
+	float _safe_area_radius_m{300.0f};
+	static constexpr uint8_t _num_sectors = 8;
+
 	// update subscriptions
 	void		params_update();
 
@@ -518,4 +532,8 @@ private:
 	bool 		geofence_allows_position(const vehicle_global_position_s &pos);
 
 	void		reset_custom_action();
+
+	void 		readSafeAreaFromStorage();
+
+	void 		clearSafeAreaFromStorage();
 };

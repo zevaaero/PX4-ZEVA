@@ -46,88 +46,14 @@ VtolTakeoff::VtolTakeoff(Navigator *navigator) :
 	MissionBlock(navigator),
 	ModuleParams(navigator)
 {
-	clearSafeAreaFromStorage();
 }
 
 void
 VtolTakeoff::on_activation()
 {
-	set_takeoff_position();
-	_takeoff_state = vtol_takeoff_state::TAKEOFF_HOVER;
-
-	readSafeAreaFromStorage();
-}
-
-void VtolTakeoff::readSafeAreaFromStorage()
-{
-
-	setSectorBitmap(0);
-	setSectorOffsetDegrees(0);
-
-	mission_stats_entry_s stats;
-	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
-	int num_safe_points = 0;
-
-	if (ret == sizeof(mission_stats_entry_s)) {
-		num_safe_points = stats.num_items;
-	}
-
-	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
-		mission_safe_point_s mission_safe_point;
-
-		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
-		    sizeof(mission_safe_point_s)) {
-			PX4_ERR("dm_read failed");
-			continue;
-		}
-
-		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
-			setSectorBitmap(mission_safe_point.safe_area_sector_clear_bitmap);
-			setSectorOffsetDegrees(mission_safe_point.safe_area_first_sector_offset_degrees);
-			setSafeAreaRadiusMeter(mission_safe_point.safe_area_radius);
-			break;
-		}
-
-	}
-}
-
-void VtolTakeoff::clearSafeAreaFromStorage()
-{
-	mission_stats_entry_s stats;
-	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
-	int num_safe_points = 0;
-
-	if (ret == sizeof(mission_stats_entry_s)) {
-		num_safe_points = stats.num_items;
-	}
-
-	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
-		mission_safe_point_s mission_safe_point;
-
-		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
-		    sizeof(mission_safe_point_s)) {
-			PX4_ERR("dm_read failed");
-			continue;
-		}
-
-		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
-			mission_safe_point.safe_area_sector_clear_bitmap = 0;
-			mission_safe_point.safe_area_first_sector_offset_degrees = 0;
-			mission_safe_point.safe_area_radius = -1;
-			setSectorBitmap(mission_safe_point.safe_area_sector_clear_bitmap);
-			setSectorOffsetDegrees(mission_safe_point.safe_area_first_sector_offset_degrees);
-			setSafeAreaRadiusMeter(mission_safe_point.safe_area_radius);
-
-			const bool write_failed = dm_write(DM_KEY_SAFE_POINTS, current_seq, DM_PERSIST_POWER_ON_RESET, &mission_safe_point,
-							   sizeof(struct mission_safe_point_s)) != sizeof(struct mission_safe_point_s);
-
-			if (write_failed) {
-				PX4_DEBUG("Dataman write failed");
-			}
-
-			break;
-		}
-
+	if (_navigator->hasSafeArea()) {
+		set_takeoff_position();
+		_takeoff_state = vtol_takeoff_state::TAKEOFF_HOVER;
 	}
 }
 
@@ -218,7 +144,7 @@ void VtolTakeoff::generate_waypoint_from_heading(struct position_setpoint_s *set
 {
 	waypoint_from_heading_and_distance(
 		_navigator->get_home_position()->lat, _navigator->get_home_position()->lon,
-		yaw, _safe_area_radius_m * cosf(M_PI_F / _num_sectors) - _param_loiter_radius_m.get(),
+		yaw, _navigator->getSafeAreaRadiusMeter() * cosf(M_PI_F / _navigator->getNumSectors()) - _param_loiter_radius_m.get(),
 		&(setpoint->lat), &(setpoint->lon));
 	setpoint->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 	setpoint->yaw = yaw;
@@ -242,8 +168,6 @@ VtolTakeoff::set_takeoff_position()
 	mission_apply_limitation(_mission_item);
 	mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
 
-
-
 	pos_sp_triplet->previous.valid = false;
 	pos_sp_triplet->current.yaw_valid = true;
 	pos_sp_triplet->next.valid = false;
@@ -256,12 +180,13 @@ float VtolTakeoff::getClosestTransitionHeading()
 	const float vehicle_heading = _navigator->get_local_position()->heading;
 	uint8_t min_index = 0;
 	float delta_heading_prev = INFINITY;
-	const float sector_angle = 2 * M_PI_F / _num_sectors;
+	const float sector_angle = 2 * M_PI_F / _navigator->getNumSectors();
 
-	for (int i = 0; i < _num_sectors; i++) {
-		if (_sector_bitmap & (1 << i)) {
+	for (int i = 0; i < _navigator->getNumSectors(); i++) {
+		if (_navigator->getSafeAreaSectorClearBitmap() & (1 << i)) {
 
-			const float center_heading_sector = sector_angle * i + math::radians(_offset_degrees) + sector_angle * 0.5f;
+			const float center_heading_sector = sector_angle * i + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) +
+							    sector_angle * 0.5f;
 			const float delta_heading = wrap_pi(vehicle_heading - center_heading_sector);
 
 			if (fabsf(delta_heading) < delta_heading_prev) {
@@ -271,5 +196,6 @@ float VtolTakeoff::getClosestTransitionHeading()
 		}
 	}
 
-	return wrap_pi(sector_angle * min_index + math::radians(_offset_degrees) + sector_angle * 0.5f);
+	return wrap_pi(sector_angle * min_index + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) + sector_angle *
+		       0.5f);
 }

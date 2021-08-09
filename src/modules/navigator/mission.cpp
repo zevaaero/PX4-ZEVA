@@ -1847,7 +1847,7 @@ Mission::check_mission_valid(bool force)
 			break;
 
 		case 2: // require planned mission landing unless there exists a VTOL safe area
-			if (!_navigator->get_has_vtol_safe_area()) {
+			if (!_navigator->hasSafeArea()) {
 				land_required = true;
 			}
 
