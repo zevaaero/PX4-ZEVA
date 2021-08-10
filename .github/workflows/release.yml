@@ -184,6 +184,7 @@ jobs:
             while read url; do
               remote=$(echo $url | awk -F'/' ' { print $NF } ')
               git remote add $remote $url
+              git push -u $remote HEAD:refs/tags/${{ needs.release.outputs.tag }}
               git push -u $remote HEAD:refs/heads/auterion/v${{ needs.release.outputs.release }}
               git remote remove $remote
             done < list
