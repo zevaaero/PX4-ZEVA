@@ -31,7 +31,7 @@ uint16 max_error			# max error, expected margin of error in % in the state-of-ch
 uint8 id					# ID number of a battery. Should be unique and consistent for the lifetime of a vehicle. 1-indexed.
 uint16 interface_error		# SMBUS interface error counter
 
-float32[10] voltage_cell_v		# Battery individual cell voltages
+float32[14] voltage_cell_v		# Battery individual cell voltages
 float32 max_cell_voltage_delta	# Max difference between individual cell voltages
 
 bool is_powering_off			# Power off event imminent indication, false if unknown
