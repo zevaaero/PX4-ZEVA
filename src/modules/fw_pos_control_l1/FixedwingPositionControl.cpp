@@ -1117,7 +1117,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			/* reset setpoints from other modes (auto) otherwise we won't
 			 * level out without new manual input */
 			_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
-			_att_sp.yaw_body = 0;
+			_att_sp.yaw_body = NAN;
 		}
 
 		_control_mode_current = FW_POSCTRL_MODE_POSITION;
@@ -1219,7 +1219,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 
 			_att_sp.roll_body = roll_sp_new;
-			_att_sp.yaw_body = 0;
+			_att_sp.yaw_body = NAN;
 		}
 
 	} else if (_control_mode.flag_control_altitude_enabled && _control_mode.flag_control_manual_enabled) {
@@ -1265,7 +1265,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
 
-		_att_sp.yaw_body = 0.f;
+		_att_sp.yaw_body = NAN;
 
 	} else if (_control_mode.flag_control_altitude_enabled && !_control_mode.flag_control_manual_enabled) {
 		// if in Auto flight and position not valid, set fixed roll setpoint (GPS failure mode)
@@ -1292,7 +1292,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 
 		_att_sp.roll_body = math::radians(_param_fw_gpsf_r.get()); // open loop loiter bank angle
-		_att_sp.yaw_body = 0.f;
+		_att_sp.yaw_body = NAN;
 
 	} else if (_control_mode.flag_control_climb_rate_enabled && !_control_mode.flag_control_altitude_enabled) {
 		/* DESCEND mode, without position and altitude control, just descend rate is controlled.
@@ -1316,7 +1316,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_t_sink_min.get());
 
 		_att_sp.roll_body = math::radians(_param_fw_gpsf_r.get()); // open loop loiter bank angle
-		_att_sp.yaw_body = 0.f;
+		_att_sp.yaw_body = NAN;
 
 	} else {
 		_control_mode_current = FW_POSCTRL_MODE_OTHER;
