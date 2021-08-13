@@ -49,7 +49,6 @@
  * checks in the commander.
  * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
  *
- * @reboot_required true
  * @min 0
  * @max 894281
  * @category Developer
@@ -78,7 +77,6 @@ PARAM_DEFINE_INT32(CBRK_RATE_CTRL, 0);
  * Setting this parameter to 22027 will disable IO safety.
  * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
  *
- * @reboot_required true
  * @min 0
  * @max 22027
  * @category Developer
@@ -156,7 +154,6 @@ PARAM_DEFINE_INT32(CBRK_BUZZER, 0);
  * checks in the commander.
  * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
  *
- * @reboot_required true
  * @min 0
  * @max 197848
  * @category Developer
@@ -171,7 +168,6 @@ PARAM_DEFINE_INT32(CBRK_USB_CHK, 0);
  * accuracy checks in the commander.
  * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
  *
- * @reboot_required true
  * @min 0
  * @max 201607
  * @category Developer
@@ -186,7 +182,6 @@ PARAM_DEFINE_INT32(CBRK_VELPOSERR, 0);
  * mode for VTOLs.
  * WARNING: ENABLING THIS CIRCUIT BREAKER IS AT OWN RISK
  *
- * @reboot_required true
  * @min 0
  * @max 159753
  * @category Developer
