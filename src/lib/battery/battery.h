@@ -99,9 +99,10 @@ public:
 	 * @param source: Source type in relation to BAT%d_SOURCE param.
 	 * @param priority: The brick number -1. The term priority refers to the Vn connection on the LTC4417
 	 * @param throttle_normalized: Throttle of the vehicle, between 0 and 1
+	 * @param publish: The flag that can disable publishing battery status. It is true by default
 	 */
 	void updateBatteryStatus(const hrt_abstime &timestamp, float voltage_v, float current_a, bool connected,
-				 int source, int priority, float throttle_normalized);
+				 int source, int priority, float throttle_normalized, bool publish = true);
 
 protected:
 	struct {

@@ -41,9 +41,7 @@ const char *const UavcanBatteryBridge::NAME = "battery";
 UavcanBatteryBridge::UavcanBatteryBridge(uavcan::INode &node) :
 	UavcanSensorBridgeBase("uavcan_battery", ORB_ID(battery_status)),
 	ModuleParams(nullptr),
-	_sub_battery(node),
-	_warning(battery_status_s::BATTERY_WARNING_NONE),
-	_last_timestamp(0)
+	_sub_battery(node)
 {
 }
 
@@ -62,82 +60,26 @@ int UavcanBatteryBridge::init()
 void
 UavcanBatteryBridge::battery_sub_cb(const uavcan::ReceivedDataStructure<uavcan::equipment::power::BatteryInfo> &msg)
 {
-	battery_status_s battery{};
+	_actuators_sub.copy(&_actuator_controls);
 
-	battery.timestamp = hrt_absolute_time();
-	battery.voltage_v = msg.voltage;
-	battery.voltage_filtered_v = msg.voltage;
-	battery.current_a = msg.current;
-	battery.current_filtered_a = msg.current;
-	// battery.current_average_a = msg.;
+	_battery.updateBatteryStatus(
+		hrt_absolute_time(),
+		msg.voltage,
+		msg.current,
+		true,
+		battery_status_s::BATTERY_SOURCE_EXTERNAL,
+		0,
+		_actuator_controls.control[actuator_controls_s::INDEX_THROTTLE],
+		false
+	);
 
-	sumDischarged(battery.timestamp, battery.current_a);
-	battery.discharged_mah = _discharged_mah;
+	/* Override data that is expected to arrive from UAVCAN msg*/
+	battery_status_s *battery_status = _battery.getBatteryStatus();
+	battery_status->remaining = msg.state_of_charge_pct / 100.0f; // between 0 and 1
+	battery_status->temperature = msg.temperature + CONSTANTS_ABSOLUTE_NULL_CELSIUS; // Kelvin to Celcius
+	battery_status->capacity = msg.full_charge_capacity_wh;
+	itoa(msg.model_instance_id, battery_status->serial_number, 10);
+	battery_status->id = msg.getSrcNodeID().get();
 
-	battery.remaining = msg.state_of_charge_pct / 100.0f; // between 0 and 1
-	// battery.scale = msg.; // Power scaling factor, >= 1, or -1 if unknown
-	battery.temperature = msg.temperature + CONSTANTS_ABSOLUTE_NULL_CELSIUS; // Kelvin to Celcius
-	// battery.cell_count = msg.;
-	battery.connected = true;
-	battery.source = msg.status_flags & uavcan::equipment::power::BatteryInfo::STATUS_FLAG_IN_USE;
-	// battery.priority = msg.;
-	battery.capacity = msg.full_charge_capacity_wh;
-	// battery.cycle_count = msg.;
-	// battery.run_time_to_empty = msg.;
-	// battery.average_time_to_empty = msg.;
-	itoa(msg.model_instance_id, battery.serial_number, 10);
-
-	battery.id = msg.getSrcNodeID().get();
-
-	// Mavlink 2 needs individual cell voltages or cell[0] if cell voltages are not available.
-	battery.voltage_cell_v[0] = msg.voltage;
-
-	// Set cell count to 1 so the the battery code in mavlink_messages.cpp copies the values correctly (hack?)
-	battery.cell_count = 1;
-
-	// battery.max_cell_voltage_delta = msg.;
-
-	// battery.is_powering_off = msg.;
-
-	determineWarning(battery.remaining);
-	battery.warning = _warning;
-
-	publish(msg.getSrcNodeID().get(), &battery);
-}
-
-void
-UavcanBatteryBridge::sumDischarged(hrt_abstime timestamp, float current_a)
-{
-	// Not a valid measurement
-	if (current_a < 0.f) {
-		// Because the measurement was invalid we need to stop integration
-		// and re-initialize with the next valid measurement
-		_last_timestamp = 0;
-		return;
-	}
-
-	// Ignore first update because we don't know dt.
-	if (_last_timestamp != 0) {
-		const float dt = (timestamp - _last_timestamp) / 1e6;
-		// mAh since last loop: (current[A] * 1000 = [mA]) * (dt[s] / 3600 = [h])
-		_discharged_mah_loop = (current_a * 1e3f) * (dt / 3600.f);
-		_discharged_mah += _discharged_mah_loop;
-	}
-
-	_last_timestamp = timestamp;
-}
-
-void
-UavcanBatteryBridge::determineWarning(float remaining)
-{
-	// propagate warning state only if the state is higher, otherwise remain in current warning state
-	if (remaining < _param_bat_emergen_thr.get() || (_warning == battery_status_s::BATTERY_WARNING_EMERGENCY)) {
-		_warning = battery_status_s::BATTERY_WARNING_EMERGENCY;
-
-	} else if (remaining < _param_bat_crit_thr.get() || (_warning == battery_status_s::BATTERY_WARNING_CRITICAL)) {
-		_warning = battery_status_s::BATTERY_WARNING_CRITICAL;
-
-	} else if (remaining < _param_bat_low_thr.get() || (_warning == battery_status_s::BATTERY_WARNING_LOW)) {
-		_warning = battery_status_s::BATTERY_WARNING_LOW;
-	}
+	publish(msg.getSrcNodeID().get(), battery_status);
 }

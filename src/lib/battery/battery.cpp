@@ -104,7 +104,7 @@ Battery::Battery(int index, ModuleParams *parent, const int sample_interval_us) 
 }
 
 void Battery::updateBatteryStatus(const hrt_abstime &timestamp, float voltage_v, float current_a, bool connected,
-				  int source, int priority, float throttle_normalized)
+				  int source, int priority, float throttle_normalized, bool publish)
 {
 	if (!_battery_initialized) {
 		_voltage_filter_v.reset(voltage_v);
@@ -158,8 +158,9 @@ void Battery::updateBatteryStatus(const hrt_abstime &timestamp, float voltage_v,
 		_battery_status.voltage_cell_v[i] = _battery_status.voltage_filtered_v / max_cells;
 	}
 
-	if (source == _params.source) {
-		_battery_status.timestamp = hrt_absolute_time();
+	_battery_status.timestamp = hrt_absolute_time();
+
+	if ((source == _params.source) && publish) {
 		_battery_status_pub.publish(_battery_status);
 	}
 }
