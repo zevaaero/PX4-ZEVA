@@ -344,7 +344,6 @@ void Tiltrotor::update_transition_state()
 
 	} else {
 		memcpy(_v_att_sp, _fw_virtual_att_sp, sizeof(vehicle_attitude_setpoint_s));
-		_v_att_sp->thrust_body[2] = -_fw_virtual_att_sp->thrust_body[0];
 		_thrust_transition = _fw_virtual_att_sp->thrust_body[0];
 	}
 
@@ -393,8 +392,8 @@ void Tiltrotor::update_transition_state()
 			_mc_yaw_weight = _mc_roll_weight;
 		}
 
-		_thrust_transition = math::max(-_mc_virtual_att_sp->thrust_body[2], FRONTTRANS_THR_MIN);
-		_v_att_sp->thrust_body[2] = -_thrust_transition;
+		// add minimum throttle for front transition
+		_thrust_transition = math::max(_thrust_transition, FRONTTRANS_THR_MIN);
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P2) {
 		// the plane is ready to go into fixed wing mode, tilt the rotors forward completely
@@ -411,9 +410,8 @@ void Tiltrotor::update_transition_state()
 
 		set_alternate_motor_state(motor_state::VALUE, ramp_down_value);
 
-
-		_thrust_transition = math::max(-_mc_virtual_att_sp->thrust_body[2], FRONTTRANS_THR_MIN);
-		_v_att_sp->thrust_body[2] = -_thrust_transition;
+		// add minimum throttle for front transition
+		_thrust_transition = math::max(_thrust_transition, FRONTTRANS_THR_MIN);
 
 		// this line is needed such that the fw rate controller is initialized with the current throttle value.
 		// if this is not then then there is race condition where the fw rate controller still publishes a zero sample throttle after transition
@@ -466,6 +464,8 @@ void Tiltrotor::update_transition_state()
 
 	_last_time_above_threshold = hrt_absolute_time();
 	_alternate_motor_on = false;
+
+	_v_att_sp->thrust_body[2] = -_thrust_transition;
 
 	const Quatf q_sp(Eulerf(_v_att_sp->roll_body, _v_att_sp->pitch_body, _v_att_sp->yaw_body));
 	q_sp.copyTo(_v_att_sp->q_d);
