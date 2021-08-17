@@ -1714,6 +1714,7 @@ PARAM_DEFINE_INT32(RC_MAP_MAN_SW, 0);
  * The maximum number of available slots is 6.
  * @min 0
  * @max 258048
+ * @group Radio Switches
  * @bit 0 Enable Channel 1 as toggle button
  * @bit 1 Enable Channel 2 as toggle button
  * @bit 2 Enable Channel 3 as toggle button
