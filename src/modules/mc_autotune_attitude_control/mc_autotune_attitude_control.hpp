@@ -157,12 +157,18 @@ private:
 
 	hrt_abstime _last_run{0};
 	hrt_abstime _last_publish{0};
+	hrt_abstime _last_model_update{0};
 
 	float _interval_sum{0.f};
 	float _interval_count{0.f};
 	float _sample_interval_avg{0.01f};
 	float _filter_dt{0.01f};
 	bool _are_filters_initialized{false};
+
+	static constexpr float _model_dt_min{2e-3f}; // 2ms = 500Hz
+	static constexpr float _model_dt_max{10e-3f}; // 10ms = 100Hz
+	int _model_update_scaler{1};
+	int _model_update_counter{0};
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 

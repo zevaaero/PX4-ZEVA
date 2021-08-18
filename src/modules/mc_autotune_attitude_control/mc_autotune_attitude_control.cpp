@@ -138,17 +138,30 @@ void McAutotuneAttitudeControl::Run()
 
 	checkFilters();
 
+	// Send data to the filters at maximum frequency
 	if (_state == state::roll) {
-		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_ROLL],
-			       angular_velocity.xyz[0]);
+		_sys_id.updateFilters(_input_scale * controls.control[actuator_controls_s::INDEX_ROLL],
+				      angular_velocity.xyz[0]);
 
 	} else if (_state == state::pitch) {
-		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_PITCH],
-			       angular_velocity.xyz[1]);
+		_sys_id.updateFilters(_input_scale * controls.control[actuator_controls_s::INDEX_PITCH],
+				      angular_velocity.xyz[1]);
 
 	} else if (_state == state::yaw) {
-		_sys_id.update(_input_scale * controls.control[actuator_controls_s::INDEX_YAW],
-			       angular_velocity.xyz[2]);
+		_sys_id.updateFilters(_input_scale * controls.control[actuator_controls_s::INDEX_YAW],
+				      angular_velocity.xyz[2]);
+	}
+
+	// Update the model at a lower frequency
+	_model_update_counter++;
+
+	if (_model_update_counter >= _model_update_scaler) {
+		if ((_state == state::roll) || (_state == state::pitch) || (_state == state::yaw)) {
+			_sys_id.update();
+			_last_model_update = hrt_absolute_time();
+		}
+
+		_model_update_counter = 0;
 	}
 
 	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
@@ -162,8 +175,11 @@ void McAutotuneAttitudeControl::Run()
 
 		const Vector3f num(coeff(2), coeff(3), coeff(4));
 		const Vector3f den(1.f, coeff(0), coeff(1));
-		_kid = pid_design::computePidGmvc(num, den, _filter_dt, 0.08f, 0.f, 0.4f);
-		_attitude_p = pid_design::computePOuterGain(den, _filter_dt, 10.f);
+
+		const float model_dt = static_cast<float>(_model_update_scaler) * _filter_dt;
+
+		_kid = pid_design::computePidGmvc(num, den, model_dt, 0.08f, 0.f, 0.4f);
+		_attitude_p = pid_design::computePOuterGain(den, model_dt, 10.f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 
@@ -176,7 +192,7 @@ void McAutotuneAttitudeControl::Run()
 		coeff.copyTo(status.coeff);
 		coeff_var.copyTo(status.coeff_var);
 		status.fitness = _sys_id.getFitness();
-		status.dt_model = _filter_dt;
+		status.dt_model = model_dt;
 		status.innov = _sys_id.getInnovation();
 		status.u_filt = _sys_id.getFilteredInputData();
 		status.y_filt = _sys_id.getFilteredOutputData();
@@ -214,8 +230,17 @@ void McAutotuneAttitudeControl::checkFilters()
 
 			_sys_id.setLpfCutoffFrequency(filter_rate_hz, _param_imu_gyro_cutoff.get());
 			_sys_id.setHpfCutoffFrequency(filter_rate_hz, .05f);
-			_sys_id.setForgettingFactor(60.f, _filter_dt);
-			_sys_id.setFitnessLpfTimeConstant(1.f, _filter_dt);
+
+			// Set the model sampling time depending on the gyro cutoff frequency
+			// as this is a good indicator of the maximum control loop bandwidth
+			float model_dt = math::constrain(math::max(1.f / (2.f * _param_imu_gyro_cutoff.get()), _filter_dt), _model_dt_min,
+							 _model_dt_max);
+
+			_model_update_scaler = math::max(int(model_dt / _filter_dt), 1);
+			model_dt = _model_update_scaler * _filter_dt;
+
+			_sys_id.setForgettingFactor(60.f, model_dt);
+			_sys_id.setFitnessLpfTimeConstant(1.f, model_dt);
 
 			_are_filters_initialized = true;
 		}
