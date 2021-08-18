@@ -642,7 +642,7 @@ void Tiltrotor::blendThrottleAfterFrontTransition(float scale)
 
 void Tiltrotor::blendThrottleDuringBacktransition(float scale, float target_throttle)
 {
-	_thrust_transition = -(scale * target_throttle + (1.0f - scale) * _last_thr_in_fw_mode);
+	_thrust_transition = scale * target_throttle + (1.0f - scale) * _last_thr_in_fw_mode;
 }
 
 
