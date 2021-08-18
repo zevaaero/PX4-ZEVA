@@ -55,7 +55,11 @@ void SystemIdentification::reset(const matrix::Vector<float, 5> &id_state_init)
 void SystemIdentification::update(float u, float y)
 {
 	updateFilters(u, y);
+	update();
+}
 
+void SystemIdentification::update()
+{
 	_rls.update(_u_hpf, _y_hpf);
 	updateFitness();
 }

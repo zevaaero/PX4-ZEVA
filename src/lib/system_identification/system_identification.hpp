@@ -54,7 +54,8 @@ public:
 	~SystemIdentification() = default;
 
 	void reset(const matrix::Vector<float, 5> &id_state_init = {});
-	void update(float u, float y);
+	void update(float u, float y); // update filters and model
+	void update(); // update model only (to be called after updateFilters)
 	void updateFilters(float u, float y);
 	bool areFiltersInitialized() const { return _are_filters_initialized; }
 	void updateFitness();
