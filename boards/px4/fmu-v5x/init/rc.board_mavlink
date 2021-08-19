@@ -26,7 +26,7 @@ then
 			then
 				protocol_splitter start /dev/ttyS4
 				mavlink start -d /dev/mavlink -b 3000000 -r 290000 -m onboard_low_bandwidth -x -z $S_FORWARD
-				micrortps_client start -d /dev/rtps -b 0 -m 30000
+				micrortps_client start -d /dev/rtps -b 3000000 -h -m 30000
 			else
 				# Fallback to start the mavlink stream when micrortps_client module is not built
 				set MAVLINK_STREAM_ONLY 1
