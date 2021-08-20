@@ -66,7 +66,7 @@ PARAM_DEFINE_INT32(MC_AT_START, 0);
  * @decimal 1
  * @group Autotune
  */
-PARAM_DEFINE_FLOAT(MC_AT_SYSID_AMP, 1.0);
+PARAM_DEFINE_FLOAT(MC_AT_SYSID_AMP, 0.5);
 
 /**
  * Controls when to apply the new gains
