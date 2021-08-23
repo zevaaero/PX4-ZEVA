@@ -626,11 +626,11 @@ FixedwingPositionControl::get_waypoint_heading_distance(float heading, position_
 	}
 
 	waypoint_prev = temp_prev;
-	waypoint_prev.alt = _hold_alt;
+	waypoint_prev.alt = _current_altitude;
 	waypoint_prev.valid = true;
 
 	waypoint_next = temp_next;
-	waypoint_next.alt = _hold_alt;
+	waypoint_next.alt = _current_altitude;
 	waypoint_next.valid = true;
 }
 
@@ -646,8 +646,8 @@ FixedwingPositionControl::get_terrain_altitude_takeoff(float takeoff_alt)
 	return takeoff_alt;
 }
 
-void
-FixedwingPositionControl::update_desired_altitude(float dt)
+float
+FixedwingPositionControl::getManualHeightRateSetpoint()
 {
 	/*
 	 * The complete range is -1..+1, so this is 6%
@@ -662,17 +662,7 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 	 */
 	const float factor = 1.0f - deadBand;
 
-	/*
-	 * Reset the hold altitude to the current altitude if the uncertainty
-	 * changes significantly.
-	 * This is to guard against uncommanded altitude changes
-	 * when the altitude certainty increases or decreases.
-	 */
-
-	if (fabsf(_althold_epv - _local_pos.epv) > ALTHOLD_EPV_RESET_THRESH) {
-		_hold_alt = _current_altitude;
-		_althold_epv = _local_pos.epv;
-	}
+	float height_rate_setpoint = 0.0f;
 
 	/*
 	 * Manual control has as convention the rotation around
@@ -682,12 +672,7 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 	if (_manual_control_setpoint_altitude > deadBand) {
 		/* pitching down */
 		float pitch = -(_manual_control_setpoint_altitude - deadBand) / factor;
-
-		if (pitch * _param_sinkrate_target.get() < _tecs.get_hgt_rate_setpoint()) {
-			_hold_alt += (_param_sinkrate_target.get() * dt) * pitch;
-			_manual_height_rate_setpoint_m_s = pitch * _param_sinkrate_target.get();
-			_was_in_deadband = false;
-		}
+		height_rate_setpoint = pitch * _param_sinkrate_target.get();
 
 	} else if (_manual_control_setpoint_altitude < - deadBand) {
 		/* pitching up */
@@ -695,29 +680,11 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 		const float climb_rate_target = (_cruise_mode_current == CRUISE_MODE_ECO) ? _param_climbrate_target_eco.get() :
 						_param_climbrate_target.get();
 
-		if (pitch * climb_rate_target > _tecs.get_hgt_rate_setpoint()) {
+		height_rate_setpoint = pitch * climb_rate_target;
 
-			_hold_alt += (climb_rate_target * dt) * pitch;
-			_manual_height_rate_setpoint_m_s = pitch * climb_rate_target;
-			_was_in_deadband = false;
-		}
-
-	} else if (!_was_in_deadband) {
-		/* store altitude at which manual.x was inside deadBand
-		 * The aircraft should immediately try to fly at this altitude
-		 * as this is what the pilot expects when he moves the stick to the center */
-		_hold_alt = _current_altitude;
-		_althold_epv = _local_pos.epv;
-		_was_in_deadband = true;
-		_manual_height_rate_setpoint_m_s = NAN;
 	}
 
-	if (_vehicle_status.is_vtol) {
-		if (_vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING || _vehicle_status.in_transition_mode) {
-			_hold_alt = _current_altitude;
-		}
-	}
-
+	return height_rate_setpoint;
 }
 
 bool
@@ -814,9 +781,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		/* AUTONOMOUS FLIGHT */
 
 		_control_mode_current = FW_POSCTRL_MODE_AUTO;
-
-		/* reset hold altitude */
-		_hold_alt = _current_altitude;
 
 		/* reset hold yaw */
 		_hdg_hold_yaw = _yaw;
@@ -1109,7 +1073,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		if (_control_mode_current != FW_POSCTRL_MODE_POSITION) {
 			/* Need to init because last loop iteration was in a different mode */
-			_hold_alt = _current_altitude;
 			_hdg_hold_yaw = _yaw;
 			_hdg_hold_enabled = false; // this makes sure the waypoints are reset below
 			_yaw_lock_engaged = false;
@@ -1122,14 +1085,21 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		_control_mode_current = FW_POSCTRL_MODE_POSITION;
 
-		/* update desired altitude based on user pitch stick input */
-		update_desired_altitude(dt);
-
-		// if we assume that user is taking off then help by demanding altitude setpoint well above ground
-		// and set limit to pitch angle to prevent steering into ground
-		// this will only affect planes and not VTOL
 		float pitch_limit_min = _param_fw_p_lim_min.get();
-		do_takeoff_help(&_hold_alt, &pitch_limit_min);
+
+		float height_rate_sp = NAN;
+		float altitude_sp_amsl = _current_altitude;
+
+		if (in_takeoff_situation()) {
+			// if we assume that user is taking off then help by demanding altitude setpoint well above ground
+			// and set limit to pitch angle to prevent steering into ground
+			// this will only affect planes and not VTOL
+			altitude_sp_amsl = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
+			pitch_limit_min = radians(10.0f);
+
+		} else {
+			height_rate_sp = getManualHeightRateSetpoint();
+		}
 
 		/* throttle limiting */
 		throttle_max = _param_fw_thr_max.get();
@@ -1138,7 +1108,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			throttle_max = 0.0f;
 		}
 
-		tecs_update_pitch_throttle(now, _hold_alt,
+		tecs_update_pitch_throttle(now, altitude_sp_amsl,
 					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
@@ -1148,7 +1118,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   false,
 					   pitch_limit_min,
 					   false,
-					   _manual_height_rate_setpoint_m_s);
+					   height_rate_sp);
 
 		/* heading control */
 		if (fabsf(_manual_control_setpoint.y) < HDG_HOLD_MAN_INPUT_THRESH &&
@@ -1225,24 +1195,26 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 	} else if (_control_mode.flag_control_altitude_enabled && _control_mode.flag_control_manual_enabled) {
 		/* ALTITUDE CONTROL: pitch stick moves altitude setpoint, throttle stick sets airspeed */
 
-		if (_control_mode_current != FW_POSCTRL_MODE_POSITION && _control_mode_current != FW_POSCTRL_MODE_ALTITUDE) {
-			/* Need to init because last loop iteration was in a different mode */
-			_hold_alt = _current_altitude;
-		}
-
 		_control_mode_current = FW_POSCTRL_MODE_ALTITUDE;
 
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
 
-		/* update desired altitude based on user pitch stick input */
-		update_desired_altitude(dt);
-
-		// if we assume that user is taking off then help by demanding altitude setpoint well above ground
-		// and set limit to pitch angle to prevent steering into ground
-		// this will only affect planes and not VTOL
 		float pitch_limit_min = _param_fw_p_lim_min.get();
-		do_takeoff_help(&_hold_alt, &pitch_limit_min);
+
+		float height_rate_sp = NAN;
+		float altitude_sp_amsl = _current_altitude;
+
+		if (in_takeoff_situation()) {
+			// if we assume that user is taking off then help by demanding altitude setpoint well above ground
+			// and set limit to pitch angle to prevent steering into ground
+			// this will only affect planes and not VTOL
+			altitude_sp_amsl = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
+			pitch_limit_min = radians(10.0f);
+
+		} else {
+			height_rate_sp = getManualHeightRateSetpoint();
+		}
 
 		/* throttle limiting */
 		throttle_max = _param_fw_thr_max.get();
@@ -1251,7 +1223,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			throttle_max = 0.0f;
 		}
 
-		tecs_update_pitch_throttle(now, _hold_alt,
+		tecs_update_pitch_throttle(now, altitude_sp_amsl,
 					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
@@ -1261,7 +1233,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   false,
 					   pitch_limit_min,
 					   false,
-					   _manual_height_rate_setpoint_m_s);
+					   height_rate_sp);
 
 		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
 
@@ -1274,12 +1246,10 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
 
-		if (_control_mode_current != FW_POSCTRL_MODE_AUTO_ALTITUDE) {
-			/* Need to init because last loop iteration was in a different mode */
-			_hold_alt = _current_altitude;
-		}
+		float target_height_rate_m_s = 0.0f;
+		float target_altitude_amsl = 0.0f;
 
-		tecs_update_pitch_throttle(now, _hold_alt,
+		tecs_update_pitch_throttle(now, target_altitude_amsl,
 					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
@@ -1288,7 +1258,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_thr_cruise.get(),
 					   false,
 					   _param_fw_p_lim_min.get(),
-					   false);
+					   false, target_height_rate_m_s);
 
 
 		_att_sp.roll_body = math::radians(_param_fw_gpsf_r.get()); // open loop loiter bank angle
@@ -1303,7 +1273,9 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
 
-		tecs_update_pitch_throttle(now, _hold_alt,
+		float altitude_sp_amsl = _current_altitude;
+
+		tecs_update_pitch_throttle(now, altitude_sp_amsl,
 					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
@@ -1326,9 +1298,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		/* do not publish the setpoint */
 		setpoint = false;
-
-		// reset hold altitude
-		_hold_alt = _current_altitude;
 
 		// reset last airspeed setpoint
 		_last_airspeed_setpoint = NAN;
@@ -1908,7 +1877,6 @@ FixedwingPositionControl::Run()
 		// handle estimator reset events. we only adjust setpoins for manual modes
 		if (_control_mode.flag_control_manual_enabled) {
 			if (_control_mode.flag_control_altitude_enabled && _local_pos.vz_reset_counter != _alt_reset_counter) {
-				_hold_alt += -_local_pos.delta_z;
 				// make TECS accept step in altitude and demanded altitude
 				_tecs.handle_alt_step(-_local_pos.delta_z, _current_altitude);
 			}
