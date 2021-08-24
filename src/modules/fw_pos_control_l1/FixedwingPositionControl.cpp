@@ -700,16 +700,6 @@ FixedwingPositionControl::in_takeoff_situation()
 	       && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get());
 }
 
-void
-FixedwingPositionControl::do_takeoff_help(float *hold_altitude, float *pitch_limit_min)
-{
-	/* demand "climbout_diff" m above ground if user switched into this mode during takeoff */
-	if (in_takeoff_situation()) {
-		*hold_altitude = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
-		*pitch_limit_min = radians(10.0f);
-	}
-}
-
 bool
 FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2d &curr_pos,
 		const Vector2f &ground_speed,
@@ -1095,7 +1085,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			// and set limit to pitch angle to prevent steering into ground
 			// this will only affect planes and not VTOL
 			altitude_sp_amsl = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
-			pitch_limit_min = radians(10.0f);
+			pitch_limit_min = max(pitch_limit_min, radians(10.0f));
 
 		} else {
 			height_rate_sp = getManualHeightRateSetpoint();
@@ -1210,7 +1200,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			// and set limit to pitch angle to prevent steering into ground
 			// this will only affect planes and not VTOL
 			altitude_sp_amsl = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
-			pitch_limit_min = radians(10.0f);
+			pitch_limit_min = max(pitch_limit_min, radians(10.0f));
 
 		} else {
 			height_rate_sp = getManualHeightRateSetpoint();
@@ -1273,9 +1263,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
 
-		float altitude_sp_amsl = _current_altitude;
-
-		tecs_update_pitch_throttle(now, altitude_sp_amsl,
+		tecs_update_pitch_throttle(now, _current_altitude,
 					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
