@@ -1085,7 +1085,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			// and set limit to pitch angle to prevent steering into ground
 			// this will only affect planes and not VTOL
 			altitude_sp_amsl = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
-			pitch_limit_min = max(pitch_limit_min, radians(10.0f));
+			pitch_limit_min = fmaxf(pitch_limit_min, radians(10.0f));
 
 		} else {
 			height_rate_sp = getManualHeightRateSetpoint();
@@ -1200,7 +1200,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			// and set limit to pitch angle to prevent steering into ground
 			// this will only affect planes and not VTOL
 			altitude_sp_amsl = _takeoff_ground_alt + _param_fw_clmbout_diff.get();
-			pitch_limit_min = max(pitch_limit_min, radians(10.0f));
+			pitch_limit_min = fmaxf(pitch_limit_min, radians(10.0f));
 
 		} else {
 			height_rate_sp = getManualHeightRateSetpoint();
