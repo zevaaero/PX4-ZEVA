@@ -237,7 +237,7 @@ void Standard::update_transition_state()
 
 	// we get attitude setpoint from a multirotor flighttask if altitude is controlled.
 	// in any other case the fixed wing attitude controller publishes attitude setpoint from manual stick input.
-	if (_v_control_mode->flag_control_altitude_enabled) {
+	if (_v_control_mode->flag_control_climb_rate_enabled) {
 		memcpy(_v_att_sp, _mc_virtual_att_sp, sizeof(vehicle_attitude_setpoint_s));
 		_v_att_sp->roll_body = _fw_virtual_att_sp->roll_body;
 
