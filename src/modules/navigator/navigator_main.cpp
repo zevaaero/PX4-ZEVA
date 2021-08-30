@@ -949,8 +949,18 @@ Navigator::run()
 
 void Navigator::geofence_breach_check(bool &have_geofence_position_data)
 {
+	bool vtol_outside_safe_area = true;
+
+	if (safeAreaActive() && _home_pos.valid_hpos) {
+		// if we are maneuvering inside a safe area, then ignore geofence breach avoidance
+		// otherwise it will disrupt takeoff/landing
+		const float dist_to_home = get_distance_to_next_waypoint(_global_pos.lat, _global_pos.lon, _home_pos.lat,
+					   _home_pos.lon);
+		vtol_outside_safe_area = dist_to_home > getSafeAreaRadiusMeter();
+	}
 
 	if (have_geofence_position_data &&
+	    vtol_outside_safe_area &&
 	    (_geofence.getGeofenceAction() != geofence_result_s::GF_ACTION_NONE) &&
 	    (hrt_elapsed_time(&_last_geofence_check) > GEOFENCE_CHECK_INTERVAL_US)) {
 

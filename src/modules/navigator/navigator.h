@@ -232,6 +232,8 @@ public:
 
 	bool hasSafeArea() { return _sector_bitmap > 0; }
 
+	bool safeAreaActive() { return hasSafeArea() && ((_navigation_mode ==  &_vtol_takeoff) || (_navigation_mode == &_vtol_land));}
+
 	/**
 	 * Get the cruising speed
 	 *
