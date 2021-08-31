@@ -954,9 +954,10 @@ void Navigator::geofence_breach_check(bool &have_geofence_position_data)
 	if (safeAreaActive() && _home_pos.valid_hpos) {
 		// if we are maneuvering inside a safe area, then ignore geofence breach avoidance
 		// otherwise it will disrupt takeoff/landing
+		// add 1.1 factor to get some margin
 		const float dist_to_home = get_distance_to_next_waypoint(_global_pos.lat, _global_pos.lon, _home_pos.lat,
 					   _home_pos.lon);
-		vtol_outside_safe_area = dist_to_home > getSafeAreaRadiusMeter();
+		vtol_outside_safe_area = dist_to_home > 1.1f * getSafeAreaRadiusMeter();
 	}
 
 	if (have_geofence_position_data &&
