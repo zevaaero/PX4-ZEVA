@@ -80,14 +80,12 @@ public:
 
 private:
 	void Run() override;
-	void saveCalibrationToParams();
 	void publishMagBiasEstimate();
 
 	static constexpr int MAX_SENSOR_COUNT = 4;
 
 	FieldSensorBiasEstimator _bias_estimator[MAX_SENSOR_COUNT];
 	hrt_abstime _timestamp_last_update[MAX_SENSOR_COUNT] {};
-	hrt_abstime _time_last_motion{};
 
 	uORB::SubscriptionMultiArray<sensor_mag_s, MAX_SENSOR_COUNT> _sensor_mag_subs{ORB_ID::sensor_mag};
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
