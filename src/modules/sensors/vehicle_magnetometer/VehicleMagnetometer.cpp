@@ -247,6 +247,8 @@ void VehicleMagnetometer::MagCalibrationUpdate()
 					_calibration[mag_index].ParametersSave();
 				}
 			}
+
+			param_notify_changes();
 		}
 
 		_should_save_on_disarm = false;
