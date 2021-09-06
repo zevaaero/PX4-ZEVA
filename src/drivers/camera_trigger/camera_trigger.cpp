@@ -313,7 +313,7 @@ CameraTrigger::CameraTrigger() :
 	// Advertise critical publishers here, because we cannot advertise in interrupt context
 	camera_trigger_s trigger{};
 
-	if (_cam_cap_fback) {
+	if (!_cam_cap_fback) {
 		_trigger_pub = orb_advertise(ORB_ID(camera_trigger), &trigger);
 
 	}
@@ -839,7 +839,8 @@ CameraTrigger::engage(void *arg)
 	trigger.feedback = false;
 	trigger.timestamp = hrt_absolute_time();
 
-	if (trig->_cam_cap_fback) {
+	// Publish only if  _cam_cap_fback is disabled, otherwise, it is published over camera_capture driver
+	if (!trig->_cam_cap_fback) {
 		orb_publish(ORB_ID(camera_trigger), trig->_trigger_pub, &trigger);
 
 	}
