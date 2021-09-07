@@ -868,6 +868,14 @@ Navigator::run()
 // Do not execute any state machine while we are disarmed
 		if (_vstatus.arming_state != vehicle_status_s::ARMING_STATE_ARMED) {
 			navigation_mode_new = nullptr;
+
+			if (_clear_safe_area_on_disarm) {
+				clearSafeAreaFromStorage();
+				_clear_safe_area_on_disarm = false;
+			}
+
+		} else { // armed
+			_clear_safe_area_on_disarm = true;
 		}
 
 		if (_vstatus.nav_state != _previous_nav_state) {

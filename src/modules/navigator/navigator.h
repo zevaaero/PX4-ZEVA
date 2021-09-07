@@ -516,6 +516,8 @@ private:
 	float _safe_area_radius_m{300.0f};
 	static constexpr uint8_t _num_sectors = 8;
 
+	bool _clear_safe_area_on_disarm{false};
+
 	// update subscriptions
 	void		params_update();
 
