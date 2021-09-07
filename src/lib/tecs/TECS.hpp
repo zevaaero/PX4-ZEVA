@@ -142,7 +142,8 @@ public:
 	// eco mode settings
 	void set_speed_weight_eco(float weight_eco) { _pitch_speed_weight_eco = weight_eco; }
 	void set_height_error_time_constant_eco(float time_const_eco) { _height_error_gain_eco = 1.0f / math::max(time_const_eco, 0.1f); }
-
+	void set_fw_eco_alt_err_u(float fw_eco_alt_err_u) { _fw_eco_alt_err_u = fw_eco_alt_err_u; }
+	void set_fw_eco_alt_err_o(float fw_eco_alt_err_o) { _fw_eco_alt_err_o = fw_eco_alt_err_o; }
 
 	// getters
 	float get_throttle_setpoint() { return _last_throttle_setpoint; }
@@ -217,6 +218,8 @@ private:
 
 	float _height_error_gain_eco{0.2f};				///< in eco mode: height error inverse time constant [1/s]
 	float _pitch_speed_weight_eco{1.0f};				///< in eco mode: speed control weighting used by pitch demand calculation
+	float _fw_eco_alt_err_u{10.f};					///< altitude difference low threshold for switching to flight mode descend
+	float _fw_eco_alt_err_o{20.f};					///< altitude difference high threshold for switching to flight mode climb
 
 	// complimentary filter states
 	float _vert_vel_state{0.0f};					///< complimentary filter state - height rate (m/sec)

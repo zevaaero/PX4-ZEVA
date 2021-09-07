@@ -131,6 +131,8 @@ FixedwingPositionControl::parameters_update()
 
 	_tecs.set_speed_weight_eco(_param_fw_t_spdweight_eco.get());
 	_tecs.set_height_error_time_constant_eco(_param_fw_t_h_error_tc_eco.get());
+	_tecs.set_fw_eco_alt_err_u(_param_fw_eco_alt_err_u.get());
+	_tecs.set_fw_eco_alt_err_o(_param_fw_eco_alt_err_o.get());
 
 	// Landing slope
 	/* check if negative value for 2/3 of flare altitude is set for throttle cut */

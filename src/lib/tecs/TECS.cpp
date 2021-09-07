@@ -471,10 +471,11 @@ void TECS::_updateFlightPhase(float altitude_sp_amsl, float height_rate_setpoint
 		}
 
 	} else {
-		if (altitude_sp_amsl - _alt_control_traj_generator.getCurrentPosition() > 0.5f) {
+		// stay in flight phase level if only small altitude changes are demanded
+		if (altitude_sp_amsl - _alt_control_traj_generator.getCurrentPosition() > _fw_eco_alt_err_o) {
 			_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_CLIMB;
 
-		} else if (altitude_sp_amsl - _alt_control_traj_generator.getCurrentPosition() < -0.5f) {
+		} else if (altitude_sp_amsl - _alt_control_traj_generator.getCurrentPosition() < -_fw_eco_alt_err_u) {
 			_flight_phase = tecs_status_s::TECS_FLIGHT_PHASE_DESCEND;
 
 		} else {
