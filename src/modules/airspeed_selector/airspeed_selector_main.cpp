@@ -571,7 +571,16 @@ void AirspeedModule::select_airspeed_and_publish()
 	    (_number_of_airspeed_sensors > 0 || !_vehicle_land_detected.landed) &&
 	    _valid_airspeed_index != _prev_airspeed_index) {
 		if (_prev_airspeed_index > 0) {
-			mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor failure detected. Return to launch (RTL) is advised.");
+			const bool armed = (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED);
+
+			if (!armed) {
+				// if disarmed, the only way to trigger the failure is missing data, likely indicating a disconnected sensor
+				mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor disconnected. Check connection and power cycle vehicle.");
+
+			} else {
+				mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor failure detected. Return to launch (RTL) is advised.");
+			}
+
 
 		} else if (_prev_airspeed_index == 0 && _valid_airspeed_index == -1) {
 			mavlink_log_info(&_mavlink_log_pub, "Airspeed estimation invalid");
