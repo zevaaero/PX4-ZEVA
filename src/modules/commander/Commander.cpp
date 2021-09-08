@@ -3618,8 +3618,8 @@ void Commander::data_link_check()
 
 					if (!_armed.armed && !_status_flags.condition_calibration_enabled) {
 						// make sure to report preflight check failures to a connecting GCS
-						PreFlightCheck::preflightCheck(&_mavlink_log_pub, _status, _status_flags,
-									       true, true, hrt_elapsed_time(&_boot_timestamp));
+						PreFlightCheck::preflightCheck(&_mavlink_log_pub, _status, _status_flags, true, false,
+									       hrt_elapsed_time(&_boot_timestamp));
 					}
 				}
 
