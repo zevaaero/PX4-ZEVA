@@ -129,7 +129,9 @@ void RTL::find_RTL_destination(bool force_update)
 		float mission_landing_alt;
 		RTLDestinationType destination_type = RTL_DESTINATION_MISSION_LANDING;
 
-		if (vtol_in_rw_mode) {
+		// If we're a VTOL in hover and not already on a mission landing, then RTL to home
+		// instead of flying the whole landing pattern in hover mode.
+		if (vtol_in_rw_mode && !_navigator->getMissionLandingInProgress()) {
 			mission_landing_lat = _navigator->get_mission_landing_lat();
 			mission_landing_lon = _navigator->get_mission_landing_lon();
 			mission_landing_alt = _navigator->get_mission_landing_alt();
@@ -153,8 +155,6 @@ void RTL::find_RTL_destination(bool force_update)
 			_destination.lon = mission_landing_lon;
 			_destination.alt = mission_landing_alt;
 			_destination.type = destination_type;
-
-
 		}
 	}
 
@@ -241,7 +241,8 @@ void RTL::on_activation()
 	setClimbAndReturnDone(false);
 
 	_deny_mission_landing = _navigator->get_vstatus()->is_vtol
-				&& _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING;
+				&& _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
+				&& !_navigator->getMissionLandingInProgress();
 
 	_terrain_follower.reset();
 	_navigator->setTerrainFollowerState();
