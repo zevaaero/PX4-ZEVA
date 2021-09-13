@@ -48,47 +48,16 @@ extern const int *_boot_signature;
 /* Boot signature start and end are defined by the
  * signature definition below
 */
-
 #define MSTR_SIG_ADDR_START ((const void *)APP_ADDR_END)
 #define MSTR_SIG_ADDR_END ((const void *)((const uint8_t *)MSTR_SIG_ADDR_START+SIGNATURE_SIZE))
 
-#define OEM_SIG_ADDR_START ((const void *)((const uint8_t *)MSTR_SIG_ADDR_END))
-#define OEM_SIG_ADDR_END ((const void *)((const uint8_t *)OEM_SIG_ADDR_START+SIGNATURE_SIZE))
-
-
-/* RD certifcate may follow boot signature */
-
-#define RDCT_ADDR_START OEM_SIG_ADDR_END
-#define RDCT_ADDR_END ((const void *)((const uint8_t*)RDCT_ADDR_START+sizeof(image_cert_t)))
-
-
-
 /* The table of contents */
 
-IMAGE_MAIN_TOC(6) = {
+IMAGE_MAIN_TOC(2) = {
 	{TOC_START_MAGIC, TOC_VERSION},
 	{
 		{"MSTR", APP_ADDR_START, APP_ADDR_END, 0, 1, 0, 0, TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE},
 		{"SIG1", MSTR_SIG_ADDR_START, MSTR_SIG_ADDR_END, 0, 0, 0, 0, 0},
-		{"OEM",  APP_ADDR_START, APP_ADDR_END, 0, 3, 0, 0, TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE},
-		{"SIG2", OEM_SIG_ADDR_START, OEM_SIG_ADDR_END, 0, 0, 0, 0, 0},
-		{"RDCT", APP_ADDR_START, APP_ADDR_END, 0, 5, 0, 0, TOC_FLAG1_RDCT | TOC_FLAG1_BOOT},
-		{"RDSG", RDCT_ADDR_START, RDCT_ADDR_END, 0, 0, 0, 0, 0},
 	},
 	TOC_END_MAGIC
 };
-
-
-//  image_toc_entry_t master_signature = {
-// 	.name="MSTR",			/* Name of the section */
-// 	.crypto_section_start = APP_ADDR_START,   	/* Start address of the section in flash */
-// 	.crypto_section_len= (MSTR_SIG_ADDR_END + SIGNATURE_SIZE - MSTR_SIG_ADDR_START),    	/* Length of the section in bytes*/
-// 	.target_address = NULL,           	/* Copy target address of the section */
-// 	.key_index = 0,  			/* Key index for the crypto operation */
-// 	.sign_start = MSTR_SIG_ADDR_START,     		/* Start address of the section in flash */
-// 	.sign_len= SIGNATURE_SIZE,        		/* End of the section */
-
-// 	.flags1=  TOC_FLAG1_BOOT | TOC_FLAG1_CHECK_SIGNATURE,         		/* Flags */
-// 	.reserved=0;      		/* e.g. for more flags */
-
-// };
