@@ -43,12 +43,12 @@ extern uint32_t _vectors[];
 extern const int *_boot_signature;
 
 #define APP_ADDR_START _vectors
-#define APP_ADDR_END ((const void *)&_boot_signature)
+#define APP_ADDR_END ((const void *)(&_boot_signature-1))
 
 /* Boot signature start and end are defined by the
  * signature definition below
 */
-#define MSTR_SIG_ADDR_START ((const void *)APP_ADDR_END)
+#define MSTR_SIG_ADDR_START ((const void *)&_boot_signature)
 #define MSTR_SIG_ADDR_END ((const void *)((const uint8_t *)MSTR_SIG_ADDR_START+SIGNATURE_SIZE))
 
 /* The table of contents */

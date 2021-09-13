@@ -194,6 +194,7 @@ SECTIONS
      *  has to be in the end of the image
      */
 	.signature : {
-		_boot_signature = ALIGN(4);
+		. = ALIGN(4);
+		_boot_signature = ABSOLUTE(.);
 	} > FLASH_AXIM
 }
