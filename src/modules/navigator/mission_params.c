@@ -80,6 +80,20 @@ PARAM_DEFINE_INT32(MIS_TAKEOFF_REQ, 0);
 PARAM_DEFINE_INT32(MIS_LAND_REQ, 0);
 
 /**
+ * Mission landing required
+ *
+ * If set, the mission feasibility checker will check for a planned misson landing at the end of the mission.
+ *
+ * @value 0 Do not require a mission takeoff nor a mission landing
+ * @value 1 Require a mission takeoff, do not require a mission landing
+ * @value 2 Do not require a mission takeoff, Require a mission landing
+ * @value 3 Require a mission takeoff and a mission landing
+ * @value 4 Require a mission takeoff and a mission landing, or neither of both
+ * @group Mission
+ */
+PARAM_DEFINE_INT32(MIS_TO_LND_REQ, 0);
+
+/**
  * Minimum Loiter altitude
  *
  * This is the minimum altitude the system will always obey. The intent is to stay out of ground effect.

@@ -131,9 +131,10 @@ MissionFeasibilityChecker::checkVTOL(const mission_s &mission, float home_alt, b
 	/* Perform checks and issue feedback to the user for all checks */
 	bool resTakeoff = checkTakeoff(mission, home_alt);
 	bool resLanding = checkVTOLLanding(mission, land_start_req);
+	bool resTakeoffLandReq = checkTakeoffLandAvailable();
 
 	/* Mission is only marked as feasible if all checks return true */
-	return (resTakeoff && resLanding);
+	return (resTakeoff && resLanding && resTakeoffLandReq);
 }
 
 bool
@@ -318,7 +319,6 @@ MissionFeasibilityChecker::checkMissionItemValidity(const mission_s &mission)
 bool
 MissionFeasibilityChecker::checkTakeoff(const mission_s &mission, float home_alt)
 {
-	bool has_takeoff = false;
 	bool takeoff_first = false;
 	int takeoff_index = -1;
 
@@ -332,7 +332,7 @@ MissionFeasibilityChecker::checkTakeoff(const mission_s &mission, float home_alt
 		}
 
 		// look for a takeoff waypoint
-		if (missionitem.nav_cmd == NAV_CMD_TAKEOFF) {
+		if (missionitem.nav_cmd == NAV_CMD_TAKEOFF || missionitem.nav_cmd == NAV_CMD_VTOL_TAKEOFF) {
 			// make sure that the altitude of the waypoint is at least one meter larger than the acceptance radius
 			// this makes sure that the takeoff waypoint is not reached before we are at least one meter in the air
 
@@ -353,7 +353,7 @@ MissionFeasibilityChecker::checkTakeoff(const mission_s &mission, float home_alt
 			}
 
 			// tell that mission has a takeoff waypoint
-			has_takeoff = true;
+			_has_takeoff = true;
 
 			// tell that a takeoff waypoint is the first "waypoint"
 			// mission item
@@ -419,7 +419,7 @@ MissionFeasibilityChecker::checkTakeoff(const mission_s &mission, float home_alt
 		// check for a takeoff waypoint, after the above conditions have been met
 		// MIS_TAKEOFF_REQ param has to be set and the vehicle has to be landed - one can load a mission
 		// while the vehicle is flying and it does not require a takeoff waypoint
-		if (!has_takeoff) {
+		if (!_has_takeoff) {
 			mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: takeoff waypoint required.");
 			return false;
 
@@ -568,7 +568,6 @@ MissionFeasibilityChecker::checkVTOLLanding(const mission_s &mission, bool land_
 	/* Go through all mission items and search for a landing waypoint
 	 * if landing waypoint is found: the previous waypoint is checked to be at a feasible distance and altitude given the landing slope */
 
-	bool land_start_found = false;
 	size_t do_land_start_index = 0;
 	size_t landing_approach_index = 0;
 
@@ -583,12 +582,12 @@ MissionFeasibilityChecker::checkVTOLLanding(const mission_s &mission, bool land_
 
 		// if DO_LAND_START found then require valid landing AFTER
 		if (missionitem.nav_cmd == NAV_CMD_DO_LAND_START) {
-			if (land_start_found) {
+			if (_has_landing) {
 				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: more than one land start.");
 				return false;
 
 			} else {
-				land_start_found = true;
+				_has_landing = true;
 				do_land_start_index = i;
 			}
 		}
@@ -611,7 +610,7 @@ MissionFeasibilityChecker::checkVTOLLanding(const mission_s &mission, bool land_
 			}
 
 		} else if (missionitem.nav_cmd == NAV_CMD_RETURN_TO_LAUNCH) {
-			if (land_start_found && do_land_start_index < i) {
+			if (_has_landing && do_land_start_index < i) {
 				mavlink_log_critical(_navigator->get_mavlink_log_pub(),
 						     "Mission rejected: land start item before RTL item not possible.");
 				return false;
@@ -619,18 +618,75 @@ MissionFeasibilityChecker::checkVTOLLanding(const mission_s &mission, bool land_
 		}
 	}
 
-	if (land_start_req && !land_start_found) {
+	if (land_start_req && !_has_landing) {
 		mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: landing pattern required.");
 		return false;
 	}
 
-	if (land_start_found && (do_land_start_index > landing_approach_index)) {
+	if (_has_landing && (do_land_start_index > landing_approach_index)) {
 		mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: invalid land start.");
 		return false;
 	}
 
 	/* No landing waypoints or no waypoints */
 	return true;
+}
+
+bool
+MissionFeasibilityChecker::checkTakeoffLandAvailable()
+{
+	bool resTakeoffLandReq = true;
+
+	switch (_navigator->get_takeoff_land_required()) {
+	case 0:
+		resTakeoffLandReq = true;
+		break;
+
+	case 1:
+		resTakeoffLandReq = _has_takeoff;
+
+		if (!resTakeoffLandReq) {
+			mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Takeoff item missing.");
+		}
+
+		break;
+
+	case 2:
+		resTakeoffLandReq = _has_landing;
+
+		if (!resTakeoffLandReq) {
+			mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Landing item missing.");
+		}
+
+		break;
+
+	case 3:
+		resTakeoffLandReq = _has_landing;
+
+		if (!resTakeoffLandReq) {
+			mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Takeoff or Landing item missing.");
+		}
+
+		break;
+
+	case 4:
+		resTakeoffLandReq = _has_takeoff == _has_landing;
+
+		if (!resTakeoffLandReq && (_has_takeoff)) {
+			mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Add Landing item or remove Takeoff.");
+
+		} else if (!resTakeoffLandReq && (_has_landing)) {
+			mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Add Takeoff item or remove Landing.");
+		}
+
+		break;
+
+	default:
+		resTakeoffLandReq = true;
+		break;
+	}
+
+	return resTakeoffLandReq;
 }
 
 bool

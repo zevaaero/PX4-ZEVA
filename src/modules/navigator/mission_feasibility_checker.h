@@ -76,6 +76,10 @@ private:
 	/* Checks specific to VTOL airframes */
 	bool checkVTOL(const mission_s &mission, float home_alt, bool land_start_req);
 	bool checkVTOLLanding(const mission_s &mission, bool land_start_req);
+	bool checkTakeoffLandAvailable();
+
+	bool _has_takeoff{false};
+	bool _has_landing{false};
 
 public:
 	MissionFeasibilityChecker(Navigator *navigator) : _navigator(navigator) {}
