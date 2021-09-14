@@ -357,9 +357,7 @@ public:
 	// Param access
 	float		get_loiter_min_alt() const { return _param_mis_ltrmin_alt.get(); }
 	float		get_takeoff_min_alt() const { return _param_mis_takeoff_alt.get(); }
-	bool		get_takeoff_required() const { return _param_mis_takeoff_req.get(); }
 	int 		get_takeoff_land_required() const { return _para_mis_takeoff_land_req.get(); }
-	int		get_land_required() const { return _param_mis_land_req.get(); }
 	float		get_yaw_timeout() const { return _param_mis_yaw_tmt.get(); }
 	float		get_yaw_threshold() const { return math::radians(_param_mis_yaw_err.get()); }
 
@@ -391,9 +389,7 @@ private:
 		// Mission (MIS_*)
 		(ParamFloat<px4::params::MIS_LTRMIN_ALT>) _param_mis_ltrmin_alt,
 		(ParamFloat<px4::params::MIS_TAKEOFF_ALT>) _param_mis_takeoff_alt,
-		(ParamBool<px4::params::MIS_TAKEOFF_REQ>) _param_mis_takeoff_req,
-		(ParamInt<px4::params::MIS_TO_LND_REQ>) _para_mis_takeoff_land_req,
-		(ParamInt<px4::params::MIS_LAND_REQ>) _param_mis_land_req,
+		(ParamInt<px4::params::MIS_TKO_LAND_REQ>) _para_mis_takeoff_land_req,
 		(ParamFloat<px4::params::MIS_YAW_TMT>) _param_mis_yaw_tmt,
 		(ParamFloat<px4::params::MIS_YAW_ERR>) _param_mis_yaw_err,
 		(ParamInt<px4::params::TF_TERRAIN_EN>) _param_tf_terrain_en,

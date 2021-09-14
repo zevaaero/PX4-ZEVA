@@ -58,40 +58,18 @@
 PARAM_DEFINE_FLOAT(MIS_TAKEOFF_ALT, 2.5f);
 
 /**
- * Take-off waypoint required
- *
- * If set, the mission feasibility checker will check for a takeoff waypoint on the mission.
- *
- * @boolean
- * @group Mission
- */
-PARAM_DEFINE_INT32(MIS_TAKEOFF_REQ, 0);
-
-/**
- * Mission landing required
- *
- * If set, the mission feasibility checker will check for a planned misson landing at the end of the mission.
- *
- * @value 0 Do not require a mission landing
- * @value 1 Always require a mission landing if RTL_TYPE is set to 1
- * @value 2 Require a mission landing unless there exists a VTOL safe area
- * @group Mission
- */
-PARAM_DEFINE_INT32(MIS_LAND_REQ, 0);
-
-/**
  * Mission landing required
  *
  * If set, the mission feasibility checker will check for a planned misson landing at the end of the mission.
  *
  * @value 0 Do not require a mission takeoff nor a mission landing
  * @value 1 Require a mission takeoff, do not require a mission landing
- * @value 2 Do not require a mission takeoff, Require a mission landing
+ * @value 2 Do not require a mission takeoff, require a mission landing
  * @value 3 Require a mission takeoff and a mission landing
  * @value 4 Require a mission takeoff and a mission landing, or neither of both
  * @group Mission
  */
-PARAM_DEFINE_INT32(MIS_TO_LND_REQ, 0);
+PARAM_DEFINE_INT32(MIS_TKO_LAND_REQ, 0);
 
 /**
  * Minimum Loiter altitude

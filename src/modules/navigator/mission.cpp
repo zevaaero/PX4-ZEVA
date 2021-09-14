@@ -1843,30 +1843,11 @@ Mission::check_mission_valid(bool force)
 
 		MissionFeasibilityChecker _missionFeasibilityChecker(_navigator);
 
-		bool land_required = false;
-
-		switch (_navigator->get_land_required()) {
-		case 0: //do not require planned mission landing
-			break;
-
-		case 1: // require planned mission landing if RTL_TYPE=RTL_LAND
-			land_required = _navigator->rtl_type() == RTL::RTL_LAND;
-			break;
-
-		case 2: // require planned mission landing unless there exists a VTOL safe area
-			if (!_navigator->hasSafeArea()) {
-				land_required = true;
-			}
-
-			break;
-		}
-
 		_navigator->get_mission_result()->valid =
 			_missionFeasibilityChecker.checkMissionFeasible(_mission,
 					_param_mis_dist_1wp.get(),
 					_param_mis_dist_wps.get(),
-					_param_mis_flight_time.get(),
-					land_required);
+					_param_mis_flight_time.get());
 
 		_navigator->get_mission_result()->seq_total = _mission.count;
 		_navigator->increment_mission_instance_count();

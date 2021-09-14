@@ -67,15 +67,15 @@ private:
 	bool checkTakeoff(const mission_s &mission, float home_alt);
 
 	/* Checks specific to fixedwing airframes */
-	bool checkFixedwing(const mission_s &mission, float home_alt, bool land_start_req);
-	bool checkFixedWingLanding(const mission_s &mission, bool land_start_req);
+	bool checkFixedwing(const mission_s &mission, float home_alt);
+	bool checkFixedWingLanding(const mission_s &mission);
 
 	/* Checks specific to rotarywing airframes */
 	bool checkRotarywing(const mission_s &mission, float home_alt);
 
 	/* Checks specific to VTOL airframes */
-	bool checkVTOL(const mission_s &mission, float home_alt, bool land_start_req);
-	bool checkVTOLLanding(const mission_s &mission, bool land_start_req);
+	bool checkVTOL(const mission_s &mission, float home_alt);
+	bool checkVTOLLanding(const mission_s &mission);
 	bool checkTakeoffLandAvailable();
 
 	bool _has_takeoff{false};
@@ -93,6 +93,6 @@ public:
 	 */
 	bool checkMissionFeasible(const mission_s &mission,
 				  float max_distance_to_1st_waypoint, float max_distance_between_waypoints,
-				  int max_flight_time, bool land_start_req);
+				  int max_flight_time);
 
 };
