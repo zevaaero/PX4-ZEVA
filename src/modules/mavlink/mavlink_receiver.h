@@ -253,7 +253,7 @@ private:
 
 	orb_advert_t _mavlink_log_pub{nullptr};
 
-	static constexpr int MAX_REMOTE_COMPONENTS{12};
+	static constexpr int MAX_REMOTE_COMPONENTS{16};
 	struct ComponentState {
 		uint32_t last_time_received_ms{0};
 		uint32_t received_messages{0};
