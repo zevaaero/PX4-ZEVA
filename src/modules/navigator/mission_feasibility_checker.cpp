@@ -668,6 +668,27 @@ MissionFeasibilityChecker::checkTakeoffLandAvailable()
 
 		break;
 
+	case 5:
+		if (!_navigator->get_land_detected()->landed && !_navigator->hasSafeArea()) {
+			resTakeoffLandReq = _has_landing;
+
+			if (!resTakeoffLandReq) {
+				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Landing item missing.");
+			}
+
+		} else {
+			resTakeoffLandReq = _has_takeoff == _has_landing;
+
+			if (!resTakeoffLandReq && (_has_takeoff)) {
+				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Add Landing item or remove Takeoff.");
+
+			} else if (!resTakeoffLandReq && (_has_landing)) {
+				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Mission rejected: Add Takeoff item or remove Landing.");
+			}
+		}
+
+		break;
+
 	default:
 		resTakeoffLandReq = true;
 		break;

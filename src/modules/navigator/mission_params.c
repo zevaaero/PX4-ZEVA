@@ -67,6 +67,7 @@ PARAM_DEFINE_FLOAT(MIS_TAKEOFF_ALT, 2.5f);
  * @value 2 Do not require a mission takeoff, require a mission landing
  * @value 3 Require a mission takeoff and a mission landing
  * @value 4 Require a mission takeoff and a mission landing, or neither of both
+ * @value 5 Same as previous, but require a landing if in air and no SafeArea present
  * @group Mission
  */
 PARAM_DEFINE_INT32(MIS_TKO_LAND_REQ, 0);
