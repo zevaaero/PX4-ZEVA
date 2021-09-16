@@ -3755,7 +3755,7 @@ void Commander::battery_status_check()
 	// To make sure that all connected batteries are being regularly reported, we check which one has the
 	// oldest timestamp.
 	hrt_abstime oldest_update = hrt_absolute_time();
-	float worst_battery_time_s{-1.f};
+	float worst_battery_time_s{NAN};
 
 	_battery_current = 0.0f;
 
@@ -3835,8 +3835,9 @@ void Commander::battery_status_check()
 			_last_battery_fault[index] = battery.faults;
 			_last_battery_custom_fault[index] = battery.custom_faults;
 
-			if (battery.time_remaining_s > 0.f
-			    && (worst_battery_time_s < 0.f || battery.time_remaining_s < worst_battery_time_s)) {
+			if (PX4_ISFINITE(battery.time_remaining_s)
+			    && (!PX4_ISFINITE(worst_battery_time_s)
+				|| (PX4_ISFINITE(worst_battery_time_s) && (battery.time_remaining_s < worst_battery_time_s)))) {
 				worst_battery_time_s = battery.time_remaining_s;
 			}
 
@@ -3856,7 +3857,7 @@ void Commander::battery_status_check()
 	    && rtl_time_estimate.valid
 	    && _armed.armed
 	    && !_rtl_time_actions_done
-	    && !(worst_battery_time_s < FLT_EPSILON)
+	    && PX4_ISFINITE(worst_battery_time_s)
 	    && rtl_time_estimate.safe_time_estimate >= worst_battery_time_s
 	    && _internal_state.main_state != commander_state_s::MAIN_STATE_AUTO_RTL
 	    && _internal_state.main_state != commander_state_s::MAIN_STATE_AUTO_LAND) {
