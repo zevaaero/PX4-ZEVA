@@ -40,7 +40,6 @@
 #include "mc_autotune_attitude_control.hpp"
 
 using namespace matrix;
-using namespace time_literals;
 
 McAutotuneAttitudeControl::McAutotuneAttitudeControl() :
 	ModuleParams(nullptr),
@@ -60,6 +59,8 @@ bool McAutotuneAttitudeControl::init()
 		PX4_ERR("parameter_update callback registration failed!");
 		return false;
 	}
+
+	_signal_filter.setParameters(_publishing_dt_s, .2f); // runs in the slow publishing loop
 
 	return true;
 }
@@ -164,7 +165,7 @@ void McAutotuneAttitudeControl::Run()
 		_model_update_counter = 0;
 	}
 
-	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
+	if (hrt_elapsed_time(&_last_publish) > _publishing_dt_hrt || _last_publish == 0) {
 		const hrt_abstime now = hrt_absolute_time();
 		updateStateMachine(now);
 
@@ -281,6 +282,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_max_steps = 10;
 			_signal_sign = 1;
 			_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
+			_signal_filter.reset(0.f);
 			_gains_backup_available = false;
 		}
 
@@ -304,6 +306,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 			_sys_id.reset();
 			_input_scale = 1.f / (_param_mc_pitchrate_p.get() * _param_mc_pitchrate_k.get());
+			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
@@ -328,6 +331,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 			_sys_id.reset();
 			_input_scale = 1.f / (_param_mc_yawrate_p.get() * _param_mc_yawrate_k.get());
+			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
@@ -351,6 +355,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state = state::verification;
 			_state_start_time = now;
 			_sys_id.reset();
+			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			_steps_counter = 5;
 			_max_steps = 10;
@@ -571,7 +576,7 @@ void McAutotuneAttitudeControl::stopAutotune()
 const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 {
 	if (_steps_counter > _max_steps) {
-		_signal_sign = (_signal_sign >= 0) ? -1 : 1;
+		_signal_sign = (_signal_sign == 1) ? 0 : 1;
 		_steps_counter = 0;
 
 		if (_max_steps > 1) {
@@ -584,9 +589,11 @@ const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 
 	_steps_counter++;
 
-	const float signal = float(_signal_sign) * _param_mc_at_sysid_amp.get();
+	const float step = float(_signal_sign) * _param_mc_at_sysid_amp.get();
 
 	Vector3f rate_sp{};
+
+	const float signal = step - _signal_filter.getState();
 
 	if (_state == state::roll) {
 		rate_sp(0) = signal;
@@ -601,6 +608,8 @@ const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 		rate_sp(0) = signal;
 		rate_sp(1) = signal;
 	}
+
+	_signal_filter.update(step);
 
 	return rate_sp;
 }
