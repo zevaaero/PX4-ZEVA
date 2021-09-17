@@ -179,9 +179,12 @@ void McAutotuneAttitudeControl::Run()
 
 		const float model_dt = static_cast<float>(_model_update_scaler) * _filter_dt;
 
-		const float desired_rise_time = ((_state == state::yaw) || (_state == state::yaw_pause)) ? 0.2f : 0.08f;
-		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.4f);
-		_attitude_p = pid_design::computePOuterGain(den, model_dt, 10.f);
+		const float desired_rise_time = ((_state == state::yaw) || (_state == state::yaw_pause)) ? 0.2f : 0.13f;
+		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.5f);
+		// To compute the attitude gain, use the following empirical rule:
+		// "An error of 60 degrees should produce the maximum control output"
+		// or K_att * K_rate * rad(60) = 1
+		_attitude_p = math::constrain(1.f / (math::radians(60.f) * _kid(0)), 2.f, 6.5f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 
