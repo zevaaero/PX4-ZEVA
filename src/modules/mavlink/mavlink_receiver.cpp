@@ -313,6 +313,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_gimbal_device_information(msg);
 		break;
 
+	case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
+		handle_message_gimbal_device_attitude_status(msg);
+		break;
+
 	case MAVLINK_MSG_ID_TERRAIN_DATA:
 		_terrain_uploader.handleTerrainData(msg);
 		break;
@@ -2976,6 +2980,30 @@ MavlinkReceiver::handle_message_gimbal_device_information(mavlink_message_t *msg
 	gimbal_information.gimbal_device_compid = msg->compid;
 
 	_gimbal_device_information_pub.publish(gimbal_information);
+}
+
+void
+MavlinkReceiver::handle_message_gimbal_device_attitude_status(mavlink_message_t *msg)
+{
+	mavlink_gimbal_device_attitude_status_t gimbal_device_attitude_status_msg;
+	mavlink_msg_gimbal_device_attitude_status_decode(msg, &gimbal_device_attitude_status_msg);
+
+	gimbal_device_attitude_status_s gimbal_attitude_status{};
+	gimbal_attitude_status.timestamp = static_cast<uint64_t>(gimbal_device_attitude_status_msg.time_boot_ms) * 1000;
+	gimbal_attitude_status.target_system = gimbal_device_attitude_status_msg.target_system;
+	gimbal_attitude_status.target_component = gimbal_device_attitude_status_msg.target_component;
+	gimbal_attitude_status.device_flags = gimbal_device_attitude_status_msg.flags;
+
+	for (unsigned i = 0; i < 4; ++i) {
+		gimbal_attitude_status.q[i] = gimbal_device_attitude_status_msg.q[i];
+	}
+
+	gimbal_attitude_status.angular_velocity_x = gimbal_device_attitude_status_msg.angular_velocity_x;
+	gimbal_attitude_status.angular_velocity_y = gimbal_device_attitude_status_msg.angular_velocity_y;
+	gimbal_attitude_status.angular_velocity_z = gimbal_device_attitude_status_msg.angular_velocity_z;
+	gimbal_attitude_status.failure_flags = gimbal_device_attitude_status_msg.failure_flags;
+
+	_gimbal_device_attitude_status_pub.publish(gimbal_attitude_status);
 }
 
 void MavlinkReceiver::CheckHeartbeats(const hrt_abstime &t, bool force)
