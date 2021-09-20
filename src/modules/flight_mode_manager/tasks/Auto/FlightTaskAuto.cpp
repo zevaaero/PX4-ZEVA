@@ -300,20 +300,24 @@ bool FlightTaskAuto::_evaluateTriplets()
 		_yaw_setpoint = NAN;
 
 	} else {
-		if ((_type != WaypointType::takeoff || _sub_triplet_setpoint.get().current.disable_weather_vane)
-		    && _sub_triplet_setpoint.get().current.yaw_valid) {
+		if (!_is_yaw_good_for_control) {
+			_yaw_lock = false;
+			_yaw_setpoint = NAN;
+			_yawspeed_setpoint = 0.f;
+
+		} else if ((_type != WaypointType::takeoff || _sub_triplet_setpoint.get().current.disable_weather_vane)
+			   && _sub_triplet_setpoint.get().current.yaw_valid) {
 			// Use the yaw computed in Navigator except during takeoff because
 			// Navigator is not handling the yaw reset properly.
 			// But: use yaw from Navigator during takeoff if disable_weather_vane is true,
 			// because we're then aligning to the transition waypoint.
 			// TODO: fix in navigator
 			_yaw_setpoint = _sub_triplet_setpoint.get().current.yaw;
+			_yawspeed_setpoint = NAN;
 
 		} else {
 			_set_heading_from_mode();
 		}
-
-		_yawspeed_setpoint = NAN;
 	}
 
 	return true;
@@ -370,6 +374,8 @@ void FlightTaskAuto::_set_heading_from_mode()
 		_yaw_lock = false;
 		_yaw_setpoint = NAN;
 	}
+
+	_yawspeed_setpoint = NAN;
 }
 
 bool FlightTaskAuto::_isFinite(const position_setpoint_s &sp)
