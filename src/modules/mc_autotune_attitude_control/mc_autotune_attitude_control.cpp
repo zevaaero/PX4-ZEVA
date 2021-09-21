@@ -181,6 +181,12 @@ void McAutotuneAttitudeControl::Run()
 
 		const float desired_rise_time = ((_state == state::yaw) || (_state == state::yaw_pause)) ? 0.2f : 0.13f;
 		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.5f);
+
+		// Prevent the D term from going just negative if it is not needed
+		if ((_kid(2) < 0.f) && (_kid(2) > -0.001f)) {
+			_kid(2) = 0.f;
+		}
+
 		// To compute the attitude gain, use the following empirical rule:
 		// "An error of 60 degrees should produce the maximum control output"
 		// or K_att * K_rate * rad(60) = 1
@@ -521,7 +527,7 @@ bool McAutotuneAttitudeControl::areGainsGood() const
 {
 	const bool are_positive = _rate_k.min() > 0.f
 				  && _rate_i.min() > 0.f
-				  && _rate_d.min() > 0.f
+				  && _rate_d.min() >= 0.f
 				  && _att_p.min() > 0.f;
 
 	const bool are_small_enough = _rate_k.max() < 0.5f
