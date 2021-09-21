@@ -33,7 +33,7 @@
 
 
 #include "terrain_follower.hpp"
-#include <lib/ecl/geo/geo.h>
+#include <lib/geo/geo.h>
 
 using Vector2d = matrix::Vector2<double>;
 using Vector2f = matrix::Vector2<float>;

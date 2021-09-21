@@ -1,6 +1,6 @@
 #include "FlightTask.hpp"
 #include <mathlib/mathlib.h>
-#include <lib/ecl/geo/geo.h>
+#include <lib/geo/geo.h>
 
 constexpr uint64_t FlightTask::_timeout;
 // First index of empty_setpoint corresponds to time-stamp and requires a finite number.
@@ -52,22 +52,22 @@ void FlightTask::_checkEkfResetCounters()
 {
 	// Check if a reset event has happened
 	if (_sub_vehicle_local_position.get().xy_reset_counter != _reset_counters.xy) {
-		_ekfResetHandlerPositionXY();
+		_ekfResetHandlerPositionXY(matrix::Vector2f{_sub_vehicle_local_position.get().delta_xy});
 		_reset_counters.xy = _sub_vehicle_local_position.get().xy_reset_counter;
 	}
 
 	if (_sub_vehicle_local_position.get().vxy_reset_counter != _reset_counters.vxy) {
-		_ekfResetHandlerVelocityXY();
+		_ekfResetHandlerVelocityXY(matrix::Vector2f{_sub_vehicle_local_position.get().delta_vxy});
 		_reset_counters.vxy = _sub_vehicle_local_position.get().vxy_reset_counter;
 	}
 
 	if (_sub_vehicle_local_position.get().z_reset_counter != _reset_counters.z) {
-		_ekfResetHandlerPositionZ();
+		_ekfResetHandlerPositionZ(_sub_vehicle_local_position.get().delta_z);
 		_reset_counters.z = _sub_vehicle_local_position.get().z_reset_counter;
 	}
 
 	if (_sub_vehicle_local_position.get().vz_reset_counter != _reset_counters.vz) {
-		_ekfResetHandlerVelocityZ();
+		_ekfResetHandlerVelocityZ(_sub_vehicle_local_position.get().delta_vz);
 		_reset_counters.vz = _sub_vehicle_local_position.get().vz_reset_counter;
 	}
 
@@ -91,10 +91,11 @@ const vehicle_local_position_setpoint_s FlightTask::getPositionSetpoint()
 	vehicle_local_position_setpoint.vy = _velocity_setpoint(1);
 	vehicle_local_position_setpoint.vz = _velocity_setpoint(2);
 
-	_acceleration_setpoint.copyTo(vehicle_local_position_setpoint.acceleration);
-	_jerk_setpoint.copyTo(vehicle_local_position_setpoint.jerk);
 	vehicle_local_position_setpoint.yaw = _yaw_setpoint;
 	vehicle_local_position_setpoint.yawspeed = _yawspeed_setpoint;
+
+	_acceleration_setpoint.copyTo(vehicle_local_position_setpoint.acceleration);
+	_jerk_setpoint.copyTo(vehicle_local_position_setpoint.jerk);
 
 	// deprecated, only kept for output logging
 	matrix::Vector3f(NAN, NAN, NAN).copyTo(vehicle_local_position_setpoint.thrust);
@@ -108,7 +109,8 @@ void FlightTask::_resetSetpoints()
 	_velocity_setpoint.setNaN();
 	_acceleration_setpoint.setNaN();
 	_jerk_setpoint.setNaN();
-	_yaw_setpoint = _yawspeed_setpoint = NAN;
+	_yaw_setpoint = NAN;
+	_yawspeed_setpoint = NAN;
 }
 
 void FlightTask::_evaluateVehicleLocalPosition()

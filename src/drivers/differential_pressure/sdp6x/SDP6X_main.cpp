@@ -35,26 +35,6 @@
 
 extern "C" __EXPORT int sdp6x_airspeed_main(int argc, char *argv[]);
 
-I2CSPIDriverBase *SDP6X::instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
-				     int runtime_instance)
-{
-	SDP6X *instance = new SDP6X(iterator.configuredBusOption(), iterator.bus(), cli.bus_frequency, cli.i2c_address);
-
-	if (instance == nullptr) {
-		PX4_ERR("alloc failed");
-		return nullptr;
-	}
-
-	if (instance->init() != PX4_OK) {
-		delete instance;
-		return nullptr;
-	}
-
-	instance->ScheduleNow();
-	return instance;
-}
-
-
 void
 SDP6X::print_usage()
 {

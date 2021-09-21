@@ -35,4 +35,5 @@ px4_add_library(terrain
 	util.cpp
 	terrain_provider.cpp
 )
+target_link_libraries(terrain PRIVATE geo)
 

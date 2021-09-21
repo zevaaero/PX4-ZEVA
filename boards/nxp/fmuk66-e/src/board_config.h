@@ -270,7 +270,6 @@ __END_DECLS
 // todo:Design this!
 
 #define DIRECT_PWM_OUTPUT_CHANNELS  8
-#define DIRECT_INPUT_TIMER_CHANNELS 8
 
 #define GPIO_ULTRASOUND_TRIGGER  /* PTD0 */  (GPIO_LOWDRIVE | GPIO_OUTPUT_ZERO | PIN_PORTD | PIN0)
 #define GPIO_ULTRASOUND_ECHO     /* PTA10 */ (GPIO_PULLUP | PIN_INT_BOTH | PIN_PORTA | PIN10)
@@ -330,7 +329,6 @@ __END_DECLS
 #define BOARD_ADC_PERIPH_5V_OC  (0)
 #define BOARD_ADC_HIPOWER_5V_OC (0)
 
-#define BOARD_HAS_PWM	DIRECT_PWM_OUTPUT_CHANNELS
 
 #define BOARD_HAS_LED_PWM              1
 
@@ -339,7 +337,7 @@ __END_DECLS
 #define LED_TIM3_CH4OUT   /* PTC8  RGB_B */ PIN_FTM3_CH4_1
 
 /* This board provides a DMA pool and APIs */
-#define BOARD_DMA_ALLOC_POOL_SIZE 5120
+#define BOARD_DMA_ALLOC_POOL_SIZE 2048
 
 /* This board provides the board_on_reset interface */
 

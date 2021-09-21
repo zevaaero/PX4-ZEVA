@@ -103,8 +103,9 @@ RCUpdate::RCUpdate() :
 	}
 
 	rc_parameter_map_poll(true /* forced */);
-
 	parameters_updated();
+
+	_button_pressed_hysteresis.set_hysteresis_time_from(false, 50_ms);
 }
 
 RCUpdate::~RCUpdate()
@@ -155,6 +156,18 @@ void RCUpdate::parameters_updated()
 	}
 
 	update_rc_functions();
+
+	// deprecated parameters, will be removed post v1.12 once QGC is updated
+	{
+		int32_t rc_map_value = 0;
+
+		if (param_get(param_find("RC_MAP_RATT_SW"), &rc_map_value) == PX4_OK) {
+			if (rc_map_value != 0) {
+				PX4_WARN("RC_MAP_RATT_SW deprecated");
+				param_reset(param_find("RC_MAP_RATT_SW"));
+			}
+		}
+	}
 }
 
 void RCUpdate::update_rc_functions()
@@ -271,39 +284,38 @@ RCUpdate::map_flight_modes_buttons()
 {
 	static_assert(rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + manual_control_switches_s::MODE_SLOT_NUM <= sizeof(
 			      _rc.function) / sizeof(_rc.function[0]), "Unexpected number of RC functions");
-	static_assert(rc_channels_s::FUNCTION_FLTBTN_NUM_SLOTS == manual_control_switches_s::MODE_SLOT_NUM,
+	static_assert(rc_channels_s::FUNCTION_FLTBTN_SLOT_COUNT == manual_control_switches_s::MODE_SLOT_NUM,
 		      "Unexpected number of Flight Modes slots");
 
 	// Reset all the slots to -1
-	for (uint8_t index = 0; index < manual_control_switches_s::MODE_SLOT_NUM; index++) {
-		_rc.function[rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + index] = -1;
+	for (uint8_t slot = 0; slot < manual_control_switches_s::MODE_SLOT_NUM; slot++) {
+		_rc.function[rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + slot] = -1;
 	}
 
-	// If the functionality is disabled we can early return, no need to map channels
-	int buttons_rc_channels = _param_rc_map_flightmode_buttons.get();
+	// If the functionality is disabled we don't need to map channels
+	const int flightmode_buttons = _param_rc_map_flightmode_buttons.get();
 
-	if (buttons_rc_channels == 0) {
+	if (flightmode_buttons == 0) {
 		return;
 	}
 
-	uint8_t slot_counter = 0;
+	uint8_t slot = 0;
 
-	for (uint8_t index = 0; index < RC_MAX_CHAN_COUNT; index++) {
-		if (buttons_rc_channels & (1 << index)) {
-			PX4_DEBUG("Slot %d assigned to channel %d", slot_counter + 1, index);
-			_rc.function[rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + slot_counter] = index;
-			slot_counter++;
+	for (uint8_t channel = 0; channel < RC_MAX_CHAN_COUNT; channel++) {
+		if (flightmode_buttons & (1 << channel)) {
+			PX4_DEBUG("Slot %d assigned to channel %d", slot + 1, channel);
+			_rc.function[rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + slot] = channel;
+			slot++;
 		}
 
-		if (slot_counter == manual_control_switches_s::MODE_SLOT_NUM) {
+		if (slot >= manual_control_switches_s::MODE_SLOT_NUM) {
 			// we have filled all the available slots
 			break;
 		}
 	}
 }
 
-void
-RCUpdate::Run()
+void RCUpdate::Run()
 {
 	if (should_exit()) {
 		_input_rc_sub.unregisterCallback();
@@ -457,9 +469,7 @@ RCUpdate::Run()
 		/*
 		 * some RC systems glitch after a reboot, we should ignore the first 100ms of regained signal
 		 * as the glitch might be interpreted as a commanded stick action or a flight mode switch
-		 *
 		 */
-
 		_rc_signal_lost_hysteresis.set_hysteresis_time_from(true, 100_ms);
 		_rc_signal_lost_hysteresis.set_state_and_update(signal_lost, hrt_absolute_time());
 
@@ -472,35 +482,39 @@ RCUpdate::Run()
 		/* publish rc_channels topic even if signal is invalid, for debug */
 		_rc_channels_pub.publish(_rc);
 
-		/* only publish manual control if the signal is present */
-		if (input_source_stable && channel_count_stable && !_rc_signal_lost_hysteresis.get_state()
-		    && (input_rc.timestamp_last_signal > _last_timestamp_signal)) {
+		// only publish manual control if the signal is present and regularly updating
+		if (input_source_stable && channel_count_stable && !_rc_signal_lost_hysteresis.get_state()) {
 
-			_last_timestamp_signal = input_rc.timestamp_last_signal;
-			perf_count(_valid_data_interval_perf);
+			if ((input_rc.timestamp_last_signal > _last_timestamp_signal)
+			    && (input_rc.timestamp_last_signal - _last_timestamp_signal < 1_s)) {
 
-			// check if channels actually updated
-			bool rc_updated = false;
+				perf_count(_valid_data_interval_perf);
 
-			for (unsigned i = 0; i < channel_count_limited; i++) {
-				if (_rc_values_previous[i] != input_rc.values[i]) {
-					rc_updated = true;
-					break;
+				// check if channels actually updated
+				bool rc_updated = false;
+
+				for (unsigned i = 0; i < channel_count_limited; i++) {
+					if (_rc_values_previous[i] != input_rc.values[i]) {
+						rc_updated = true;
+						break;
+					}
+				}
+
+				// limit processing if there's no update
+				if (rc_updated || (hrt_elapsed_time(&_last_manual_control_setpoint_publish) > 300_ms)) {
+					UpdateManualSetpoint(input_rc.timestamp_last_signal);
+				}
+
+				UpdateManualSwitches(input_rc.timestamp_last_signal);
+
+				/* Update parameters from RC Channels (tuning with RC) if activated */
+				if (hrt_elapsed_time(&_last_rc_to_param_map_time) > 1_s) {
+					set_params_from_rc();
+					_last_rc_to_param_map_time = hrt_absolute_time();
 				}
 			}
 
-			// limit processing if there's no update
-			if (rc_updated || (hrt_elapsed_time(&_last_manual_control_setpoint_publish) > 300_ms)) {
-				UpdateManualSetpoint(input_rc.timestamp_last_signal);
-			}
-
-			UpdateManualSwitches(input_rc.timestamp_last_signal);
-
-			/* Update parameters from RC Channels (tuning with RC) if activated */
-			if (hrt_elapsed_time(&_last_rc_to_param_map_time) > 1_s) {
-				set_params_from_rc();
-				_last_rc_to_param_map_time = hrt_absolute_time();
-			}
+			_last_timestamp_signal = input_rc.timestamp_last_signal;
 		}
 
 		memcpy(_rc_values_previous, input_rc.values, sizeof(input_rc.values[0]) * channel_count_limited);
@@ -594,15 +608,15 @@ void RCUpdate::UpdateManualSwitches(const hrt_abstime &timestamp_sample)
 		switches.mode_slot = manual_control_switches_s::MODE_SLOT_NONE;
 		bool is_consistent_button_press = false;
 
-		for (uint8_t index = 0; index < manual_control_switches_s::MODE_SLOT_NUM; index++) {
+		for (uint8_t slot = 0; slot < manual_control_switches_s::MODE_SLOT_NUM; slot++) {
 
 			// If the slot is not in use (-1), get_rc_value() will return 0
-			float value = get_rc_value(rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + index, -1.0, 1.0);
+			float value = get_rc_value(rc_channels_s::FUNCTION_FLTBTN_SLOT_1 + slot, -1.0, 1.0);
 
 			// The range goes from -1 to 1, checking that value is greater than 0.5f
 			// corresponds to check that the signal is above 75% of the overall range.
 			if (value > 0.5f) {
-				const uint8_t current_button_press_slot = index + 1;
+				const uint8_t current_button_press_slot = slot + 1;
 
 				// The same button stays pressed consistently
 				if (current_button_press_slot == _potential_button_press_slot) {
@@ -614,7 +628,6 @@ void RCUpdate::UpdateManualSwitches(const hrt_abstime &timestamp_sample)
 			}
 		}
 
-		_button_pressed_hysteresis.set_hysteresis_time_from(false, 50_ms);
 		_button_pressed_hysteresis.set_state_and_update(is_consistent_button_press, hrt_absolute_time());
 
 		if (_button_pressed_hysteresis.get_state()) {

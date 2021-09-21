@@ -1,0 +1,37 @@
+name: EKF Update Change Indicator
+
+on: push
+
+jobs:
+  unit_tests:
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-base-focal:2021-09-08
+    env:
+      GIT_COMMITTER_EMAIL: bot@px4.io
+      GIT_COMMITTER_NAME: PX4BuildBot
+    steps:
+    - uses: actions/checkout@v1
+    - name: disable the keychain credential helper
+      run: git config --global credential.helper ""
+    - name: enable the local store credential helper
+      run: git config --global --add credential.helper store
+    - name: add credential
+      run: echo "https://x-access-token:${{ secrets.ACCESS_TOKEN }}@github.com" >> ~/.git-credentials
+    - name: tell git to use https instead of ssh whenever it encounters it
+      run: 'git config --global url."https://github.com/".insteadof git@github.com:'
+    - name: get submodules
+      run: 'git submodule update --init --recursive'
+    - name: main test updates change indication files
+      run: make tests TESTFILTER=EKF
+    - name: Check if there exists diff and save result in variable
+      run: echo "CHANGE_INDICATED=$(git diff --exit-code --output=/dev/null || echo $?)" >> $GITHUB_ENV
+      working-directory: src/modules/ekf2/test/change_indication
+    - name: auto-commit any changes to change indication
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: '[AUTO COMMIT] update change indication'
+        commit_user_name: ${GIT_COMMITTER_NAME}
+        commit_user_email: ${GIT_COMMITTER_EMAIL}
+    - if: ${{env.CHANGE_INDICATED}}
+      name: if there is a functional change, fail check
+      run: exit 1

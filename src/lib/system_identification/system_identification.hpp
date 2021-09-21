@@ -39,9 +39,9 @@
 
 #pragma once
 
-#include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
 #include <matrix/matrix/math.hpp>
 #include <mathlib/mathlib.h>
+#include <mathlib/math/filter/AlphaFilter.hpp>
 #include <mathlib/math/filter/LowPassFilter2p.hpp>
 #include <px4_platform_common/defines.h>
 
@@ -84,8 +84,8 @@ public:
 
 private:
 	ArxRls<2, 2, 1> _rls;
-	math::LowPassFilter2p _u_lpf{400.f, 30.f};
-	math::LowPassFilter2p _y_lpf{400.f, 30.f};
+	math::LowPassFilter2p<float> _u_lpf{400.f, 30.f};
+	math::LowPassFilter2p<float> _y_lpf{400.f, 30.f};
 
 	//TODO: replace by HighPassFilter class
 	float _alpha_hpf{0.f};

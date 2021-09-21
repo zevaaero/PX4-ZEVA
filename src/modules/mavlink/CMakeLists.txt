@@ -46,6 +46,7 @@ px4_add_module(
 	SRCS
 		mavlink.c
 		mavlink_command_sender.cpp
+		mavlink_events.cpp
 		mavlink_ftp.cpp
 		mavlink_log_handler.cpp
 		mavlink_main.cpp
@@ -67,15 +68,14 @@ px4_add_module(
 		module.yaml
 	DEPENDS
 		airspeed
-		component_information_header
+		component_general_json # for checksums.h
 		drivers_accelerometer
 		drivers_barometer
 		drivers_gyroscope
 		drivers_magnetometer
 		git_mavlink_v2
 		conversion
-		git_ecl
-		ecl_geo
+		geo
 		version
 		terrain
 	UNITY_BUILD
@@ -88,7 +88,7 @@ endif()
 px4_add_functional_gtest(SRC mavlink_terrain_test.cpp
 	EXTRA_SRCS terrain.cpp
 	INCLUDES ${PX4_SOURCE_DIR}/mavlink/include/mavlink
-	LINKLIBS terrain ecl_geo
+	LINKLIBS terrain geo
 	COMPILE_FLAGS
 		-DMODULE_NAME=\"mavlink\"
 		-Wno-address-of-packed-member # TODO: fix in c_library_v2

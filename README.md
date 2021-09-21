@@ -4,11 +4,11 @@
 
 [![Nuttx Targets](https://github.com/Auterion/PX4_firmware_private/workflows/Nuttx%20Targets/badge.svg)](https://github.com/Auterion/PX4_firmware_private/actions?query=workflow%3A%22Nuttx+Targets%22) [![SITL Tests](https://github.com/Auterion/PX4_firmware_private/workflows/SITL%20Tests/badge.svg)](https://github.com/Auterion/PX4_firmware_private/actions?query=workflow%3A%22SITL+Tests%22)
 
-[![Slack](https://px4-slack.herokuapp.com/badge.svg)](http://slack.px4.io)
+[![Slack](/.github/slack.svg)](https://join.slack.com/t/px4/shared_invite/zt-si4xo5qs-R4baYFmMjlrT4rQK5yUnaA)
 
 This repository holds the [PX4](http://px4.io) flight control solution for drones, with the main applications located in the [src/modules](https://github.com/PX4/PX4-Autopilot/tree/master/src/modules) directory. It also contains the PX4 Drone Middleware Platform, which provides drivers and middleware to run drones.
 
-PX4 is highly portable, OS-independent and supports Linux, NuttX and QuRT out of the box.
+PX4 is highly portable, OS-independent and supports Linux, NuttX and MacOS out of the box.
 
 * Official Website: http://px4.io (License: BSD 3-clause, [LICENSE](https://github.com/PX4/PX4-Autopilot/blob/master/LICENSE))
 * [Supported airframes](https://docs.px4.io/master/en/airframes/airframe_reference.html) ([portfolio](http://px4.io/#airframes)):
@@ -17,7 +17,7 @@ PX4 is highly portable, OS-independent and supports Linux, NuttX and QuRT out of
   * [VTOL](https://docs.px4.io/master/en/frames_vtol/)
   * [Autogyro](https://docs.px4.io/master/en/frames_autogyro/)
   * [Rover](https://docs.px4.io/master/en/frames_rover/)
-  * many more experimental types (Blimps, Boats, Submarines, Autogyros, etc)
+  * many more experimental types (Blimps, Boats, Submarines, High altitude balloons, etc)
 * Releases: [Downloads](https://github.com/PX4/PX4-Autopilot/releases)
 
 
@@ -85,23 +85,24 @@ See also [maintainers list](https://px4.io/community/maintainers/) (px4.io) and 
 This repository contains code supporting Pixhawk standard boards (best supported, best tested, recommended choice) and proprietary boards.
 
 ### Pixhawk Standard Boards
-  * FMUv2
-    * [Pixhawk](https://docs.px4.io/master/en/flight_controller/pixhawk.html)
-    * [Pixfalcon](https://docs.px4.io/master/en/flight_controller/pixfalcon.html)
-  * FMUv3
+  * FMUv6X and FMUv6U (STM32H7, 2021)
+    * Various vendors will provide FMUv6X and FMUv6U based designs Q3/2021
+  * FMUv5 and FMUv5X (STM32F7, 2019/20)
+    * [Pixhawk 4 (FMUv5)](https://docs.px4.io/master/en/flight_controller/pixhawk4.html)
+    * [Pixhawk 4 mini (FMUv5)](https://docs.px4.io/master/en/flight_controller/pixhawk4_mini.html)
+    * [CUAV V5+ (FMUv5)](https://docs.px4.io/master/en/flight_controller/cuav_v5_plus.html)
+    * [CUAV V5 nano (FMUv5)](https://docs.px4.io/master/en/flight_controller/cuav_v5_nano.html)
+    * [Auterion Skynode (FMUv5X)](https://docs.px4.io/master/en/flight_controller/auterion_skynode.html)
+  * FMUv4 (STM32F4, 2015)
+    * [Pixracer](https://docs.px4.io/master/en/flight_controller/pixracer.html)
+    * [Pixhawk 3 Pro](https://docs.px4.io/master/en/flight_controller/pixhawk3_pro.html)
+  * FMUv3 (STM32F4, 2014)
     * [Pixhawk 2](https://docs.px4.io/master/en/flight_controller/pixhawk-2.html)
     * [Pixhawk Mini](https://docs.px4.io/master/en/flight_controller/pixhawk_mini.html)
     * [CUAV Pixhack v3](https://docs.px4.io/master/en/flight_controller/pixhack_v3.html)
-  * FMUv4 (STM32F4)
-    * [Pixracer](https://docs.px4.io/master/en/flight_controller/pixracer.html)
-    * [Pixhawk 3 Pro](https://docs.px4.io/master/en/flight_controller/pixhawk3_pro.html)
-  * FMUv5 (STM32F7)
-    * [Pixhawk 4](https://docs.px4.io/master/en/flight_controller/pixhawk4.html)
-    * [Pixhawk 4 mini](https://docs.px4.io/master/en/flight_controller/pixhawk4_mini.html)
-    * [CUAV V5+](https://docs.px4.io/master/en/flight_controller/cuav_v5_plus.html)
-    * [CUAV V5 nano](https://docs.px4.io/master/en/flight_controller/cuav_v5_nano.html)
-  * FMUv6X and FMUv6U (STM32H7)
-    * Various vendors will provide FMUv6X and FMUv6U based designs Q2/2021
+  * FMUv2 (STM32F4, 2013)
+    * [Pixhawk](https://docs.px4.io/master/en/flight_controller/pixhawk.html)
+    * [Pixfalcon](https://docs.px4.io/master/en/flight_controller/pixfalcon.html)
 
 ### Manufacturer and Community supported
   * [Holybro Durandal](https://docs.px4.io/master/en/flight_controller/durandal.html)
@@ -109,7 +110,7 @@ This repository contains code supporting Pixhawk standard boards (best supported
   * [Hex Cube Yellow](https://docs.px4.io/master/en/flight_controller/cubepilot_cube_yellow.html)
   * [Airmind MindPX V2.8](http://www.mindpx.net/assets/accessories/UserGuide_MindPX.pdf)
   * [Airmind MindRacer V1.2](http://mindpx.net/assets/accessories/mindracer_user_guide_v1.2.pdf)
-  * [Bitcraze Crazyflie 2.0](https://docs.px4.io/master/en/flight_controller/crazyflie2.html)
+  * [Bitcraze Crazyflie 2.0](https://docs.px4.io/master/en/complete_vehicles/crazyflie2.html)
   * [Omnibus F4 SD](https://docs.px4.io/master/en/flight_controller/omnibus_f4_sd.html)
   * [Holybro Kakute F7](https://docs.px4.io/master/en/flight_controller/kakutef7.html)
   * [Raspberry PI with Navio 2](https://docs.px4.io/master/en/flight_controller/raspberry_pi_navio2.html)

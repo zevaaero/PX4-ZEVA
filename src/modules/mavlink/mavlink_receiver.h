@@ -50,6 +50,7 @@
 #include "mavlink_timesync.h"
 #include "tune_publisher.h"
 
+#include <geo/geo.h>
 #include <lib/drivers/accelerometer/PX4Accelerometer.hpp>
 #include <lib/drivers/barometer/PX4Barometer.hpp>
 #include <lib/drivers/gyroscope/PX4Gyroscope.hpp>
@@ -128,6 +129,7 @@ public:
 	void start();
 	void stop();
 
+	bool component_was_seen(int system_id, int component_id);
 	void print_detailed_rx_stats() const;
 
 private:
@@ -135,6 +137,8 @@ private:
 	void run();
 
 	void acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result, uint8_t progress);
+
+	void updateParams() override;
 
 	/**
 	 * Common method to handle both mavlink command types. T is one of mavlink_command_int_t or mavlink_command_long_t.
@@ -178,6 +182,7 @@ private:
 	void handle_message_play_tune(mavlink_message_t *msg);
 	void handle_message_play_tune_v2(mavlink_message_t *msg);
 	void handle_message_radio_status(mavlink_message_t *msg);
+	void handle_message_rc_channels(mavlink_message_t *msg);
 	void handle_message_rc_channels_override(mavlink_message_t *msg);
 	void handle_message_serial_control(mavlink_message_t *msg);
 	void handle_message_set_actuator_control_target(mavlink_message_t *msg);
@@ -200,6 +205,7 @@ private:
 	void handle_message_debug_vect(mavlink_message_t *msg);
 	void handle_message_named_value_float(mavlink_message_t *msg);
 #endif // !CONSTRAINED_FLASH
+	void handle_message_request_event(mavlink_message_t *msg);
 
 	void CheckHeartbeats(const hrt_abstime &t, bool force = false);
 
@@ -229,11 +235,6 @@ private:
 
 	void update_terrain_uploader(const hrt_abstime &now);
 
-	/**
-	 * @brief Updates optical flow parameters.
-	 */
-	void updateParams() override;
-
 	void update_rx_stats(const mavlink_message_t &message);
 
 	px4::atomic_bool 	_should_exit{false};
@@ -253,7 +254,7 @@ private:
 
 	orb_advert_t _mavlink_log_pub{nullptr};
 
-	static constexpr int MAX_REMOTE_COMPONENTS{16};
+	static constexpr unsigned MAX_REMOTE_COMPONENTS{8};
 	struct ComponentState {
 		uint32_t last_time_received_ms{0};
 		uint32_t received_messages{0};
@@ -263,6 +264,7 @@ private:
 		uint8_t last_sequence{0};
 	};
 	ComponentState _component_states[MAX_REMOTE_COMPONENTS] {};
+	unsigned _component_states_count{0};
 	bool _warned_component_states_full_once{false};
 
 	uint64_t _total_received_counter{0};                            ///< The total number of successfully received messages
@@ -292,7 +294,7 @@ private:
 	uORB::Publication<onboard_computer_status_s>		_onboard_computer_status_pub{ORB_ID(onboard_computer_status)};
 	uORB::Publication<generator_status_s>			_generator_status_pub{ORB_ID(generator_status)};
 	uORB::Publication<optical_flow_s>			_flow_pub{ORB_ID(optical_flow)};
-	uORB::Publication<sensor_gps_s>				_gps_pub{ORB_ID(sensor_gps)};
+	uORB::Publication<sensor_gps_s>				_sensor_gps_pub{ORB_ID(sensor_gps)};
 	uORB::Publication<vehicle_attitude_s>			_attitude_pub{ORB_ID(vehicle_attitude)};
 	uORB::Publication<vehicle_attitude_setpoint_s>		_att_sp_pub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Publication<vehicle_attitude_setpoint_s>		_mc_virtual_att_sp_pub{ORB_ID(mc_virtual_attitude_setpoint)};
@@ -359,6 +361,9 @@ private:
 	static constexpr unsigned int	MOM_SWITCH_COUNT{8};
 	uint8_t				_mom_switch_pos[MOM_SWITCH_COUNT] {};
 	uint16_t			_mom_switch_state{0};
+
+	map_projection_reference_s _global_local_proj_ref{};
+	float _global_local_alt0{NAN};
 
 	hrt_abstime			_last_utm_global_pos_com{0};
 

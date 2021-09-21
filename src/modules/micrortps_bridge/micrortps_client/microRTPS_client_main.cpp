@@ -110,7 +110,17 @@ static int parse_options(int argc, char *argv[])
 
 		case 'w': _options.sleep_us        = strtoul(myoptarg, nullptr, 10);    break;
 
-		case 'b': _options.baudrate        = strtoul(myoptarg, nullptr, 10);    break;
+		case 'b': {
+				int baudrate = 0;
+
+				if (px4_get_parameter_value(myoptarg, baudrate) != 0) {
+					PX4_ERR("baudrate parsing failed");
+				}
+
+				_options.baudrate = baudrate;
+
+				break;
+			}
 
 		case 'm': _options.datarate        = strtoul(myoptarg, nullptr, 10);    break;
 
@@ -177,7 +187,7 @@ static int micrortps_start(int argc, char *argv[])
 			transport_node = new UART_node(_options.device, _options.baudrate, _options.poll_ms,
 						       _options.sw_flow_control, _options.hw_flow_control, sys_id,
 						       _options.verbose_debug);
-			PX4_INFO("UART transport: device: %s; baudrate: %d; poll: %dms; flow_control: %s",
+			PX4_INFO("UART transport: device: %s; baudrate: %" PRIu32 "; poll: %" PRIu32 "ms; flow_control: %s",
 				 _options.device, _options.baudrate, _options.poll_ms,
 				 _options.sw_flow_control ? "SW enabled" : (_options.hw_flow_control ? "HW enabled" : "No"));
 		}
@@ -186,7 +196,7 @@ static int micrortps_start(int argc, char *argv[])
 	case options::eTransports::UDP: {
 			transport_node = new UDP_node(_options.ip, _options.recv_port, _options.send_port,
 						      sys_id, _options.verbose_debug);
-			PX4_INFO("UDP transport: ip address: %s; recv port: %u; send port: %u",
+			PX4_INFO("UDP transport: ip address: %s; recv port: %" PRIu16 "; send port: %" PRIu16,
 				 _options.ip, _options.recv_port, _options.send_port);
 
 		}
@@ -246,7 +256,7 @@ int micrortps_client_main(int argc, char *argv[])
 		_rtps_task = px4_task_spawn_cmd("micrortps_client",
 						SCHED_DEFAULT,
 						SCHED_PRIORITY_DEFAULT,
-						2900,
+						PX4_STACK_ADJUSTED(2900),
 						(px4_main_t) micrortps_start,
 						(char *const *)argv);
 

@@ -50,6 +50,7 @@
 #include <mathlib/mathlib.h>
 
 #include <sys/ioctl.h>
+#include <assert.h>
 #include <unistd.h>
 #include <termios.h>
 #include <errno.h>

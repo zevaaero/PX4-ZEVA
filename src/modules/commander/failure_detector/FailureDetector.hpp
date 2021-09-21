@@ -43,7 +43,7 @@
 
 #pragma once
 
-#include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
+#include <mathlib/math/filter/AlphaFilter.hpp>
 #include <matrix/matrix/math.hpp>
 #include <mathlib/mathlib.h>
 #include <px4_platform_common/module_params.h>

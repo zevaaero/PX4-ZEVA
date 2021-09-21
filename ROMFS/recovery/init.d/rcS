@@ -15,10 +15,6 @@ set +e
 #
 #------------------------------------------------------------------------------
 set R /
-#
-# Mount the procfs.
-#
-mount -t procfs /proc
 
 #
 # Start CDC/ACM serial driver.
@@ -29,13 +25,6 @@ sercon
 # Print full system version.
 #
 ver all
-
-#
-# Start the ORB (first app to start)
-# tone_alarm and tune_control
-# is dependent.
-#
-uorb start
 
 #
 # Set the parameter file the board supports params on

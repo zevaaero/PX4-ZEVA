@@ -40,7 +40,7 @@
 #pragma once
 
 #include <drivers/drv_hrt.h>
-#include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
+#include <mathlib/math/filter/AlphaFilter.hpp>
 #include <lib/perf/perf_counter.h>
 #include <lib/pid_design/pid_design.hpp>
 #include <lib/system_identification/system_identification.hpp>

@@ -39,7 +39,7 @@
 #include "mavlink_bridge_header.h"
 
 #include <drivers/drv_hrt.h>
-#include <ecl/geo/geo.h>
+#include <lib/geo/geo.h>
 #include <lib/mathlib/mathlib.h>
 #include <lib/terrain/util.h>
 #include <px4_platform_common/defines.h>

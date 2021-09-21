@@ -56,8 +56,7 @@ px4_add_module(
 		vtol_takeoff.cpp
 		vtol_land.cpp
 	DEPENDS
-		git_ecl
-		ecl_geo
+		geo
 		landing_slope
 		geofence_breach_avoidance
 		motion_planning

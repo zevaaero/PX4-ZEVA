@@ -1,17 +1,12 @@
 
 px4_add_board(
 	PLATFORM posix
-	VENDOR px4
-	MODEL sitl
 	ROMFSROOT px4fmu_common
-	LABEL default
-	EMBEDDED_METADATA parameters
 	TESTING
 	ETHERNET
 	DRIVERS
 		#barometer # all available barometer drivers
 		#batt_smbus
-		camera_capture
 		camera_trigger
 		#differential_pressure # all available differential pressure drivers
 		#distance_sensor # all available distance sensor drivers
@@ -93,7 +88,7 @@ px4_add_board(
 	EXAMPLES
 		dyn_hello # dynamically loading modules example
 		fake_gps
-		fake_gyro
+		fake_imu
 		fake_magnetometer
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello

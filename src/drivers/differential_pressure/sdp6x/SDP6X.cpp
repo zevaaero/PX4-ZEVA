@@ -56,6 +56,7 @@ SDP6X::init_sdp6x()
 		_device_id.devid_s.devtype = DRV_DIFF_PRESS_DEVTYPE_SDP31;
 		// wait until sensor is ready
 		px4_usleep(20000);
+		ScheduleNow();
 	}
 
 	return ret == 0;
