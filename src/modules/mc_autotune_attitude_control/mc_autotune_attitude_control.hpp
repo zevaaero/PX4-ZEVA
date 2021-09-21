@@ -180,6 +180,7 @@ private:
 		(ParamBool<px4::params::MC_AT_START>) _param_mc_at_start,
 		(ParamFloat<px4::params::MC_AT_SYSID_AMP>) _param_mc_at_sysid_amp,
 		(ParamInt<px4::params::MC_AT_APPLY>) _param_mc_at_apply,
+		(ParamFloat<px4::params::MC_AT_RISE_TIME>) _param_mc_at_rise_time,
 
 		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,
 

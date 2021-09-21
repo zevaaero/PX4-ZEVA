@@ -179,8 +179,9 @@ void McAutotuneAttitudeControl::Run()
 
 		const float model_dt = static_cast<float>(_model_update_scaler) * _filter_dt;
 
-		const float desired_rise_time = ((_state == state::yaw) || (_state == state::yaw_pause)) ? 0.2f : 0.13f;
-		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.5f);
+		const float desired_rise_time = ((_state == state::yaw)
+						 || (_state == state::yaw_pause)) ? 0.2f : _param_mc_at_rise_time.get();
+		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.7f);
 
 		// Prevent the D term from going just negative if it is not needed
 		if ((_kid(2) < 0.f) && (_kid(2) > -0.001f)) {
