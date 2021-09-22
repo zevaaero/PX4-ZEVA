@@ -50,8 +50,6 @@ void LoggedTopics::add_default_topics()
 	add_topic("actuator_controls_1", 100);
 	add_topic("actuator_controls_2", 100);
 	add_topic("actuator_controls_3", 100);
-	add_topic("actuator_controls_4", 100);
-	add_topic("actuator_controls_5", 100);
 	add_topic("actuator_controls_status_0", 300);
 	add_topic("actuator_controls_status_1", 300);
 	add_topic("airspeed", 1000);
@@ -118,11 +116,22 @@ void LoggedTopics::add_default_topics()
 	add_topic("wind", 1000);
 
 	// Control allocation topics
-	add_topic("vehicle_actuator_setpoint", 20);
-	add_topic("vehicle_angular_acceleration", 20);
-	add_topic("vehicle_angular_acceleration_setpoint", 20);
-	add_topic("vehicle_thrust_setpoint", 20);
-	add_topic("vehicle_torque_setpoint", 20);
+	param_t control_allocation_handle = param_find("CA_METHOD"); // TODO: use SYS_CTRL_ALLOC
+	int32_t control_allocation_enabled = 0;
+
+	if (control_allocation_handle != PARAM_INVALID) {
+		param_get(control_allocation_handle, &control_allocation_enabled);
+	}
+
+	if (control_allocation_enabled >= 1) {
+		add_topic("actuator_controls_4", 100);
+		add_topic("actuator_controls_5", 100);
+		add_topic("vehicle_actuator_setpoint", 20);
+		add_topic("vehicle_angular_acceleration", 20);
+		add_topic("vehicle_angular_acceleration_setpoint", 20);
+		add_topic("vehicle_thrust_setpoint", 20);
+		add_topic("vehicle_torque_setpoint", 20);
+	}
 
 	// multi topics
 	add_topic_multi("actuator_outputs", 100, 3);
