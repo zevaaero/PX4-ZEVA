@@ -154,7 +154,6 @@ private:
 	void PublishStatusFlags(const hrt_abstime &timestamp);
 	void PublishWindEstimate(const hrt_abstime &timestamp);
 	void PublishYawEstimatorStatus(const hrt_abstime &timestamp);
-	void PublishBaroBiasEstimate(const hrt_abstime &timestamp);
 
 	void SelectImuStatus();
 

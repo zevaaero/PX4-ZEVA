@@ -515,7 +515,6 @@ void EKF2::Run()
 			PublishInnovationTestRatios(now);
 			PublishInnovationVariances(now);
 			PublishYawEstimatorStatus(now);
-			PublishBaroBiasEstimate(now);
 
 			UpdateMagCalibration(now);
 
@@ -1275,21 +1274,6 @@ void EKF2::PublishWindEstimate(const hrt_abstime &timestamp)
 
 		_wind_pub.publish(wind);
 	}
-}
-
-void EKF2::PublishBaroBiasEstimate(const hrt_abstime &timestamp)
-{
-
-	baro_bias_estimate_s bbe{};
-	bbe.timestamp = timestamp;
-	bbe.timestamp_sample = timestamp;
-	bbe.baro_device_id = _device_id_baro;
-	_ekf.getBaroBiasEstimatorStatus(bbe.bias,
-					bbe.bias_var,
-					bbe.innov,
-					bbe.innov_var,
-					bbe.innov_test_ratio);
-	_baro_bias_estimate_pub.publish(bbe);
 }
 
 void EKF2::PublishOpticalFlowVel(const hrt_abstime &timestamp, const optical_flow_s &flow_sample)
