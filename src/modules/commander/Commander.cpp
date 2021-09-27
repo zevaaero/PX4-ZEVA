@@ -2120,7 +2120,7 @@ Commander::run()
 			// Transition main state to loiter or auto-mission after takeoff is completed.
 			if (_armed.armed && !_land_detector.landed
 			    && (_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF ||
-				_status.nav_state == commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF)
+				_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF)
 			    && (mission_result.timestamp >= _status.nav_state_timestamp)
 			    && mission_result.finished) {
 

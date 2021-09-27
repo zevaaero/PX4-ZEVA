@@ -700,44 +700,54 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 		break;
 
 	case commander_state_s::MAIN_STATE_AUTO_TAKEOFF:
-	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF:
+	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF: {
 
-		/* require local position */
+			/* require local position */
 
-		if (status.engine_failure) {
-			status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
+			const bool in_forward_flight = status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING
+						       || status.in_transition_mode;
 
-		} else if (is_armed
-			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false,
-					   gps_fail_openloop_loiter_time_s)) {
-			// nothing to do - everything done in check_invalid_pos_nav_state
-		} else if (status.data_link_lost && data_link_loss_act_configured && !landed && is_armed) {
-			// Data link lost, data link loss reaction configured -> do configured reaction
-			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_datalink);
-			set_link_loss_nav_state(status, armed, status_flags, internal_state, data_link_loss_act, 0);
+			// deny entering failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
+			// altitude. This is to prevent maneuvers which do not comply with the restrictions given by the VTOL safe area.
+			// the vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
+			const bool deny_failsafe = status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF && in_forward_flight
+						   && !mission_finished;
 
-		} else if (status.rc_signal_lost && !(param_com_rcl_except & RCLossExceptionBits::RCL_EXCEPT_HOLD)
-			   && status_flags.rc_signal_found_once && is_armed && !landed) {
-			// RC link lost, rc loss not disabled in loiter, RC was used before -> RC loss reaction after delay
-			// Safety pilot expects to be able to take over by RC in case anything unexpected happens
-			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_rc);
-			set_link_loss_nav_state(status, armed, status_flags, internal_state, rc_loss_act, param_com_rcl_act_t);
+			if (status.engine_failure) {
+				status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
 
-		} else if (status.rc_signal_lost && !(param_com_rcl_except & RCLossExceptionBits::RCL_EXCEPT_HOLD)
-			   && status.data_link_lost && !data_link_loss_act_configured
-			   && is_armed && !landed) {
-			// All links lost, no data link loss reaction configured -> immediately do RC loss reaction
-			// Lost all communication, by default it's considered unsafe to continue the mission
-			// This is only reached when flying mission completely without RC (it was not present since boot)
-			enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_datalink);
-			set_link_loss_nav_state(status, armed, status_flags, internal_state, rc_loss_act, 0);
+			} else if (is_armed
+				   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false,
+						   gps_fail_openloop_loiter_time_s)) {
+				// nothing to do - everything done in check_invalid_pos_nav_state
+			} else if (status.data_link_lost && data_link_loss_act_configured && !landed && is_armed && !deny_failsafe) {
+				// Data link lost, data link loss reaction configured -> do configured reaction
+				enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_datalink);
+				set_link_loss_nav_state(status, armed, status_flags, internal_state, data_link_loss_act, 0);
 
-		} else {
-			status.nav_state = internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_TAKEOFF ?
-					   vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF : vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF;
+			} else if (status.rc_signal_lost && !(param_com_rcl_except & RCLossExceptionBits::RCL_EXCEPT_HOLD)
+				   && status_flags.rc_signal_found_once && is_armed && !landed && !deny_failsafe) {
+				// RC link lost, rc loss not disabled in loiter, RC was used before -> RC loss reaction after delay
+				// Safety pilot expects to be able to take over by RC in case anything unexpected happens
+				enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_rc);
+				set_link_loss_nav_state(status, armed, status_flags, internal_state, rc_loss_act, param_com_rcl_act_t);
+
+			} else if (status.rc_signal_lost && !(param_com_rcl_except & RCLossExceptionBits::RCL_EXCEPT_HOLD)
+				   && status.data_link_lost && !data_link_loss_act_configured
+				   && is_armed && !landed && !deny_failsafe) {
+				// All links lost, no data link loss reaction configured -> immediately do RC loss reaction
+				// Lost all communication, by default it's considered unsafe to continue the mission
+				// This is only reached when flying mission completely without RC (it was not present since boot)
+				enable_failsafe(status, old_failsafe, mavlink_log_pub, reason_no_datalink);
+				set_link_loss_nav_state(status, armed, status_flags, internal_state, rc_loss_act, 0);
+
+			} else {
+				status.nav_state = internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_TAKEOFF ?
+						   vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF : vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF;
+			}
+
+			break;
 		}
-
-		break;
 
 	case commander_state_s::MAIN_STATE_AUTO_LAND:
 
