@@ -702,7 +702,11 @@ Navigator::run()
 				}
 
 				if (hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
-					if (!rtl_activated && _rtl.getClimbDone()) {
+					if (_navigation_mode == &_vtol_takeoff && !get_mission_result()->finished) {
+						// if we are in the middle of a vtol takeoff then let's wait until we have established the loiter
+						navigation_mode_new = &_vtol_takeoff;
+
+					} else if (!rtl_activated && _rtl.getClimbDone()) {
 						navigation_mode_new = &_vtol_land;
 
 					} else {
