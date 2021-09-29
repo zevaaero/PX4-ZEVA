@@ -1303,6 +1303,10 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
 
+		// Hard-code descend rate to 0.5m/s. This is a compromise to give the system to recover,
+		// but not letting it drift too far away. We may want to parametrize it later.
+		const float descend_rate = -0.5f;
+
 		tecs_update_pitch_throttle(now, _hold_alt,
 					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
@@ -1313,7 +1317,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   false,
 					   _param_fw_p_lim_min.get(),
 					   false,
-					   _param_fw_t_sink_min.get());
+					   descend_rate);
 
 		_att_sp.roll_body = math::radians(_param_fw_gpsf_r.get()); // open loop loiter bank angle
 		_att_sp.yaw_body = 0.f;
