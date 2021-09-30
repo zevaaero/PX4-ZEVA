@@ -440,7 +440,7 @@ void AirspeedModule::update_params()
 	_wind_estimator_sideslip.set_tas_gate(_param_west_tas_gate.get());
 	_wind_estimator_sideslip.set_beta_gate(_param_west_beta_gate.get());
 
-	for (int i = 0; i < _number_of_airspeed_sensors; i++) {
+	for (int i = 0; i < MAX_NUM_AIRSPEED_SENSORS; i++) {
 		_airspeed_validator[i].set_wind_estimator_wind_p_noise(_param_west_w_p_noise.get());
 		_airspeed_validator[i].set_wind_estimator_tas_scale_p_noise(_param_west_sc_p_noise.get());
 		_airspeed_validator[i].set_wind_estimator_tas_noise(_param_west_tas_noise.get());
