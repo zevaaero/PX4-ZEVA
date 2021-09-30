@@ -159,7 +159,7 @@ private:
 	// states of airspeed valid declaration
 	bool _airspeed_valid{true}; ///< airspeed valid (pitot or groundspeed-windspeed)
 	int _checks_fail_delay{3}; ///< delay for airspeed invalid declaration after single check failure (Sec)
-	int _checks_clear_delay{3}; ///< delay for airspeed valid declaration after all checks passed again (Sec)
+	int _checks_clear_delay{-1}; ///< delay for airspeed valid declaration after all checks passed again (Sec)
 	uint64_t	_time_checks_passed{0};	///< time the checks have last passed (uSec)
 	uint64_t	_time_checks_failed{0};	///< time the checks have last not passed (uSec)
 
