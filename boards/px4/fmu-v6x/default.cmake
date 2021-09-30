@@ -4,7 +4,7 @@ px4_add_board(
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
 	ROMFSROOT px4fmu_common
-	BUILD_BOOTLOADER
+	#BUILD_BOOTLOADER
 	IO px4_io-v2_default
 	UAVCAN_INTERFACES 2
 	UAVCAN_TIMER_OVERRIDE 2
@@ -68,7 +68,7 @@ px4_add_board(
 		fw_autotune_attitude_control
 		fw_pos_control_l1
 		gyro_calibration
-		gyro_fft
+		#gyro_fft
 		land_detector
 		landing_target_estimator
 		load_mon
