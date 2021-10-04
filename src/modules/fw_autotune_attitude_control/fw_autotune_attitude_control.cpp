@@ -219,7 +219,7 @@ void FwAutotuneAttitudeControl::checkFilters()
 			_are_filters_initialized = true;
 			_filter_sample_rate = update_rate_hz;
 			_sys_id.setLpfCutoffFrequency(_filter_sample_rate, _param_imu_gyro_cutoff.get());
-			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .05f);
+			_sys_id.setHpfCutoffFrequency(_filter_sample_rate, .5f);
 			_sys_id.setForgettingFactor(60.f, _sample_interval_avg);
 			_sys_id.setFitnessLpfTimeConstant(1.f, _sample_interval_avg);
 		}

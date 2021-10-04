@@ -40,7 +40,6 @@
 #include "mc_autotune_attitude_control.hpp"
 
 using namespace matrix;
-using namespace time_literals;
 
 McAutotuneAttitudeControl::McAutotuneAttitudeControl() :
 	ModuleParams(nullptr),
@@ -60,6 +59,8 @@ bool McAutotuneAttitudeControl::init()
 		PX4_ERR("parameter_update callback registration failed!");
 		return false;
 	}
+
+	_signal_filter.setParameters(_publishing_dt_s, .2f); // runs in the slow publishing loop
 
 	return true;
 }
@@ -164,7 +165,7 @@ void McAutotuneAttitudeControl::Run()
 		_model_update_counter = 0;
 	}
 
-	if (hrt_elapsed_time(&_last_publish) > 100_ms || _last_publish == 0) {
+	if (hrt_elapsed_time(&_last_publish) > _publishing_dt_hrt || _last_publish == 0) {
 		const hrt_abstime now = hrt_absolute_time();
 		updateStateMachine(now);
 
@@ -178,9 +179,19 @@ void McAutotuneAttitudeControl::Run()
 
 		const float model_dt = static_cast<float>(_model_update_scaler) * _filter_dt;
 
-		const float desired_rise_time = ((_state == state::yaw) || (_state == state::yaw_pause)) ? 0.2f : 0.08f;
-		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.4f);
-		_attitude_p = pid_design::computePOuterGain(den, model_dt, 10.f);
+		const float desired_rise_time = ((_state == state::yaw)
+						 || (_state == state::yaw_pause)) ? 0.2f : _param_mc_at_rise_time.get();
+		_kid = pid_design::computePidGmvc(num, den, model_dt, desired_rise_time, 0.f, 0.7f);
+
+		// Prevent the D term from going just negative if it is not needed
+		if ((_kid(2) < 0.f) && (_kid(2) > -0.001f)) {
+			_kid(2) = 0.f;
+		}
+
+		// To compute the attitude gain, use the following empirical rule:
+		// "An error of 60 degrees should produce the maximum control output"
+		// or K_att * K_rate * rad(60) = 1
+		_attitude_p = math::constrain(1.f / (math::radians(60.f) * _kid(0)), 2.f, 6.5f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 
@@ -230,7 +241,7 @@ void McAutotuneAttitudeControl::checkFilters()
 			const float filter_rate_hz = 1.f / _filter_dt;
 
 			_sys_id.setLpfCutoffFrequency(filter_rate_hz, _param_imu_gyro_cutoff.get());
-			_sys_id.setHpfCutoffFrequency(filter_rate_hz, .05f);
+			_sys_id.setHpfCutoffFrequency(filter_rate_hz, .5f);
 
 			// Set the model sampling time depending on the gyro cutoff frequency
 			// as this is a good indicator of the maximum control loop bandwidth
@@ -281,6 +292,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_max_steps = 10;
 			_signal_sign = 1;
 			_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
+			_signal_filter.reset(0.f);
 			_gains_backup_available = false;
 		}
 
@@ -304,6 +316,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 			_sys_id.reset();
 			_input_scale = 1.f / (_param_mc_pitchrate_p.get() * _param_mc_pitchrate_k.get());
+			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
@@ -328,6 +341,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 			_sys_id.reset();
 			_input_scale = 1.f / (_param_mc_yawrate_p.get() * _param_mc_yawrate_k.get());
+			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
 			_steps_counter = 5;
@@ -351,6 +365,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state = state::verification;
 			_state_start_time = now;
 			_sys_id.reset();
+			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			_steps_counter = 5;
 			_max_steps = 10;
@@ -513,7 +528,7 @@ bool McAutotuneAttitudeControl::areGainsGood() const
 {
 	const bool are_positive = _rate_k.min() > 0.f
 				  && _rate_i.min() > 0.f
-				  && _rate_d.min() > 0.f
+				  && _rate_d.min() >= 0.f
 				  && _att_p.min() > 0.f;
 
 	const bool are_small_enough = _rate_k.max() < 0.5f
@@ -571,7 +586,7 @@ void McAutotuneAttitudeControl::stopAutotune()
 const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 {
 	if (_steps_counter > _max_steps) {
-		_signal_sign = (_signal_sign >= 0) ? -1 : 1;
+		_signal_sign = (_signal_sign == 1) ? 0 : 1;
 		_steps_counter = 0;
 
 		if (_max_steps > 1) {
@@ -584,9 +599,11 @@ const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 
 	_steps_counter++;
 
-	const float signal = float(_signal_sign) * _param_mc_at_sysid_amp.get();
+	const float step = float(_signal_sign) * _param_mc_at_sysid_amp.get();
 
 	Vector3f rate_sp{};
+
+	const float signal = step - _signal_filter.getState();
 
 	if (_state == state::roll) {
 		rate_sp(0) = signal;
@@ -601,6 +618,8 @@ const Vector3f McAutotuneAttitudeControl::getIdentificationSignal()
 		rate_sp(0) = signal;
 		rate_sp(1) = signal;
 	}
+
+	_signal_filter.update(step);
 
 	return rate_sp;
 }

@@ -66,7 +66,7 @@ PARAM_DEFINE_INT32(MC_AT_START, 0);
  * @decimal 1
  * @group Autotune
  */
-PARAM_DEFINE_FLOAT(MC_AT_SYSID_AMP, 0.5);
+PARAM_DEFINE_FLOAT(MC_AT_SYSID_AMP, 0.7);
 
 /**
  * Controls when to apply the new gains
@@ -85,3 +85,14 @@ PARAM_DEFINE_FLOAT(MC_AT_SYSID_AMP, 0.5);
  * @group Autotune
  */
 PARAM_DEFINE_INT32(MC_AT_APPLY, 1);
+
+/**
+ * Desired angular rate closed-loop rise time
+ *
+ * @min 0.01
+ * @max 0.5
+ * @decimal 2
+ * @unit s
+ * @group Autotune
+ */
+PARAM_DEFINE_FLOAT(MC_AT_RISE_TIME, 0.14);

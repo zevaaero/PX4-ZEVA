@@ -60,6 +60,8 @@
 #include <uORB/topics/vehicle_status.h>
 #include <mathlib/mathlib.h>
 
+using namespace time_literals;
+
 class McAutotuneAttitudeControl : public ModuleBase<McAutotuneAttitudeControl>, public ModuleParams,
 	public px4::WorkItem
 {
@@ -165,6 +167,8 @@ private:
 	float _filter_dt{0.01f};
 	bool _are_filters_initialized{false};
 
+	AlphaFilter<float> _signal_filter; ///< used to create a wash-out filter
+
 	static constexpr float _model_dt_min{2e-3f}; // 2ms = 500Hz
 	static constexpr float _model_dt_max{10e-3f}; // 10ms = 100Hz
 	int _model_update_scaler{1};
@@ -176,6 +180,7 @@ private:
 		(ParamBool<px4::params::MC_AT_START>) _param_mc_at_start,
 		(ParamFloat<px4::params::MC_AT_SYSID_AMP>) _param_mc_at_sysid_amp,
 		(ParamInt<px4::params::MC_AT_APPLY>) _param_mc_at_apply,
+		(ParamFloat<px4::params::MC_AT_RISE_TIME>) _param_mc_at_rise_time,
 
 		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,
 
@@ -195,4 +200,7 @@ private:
 		(ParamFloat<px4::params::MC_YAWRATE_D>) _param_mc_yawrate_d,
 		(ParamFloat<px4::params::MC_YAW_P>) _param_mc_yaw_p
 	)
+
+	static constexpr float _publishing_dt_s = 100e-3f;
+	static constexpr hrt_abstime _publishing_dt_hrt = 100_ms;
 };
