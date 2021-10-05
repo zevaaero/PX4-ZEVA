@@ -95,6 +95,7 @@ px4_add_board(
 		vmount
 		vtol_att_control
 	SYSTEMCMDS
+		actuator_endurance_test
 		bl_update
 		dmesg
 		esc_calib
