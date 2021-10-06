@@ -567,7 +567,7 @@ void DevCommon::cleanup()
 
 	size_t garbage_end = 0;
 
-	if (!mavlink_available && !rtps_available) {
+	if (!mavlink_available && !rtps_available && (_read_buffer->buf_size > 0)) {
 		garbage_end = _read_buffer->buf_size - 1;
 
 	} else {
