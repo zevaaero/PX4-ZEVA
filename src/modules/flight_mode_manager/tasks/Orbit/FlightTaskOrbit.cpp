@@ -307,16 +307,7 @@ void FlightTaskOrbit::_generate_circle_approach_setpoints()
 	Vector2f closest_point_on_circle = Vector2f(_position) + position_to_center_xy.unit_or_zero() *
 					   (position_to_center_xy.norm() - _orbit_radius);
 
-	float angle = math::radians(8.f);
-	float s_a = _orbit_velocity >= 0 ? sinf(angle) : -sinf(angle);
-	float c_a = cosf(angle);
-	Vector2f origin_closest = (closest_point_on_circle - center2d);
-	Vector2f target_circle_point_xy =  {
-		center2d(0) + c_a * origin_closest(0) - s_a * origin_closest(1),
-		center2d(1) + s_a * origin_closest(0) + c_a * origin_closest(1)
-	};
-
-	const Vector3f target_circle_point{target_circle_point_xy(0), target_circle_point_xy(1), _center(2)};
+	const Vector3f target_circle_point{closest_point_on_circle(0), closest_point_on_circle(1), _center(2)};
 
 	PositionSmoothing::PositionSmoothingSetpoints out_setpoints;
 	_position_smoothing.generateSetpoints(_position, {
