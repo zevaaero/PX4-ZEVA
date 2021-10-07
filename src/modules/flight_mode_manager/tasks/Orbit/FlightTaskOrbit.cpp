@@ -280,26 +280,6 @@ bool FlightTaskOrbit::_is_position_on_circle() const
 }
 
 
-bool circle_tangents_for_position(const Vector2f &center, float radius, const Vector2f &position, Vector2f &out1,
-				  Vector2f &out2)
-{
-	const Vector2f d = position - center;
-	const Vector2f dr = {-d(1), d(0)};
-	float d_norm = d.length();
-
-	if (d_norm >= radius) {
-		float rho = radius / d_norm;
-		float ad = rho * rho;
-		float bd = rho * sqrtf(1.f - ad);
-		out1 = center + ad * d + bd * dr;
-		out2 = center + ad * d - bd * dr;
-		return true;
-	}
-
-	return false;
-}
-
-
 void FlightTaskOrbit::_generate_circle_approach_setpoints()
 {
 	const Vector2f center2d = Vector2f(_center);
