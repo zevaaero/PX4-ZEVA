@@ -336,7 +336,7 @@ mixer_tick()
 			 * the oneshots with updated values.
 			 */
 
-			up_pwm_update();
+			up_pwm_update(0xff);
 		}
 	}
 
