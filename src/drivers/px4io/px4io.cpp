@@ -635,6 +635,25 @@ PX4IO::init()
 		return -1;
 	}
 
+	param_t sys_use_io_param = param_find("SYS_USE_IO");
+
+	if (sys_use_io_param != PARAM_INVALID) {
+
+		int32_t sys_use_io = -1;
+		param_get(sys_use_io_param, &sys_use_io);
+
+		if (sys_use_io == 0) {
+
+			uint16_t pwm_value = 0;
+
+			for (uint32_t idx = 0; idx < _max_actuators; idx++) {
+				io_reg_set(PX4IO_PAGE_DISARMED_PWM, idx, pwm_value);
+			}
+
+			_max_actuators = 0;
+		}
+	}
+
 	if (_max_rc_input > input_rc_s::RC_INPUT_MAX_CHANNELS) {
 		_max_rc_input = input_rc_s::RC_INPUT_MAX_CHANNELS;
 	}
