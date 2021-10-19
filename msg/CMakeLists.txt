@@ -37,6 +37,7 @@ cmake_policy(SET CMP0057 NEW)
 include(px4_list_make_absolute)
 
 set(msg_files
+	action_request.msg
 	actuator_armed.msg
 	actuator_controls.msg
 	actuator_controls_status.msg
@@ -45,7 +46,6 @@ set(msg_files
 	airspeed.msg
 	airspeed_validated.msg
 	airspeed_wind.msg
-	arm_request.msg
 	battery_status.msg
 	camera_capture.msg
 	camera_status.msg
@@ -106,7 +106,6 @@ set(msg_files
 	mavlink_log.msg
 	mission.msg
 	mission_result.msg
-	mode_request.msg
 	mount_orientation.msg
 	multirotor_motor_limits.msg
 	navigator_mission_item.msg
