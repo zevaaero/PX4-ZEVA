@@ -115,6 +115,7 @@ set(msg_files
 	parameter_update.msg
 	autotune_attitude_control_status.msg
 	ping.msg
+	pps_capture.msg
 	position_controller_landing_status.msg
 	position_controller_status.msg
 	position_setpoint.msg
