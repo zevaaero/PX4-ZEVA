@@ -92,8 +92,8 @@ add_custom_command(OUTPUT ${generated_serial_params_file}
 )
 
 set(parameters_xml ${PX4_BINARY_DIR}/parameters.xml)
-set(parameters_json ${PX4_BINARY_DIR}/params.json) # file name needs to be kept short to fit into url (metadata_uri)
-file(GLOB_RECURSE param_src_files ${PX4_SOURCE_DIR}/src/*params.c)
+set(parameters_json ${PX4_BINARY_DIR}/parameters.json)
+file(GLOB_RECURSE param_src_files ${PX4_SOURCE_DIR}/src/*params.c ${PX4_SOURCE_DIR}/src/*parameters.c)
 add_custom_command(OUTPUT ${parameters_xml} ${parameters_json} ${parameters_json}.xz
 	COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/px_process_params.py
 		--src-path ${module_list} ${generated_params_dir}
@@ -129,17 +129,12 @@ add_custom_command(OUTPUT px4_parameters.hpp
 	)
 
 set(SRCS)
-if ("${CONFIG_SHMEM}" STREQUAL "1")
-	message(STATUS "parameters shared memory enabled")
-	add_definitions(-DCONFIG_SHMEM=1)
-	list(APPEND SRCS parameters_shmem.cpp)
+
+list(APPEND SRCS parameters.cpp)
+if(BUILD_TESTING)
+	list(APPEND SRCS param_translation_unit_tests.cpp)
 else()
-	list(APPEND SRCS parameters.cpp)
-	if(BUILD_TESTING)
-		list(APPEND SRCS param_translation_unit_tests.cpp)
-	else()
-		list(APPEND SRCS param_translation.cpp)
-	endif()
+	list(APPEND SRCS param_translation.cpp)
 endif()
 
 if(${PX4_PLATFORM} STREQUAL "nuttx")

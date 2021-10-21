@@ -54,7 +54,7 @@
 #include <float.h>
 
 #include <drivers/drv_hrt.h>
-#include <lib/ecl/geo/geo.h>
+#include <lib/geo/geo.h>
 #include <lib/l1/ECL_L1_Pos_Controller.hpp>
 #include <lib/tecs/TECS.hpp>
 #include <lib/landing_slope/Landingslope.hpp>
@@ -175,6 +175,7 @@ private:
 	map_projection_reference_s _global_local_proj_ref{};
 	float	_global_local_alt0{NAN};
 
+	float 	_manual_height_rate_setpoint_m_s{NAN};
 	float	_takeoff_ground_alt{0.0f};			///< ground altitude at which plane was launched
 	float	_hdg_hold_yaw{0.0f};				///< hold heading for velocity mode
 	bool	_hdg_hold_enabled{false};			///< heading hold enabled

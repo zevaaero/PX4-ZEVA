@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2015, 2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,7 +83,7 @@ struct Params {
 	float dec_to_pitch_i;
 	float back_trans_dec_sp;
 	bool vt_mc_on_fmu;
-	int vt_forward_thrust_enable_mode;
+	int32_t vt_forward_thrust_enable_mode;
 	float mpc_land_alt1;
 	float mpc_land_alt2;
 };
@@ -233,6 +233,8 @@ public:
 
 	mode get_mode() {return _vtol_mode;}
 
+	bool was_in_trans_mode() {return _flag_was_in_trans_mode;}
+
 	virtual void parameters_update() = 0;
 
 protected:
@@ -290,6 +292,7 @@ protected:
 
 	float _accel_to_pitch_integ = 0;
 
+	bool _quadchute_command_treated{false};
 	bool _in_actuator_test_mode{false};
 	hrt_abstime _actuator_test_start_ts{0};
 	hrt_abstime _timestamp_new_state{0};

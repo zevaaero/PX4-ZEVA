@@ -512,7 +512,6 @@ PARAM_DEFINE_FLOAT(FW_WIND_THLD_L, 0.0f);
 PARAM_DEFINE_FLOAT(FW_WIND_ARSP_OF, 1.0f);
 
 
-
 /**
  * Stall Airspeed (CAS)
  *
@@ -884,7 +883,6 @@ PARAM_DEFINE_FLOAT(FW_T_CLMB_R_SP, 3.0f);
  *
  * The default rate at which the vehicle will sink in autonomous modes to achieve altitude setpoints.
  * In manual modes this defines the maximum rate at which the altitude setpoint can be decreased.
- *
  *
  * @unit m/s
  * @min 0.5

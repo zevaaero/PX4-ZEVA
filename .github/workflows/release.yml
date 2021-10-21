@@ -8,7 +8,7 @@ jobs:
   release:
    name: Build and deploy Nuttx targets for the release
    runs-on: ubuntu-latest
-   container: px4io/px4-dev-nuttx-focal:2021-02-04
+   container: px4io/px4-dev-nuttx-focal:2021-09-08
    outputs:
      release: ${{ steps.references.outputs.release }}
      tag: ${{ steps.references.outputs.tag_branch }}
@@ -155,7 +155,7 @@ jobs:
   deploy-release-branches:
     name: Create v${{ needs.release.outputs.release }} release branch in customer repos
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-nuttx-focal:2021-02-04
+    container: px4io/px4-dev-nuttx-focal:2021-09-08
     needs: release
     steps:
       - uses: actions/checkout@v1

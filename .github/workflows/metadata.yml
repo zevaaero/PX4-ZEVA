@@ -10,7 +10,7 @@ jobs:
 
   airframe:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2021-02-04
+    container: px4io/px4-dev-base-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper
@@ -27,13 +27,14 @@ jobs:
     - name: airframe metadata
       run: |
         make airframe_metadata
+        ./src/lib/version/get_git_tag_or_branch_version.sh build/px4_sitl_default >> $GITHUB_ENV
         cd build/px4_sitl_default/docs
-        ls -ls *
-      # TODO: deploy to userguide gitbook and s3
+      # TODO: deploy to userguide gitbook
+
 
   module:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2021-02-04
+    container: px4io/px4-dev-base-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper
@@ -56,7 +57,7 @@ jobs:
 
   parameter:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2021-02-04
+    container: px4io/px4-dev-base-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper
@@ -76,10 +77,27 @@ jobs:
         ./src/lib/version/get_git_tag_or_branch_version.sh build/px4_sitl_default >> $GITHUB_ENV
 
 
+  events:
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-base-focal:2021-09-08
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+
+    - name: events metadata
+      run: |
+        make extract_events
+        ./src/lib/version/get_git_tag_or_branch_version.sh build/px4_sitl_default >> $GITHUB_ENV
+        cd build/px4_sitl_default
+        mkdir _events_full || true
+        cp events/all_events_full.json.xz _events_full/all_events.json.xz
+
+
 
   micrortps_agent:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-nuttx-focal:2021-02-04
+    container: px4io/px4-dev-nuttx-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper
@@ -115,7 +133,7 @@ jobs:
 
   system_monitord:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2021-02-04
+    container: px4io/px4-dev-base-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper
@@ -149,7 +167,7 @@ jobs:
 
   ROS_msgs:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2021-02-04
+    container: px4io/px4-dev-base-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper
@@ -184,7 +202,7 @@ jobs:
   ROS2_bridge:
     needs: ROS_msgs
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-base-focal:2021-02-04
+    container: px4io/px4-dev-base-focal:2021-09-08
     steps:
     - uses: actions/checkout@v1
     - name: disable the keychain credential helper

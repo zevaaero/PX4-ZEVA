@@ -4,11 +4,19 @@
 #------------------------------------------------------------------------------
 board_adc start
 
-if param compare INA226_ENABLE 1
+
+if param compare SENS_EN_INA226 1
 then
 	# Start Digital power monitors
 	ina226 -X -b 1 -t 1 -k start
 	ina226 -X -b 2 -t 2 -k start
+fi
+
+if param compare SENS_EN_INA228 1
+then
+	# Start Digital power monitors
+	ina228 -X -b 1 -t 1 -k start
+	ina228 -X -b 2 -t 2 -k start
 fi
 
 if ver hwtypecmp V5X90 V5X91 V5X92 V5Xa0 V5Xa1 V5Xa2 V5X80 V5X81 V5X82
@@ -58,6 +66,9 @@ else
 
 fi
 
+# External compass on GPS1/I2C1 (the 3rd external bus): standard Holybro Pixhawk 4 or CUAV V5 GPS/compass puck (with lights, safety button, and buzzer)
+ist8310 -X -b 1 -R 10 start
+
 # Possible internal Baro
 
 # Disable startup of internal baros if param is set to false
@@ -66,9 +77,9 @@ then
 	bmp388 -I -a 0x77 start
 	if ver hwtypecmp V5X91 V5Xa1 V5X81
 	then
-		bmp388 -X -b 2 start
-	else
 		bmp388 -I start
+	else
+		bmp388 -X -b 2 start
 	fi
 
 fi

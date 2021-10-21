@@ -78,6 +78,7 @@ static unsigned dsm_partial_frame_count;	/**< Count of bytes received for curren
 static unsigned dsm_channel_shift = 0;			/**< Channel resolution, 0=unknown, 10=10 bit (1024), 11=11 bit (2048) */
 static unsigned dsm_frame_drops = 0;			/**< Count of incomplete DSM frames */
 static uint16_t dsm_chan_count = 0;         /**< DSM channel count */
+static uint16_t dsm_chan_count_prev = 0;    /**< last valid DSM channel count */
 
 /**
  * Attempt to decode a single channel raw channel datum
@@ -172,6 +173,7 @@ static bool dsm_guess_format(bool reset)
 
 	/* reset the 10/11 bit sniffed channel masks */
 	if (reset) {
+		PX4_DEBUG("dsm_guess_format reset");
 		cs10 = 0;
 		cs11 = 0;
 		samples = 0;
@@ -206,8 +208,8 @@ static bool dsm_guess_format(bool reset)
 	printf("dsm guess format: samples: %d %s\n", samples, (reset) ? "RESET" : "");
 #endif
 
-	/* wait until we have seen plenty of frames - 5 should normally be enough */
-	if (samples < 5) {
+	/* wait until we have seen plenty of frames */
+	if (samples < 10) {
 		return false;
 	}
 
@@ -587,6 +589,7 @@ bool dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, 
 
 		/* reset bit guessing state machine if the channel index is out of bounds */
 		if (channel > DSM_MAX_CHANNEL_COUNT) {
+			PX4_DEBUG("channel %d > %d (DSM_MAX_CHANNEL_COUNT)", channel, DSM_MAX_CHANNEL_COUNT);
 			dsm_guess_format(true);
 			return false;
 		}
@@ -629,16 +632,6 @@ bool dsm_decode(hrt_abstime frame_time, uint16_t *values, uint16_t *num_values, 
 		//  2048 Mode Scaling: PWM_OUT = (ServoPosition x 0.583μs) + Offset (903μs)
 		//  scaled integer for decent accuracy while staying efficient (0.583us ~= 1194/2048)
 		values[channel] = (value * 1194) / 2048 + 903;
-	}
-
-	/*
-	 * Spektrum likes to send junk in higher channel numbers to fill
-	 * their packets. We don't know about a 13 channel model in their TX
-	 * lines, so if we get a channel count of 13, we'll return 12 (the last
-	 * data index that is stable).
-	 */
-	if (*num_values == 13) {
-		*num_values = 12;
 	}
 
 	/* Set the 11-bit data indicator */
@@ -831,11 +824,18 @@ bool dsm_parse(const uint64_t now, const uint8_t *frame, const unsigned len, uin
 	}
 
 	if (decode_ret) {
-		*num_values = dsm_chan_count;
+		// require stable channel count (dsm_chan_count == dsm_chan_count_prev) before considering the decode valid
+		if ((dsm_chan_count > 0) && (dsm_chan_count <= DSM_MAX_CHANNEL_COUNT) && (dsm_chan_count == dsm_chan_count_prev)) {
+			*num_values = dsm_chan_count;
+			memcpy(&values[0], &dsm_chan_buf[0], dsm_chan_count * sizeof(dsm_chan_buf[0]));
 
-		memcpy(&values[0], &dsm_chan_buf[0], dsm_chan_count * sizeof(dsm_chan_buf[0]));
+		} else {
+			decode_ret = false;
+		}
+
+		dsm_chan_count_prev = dsm_chan_count;
+
 #ifdef DSM_DEBUG
-
 		printf("PACKET ---------\n");
 		printf("frame drops: %u, chan #: %u\n", dsm_frame_drops, dsm_chan_count);
 

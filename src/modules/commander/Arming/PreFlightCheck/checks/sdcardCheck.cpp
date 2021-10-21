@@ -42,42 +42,33 @@
 #include <sys/statfs.h>
 #endif
 
-bool PreFlightCheck::sdcardCheck(orb_advert_t *mavlink_log_pub, const bool report_fail)
+bool PreFlightCheck::sdcardCheck(orb_advert_t *mavlink_log_pub, bool &sd_card_detected_once,
+				 const bool report_fail)
 {
-	const char *microsd_dir = PX4_STORAGEDIR;
-	static bool sd_card_missing = true;
-	static bool checked_once = false;
 	bool success = true;
-	struct statfs statfs_buf;
-	uint64_t total_bytes = 0;
 
-	int32_t reporting_enabled = 0;
-	param_get(param_find("COM_ARM_SDCARD"), &reporting_enabled);
+	int32_t param_com_arm_sdcard{0};
+	param_get(param_find("COM_ARM_SDCARD"), &param_com_arm_sdcard);
 
-	if (reporting_enabled == 0) {
-		return success;
-	}
+	if (param_com_arm_sdcard > 0) {
+		struct statfs statfs_buf;
 
-	if (!checked_once) {
-		checked_once = true;
-
-		if (statfs(microsd_dir, &statfs_buf) == 0) {
-			total_bytes = (uint64_t)statfs_buf.f_blocks * statfs_buf.f_bsize;
+		if (!sd_card_detected_once && statfs(PX4_STORAGEDIR, &statfs_buf) == 0) {
+			// on NuttX we get a data block count f_blocks and byte count per block f_bsize if an SD card is inserted
+			sd_card_detected_once = (statfs_buf.f_blocks > 0) && (statfs_buf.f_bsize > 0);
 		}
 
-		sd_card_missing = total_bytes == 0; // on NuttX we get 0 total bytes if no SD card is inserted
-	}
+		if (!sd_card_detected_once) {
+			if (report_fail) {
+				mavlink_log_critical(mavlink_log_pub, "Warning! Missing FMU SD Card.");
+			}
 
-	if (sd_card_missing) {
-		if (reporting_enabled == 2) {
-			success = false;
-		}
-
-		if (report_fail && reporting_enabled > 0) {
-			mavlink_log_critical(mavlink_log_pub, "Warning! Missing FMU SD Card.");
+			if (param_com_arm_sdcard == 2) {
+				// disallow arming without sd card
+				success = false;
+			}
 		}
 	}
 
 	return success;
 }
-

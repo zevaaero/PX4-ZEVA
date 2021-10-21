@@ -80,8 +80,6 @@ VtolType::VtolType(VtolAttitudeControl *att_controller) :
 	for (auto &pwm_disarmed : _disarmed_pwm_values.values) {
 		pwm_disarmed = PWM_MOTOR_OFF;
 	}
-
-	_current_max_pwm_values = _max_mc_pwm_values;
 }
 
 bool VtolType::init()
@@ -96,7 +94,7 @@ bool VtolType::init()
 	}
 
 	int ret = px4_ioctl(fd, PWM_SERVO_GET_MAX_PWM, (long unsigned int)&_max_mc_pwm_values);
-
+	_current_max_pwm_values = _max_mc_pwm_values;
 
 	if (ret != PX4_OK) {
 		PX4_ERR("failed getting max values");
@@ -251,6 +249,15 @@ bool VtolType::can_transition_on_ground()
 
 void VtolType::check_quadchute_condition()
 {
+	if (_attc->get_transition_command() == vtol_vehicle_status_s::VEHICLE_VTOL_STATE_MC && _attc->get_immediate_transition()
+	    && !_quadchute_command_treated) {
+		_attc->quadchute(VtolAttitudeControl::QuadchuteReason::ExternalCommand);
+		_quadchute_command_treated = true;
+		_attc->reset_immediate_transition();
+
+	} else {
+		_quadchute_command_treated = false;
+	}
 
 	if (!_tecs_running) {
 		// reset the filtered height rate and heigh rate setpoint if TECS is not running
@@ -265,7 +272,7 @@ void VtolType::check_quadchute_condition()
 		if (_params->fw_min_alt > FLT_EPSILON) {
 
 			if (-(_local_pos->z) < _params->fw_min_alt) {
-				_attc->quadchute("QuadChute: Minimum altitude breached");
+				_attc->quadchute(VtolAttitudeControl::QuadchuteReason::MinimumAltBreached);
 			}
 		}
 
@@ -283,7 +290,7 @@ void VtolType::check_quadchute_condition()
 				    (_ra_hrate < -1.0f) &&
 				    (_ra_hrate_sp > 1.0f)) {
 
-					_attc->quadchute("QuadChute: loss of altitude");
+					_attc->quadchute(VtolAttitudeControl::QuadchuteReason::LossOfAlt);
 				}
 
 			} else {
@@ -291,7 +298,7 @@ void VtolType::check_quadchute_condition()
 				const bool height_rate_error = _local_pos->v_z_valid && (_local_pos->vz > 1.0f) && (_local_pos->z_deriv > 1.0f);
 
 				if (height_error && height_rate_error) {
-					_attc->quadchute("QuadChute: large altitude error");
+					_attc->quadchute(VtolAttitudeControl::QuadchuteReason::LargeAltError);
 				}
 			}
 		}
@@ -302,7 +309,7 @@ void VtolType::check_quadchute_condition()
 			const bool pitch_limit_exceeded = fabsf(euler.theta()) > fabsf(math::radians(_params->fw_qc_max_pitch));
 
 			if (pitch_limit_exceeded && !_pitch_limit_violation_reported) {
-				_attc->quadchute("Maximum pitch angle exceeded");
+				_attc->quadchute(VtolAttitudeControl::QuadchuteReason::MaximumPitchExceeded);
 				_pitch_limit_violation_reported = true;
 
 			} else if (!pitch_limit_exceeded) {
@@ -316,7 +323,7 @@ void VtolType::check_quadchute_condition()
 			const bool roll_limit_exceeded = fabsf(euler.phi()) > fabsf(math::radians(_params->fw_qc_max_roll));
 
 			if (roll_limit_exceeded && !_roll_limit_violation_reported) {
-				_attc->quadchute("Maximum roll angle exceeded");
+				_attc->quadchute(VtolAttitudeControl::QuadchuteReason::MaximumRollExceeded);
 				_roll_limit_violation_reported = true;
 
 			} else if (!roll_limit_exceeded) {

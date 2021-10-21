@@ -23,4 +23,7 @@ param set-default SENS_EN_SF1XX 6
 # start a MAVLink instance on the Pixhawk Payload Bus
 param set-default MAV_2_CONFIG 401
 
+param set-default SENS_EN_INA228 0
+param set-default SENS_EN_INA226 1
+
 safety_button start

@@ -95,33 +95,14 @@ constexpr bool PX4_ISFINITE(double x) { return __builtin_isfinite(x); }
 #define DIRENT_REGULAR_FILE DT_REG
 #define DIRENT_DIRECTORY DT_DIR
 
-#ifdef __PX4_QURT
-
-// QURT specific
-#  include "dspal_math.h"
-#  define PX4_ROOTFSDIR "."
-#  define PX4_TICKS_PER_SEC 1000L
-
-#else // __PX4_QURT
-
-// All POSIX except QURT.
-
 __BEGIN_DECLS
 extern long PX4_TICKS_PER_SEC;
 __END_DECLS
 
-#  if defined(__PX4_POSIX_EAGLE) || defined(__PX4_POSIX_EXCELSIOR)
-#    define PX4_ROOTFSDIR "/home/linaro"
-#  else
-#    define PX4_ROOTFSDIR "."
-#  endif
-
-#endif // __PX4_QURT
+#define PX4_ROOTFSDIR "."
 
 #define PX4_STORAGEDIR PX4_ROOTFSDIR
-#endif // __PX4_POSIX
 
-#if defined(__PX4_POSIX)
 /****************************************************************************
  * Defines for POSIX and ROS
  ****************************************************************************/

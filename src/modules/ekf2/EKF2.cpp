@@ -152,6 +152,7 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_drag_noise(_params->drag_noise),
 	_param_ekf2_bcoef_x(_params->bcoef_x),
 	_param_ekf2_bcoef_y(_params->bcoef_y),
+	_param_ekf2_mcoef(_params->mcoef),
 	_param_ekf2_aspd_max(_params->max_correction_airspeed),
 	_param_ekf2_pcoef_xp(_params->static_pressure_coef_xp),
 	_param_ekf2_pcoef_xn(_params->static_pressure_coef_xn),
@@ -191,6 +192,7 @@ bool EKF2::multi_init(int imu, int mag)
 
 	_ekf2_timestamps_pub.advertise();
 	_ekf_gps_drift_pub.advertise();
+	_estimator_baro_bias_pub.advertise();
 	_estimator_innovation_test_ratios_pub.advertise();
 	_estimator_innovation_variances_pub.advertise();
 	_estimator_innovations_pub.advertise();
@@ -213,6 +215,8 @@ bool EKF2::multi_init(int imu, int mag)
 	    && (_global_position_pub.get_instance() == status_instance)) {
 
 		_instance = status_instance;
+
+		ScheduleNow();
 		return true;
 	}
 
@@ -344,12 +348,14 @@ void EKF2::Run()
 			   || (imu.accel_device_id != _device_id_accel)
 			   || (imu.gyro_device_id != _device_id_gyro)) {
 
-			PX4_INFO("%d - resetting IMU bias", _instance);
+			PX4_DEBUG("%d - resetting IMU bias", _instance);
 			_device_id_accel = imu.accel_device_id;
 			_device_id_gyro = imu.gyro_device_id;
 
 			_ekf.resetImuBias();
 			_imu_calibration_count = imu.calibration_count;
+
+			SelectImuStatus();
 		}
 
 	} else {
@@ -382,11 +388,13 @@ void EKF2::Run()
 				if (_device_id_accel != sensor_selection.accel_device_id) {
 					_ekf.resetAccelBias();
 					_device_id_accel = sensor_selection.accel_device_id;
+					SelectImuStatus();
 				}
 
 				if (_device_id_gyro != sensor_selection.gyro_device_id) {
 					_ekf.resetGyroBias();
 					_device_id_gyro = sensor_selection.gyro_device_id;
+					SelectImuStatus();
 				}
 			}
 		}
@@ -394,6 +402,8 @@ void EKF2::Run()
 
 	if (imu_updated) {
 		const hrt_abstime now = imu_sample_new.time_us;
+
+		UpdateImuStatus();
 
 		// push imu data into estimator
 		_ekf.setIMUData(imu_sample_new);
@@ -495,6 +505,7 @@ void EKF2::Run()
 			PublishWindEstimate(now);
 
 			// publish status/logging messages
+			PublishBaroBias(now);
 			PublishEkfDriftMetrics(now);
 			PublishEventFlags(now);
 			PublishStates(now);
@@ -504,7 +515,6 @@ void EKF2::Run()
 			PublishInnovationTestRatios(now);
 			PublishInnovationVariances(now);
 			PublishYawEstimatorStatus(now);
-			PublishBaroBiasEstimate(now);
 
 			UpdateMagCalibration(now);
 
@@ -545,6 +555,28 @@ void EKF2::PublishAttitude(const hrt_abstime &timestamp)
 		// we do this by publishing an attitude with zero timestamp
 		vehicle_attitude_s att{};
 		_attitude_pub.publish(att);
+	}
+}
+
+void EKF2::PublishBaroBias(const hrt_abstime &timestamp)
+{
+	if (_device_id_baro != 0) {
+		const BaroBiasEstimator::status &status = _ekf.getBaroBiasEstimatorStatus();
+
+		if (fabsf(status.bias - _last_baro_bias_published) > 0.001f) {
+			estimator_baro_bias_s baro_bias{};
+			baro_bias.timestamp_sample = timestamp;
+			baro_bias.baro_device_id = _device_id_baro;
+			baro_bias.bias = status.bias;
+			baro_bias.bias_var = status.bias_var;
+			baro_bias.innov = status.innov;
+			baro_bias.innov_var = status.innov_var;
+			baro_bias.innov_test_ratio = status.innov_test_ratio;
+			baro_bias.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
+			_estimator_baro_bias_pub.publish(baro_bias);
+
+			_last_baro_bias_published = status.bias;
+		}
 	}
 }
 
@@ -630,47 +662,42 @@ void EKF2::PublishEventFlags(const hrt_abstime &timestamp)
 void EKF2::PublishGlobalPosition(const hrt_abstime &timestamp)
 {
 	if (_ekf.global_position_is_valid() && !_preflt_checker.hasFailed()) {
-		// only publish if position has changed by at least 1 mm (map_projection_reproject is relatively expensive)
 		const Vector3f position{_ekf.getPosition()};
 
-		if ((_last_local_position_for_gpos - position).longerThan(0.001f)) {
-			// generate and publish global position data
-			vehicle_global_position_s global_pos;
-			global_pos.timestamp_sample = timestamp;
+		// generate and publish global position data
+		vehicle_global_position_s global_pos;
+		global_pos.timestamp_sample = timestamp;
 
-			// Position of local NED origin in GPS / WGS84 frame
-			map_projection_reproject(&_ekf.global_origin(), position(0), position(1), &global_pos.lat, &global_pos.lon);
+		// Position of local NED origin in GPS / WGS84 frame
+		map_projection_reproject(&_ekf.global_origin(), position(0), position(1), &global_pos.lat, &global_pos.lon);
 
-			float delta_xy[2];
-			_ekf.get_posNE_reset(delta_xy, &global_pos.lat_lon_reset_counter);
+		float delta_xy[2];
+		_ekf.get_posNE_reset(delta_xy, &global_pos.lat_lon_reset_counter);
 
-			global_pos.alt = -position(2) + _ekf.getEkfGlobalOriginAltitude(); // Altitude AMSL in meters
-			global_pos.alt_ellipsoid = filter_altitude_ellipsoid(global_pos.alt);
+		global_pos.alt = -position(2) + _ekf.getEkfGlobalOriginAltitude(); // Altitude AMSL in meters
+		global_pos.alt_ellipsoid = filter_altitude_ellipsoid(global_pos.alt);
 
-			// global altitude has opposite sign of local down position
-			float delta_z;
-			uint8_t z_reset_counter;
-			_ekf.get_posD_reset(&delta_z, &z_reset_counter);
-			global_pos.delta_alt = -delta_z;
+		// global altitude has opposite sign of local down position
+		float delta_z;
+		uint8_t z_reset_counter;
+		_ekf.get_posD_reset(&delta_z, &z_reset_counter);
+		global_pos.delta_alt = -delta_z;
 
-			_ekf.get_ekf_gpos_accuracy(&global_pos.eph, &global_pos.epv);
+		_ekf.get_ekf_gpos_accuracy(&global_pos.eph, &global_pos.epv);
 
-			if (_ekf.isTerrainEstimateValid()) {
-				// Terrain altitude in m, WGS84
-				global_pos.terrain_alt = _ekf.getEkfGlobalOriginAltitude() - _ekf.getTerrainVertPos();
-				global_pos.terrain_alt_valid = true;
+		if (_ekf.isTerrainEstimateValid()) {
+			// Terrain altitude in m, WGS84
+			global_pos.terrain_alt = _ekf.getEkfGlobalOriginAltitude() - _ekf.getTerrainVertPos();
+			global_pos.terrain_alt_valid = true;
 
-			} else {
-				global_pos.terrain_alt = NAN;
-				global_pos.terrain_alt_valid = false;
-			}
-
-			global_pos.dead_reckoning = _ekf.inertial_dead_reckoning(); // True if this position is estimated through dead-reckoning
-			global_pos.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
-			_global_position_pub.publish(global_pos);
-
-			_last_local_position_for_gpos = position;
+		} else {
+			global_pos.terrain_alt = NAN;
+			global_pos.terrain_alt_valid = false;
 		}
+
+		global_pos.dead_reckoning = _ekf.inertial_dead_reckoning(); // True if this position is estimated through dead-reckoning
+		global_pos.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
+		_global_position_pub.publish(global_pos);
 	}
 }
 
@@ -814,6 +841,7 @@ void EKF2::PublishLocalPosition(const hrt_abstime &timestamp)
 
 	lpos.heading = Eulerf(_ekf.getQuaternion()).psi();
 	lpos.delta_heading = Eulerf(delta_q_reset).psi();
+	lpos.heading_good_for_control = _ekf.isYawFinalAlignComplete();
 
 	// Distance to bottom surface (ground) in meters
 	// constrain the distance to ground to _rng_gnd_clearance
@@ -1249,21 +1277,6 @@ void EKF2::PublishWindEstimate(const hrt_abstime &timestamp)
 	}
 }
 
-void EKF2::PublishBaroBiasEstimate(const hrt_abstime &timestamp)
-{
-
-	baro_bias_estimate_s bbe{};
-	bbe.timestamp = timestamp;
-	bbe.timestamp_sample = timestamp;
-	bbe.baro_device_id = _device_id_baro;
-	_ekf.getBaroBiasEstimatorStatus(bbe.bias,
-					bbe.bias_var,
-					bbe.innov,
-					bbe.innov_var,
-					bbe.innov_test_ratio);
-	_baro_bias_estimate_pub.publish(bbe);
-}
-
 void EKF2::PublishOpticalFlowVel(const hrt_abstime &timestamp, const optical_flow_s &flow_sample)
 {
 	estimator_optical_flow_vel_s flow_vel{};
@@ -1298,6 +1311,43 @@ float EKF2::filter_altitude_ellipsoid(float amsl_hgt)
 	}
 
 	return amsl_hgt + _wgs84_hgt_offset;
+}
+
+void EKF2::SelectImuStatus()
+{
+	for (uint8_t imu_instance = 0; imu_instance < MAX_NUM_IMUS; imu_instance++) {
+		uORB::Subscription imu_status_sub{ORB_ID(vehicle_imu_status), imu_instance};
+
+		vehicle_imu_status_s imu_status{};
+		imu_status_sub.copy(&imu_status);
+
+		if (imu_status.accel_device_id == _device_id_accel) {
+			_vehicle_imu_status_sub.ChangeInstance(imu_instance);
+			return;
+		}
+	}
+
+	PX4_WARN("%d - IMU status not found for accel %" PRId32 ", gyro %" PRId32, _instance, _device_id_accel,
+		 _device_id_gyro);
+}
+
+void EKF2::UpdateImuStatus()
+{
+	vehicle_imu_status_s imu_status;
+
+	if (_vehicle_imu_status_sub.update(&imu_status)) {
+		if (imu_status.accel_device_id != _device_id_accel) {
+			SelectImuStatus();
+			return;
+		}
+
+		// accel -> delta velocity
+		_ekf.setDeltaVelocityHighFrequencyVibrationMetric(imu_status.accel_vibration_metric * _ekf.get_dt_imu_avg());
+
+		// gyro -> delta angle
+		_ekf.setDeltaAngleHighFrequencyVibrationMetric(imu_status.gyro_vibration_metric * _ekf.get_dt_imu_avg());
+		_ekf.setDeltaAngleConingMetric(imu_status.gyro_coning_vibration * _ekf.get_dt_imu_avg());
+	}
 }
 
 void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
@@ -1593,14 +1643,14 @@ void EKF2::UpdateMagSample(ekf2_timestamps_s &ekf2_timestamps)
 		// check if magnetometer has changed
 		if (magnetometer.device_id != _device_id_mag) {
 			if (_device_id_mag != 0) {
-				PX4_WARN("%d - mag sensor ID changed %d -> %d", _instance, _device_id_mag, magnetometer.device_id);
+				PX4_WARN("%d - mag sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_mag, magnetometer.device_id);
 			}
 
 			reset = true;
 
 		} else if (magnetometer.calibration_count > _mag_calibration_count) {
 			// existing calibration has changed, reset saved mag bias
-			PX4_DEBUG("%d - mag %d calibration updated, resetting bias", _instance, _device_id_mag);
+			PX4_DEBUG("%d - mag %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_mag);
 			reset = true;
 		}
 
@@ -1638,7 +1688,12 @@ void EKF2::UpdateRangeSample(ekf2_timestamps_s &ekf2_timestamps)
 					    && (distance_sensor.orientation == distance_sensor_s::ROTATION_DOWNWARD_FACING)) {
 
 						if (_distance_sensor_sub.ChangeInstance(i)) {
-							PX4_INFO("%d - selected distance_sensor:%d", _instance, i);
+							int ndist = orb_group_count(ORB_ID(distance_sensor));
+
+							if (ndist > 1) {
+								PX4_INFO("%d - selected distance_sensor:%d (%d advertised)", _instance, i, ndist);
+							}
+
 							_distance_sensor_selected = true;
 							break;
 						}
@@ -1724,7 +1779,7 @@ void EKF2::UpdateMagCalibration(const hrt_abstime &timestamp)
 				_param_ekf2_mag_decl.set(declination_deg);
 				_mag_decl_saved = true;
 
-				if (!_multi_mode) {
+				if (!_multi_mode || (_multi_mode && _instance == 0)) {
 					_param_ekf2_mag_decl.commit_no_notification();
 				}
 			}
@@ -1763,8 +1818,8 @@ int EKF2::task_spawn(int argc, char *argv[])
 		param_get(param_find("EKF2_MULTI_IMU"), &imu_instances);
 
 		if (imu_instances < 1 || imu_instances > 4) {
-			const int32_t imu_instances_limited = math::constrain(imu_instances, 1, 4);
-			PX4_WARN("EKF2_MULTI_IMU limited %d -> %d", imu_instances, imu_instances_limited);
+			const int32_t imu_instances_limited = math::constrain(imu_instances, static_cast<int32_t>(1), static_cast<int32_t>(4));
+			PX4_WARN("EKF2_MULTI_IMU limited %" PRId32 " -> %" PRId32, imu_instances, imu_instances_limited);
 			param_set_no_notification(param_find("EKF2_MULTI_IMU"), &imu_instances_limited);
 			imu_instances = imu_instances_limited;
 		}
@@ -1777,8 +1832,8 @@ int EKF2::task_spawn(int argc, char *argv[])
 
 			// Mags (1 - 4 supported)
 			if (mag_instances < 1 || mag_instances > 4) {
-				const int32_t mag_instances_limited = math::constrain(mag_instances, 1, 4);
-				PX4_WARN("EKF2_MULTI_MAG limited %d -> %d", mag_instances, mag_instances_limited);
+				const int32_t mag_instances_limited = math::constrain(mag_instances, static_cast<int32_t>(1), static_cast<int32_t>(4));
+				PX4_WARN("EKF2_MULTI_MAG limited %" PRId32 " -> %" PRId32, mag_instances, mag_instances_limited);
 				param_set_no_notification(param_find("EKF2_MULTI_MAG"), &mag_instances_limited);
 				mag_instances = mag_instances_limited;
 			}
@@ -1803,13 +1858,13 @@ int EKF2::task_spawn(int argc, char *argv[])
 		}
 
 		const hrt_abstime time_started = hrt_absolute_time();
-		const int multi_instances = math::min(imu_instances * mag_instances, (int)EKF2_MAX_INSTANCES);
+		const int multi_instances = math::min(imu_instances * mag_instances, static_cast<int32_t>(EKF2_MAX_INSTANCES));
 		int multi_instances_allocated = 0;
 
 		// allocate EKF2 instances until all found or arming
 		uORB::SubscriptionData<vehicle_status_s> vehicle_status_sub{ORB_ID(vehicle_status)};
 
-		bool ekf2_instance_created[4][4] {}; // IMUs * mags
+		bool ekf2_instance_created[MAX_NUM_IMUS][MAX_NUM_MAGS] {}; // IMUs * mags
 
 		while ((multi_instances_allocated < multi_instances)
 		       && (vehicle_status_sub.get().arming_state != vehicle_status_s::ARMING_STATE_ARMED)
@@ -1839,16 +1894,21 @@ int EKF2::task_spawn(int argc, char *argv[])
 
 								if ((actual_instance >= 0) && (_objects[actual_instance].load() == nullptr)) {
 									_objects[actual_instance].store(ekf2_inst);
-									ekf2_inst->ScheduleNow();
 									success = true;
 									multi_instances_allocated++;
 									ekf2_instance_created[imu][mag] = true;
 
-									PX4_INFO("starting instance %d, IMU:%d (%d), MAG:%d (%d)", actual_instance,
-										 imu, vehicle_imu_sub.get().accel_device_id,
-										 mag, vehicle_mag_sub.get().device_id);
+									if (actual_instance == 0) {
+										// force selector to run immediately if first instance started
+										_ekf2_selector.load()->ScheduleNow();
+									}
 
-									_ekf2_selector.load()->ScheduleNow();
+									PX4_DEBUG("starting instance %d, IMU:%" PRIu8 " (%" PRIu32 "), MAG:%" PRIu8 " (%" PRIu32 ")", actual_instance,
+										  imu, vehicle_imu_sub.get().accel_device_id,
+										  mag, vehicle_mag_sub.get().device_id);
+
+									// sleep briefly before starting more instances
+									px4_usleep(10000);
 
 								} else {
 									PX4_ERR("instance numbering problem instance: %d", actual_instance);
@@ -1857,7 +1917,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 								}
 
 							} else {
-								PX4_ERR("alloc and init failed imu: %d mag:%d", imu, mag);
+								PX4_ERR("alloc and init failed imu: %" PRIu8 " mag:%" PRIu8, imu, mag);
 								px4_usleep(1000000);
 								break;
 							}
@@ -1915,7 +1975,10 @@ timestamps from the sensor topics.
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAM_FLAG('r', "Enable replay mode", true);
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
-
+#if !defined(CONSTRAINED_FLASH)
+	PRINT_MODULE_USAGE_COMMAND_DESCR("select_instance", "Request switch to new estimator instance");
+	PRINT_MODULE_USAGE_ARG("<instance>", "Specify desired estimator instance", false);
+#endif // !CONSTRAINED_FLASH
 	return 0;
 }
 
@@ -1938,6 +2001,31 @@ extern "C" __EXPORT int ekf2_main(int argc, char *argv[])
 		EKF2::unlock_module();
 		return ret;
 
+#if !defined(CONSTRAINED_FLASH)
+	} else if (strcmp(argv[1], "select_instance") == 0) {
+
+		if (EKF2::trylock_module()) {
+			if (_ekf2_selector.load()) {
+				if (argc > 2) {
+					int instance = atoi(argv[2]);
+					_ekf2_selector.load()->RequestInstance(instance);
+				} else {
+					EKF2::unlock_module();
+					return EKF2::print_usage("instance required");
+				}
+
+			} else {
+				PX4_ERR("multi-EKF not active, unable to select instance");
+			}
+
+			EKF2::unlock_module();
+
+		} else {
+			PX4_WARN("module locked, try again later");
+		}
+
+		return 0;
+#endif // !CONSTRAINED_FLASH
 	} else if (strcmp(argv[1], "status") == 0) {
 		if (EKF2::trylock_module()) {
 #if !defined(CONSTRAINED_FLASH)

@@ -33,13 +33,17 @@
 
 set(LIBCANARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libcanard)
 set(DSDL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/public_regulated_data_types)
+set(LEGACY_DSDL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/legacy_data_types)
 
 px4_add_git_submodule(TARGET git_libcanard PATH ${LIBCANARD_DIR})
 px4_add_git_submodule(TARGET git_public_regulated_data_types PATH ${DSDL_DIR})
+px4_add_git_submodule(TARGET git_legacy_data_types PATH ${LEGACY_DSDL_DIR})
 
 find_program(NNVG_PATH nnvg)
 if(NNVG_PATH)
+	message("Generating UAVCANv1 DSDL headers using Nunavut")
 	execute_process(COMMAND ${NNVG_PATH} --outdir ${CMAKE_CURRENT_BINARY_DIR}/dsdlc_generated --target-language c -I ${DSDL_DIR}/uavcan ${DSDL_DIR}/reg)
+	execute_process(COMMAND ${NNVG_PATH} --outdir ${CMAKE_CURRENT_BINARY_DIR}/dsdlc_generated --target-language c -I ${LEGACY_DSDL_DIR}/uavcan ${LEGACY_DSDL_DIR}/legacy)
 	execute_process(COMMAND ${NNVG_PATH} --outdir ${CMAKE_CURRENT_BINARY_DIR}/dsdlc_generated --target-language c ${DSDL_DIR}/uavcan)
 else()
 	message(FATAL_ERROR "UAVCAN Nunavut nnvg not found")
@@ -72,12 +76,17 @@ px4_add_module(
 		${LIBCANARD_DIR}/libcanard/
 		${CMAKE_CURRENT_BINARY_DIR}/dsdlc_generated
 	SRCS
+		PublicationManager.cpp
+		PublicationManager.hpp
+		SubscriptionManager.cpp
+		SubscriptionManager.hpp
 		ParamManager.hpp
 		ParamManager.cpp
 		NodeManager.hpp
 		NodeManager.cpp
 		Uavcan.cpp
 		Uavcan.hpp
+		Publishers/uORB/uorb_publisher.cpp
 		${SRCS}
 		o1heap/o1heap.c
 		o1heap/o1heap.h
@@ -86,5 +95,6 @@ px4_add_module(
 	DEPENDS
 		git_libcanard
 		git_public_regulated_data_types
+		git_legacy_data_types
 		version
 	)

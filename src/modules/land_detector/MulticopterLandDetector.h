@@ -80,9 +80,8 @@ protected:
 
 	void _set_hysteresis_factor(const int factor) override;
 private:
-	bool _is_close_to_ground();
-
 	float _get_gnd_effect_altitude();
+	bool _is_close_to_ground();
 
 	/** Time in us that freefall has to hold before triggering freefall */
 	static constexpr hrt_abstime FREEFALL_TRIGGER_TIME_US = 300_ms;
@@ -132,10 +131,10 @@ private:
 
 	bool _in_descend{false};		///< vehicle is commanded to desend
 	bool _horizontal_movement{false};	///< vehicle is moving horizontally
-	bool _below_gnd_effect_hgt{false};	///< vehicle height above ground is below height where ground effect occurs
 	bool _vertical_movement{false};
 	bool _has_low_throttle{false};
 	bool _close_to_ground_or_skipped_check{false};
+	bool _below_gnd_effect_hgt{false};	///< vehicle height above ground is below height where ground effect occurs
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(
 		LandDetector,

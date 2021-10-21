@@ -68,16 +68,14 @@
 class SDP6X : public Airspeed, public I2CSPIDriver<SDP6X>
 {
 public:
-	SDP6X(I2CSPIBusOption bus_option, const int bus, int bus_frequency, int address = I2C_ADDRESS_SDP6X) :
-		Airspeed(bus, bus_frequency, address, CONVERSION_INTERVAL),
-		I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus, address)
+	SDP6X(const I2CSPIDriverConfig &config) :
+		Airspeed(config.bus, config.bus_frequency, config.i2c_address, CONVERSION_INTERVAL),
+		I2CSPIDriver(config)
 	{
 	}
 
 	virtual ~SDP6X() = default;
 
-	static I2CSPIDriverBase *instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
-					     int runtime_instance);
 	static void print_usage();
 
 	void	RunImpl();
@@ -88,7 +86,7 @@ private:
 	int	collect() override;
 	int	probe() override;
 
-	math::LowPassFilter2p _filter{SPD6X_MEAS_RATE, SDP6X_MEAS_DRIVER_FILTER_FREQ};
+	math::LowPassFilter2p<float> _filter{SPD6X_MEAS_RATE, SDP6X_MEAS_DRIVER_FILTER_FREQ};
 
 	bool init_sdp6x();
 

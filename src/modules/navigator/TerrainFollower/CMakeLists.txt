@@ -40,4 +40,4 @@ px4_add_library(terrain_follower
 target_link_libraries(terrain_follower PRIVATE terrain)
 
 
-px4_add_functional_gtest(SRC TerrainFollowerTest.cpp LINKLIBS terrain_follower terrain ecl_geo modules__navigator)
+px4_add_functional_gtest(SRC TerrainFollowerTest.cpp LINKLIBS terrain_follower terrain geo modules__navigator)

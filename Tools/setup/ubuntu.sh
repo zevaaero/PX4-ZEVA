@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+set -e
+
 ## Bash script to setup PX4 development environment on Ubuntu LTS (20.04, 18.04, 16.04).
 ## Can also be used in docker.
 ##
@@ -115,18 +117,32 @@ if [[ $INSTALL_NUTTX == "true" ]]; then
 	echo "Installing NuttX dependencies"
 
 	sudo DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends install \
-		autoconf \
 		automake \
+		binutils-dev \
 		bison \
-		bzip2 \
-		file \
+		build-essential \
 		flex \
+		g++-multilib \
+		gcc-multilib \
 		gdb-multiarch \
+		genromfs \
+		gettext \
 		gperf \
-		libncurses-dev \
+		kconfig-frontends \
+		libelf-dev \
+		libexpat-dev \
+		libgmp-dev \
+		libisl-dev \
+		libmpc-dev \
+		libmpfr-dev \
+		libncurses5-dev \
+		libncursesw5-dev \
 		libtool \
 		pkg-config \
 		screen \
+		texinfo \
+		u-boot-tools \
+		util-linux \
 		vim-common \
 		;
 
@@ -179,7 +195,7 @@ if [[ $INSTALL_SIM == "true" ]]; then
 		java_version=11
 		gazebo_version=9
 	elif [[ "${UBUNTU_RELEASE}" == "20.04" ]]; then
-		java_version=14
+		java_version=13
 		gazebo_version=11
 	else
 		java_version=14

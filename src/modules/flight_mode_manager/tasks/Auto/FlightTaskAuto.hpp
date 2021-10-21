@@ -45,8 +45,8 @@
 #include <uORB/topics/home_position.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
-#include <lib/ecl/geo/geo.h>
-#include <lib/ecl/AlphaFilter/AlphaFilter.hpp>
+#include <lib/geo/geo.h>
+#include <mathlib/math/filter/AlphaFilter.hpp>
 
 // TODO: make this switchable in the board config, like a module
 #if CONSTRAINED_FLASH

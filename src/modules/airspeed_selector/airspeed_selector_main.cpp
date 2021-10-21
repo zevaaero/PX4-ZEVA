@@ -31,17 +31,19 @@
  *
  ****************************************************************************/
 
+#include "AirspeedValidator.hpp"
+
 #include <drivers/drv_hrt.h>
-#include <ecl/airdata/WindEstimator.hpp>
+#include <lib/wind_estimator/WindEstimator.hpp>
 #include <matrix/math.hpp>
 #include <parameters/param.h>
 #include <perf/perf_counter.h>
+#include <px4_platform_common/events.h>
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 #include <lib/airspeed/airspeed.h>
-#include <AirspeedValidator.hpp>
-#include <systemlib/mavlink_log.h>
+#include <lib/systemlib/mavlink_log.h>
 
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionMultiArray.hpp>
@@ -234,12 +236,14 @@ AirspeedModule::init()
 		_valid_airspeed_index = math::min(_param_airspeed_primary_index.get(), _number_of_airspeed_sensors);
 
 		if (_number_of_airspeed_sensors == 0) {
-			mavlink_log_info(&_mavlink_log_pub,
-					 "No airspeed sensor detected. Switch to non-airspeed mode.");
+			mavlink_log_info(&_mavlink_log_pub, "No airspeed sensor detected. Switch to non-airspeed mode.\t");
+			events::send(events::ID("airspeed_selector_switch"), events::Log::Info,
+				     "No airspeed sensor detected, switching to non-airspeed mode");
 
 		} else {
-			mavlink_log_info(&_mavlink_log_pub,
-					 "Primary airspeed index bigger than number connected sensors. Take last sensor.");
+			mavlink_log_info(&_mavlink_log_pub, "Primary airspeed index bigger than number connected sensors. Take last sensor.\t");
+			events::send(events::ID("airspeed_selector_prim_too_high"), events::Log::Info,
+				     "Primary airspeed index bigger than number connected sensors, taking last sensor");
 		}
 
 	} else {
@@ -575,22 +579,36 @@ void AirspeedModule::select_airspeed_and_publish()
 
 			if (!armed) {
 				// if disarmed, the only way to trigger the failure is missing data, likely indicating a disconnected sensor
-				mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor disconnected. Check connection and power cycle vehicle.");
+				mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor disconnected. Check connection and power cycle vehicle.\t");
+				events::send(events::ID("airspeed_selector_sensor_failure_disarmed"), events::Log::Error,
+					     "Airspeed sensor disconnected. Check the connection and power cycle the vehicle");
 
 			} else {
-				mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor failure detected. Return to launch (RTL) is advised.");
+				mavlink_log_critical(&_mavlink_log_pub, "Airspeed sensor failure detected. Return to launch (RTL) is advised.\t");
+				events::send(events::ID("airspeed_selector_sensor_failure"), events::Log::Critical,
+					     "Airspeed sensor failure detected. Return to launch (RTL) is advised");
 			}
 
 
 		} else if (_prev_airspeed_index == 0 && _valid_airspeed_index == -1) {
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed estimation invalid");
+			mavlink_log_info(&_mavlink_log_pub, "Airspeed estimation invalid\t");
+			events::send(events::ID("airspeed_selector_estimation_invalid"), events::Log::Error,
+				     "Airspeed estimation invalid");
 
 		} else if (_prev_airspeed_index == -1 && _valid_airspeed_index == 0) {
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed estimation valid");
+			mavlink_log_info(&_mavlink_log_pub, "Airspeed estimation valid\t");
+			events::send(events::ID("airspeed_selector_estimation_valid"), events::Log::Info,
+				     "Airspeed estimation valid");
 
 		} else {
-			mavlink_log_info(&_mavlink_log_pub, "Airspeed sensor healthy, start using again (%i, %i)", _prev_airspeed_index,
+			mavlink_log_info(&_mavlink_log_pub, "Airspeed sensor healthy, start using again (%i, %i)\t", _prev_airspeed_index,
 					 _valid_airspeed_index);
+			/* EVENT
+			 * @description Previously selected sensor index: {1}, current sensor index: {2}.
+			 */
+			events::send<uint8_t, uint8_t>(events::ID("airspeed_selector_estimation_regain"), events::Log::Info,
+						       "Airspeed sensor healthy, start using again", _prev_airspeed_index,
+						       _valid_airspeed_index);
 		}
 	}
 

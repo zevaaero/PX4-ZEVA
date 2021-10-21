@@ -238,7 +238,7 @@ int MagBiasEstimator::print_status()
 
 			const Vector3f &bias = _bias_estimator[mag_index].getBias();
 
-			PX4_INFO("%d (%d) bias: [% 05.3f % 05.3f % 05.3f]",
+			PX4_INFO("%d (%" PRIu32 ") bias: [% 05.3f % 05.3f % 05.3f]",
 				 mag_index, _calibration[mag_index].device_id(),
 				 (double)bias(0),
 				 (double)bias(1),

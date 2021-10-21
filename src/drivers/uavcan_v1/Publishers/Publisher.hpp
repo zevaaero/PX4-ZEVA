@@ -44,19 +44,26 @@
 #include <px4_platform_common/px4_config.h>
 
 #include <lib/parameters/param.h>
+#include <containers/List.hpp>
 
 #include <uavcan/_register/Access_1_0.h>
 
 #include "../CanardInterface.hpp"
 #include "../ParamManager.hpp"
 
-class UavcanPublisher
+/* This is a default baseline timeout for publishers
+ * Still it's recommended for implementers to check if their publisher
+ * has timing requirements and if it should drop messages that are too old in favour of newer messages
+ */
+#define PUBLISHER_DEFAULT_TIMEOUT_USEC 100000UL
+
+class UavcanPublisher : public ListNode<UavcanPublisher *>
 {
 public:
-	static constexpr uint16_t CANARD_PORT_ID_UNSET = 65535U;
-
 	UavcanPublisher(CanardInstance &ins, UavcanParamManager &pmgr, const char *subject_name, uint8_t instance = 0) :
 		_canard_instance(ins), _param_manager(pmgr), _subject_name(subject_name), _instance(instance) { };
+
+	virtual ~UavcanPublisher() = default;
 
 	// Update the uORB Subscription and broadcast a UAVCAN message
 	virtual void update() = 0;
@@ -70,16 +77,19 @@ public:
 
 		// Set _port_id from _uavcan_param
 		uavcan_register_Value_1_0 value;
-		_param_manager.GetParamByName(uavcan_param, value);
-		int32_t new_id = value.integer32.value.elements[0];
 
-		if (_port_id != new_id) {
-			if (new_id == CANARD_PORT_ID_UNSET) {
-				PX4_INFO("Disabling publication of subject %s.%d", _subject_name, _instance);
+		if (_param_manager.GetParamByName(uavcan_param, value)) {
+			uint16_t new_id = value.natural16.value.elements[0];
 
-			} else {
-				_port_id = (CanardPortID)new_id;
-				PX4_INFO("Enabling subject %s.%d on port %d", _subject_name, _instance, _port_id);
+			if (_port_id != new_id) {
+				if (new_id == CANARD_PORT_ID_UNSET) {
+					PX4_INFO("Disabling publication of subject %s.%d", _subject_name, _instance);
+					_port_id = CANARD_PORT_ID_UNSET;
+
+				} else {
+					_port_id = (CanardPortID)new_id;
+					PX4_INFO("Enabling subject %s.%d on port %d", _subject_name, _instance, _port_id);
+				}
 			}
 		}
 	};
@@ -88,16 +98,40 @@ public:
 	{
 		if (_port_id != CANARD_PORT_ID_UNSET) {
 			PX4_INFO("Enabled subject %s.%d on port %d", _subject_name, _instance, _port_id);
+
+		} else {
+			PX4_INFO("Subject %s.%d disabled", _subject_name, _instance);
 		}
+	}
+
+	const char *getSubjectName()
+	{
+		return _subject_name;
+	}
+
+	uint8_t getInstance()
+	{
+		return _instance;
+	}
+
+	UavcanPublisher *next()
+	{
+		return _next_pub;
+	}
+
+	void setNext(UavcanPublisher *next)
+	{
+		_next_pub = next;
 	}
 
 protected:
 	CanardInstance &_canard_instance;
 	UavcanParamManager &_param_manager;
-	CanardRxSubscription _canard_sub;
 	const char *_subject_name;
 	uint8_t _instance {0};
 
 	CanardPortID _port_id {CANARD_PORT_ID_UNSET};
 	CanardTransferID _transfer_id {0};
+
+	UavcanPublisher *_next_pub {nullptr};
 };

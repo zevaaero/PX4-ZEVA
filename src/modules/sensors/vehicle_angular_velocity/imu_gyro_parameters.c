@@ -83,17 +83,19 @@ PARAM_DEFINE_FLOAT(IMU_GYRO_NF_BW, 20.0f);
 PARAM_DEFINE_FLOAT(IMU_GYRO_CUTOFF, 40.0f);
 
 /**
-* Gyro control data maximum publication rate
+* Gyro control data maximum publication rate (inner loop rate)
 *
-* This is the maximum rate the gyro control data (sensor_gyro) will be allowed to publish at.
-* Set to 0 to disable and publish at the native sensor sample rate.
+* The maximum rate the gyro control data (vehicle_angular_velocity) will be
+* allowed to publish at. This is the loop rate for the rate controller and outputs.
 *
-* @min 0
+* Note: sensor data is always read and filtered at the full raw rate (eg commonly 8 kHz) regardless of this setting.
+*
+* @min 100
 * @max 2000
-* @value 0 0 (driver minimum)
 * @value 100 100 Hz
 * @value 250 250 Hz
 * @value 400 400 Hz
+* @value 800 800 Hz
 * @value 1000 1000 Hz
 * @value 2000 2000 Hz
 * @unit Hz
@@ -128,6 +130,7 @@ PARAM_DEFINE_FLOAT(IMU_DGYRO_CUTOFF, 30.0f);
 * Enable bank of dynamically updating notch filters.
 * Requires ESC RPM feedback or onboard FFT (IMU_GYRO_FFT_EN).
 * @group Sensors
+* @category Developer
 * @min 0
 * @max 3
 * @bit 0 ESC RPM

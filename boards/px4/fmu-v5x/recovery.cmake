@@ -1,9 +1,6 @@
 
 px4_add_board(
 	PLATFORM nuttx
-	VENDOR px4
-	MODEL fmu-v5x
-	LABEL recovery
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
 	ROMFSROOT recovery
@@ -110,7 +107,6 @@ px4_add_board(
 		sd_bench
 		serial_test
 		system_time
-		tests # tests and test runner
 		top
 		topic_listener
 		tune_control

@@ -225,8 +225,11 @@ void Tailsitter::update_transition_state()
 	_q_trans_sp.normalize();
 
 	// tilt angle (zero if vehicle nose points up (hover))
-	const float tilt = acosf(_q_trans_sp(0) * _q_trans_sp(0) - _q_trans_sp(1) * _q_trans_sp(1) - _q_trans_sp(2) *
-				 _q_trans_sp(2) + _q_trans_sp(3) * _q_trans_sp(3));
+	float cos_tilt = _q_trans_sp(0) * _q_trans_sp(0) - _q_trans_sp(1) * _q_trans_sp(1) - _q_trans_sp(2) *
+			 _q_trans_sp(2) + _q_trans_sp(3) * _q_trans_sp(3);
+	cos_tilt = cos_tilt >  1.0f ?  1.0f : cos_tilt;
+	cos_tilt = cos_tilt < -1.0f ? -1.0f : cos_tilt;
+	const float tilt = acosf(cos_tilt);
 
 	if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_FRONT_P1) {
 
@@ -235,6 +238,14 @@ void Tailsitter::update_transition_state()
 		if (tilt < M_PI_2_F - _params_tailsitter.fw_pitch_sp_offset) {
 			_q_trans_sp = Quatf(AxisAnglef(_trans_rot_axis,
 						       time_since_trans_start * trans_pitch_rate)) * _q_trans_start;
+		}
+
+		// check front transition timeout
+		if (_params->front_trans_timeout > FLT_EPSILON) {
+			if (time_since_trans_start > _params->front_trans_timeout) {
+				// transition timeout occured, abort transition
+				_attc->quadchute(VtolAttitudeControl::QuadchuteReason::TransitionTimeout);
+			}
 		}
 
 	} else if (_vtol_schedule.flight_mode == vtol_mode::TRANSITION_BACK) {

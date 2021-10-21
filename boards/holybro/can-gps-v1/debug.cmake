@@ -2,12 +2,10 @@ include (${CMAKE_CURRENT_LIST_DIR}/uavcan_board_identity)
 
 px4_add_board(
 	PLATFORM nuttx
-	VENDOR holybro
-	MODEL can-gps-v1
-	LABEL debug
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m4
 	CONSTRAINED_MEMORY
+	CONSTRAINED_FLASH
 	ROMFSROOT cannode
 	UAVCAN_INTERFACES 2
 	DRIVERS
@@ -15,12 +13,12 @@ px4_add_board(
 		barometer/bmp388
 		bootloaders
 		gps
-		imu/bosch/bmi088
+		imu/invensense/icm20649
 		lights/rgbled_ncp5623c
 		magnetometer/bosch/bmm150
 		uavcannode
 	MODULES
-		ekf2
+		#ekf2
 		load_mon
 		sensors
 	SYSTEMCMDS
@@ -29,7 +27,7 @@ px4_add_board(
 		perf
 		reboot
 		top
-		topic_listener
+		#topic_listener
 		uorb
 		ver
 		work_queue

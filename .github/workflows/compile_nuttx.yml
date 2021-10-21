@@ -12,24 +12,16 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: px4io/px4-dev-nuttx-focal:2021-02-04
+    container: px4io/px4-dev-nuttx-focal:2021-09-08
     strategy:
       matrix:
         config: [
-          px4_fmu-v3_default,
-          px4_fmu-v4_default,
-          px4_fmu-v5_default,
-          px4_fmu-v5_fixedwing,
-          px4_fmu-v5_multicopter,
-          px4_fmu-v5_optimized,
-          px4_fmu-v5_rtps,
-          px4_fmu-v5_stackcheck,
-          px4_fmu-v5x_base_phy_DP83848C,
-          px4_fmu-v5x_default,
-          px4_fmu-v5x_recovery,
-          px4_fmu-v5x_rtps,
-          px4_fmu-v6x_default,
-          px4_io-v2_default,
+          px4_fmu-v3,
+          px4_fmu-v4,
+          px4_fmu-v5,
+          px4_fmu-v5,
+          px4_fmu-v5x,
+          px4_fmu-v6x
           ]
     steps:
     - uses: actions/checkout@v1
@@ -65,19 +57,8 @@ jobs:
           ccache -s
           ccache -z
 
-    - name: make ${{matrix.config}}
-      run: make ${{matrix.config}}
-    - name: PX4_RESTRICTED_BUILD=1 make ${{matrix.config}}
-      run: PX4_RESTRICTED_BUILD=1 make ${{matrix.config}}
-    #- name: Upload px4 binary
-      #uses: actions/upload-artifact@v2
-      #with:
-        #name: nuttx-binaries
-        #path: |
-          #build/${{matrix.config}}/*.elf
-          #build/${{matrix.config}}/*.map
-          #build/${{matrix.config}}/*.px4
-          #build/${{matrix.config}}/*.bin
+    - name: make all_variants_${{matrix.config}}
+      run: make all_variants_${{matrix.config}}
     - name: make ${{matrix.config}} bloaty_compileunits
       run: make ${{matrix.config}} bloaty_compileunits || true
     - name: make ${{matrix.config}} bloaty_inlines
@@ -88,6 +69,8 @@ jobs:
       run: make ${{matrix.config}} bloaty_symbols || true
     - name: make ${{matrix.config}} bloaty_templates
       run: make ${{matrix.config}} bloaty_templates || true
+    - name: make ${{matrix.config}} bloaty_ram
+      run: make ${{matrix.config}} bloaty_ram || true
     - name: make ${{matrix.config}} bloaty_compare_master
       run: make ${{matrix.config}} bloaty_compare_master || true
     - name: ccache post-run
