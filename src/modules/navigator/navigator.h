@@ -347,7 +347,7 @@ public:
 	TerrainFollowerWrapper &getTerrainFollower() { return _terrain_follower; }
 
 	// RTL
-	int			rtl_type() { return _rtl.rtl_type(); }
+	bool		mission_landing_required() { return _rtl.get_rtl_type() == RTL::RTL_TYPE_MISSION_LANDING; }
 	bool		in_rtl_state() const { return _vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL; }
 
 	bool		abort_landing();

@@ -123,12 +123,11 @@ void RTL::find_RTL_destination(bool force_update)
 				     && _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING;
 
 
-	// consider the mission landing if not RTL_HOME type set
-	if (rtl_type() != RTL_HOME && _navigator->get_mission_start_land_available()) {
+	// consider the mission landing if not RTL_TYPE_HOME_OR_RALLY type set
+	if (_param_rtl_type.get() != RTL_TYPE_HOME_OR_RALLY && _navigator->get_mission_start_land_available()) {
 		double mission_landing_lat;
 		double mission_landing_lon;
 		float mission_landing_alt;
-		RTLDestinationType destination_type = RTL_DESTINATION_MISSION_LANDING;
 
 		// If we're a VTOL in hover and not already on a mission landing, then RTL to home
 		// instead of flying the whole landing pattern in hover mode.
@@ -136,7 +135,6 @@ void RTL::find_RTL_destination(bool force_update)
 			mission_landing_lat = _navigator->get_mission_landing_lat();
 			mission_landing_lon = _navigator->get_mission_landing_lon();
 			mission_landing_alt = _navigator->get_mission_landing_alt();
-			destination_type = RTL_DESTINATION_HOME;
 
 		} else {
 			mission_landing_lat = _navigator->get_mission_landing_start_lat();
@@ -144,23 +142,34 @@ void RTL::find_RTL_destination(bool force_update)
 			mission_landing_alt = _navigator->get_mission_landing_start_alt();
 		}
 
-		// compare home position to landing position to decide which is closer
 		dlat = mission_landing_lat - global_position.lat;
 		dlon = mission_landing_lon - global_position.lon;
 		double dist_squared = coord_dist_sq(dlat, dlon);
 
-		// set destination to mission landing if closest or in RTL_LAND or RTL_MISSION (so not in RTL_CLOSEST)
-		if (dist_squared < min_dist_squared || rtl_type() != RTL_CLOSEST) {
+		// always find closest destination if in hover and VTOL
+		if (_param_rtl_type.get() == RTL_TYPE_CLOSEST || (vtol_in_rw_mode && !_navigator->getMissionLandingInProgress())) {
+
+			// compare home position to landing position to decide which is closer
+			if (dist_squared < min_dist_squared) {
+				_destination.type = RTL_DESTINATION_MISSION_LANDING;
+				min_dist_squared = dist_squared;
+				_destination.lat = mission_landing_lat;
+				_destination.lon = mission_landing_lon;
+				_destination.alt = mission_landing_alt;
+			}
+
+		} else {
+			// it has to be the mission landing
+			_destination.type = RTL_DESTINATION_MISSION_LANDING;
 			min_dist_squared = dist_squared;
 			_destination.lat = mission_landing_lat;
 			_destination.lon = mission_landing_lon;
 			_destination.alt = mission_landing_alt;
-			_destination.type = destination_type;
 		}
 	}
 
-	// do not consider rally point if RTL type is set to RTL_MISSION, so exit function and use either home or mission landing
-	if (rtl_type() == RTL_MISSION) {
+	// do not consider rally point if RTL type is set to RTL_TYPE_MISSION_LANDING_REVERSED, so exit function and use either home or mission landing
+	if (_param_rtl_type.get() == RTL_TYPE_MISSION_LANDING_REVERSED) {
 		return;
 	}
 
@@ -242,10 +251,6 @@ void RTL::on_activation()
 {
 	setClimbDone(false);
 	setClimbAndReturnDone(false);
-
-	_deny_mission_landing = _navigator->get_vstatus()->is_vtol
-				&& _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
-				&& !_navigator->getMissionLandingInProgress();
 
 	_terrain_follower.reset();
 	_navigator->setTerrainFollowerState();
