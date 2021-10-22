@@ -832,7 +832,8 @@ UavcanNode::enable_idle_throttle_when_armed(bool value)
 	value &= _idle_throttle_when_armed_param > 0;
 
 	if (value != _idle_throttle_when_armed) {
-		_mixing_interface.mixingOutput().setAllMinValues(value ? 1 : 0);
+		_mixing_interface.mixingOutput().setAllMinValues(
+			value ? _idle_throttle_when_armed_param : 0);
 		_idle_throttle_when_armed = value;
 	}
 }
