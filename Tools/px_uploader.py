@@ -667,6 +667,22 @@ class uploader(object):
 
         print("\nRebooting.", end='')
         self.__reboot()
+
+        # check if application has booted
+        time.sleep(3)
+        # this Sync is expected to fail, because jump to Px4 succeeded
+        btl_active = False
+        try:
+            # Test if bootloader answers
+            ret =self.__sync()
+            btl_active=True
+
+        except Exception as e :
+            btl_active = False
+
+        if btl_active ==  True:
+            raise Exception('Did not boot to PX4 Application, still in Bootloader')
+
         self.port.close()
         print(" Elapsed Time %3.3f\n" % (time.time() - start))
 
