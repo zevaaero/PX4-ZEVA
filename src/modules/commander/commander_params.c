@@ -274,7 +274,7 @@ PARAM_DEFINE_INT32(COM_RC_ARM_HYST, 1000);
 /**
  * RC disarm gesture duration when not landed
  *
- * The default value of 10000 requires the stick to be held in the disarm position for 10 second.
+ * The default value of 1000 requires the stick to be held in the disarm position for 1 second.
  *
  * @group Commander
  * @min 100
