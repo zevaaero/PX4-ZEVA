@@ -131,8 +131,8 @@ jobs:
     - name: Update binaries in AuterionOS
       id: update_aos_binaries
       run: |
-        yes | cp -rf development/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/dev
-        yes | cp -rf production/*/px4_fmu-v5*.px4 distro/src/fmu/binaries/prod
+        yes | cp -rf development/*/px4_fmu-v5x*.px4 distro/src/fmu/binaries/dev
+        yes | cp -rf production/*/px4_fmu-v5x*.px4 distro/src/fmu/binaries/prod
         DISTRO_REF_BRANCH=$(echo ${{ steps.references.outputs.ref_branch }} | sed -r "s/\/+/-/g") # required while we don't define a branch naming convention for releases
         cd distro
         echo "::set-output name=aos_branch::`sh -c \"if git ls-remote --heads --exit-code --quiet https://github.com/Auterion/auterion_distro_resin.git \${DISTRO_REF_BRANCH}; then echo \${DISTRO_REF_BRANCH}; else echo master; fi | tail -1\"`"
