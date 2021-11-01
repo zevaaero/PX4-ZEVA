@@ -119,9 +119,10 @@ bool ManualControl::wantsDisarm(const vehicle_control_mode_s &vehicle_control_mo
 	    && (landed || mc_manual_thrust_mode)
 	    && (stick_in_lower_left || arm_button_pressed || arm_switch_to_disarm_transition)) {
 
-		const bool last_disarm_hysteresis = _stick_disarm_hysteresis.get_state();
-		_stick_disarm_hysteresis.set_state_and_update(true, hrt_absolute_time());
-		const bool disarm_trigger = !last_disarm_hysteresis && _stick_disarm_hysteresis.get_state()
+		systemlib::Hysteresis &hysteresis = landed ? _stick_disarm_landed_hysteresis : _stick_disarm_in_air_hysteresis;
+		const bool last_disarm_hysteresis = hysteresis.get_state();
+		hysteresis.set_state_and_update(true, hrt_absolute_time());
+		const bool disarm_trigger = !last_disarm_hysteresis && hysteresis.get_state()
 					    && !_stick_arm_hysteresis.get_state();
 
 		if (disarm_trigger || arm_switch_to_disarm_transition) {
@@ -130,7 +131,8 @@ bool ManualControl::wantsDisarm(const vehicle_control_mode_s &vehicle_control_mo
 
 	} else if (!arm_button_pressed) {
 
-		_stick_disarm_hysteresis.set_state_and_update(false, hrt_absolute_time());
+		_stick_disarm_landed_hysteresis.set_state_and_update(false, hrt_absolute_time());
+		_stick_disarm_in_air_hysteresis.set_state_and_update(false, hrt_absolute_time());
 	}
 
 	return ret;
@@ -161,7 +163,7 @@ bool ManualControl::wantsArm(const vehicle_control_mode_s &vehicle_control_mode,
 		const bool last_arm_hysteresis = _stick_arm_hysteresis.get_state();
 		_stick_arm_hysteresis.set_state_and_update(true, hrt_absolute_time());
 		const bool arm_trigger = !last_arm_hysteresis && _stick_arm_hysteresis.get_state()
-					 && !_stick_disarm_hysteresis.get_state();
+					 && !_stick_disarm_landed_hysteresis.get_state() && !_stick_disarm_in_air_hysteresis.get_state();
 
 		if (arm_trigger || arm_switch_to_arm_transition) {
 			ret = true;
@@ -188,6 +190,7 @@ bool ManualControl::isModeInitializationRequired()
 void ManualControl::updateParams()
 {
 	ModuleParams::updateParams();
-	_stick_disarm_hysteresis.set_hysteresis_time_from(false, _param_rc_arm_hyst.get() * 1_ms);
+	_stick_disarm_landed_hysteresis.set_hysteresis_time_from(false, _param_rc_arm_hyst.get() * 1_ms);
+	_stick_disarm_in_air_hysteresis.set_hysteresis_time_from(false, _param_rc_disarm_air_hyst.get() * 1_ms);
 	_stick_arm_hysteresis.set_hysteresis_time_from(false, _param_rc_arm_hyst.get() * 1_ms);
 }

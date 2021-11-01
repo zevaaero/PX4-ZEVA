@@ -86,13 +86,15 @@ private:
 	bool _rc_available{false};
 
 	// Arming/disarming
-	systemlib::Hysteresis _stick_disarm_hysteresis{false};
+	systemlib::Hysteresis _stick_disarm_landed_hysteresis{false};
+	systemlib::Hysteresis _stick_disarm_in_air_hysteresis{false};
 	systemlib::Hysteresis _stick_arm_hysteresis{false};
 	uint8_t _last_manual_control_switches_arm_switch{manual_control_switches_s::SWITCH_POS_NONE};
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::COM_RC_LOSS_T>) _param_com_rc_loss_t,
 		(ParamInt<px4::params::COM_RC_ARM_HYST>) _param_rc_arm_hyst,
+		(ParamInt<px4::params::COM_RC_DARM_A_H>) _param_rc_disarm_air_hyst,
 		(ParamBool<px4::params::COM_ARM_SWISBTN>) _param_com_arm_swisbtn,
 		(ParamBool<px4::params::COM_REARM_GRACE>) _param_com_rearm_grace,
 		(ParamInt<px4::params::COM_RC_OVERRIDE>) _param_rc_override,

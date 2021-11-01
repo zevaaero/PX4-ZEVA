@@ -272,6 +272,18 @@ PARAM_DEFINE_INT32(COM_RC_IN_MODE, 0);
 PARAM_DEFINE_INT32(COM_RC_ARM_HYST, 1000);
 
 /**
+ * RC disarm gesture duration when not landed
+ *
+ * The default value of 10000 requires the stick to be held in the disarm position for 10 second.
+ *
+ * @group Commander
+ * @min 100
+ * @max 20000
+ * @unit ms
+ */
+PARAM_DEFINE_INT32(COM_RC_DARM_A_H, 1000);
+
+/**
  * Time-out for auto disarm after landing
  *
  * A non-zero, positive value specifies the time-out period in seconds after which the vehicle will be
