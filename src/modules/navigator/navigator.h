@@ -370,6 +370,8 @@ public:
 	void		release_gimbal_control();
 	void 		set_gimbal_neutral();
 
+	void        stop_capturing_images();
+
 private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad,	/**< loiter radius for fixedwing */
@@ -505,6 +507,8 @@ private:
 
 	bool _mission_landing_in_progress{false};	// this flag gets set if the mission is currently executing on a landing pattern
 	// if mission mode is inactive, this flag will be cleared after 2 seconds
+
+	bool _is_capturing_images{false}; // keep track if we need to stop capturing images
 
 	traffic_buffer_s _traffic_buffer;
 

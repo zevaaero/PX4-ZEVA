@@ -155,6 +155,8 @@ Mission::on_inactivation()
 	cmd.param3 = 1.0f;
 	_navigator->publish_vehicle_cmd(&cmd);
 
+	_navigator->stop_capturing_images();
+
 	_navigator->set_gimbal_neutral();
 	_navigator->release_gimbal_control();
 

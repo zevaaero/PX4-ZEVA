@@ -1756,7 +1756,20 @@ Navigator::publish_vehicle_cmd(vehicle_command_s *vcmd)
 	// sent to the mavlink links to other components.
 	switch (vcmd->command) {
 	case NAV_CMD_IMAGE_START_CAPTURE:
+
+		// We are only capturing multiple if param3 is 0 or > 1.
+		if (static_cast<int>(vcmd->param3) != 1) {
+			_is_capturing_images = true;
+		}
+
+		vcmd->target_component = 100; // MAV_COMP_ID_CAMERA
+		break;
+
 	case NAV_CMD_IMAGE_STOP_CAPTURE:
+		_is_capturing_images = false;
+		vcmd->target_component = 100; // MAV_COMP_ID_CAMERA
+		break;
+
 	case NAV_CMD_VIDEO_START_CAPTURE:
 	case NAV_CMD_VIDEO_STOP_CAPTURE:
 		vcmd->target_component = 100; // MAV_COMP_ID_CAMERA
@@ -1834,6 +1847,19 @@ Navigator::set_gimbal_neutral()
 	vcmd.param4 = NAN;
 	vcmd.param5 = gimbal_manager_set_attitude_s::GIMBAL_MANAGER_FLAGS_NEUTRAL;
 	publish_vehicle_cmd(&vcmd);
+}
+
+void
+Navigator::stop_capturing_images()
+{
+	if (_is_capturing_images) {
+		vehicle_command_s vcmd = {};
+		vcmd.command = NAV_CMD_IMAGE_STOP_CAPTURE;
+		vcmd.param1 = 0.0f;
+		publish_vehicle_cmd(&vcmd);
+
+		// _is_capturing_images is reset inside publish_vehicle_cmd.
+	}
 }
 
 void
