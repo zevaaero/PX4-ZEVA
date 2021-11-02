@@ -2551,6 +2551,7 @@ Commander::run()
 
 					_status_changed = true;
 					_armed.manual_lockdown = true;
+					send_parachute_command();
 				}
 
 			} else if (_manual_control_switches.kill_switch == manual_control_switches_s::SWITCH_POS_OFF) {
