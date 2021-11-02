@@ -42,3 +42,6 @@ bool avoidance_system_valid                       # Status of the obstacle avoid
 
 bool onboard_logging_system_required              # Set to true if logging system is required for arming via the COM_ARM_WO_OBLOG parameter
 bool onboard_logging_system_valid                 # Status of the onboard logging system
+
+bool parachute_system_present
+bool parachute_system_healthy
