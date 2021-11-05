@@ -473,6 +473,44 @@ static constexpr const char *arm_disarm_reason_str(arm_disarm_reason_t calling_r
 	return "";
 };
 
+using battery_fault_reason_t = events::px4::enums::battery_fault_reason_t;
+static_assert(battery_status_s::BATTERY_FAULT_COUNT == static_cast<uint8_t>(battery_fault_reason_t::battery_fault_count)
+	      , "Battery fault flags mismatch!");
+
+static constexpr const char *battery_fault_reason_str(battery_fault_reason_t battery_fault_reason)
+{
+	switch (battery_fault_reason) {
+	case battery_fault_reason_t::deep_discharge: return "under voltage";
+
+	case battery_fault_reason_t::voltage_spikes: return "over voltage";
+
+	case battery_fault_reason_t::cell_fail: return "cell fault";
+
+	case battery_fault_reason_t::over_current: return "over current";
+
+	case battery_fault_reason_t::fault_temperature: return "critical temperature";
+
+	case battery_fault_reason_t::under_temperature: return "under temperature";
+
+	case battery_fault_reason_t::incompatible_voltage: return "voltage mismatch";
+
+	case battery_fault_reason_t::incompatible_firmware: return "incompatible firmware";
+
+	case battery_fault_reason_t::incompatible_model: return "incompatible model";
+
+	case battery_fault_reason_t::hardware_fault: return "hardware fault";
+
+	case battery_fault_reason_t::over_temperature: return "near temperature limit";
+
+	case battery_fault_reason_t::battery_fault_count: return "error! battery fault count";
+
+	}
+
+	return "";
+};
+
+
+
 using navigation_mode_t = events::px4::enums::navigation_mode_t;
 
 static inline navigation_mode_t navigation_mode(uint8_t main_state)
@@ -3998,7 +4036,11 @@ void Commander::battery_status_check()
 		if (_armed.armed) {
 
 			if ((_last_connected_batteries & (1 << index)) && !battery.connected) {
-				mavlink_log_critical(&_mavlink_log_pub, "Battery %d disconnected, land now!", index + 1);
+				mavlink_log_critical(&_mavlink_log_pub, "Battery %d disconnected. Land now! \t", index + 1);
+				events::send<uint8_t>(events::ID("commander_battery_disconnected"), {events::Log::Emergency, events::LogInternal::Warning},
+						      "Battery {1} disconnected. Land now!", index + 1);
+				// trigger a battery failsafe action if a battery disconnects in flight
+				worst_warning = battery_status_s::BATTERY_WARNING_CRITICAL;
 			}
 
 			if ((battery.mode > 0) && (battery.mode != _last_battery_mode[index])) {
@@ -4035,25 +4077,21 @@ void Commander::battery_status_check()
 				oldest_update = battery.timestamp;
 			}
 
-
-			if (battery.faults > 0 && battery.custom_faults == 0) {
+			if (battery.faults > 0) {
 				// MAVLink supported faults, can be checked on the ground station
 				battery_has_fault = true;
 
-				if (battery.faults != _last_battery_fault[index]) {
-					mavlink_log_critical(&_mavlink_log_pub, "Battery %d reported faults, check status %s", index + 1,
-							     _armed.armed ? "and land now!" : "");
-				}
+				if (battery.faults != _last_battery_fault[index] || battery.custom_faults != _last_battery_custom_fault[index]) {
+					for (uint8_t fault_index = 0; fault_index < static_cast<uint8_t>(battery_fault_reason_t::battery_fault_count);
+					     fault_index++) {
+						if (battery.faults & (1 << fault_index)) {
+							mavlink_log_emergency(&_mavlink_log_pub, "Battery %d: %s. %s \t", index + 1,
+									      battery_fault_reason_str(static_cast<battery_fault_reason_t>(fault_index)),  _armed.armed ? "Land now!" : "");
 
-			} else if (battery.custom_faults > 0) {
-				// Manufacturer specific faults, flag the specific error code
-				battery_has_fault = true;
-
-				if (battery.custom_faults != _last_battery_custom_fault[index]) {
-
-					mavlink_log_critical(&_mavlink_log_pub, "Battery %d reported faults: code %" PRIu32 ". %s", index + 1,
-							     battery.custom_faults,
-							     _armed.armed ? "Land now!" : "");
+							events::send<uint8_t, events::px4::enums::battery_fault_reason_t>(events::ID("battery_fault"), {events::Log::Emergency, events::LogInternal::Warning},
+									"Battery {1}: {2}", index + 1, static_cast<battery_fault_reason_t>(fault_index));
+						}
+					}
 				}
 			}
 
@@ -4430,7 +4468,7 @@ void Commander::esc_status_check()
 				}
 			}
 
-			mavlink_log_critical(&_mavlink_log_pub, "%soffline\t", esc_fail_msg);
+			mavlink_log_critical(&_mavlink_log_pub, "%soffline. %s\t", esc_fail_msg, _armed.armed ? "Land now!" : "");
 
 			_last_esc_online_flags = esc_status.esc_online_flags;
 			_status_flags.condition_escs_error = true;
@@ -4440,54 +4478,57 @@ void Commander::esc_status_check()
 
 		for (int index = 0; index < esc_status.esc_count; index++) {
 
-			if (esc_status.esc[index].failures > esc_report_s::FAILURE_NONE) {
-				_status_flags.condition_escs_failure = true;
+			_status_flags.condition_escs_failure |= esc_status.esc[index].failures > esc_report_s::FAILURE_NONE;
 
-				if (esc_status.esc[index].failures != _last_esc_failure[index]) {
+			if (esc_status.esc[index].failures != _last_esc_failure[index]) {
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_CURRENT_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over current\t", index + 1);
-						events::send<uint8_t>(events::ID("commander_esc_over_current"), events::Log::Critical,
-								      "ESC{1}: over current", index + 1);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_CURRENT_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over current\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_esc_over_current"), events::Log::Critical,
+							      "ESC{1}: over current", index + 1);
+				}
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_VOLTAGE_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over voltage\t", index + 1);
-						events::send<uint8_t>(events::ID("commander_esc_over_voltage"), events::Log::Critical,
-								      "ESC{1}: over voltage", index + 1);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_VOLTAGE_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over voltage\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_esc_over_voltage"), events::Log::Critical,
+							      "ESC{1}: over voltage", index + 1);
+				}
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_TEMPERATURE_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over temperature\t", index + 1);
-						events::send<uint8_t>(events::ID("commander_esc_over_temp"), events::Log::Critical,
-								      "ESC{1}: over temperature", index + 1);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_WARN_ESC_TEMPERATURE_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over temperature\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_motor_over_temp"), events::Log::Critical,
+							      "ESC{1}: over temperature", index + 1);
+				}
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_RPM_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over RPM\t", index + 1);
-						events::send<uint8_t>(events::ID("commander_esc_over_rpm"), events::Log::Critical,
-								      "ESC{1}: over RPM", index + 1);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_ESC_TEMPERATURE_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over temperature\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_esc_over_temp"), events::Log::Critical,
+							      "ESC{1}: over temperature", index + 1);
+				}
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_INCONSISTENT_CMD_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: command inconsistency\t", index + 1);
-						events::send<uint8_t>(events::ID("commander_esc_cmd_inconsistent"), events::Log::Critical,
-								      "ESC{1}: command inconsistency", index + 1);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_OVER_RPM_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: over RPM\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_esc_over_rpm"), events::Log::Critical,
+							      "ESC{1}: over RPM", index + 1);
+				}
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_MOTOR_STUCK_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: motor stuck\t", index + 1);
-						events::send<uint8_t>(events::ID("commander_esc_motor_stuck"), events::Log::Critical,
-								      "ESC{1}: motor stuck", index + 1);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_INCONSISTENT_CMD_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: command inconsistency\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_esc_cmd_inconsistent"), events::Log::Critical,
+							      "ESC{1}: command inconsistency", index + 1);
+				}
 
-					if (esc_status.esc[index].failures & esc_report_s::FAILURE_GENERIC_MASK) {
-						mavlink_log_critical(&_mavlink_log_pub, "ESC%d: generic failure - code %d\t", index + 1,
-								     esc_status.esc[index].esc_state);
-						events::send<uint8_t, uint8_t>(events::ID("commander_esc_generic_failure"), events::Log::Critical,
-									       "ESC{1}: generic failure (code {2})", index + 1, esc_status.esc[index].esc_state);
-					}
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_MOTOR_STUCK_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: motor stuck\t", index + 1);
+					events::send<uint8_t>(events::ID("commander_esc_motor_stuck"), events::Log::Critical,
+							      "ESC{1}: motor stuck", index + 1);
+				}
 
+				if (esc_status.esc[index].failures & esc_report_s::FAILURE_GENERIC_MASK) {
+					mavlink_log_critical(&_mavlink_log_pub, "ESC%d: generic failure - code %d\t", index + 1,
+							     esc_status.esc[index].esc_state);
+					events::send<uint8_t, uint8_t>(events::ID("commander_esc_generic_failure"), events::Log::Critical,
+								       "ESC{1}: generic failure (code {2})", index + 1, esc_status.esc[index].esc_state);
 				}
 
 				_last_esc_failure[index] = esc_status.esc[index].failures;
