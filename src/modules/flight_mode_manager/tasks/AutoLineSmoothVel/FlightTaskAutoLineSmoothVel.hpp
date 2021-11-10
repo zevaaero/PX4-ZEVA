@@ -102,13 +102,26 @@ protected:
 	float _land_heading;
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
 
-	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAutoMapper,
+	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAuto,
 					(ParamFloat<px4::params::MIS_YAW_ERR>) _param_mis_yaw_err, // yaw-error threshold
 					(ParamFloat<px4::params::MPC_ACC_HOR>) _param_mpc_acc_hor, // acceleration in flight
 					(ParamFloat<px4::params::MPC_ACC_UP_MAX>) _param_mpc_acc_up_max,
 					(ParamFloat<px4::params::MPC_ACC_DOWN_MAX>) _param_mpc_acc_down_max,
 					(ParamFloat<px4::params::MPC_JERK_AUTO>) _param_mpc_jerk_auto,
 					(ParamFloat<px4::params::MPC_XY_TRAJ_P>) _param_mpc_xy_traj_p,
-					(ParamFloat<px4::params::MPC_XY_ERR_MAX>) _param_mpc_xy_err_max
+					(ParamFloat<px4::params::MPC_XY_ERR_MAX>) _param_mpc_xy_err_max,
+					(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed,
+					(ParamFloat<px4::params::MPC_LAND_CRWL>) _param_mpc_land_crawl_speed,
+					(ParamInt<px4::params::MPC_LAND_RC_HELP>) _param_mpc_land_rc_help,
+					(ParamFloat<px4::params::MPC_LAND_ALT1>)
+					_param_mpc_land_alt1, // altitude at which we start ramping down speed
+					(ParamFloat<px4::params::MPC_LAND_ALT2>)
+					_param_mpc_land_alt2, // altitude at which we descend at land speed
+					(ParamFloat<px4::params::MPC_LAND_ALT3>)
+					_param_mpc_land_alt3, // altitude where we switch to crawl speed, if distance sensor available
+					(ParamFloat<px4::params::MPC_TKO_SPEED>) _param_mpc_tko_speed,
+					(ParamFloat<px4::params::MPC_TKO_RAMP_T>)
+					_param_mpc_tko_ramp_t, // time constant for smooth takeoff ramp
+					(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max
 				       );
 };

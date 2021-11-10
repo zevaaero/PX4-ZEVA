@@ -48,21 +48,4 @@ public:
 	FlightTaskAutoMapper() = default;
 	virtual ~FlightTaskAutoMapper() = default;
 
-protected:
-
-	DEFINE_PARAMETERS_CUSTOM_PARENT(FlightTaskAuto,
-					(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed,
-					(ParamFloat<px4::params::MPC_LAND_CRWL>) _param_mpc_land_crawl_speed,
-					(ParamInt<px4::params::MPC_LAND_RC_HELP>) _param_mpc_land_rc_help,
-					(ParamFloat<px4::params::MPC_LAND_ALT1>)
-					_param_mpc_land_alt1, // altitude at which we start ramping down speed
-					(ParamFloat<px4::params::MPC_LAND_ALT2>)
-					_param_mpc_land_alt2, // altitude at which we descend at land speed
-					(ParamFloat<px4::params::MPC_LAND_ALT3>)
-					_param_mpc_land_alt3, // altitude where we switch to crawl speed, if LIDAR available
-					(ParamFloat<px4::params::MPC_TKO_SPEED>) _param_mpc_tko_speed,
-					(ParamFloat<px4::params::MPC_TKO_RAMP_T>)
-					_param_mpc_tko_ramp_t, // time constant for smooth takeoff ramp
-					(ParamFloat<px4::params::MPC_MAN_Y_MAX>) _param_mpc_man_y_max
-				       );
 };
