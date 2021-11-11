@@ -184,7 +184,7 @@ void FailureDetector::updateEscsStatus(const vehicle_status_s &vehicle_status)
 			bool is_esc_failure = !is_all_escs_armed;
 
 			for (uint8_t i = 0; i < limited_esc_count; i++) {
-				is_esc_failure |= (esc_status.esc[i].failures != esc_report_s::FAILURE_NONE);
+				is_esc_failure |= (esc_status.esc[i].failures > 0);
 			}
 
 			_esc_failure_hysteresis.set_hysteresis_time_from(false, 300_ms);
