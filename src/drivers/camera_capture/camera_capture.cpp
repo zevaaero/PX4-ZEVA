@@ -78,11 +78,6 @@ CameraCapture::capture_callback(uint32_t chan_index, hrt_abstime edge_time, uint
 {
 	_trigger.chan_index = chan_index;
 	_trigger.hrt_edge_time = edge_time;
-
-	timespec tv{};
-	px4_clock_gettime(CLOCK_REALTIME, &tv);
-	_trigger.rtc_edge_time = ts_to_abstime(&tv) - hrt_elapsed_time(&edge_time);
-
 	_trigger.edge_state = edge_state;
 	_trigger.overflow = overflow;
 
@@ -96,11 +91,6 @@ CameraCapture::gpio_interrupt_routine(int irq, void *context, void *arg)
 
 	dev->_trigger.chan_index = 0;
 	dev->_trigger.hrt_edge_time = hrt_absolute_time();
-
-	timespec tv{};
-	px4_clock_gettime(CLOCK_REALTIME, &tv);
-	dev->_trigger.rtc_edge_time = ts_to_abstime(&tv);
-
 	dev->_trigger.edge_state = 0;
 	dev->_trigger.overflow = 0;
 
@@ -169,10 +159,23 @@ CameraCapture::publish_trigger()
 	pps_capture_s pps_capture;
 
 	if (_pps_capture_sub.update(&pps_capture)) {
-		_rtc_drift_time = pps_capture.rtc_drift_time;
+		_pps_hrt_timestamp = pps_capture.timestamp;
+		_pps_rtc_timestamp = pps_capture.rtc_timestamp;
 	}
 
-	trigger.timestamp_utc = _trigger.rtc_edge_time + _rtc_drift_time;
+
+	if (_pps_hrt_timestamp > 0) {
+		// Current RTC time (RTC time captured by the PPS module + elapsed time since capture)
+		uint64_t gps_utc_time = _pps_rtc_timestamp + hrt_elapsed_time(&_pps_hrt_timestamp);
+		// Current RTC time - elapsed time since capture interrupt event
+		trigger.timestamp_utc = gps_utc_time - hrt_elapsed_time(&trigger.timestamp);
+
+	} else {
+		// No PPS capture received, use RTC clock as fallback
+		timespec tv{};
+		px4_clock_gettime(CLOCK_REALTIME, &tv);
+		trigger.timestamp_utc = ts_to_abstime(&tv) - hrt_elapsed_time(&trigger.timestamp);
+	}
 
 	_trigger_pub.publish(trigger);
 }
