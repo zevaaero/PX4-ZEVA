@@ -300,15 +300,15 @@
                     "description": "Smart battery modes of operation",
                     "entries": {
                         "0": {
-                            "name": "mode_unknown",
+                            "name": "unknown",
                             "description": "unknown"
                         },
                         "1": {
-                            "name": "mode_autodischarging",
+                            "name": "autodischarging",
                             "description": "auto discharging towards storage level"
                         },
                         "2": {
-                            "name": "mode_hotswap",
+                            "name": "hotswap",
                             "description": "hot-swap"
                         }
                     }
