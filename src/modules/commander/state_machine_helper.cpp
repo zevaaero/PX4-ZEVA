@@ -1176,7 +1176,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 		break;
 
 	case battery_status_s::BATTERY_WARNING_LOW:
-		mavlink_log_info(mavlink_log_pub, "Low battery level! Return advised\t");
+		mavlink_log_gcs_critical(mavlink_log_pub, "Low battery level! Return advised\t");
 		events::send(events::ID("commander_bat_low"), {events::Log::Warning, events::LogInternal::Info},
 			     "Low battery level! Return advised");
 		break;
@@ -1187,7 +1187,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 
 		switch (low_battery_action) {
 		case LOW_BAT_ACTION::WARNING:
-			mavlink_log_info(mavlink_log_pub, "%s, landing advised\t", battery_critical);
+			mavlink_log_gcs_critical(mavlink_log_pub, "%s, landing advised\t", battery_critical);
 			events::send(events::ID("commander_bat_crit"), {events::Log::Critical, events::LogInternal::Info},
 				     "Critical battery level! Landing advised");
 			break;
@@ -1204,7 +1204,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 
 					internal_state.main_state = commander_state_s::MAIN_STATE_AUTO_RTL;
 					internal_state.timestamp = hrt_absolute_time();
-					mavlink_log_info(mavlink_log_pub, "%s, executing RTL\t", battery_critical);
+					mavlink_log_gcs_critical(mavlink_log_pub, "%s, executing RTL\t", battery_critical);
 					events::send(events::ID("commander_bat_crit_rtl"), {events::Log::Critical, events::LogInternal::Info},
 						     "Critical battery level! Executing RTL");
 				}
@@ -1227,7 +1227,7 @@ void battery_failsafe(orb_advert_t *mavlink_log_pub, const vehicle_status_s &sta
 			      internal_state.main_state == commander_state_s::MAIN_STATE_AUTO_PRECLAND)) {
 				internal_state.main_state = commander_state_s::MAIN_STATE_AUTO_LAND;
 				internal_state.timestamp = hrt_absolute_time();
-				mavlink_log_info(mavlink_log_pub, "%s, landing\t", battery_critical);
+				mavlink_log_gcs_critical(mavlink_log_pub, "%s, landing\t", battery_critical);
 				events::send(events::ID("commander_bat_crit_land"), {events::Log::Warning, events::LogInternal::Info},
 					     "Critical battery level! Landing now");
 			}
