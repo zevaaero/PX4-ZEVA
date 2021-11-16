@@ -344,9 +344,10 @@ MissionBlock::is_mission_item_reached()
 				_waypoint_yaw_reached = true;
 			}
 
-			// Temporary hack: Always accept yaw during takeoff.
-			// TODO: Navigator needs to handle a yaw reset properly and adjust its yaw setpoint.
-			// FlightTaskAuto is currently also ignoring the yaw setpoint during takeoff because of this.
+			// Always accept yaw during takeoff
+			// TODO: Ideally Navigator would handle a yaw reset and adjust its yaw setpoint, making the
+			// following no longer necessary.
+			// FlightTaskAuto is currently also ignoring the yaw setpoint during takeoff and thus "handling" it.
 			if (_mission_item.nav_cmd == vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF) {
 				_waypoint_yaw_reached = true;
 			}
