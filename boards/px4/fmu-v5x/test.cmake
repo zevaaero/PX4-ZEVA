@@ -24,7 +24,7 @@ px4_add_board(
 		differential_pressure # all available differential pressure drivers
 		distance_sensor # all available distance sensor drivers
 		dshot
-		gps
+		#gps
 		heater
 		#imu # all available imu drivers
 		#imu/analog_devices/adis16448
