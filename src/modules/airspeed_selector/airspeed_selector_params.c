@@ -76,15 +76,14 @@ PARAM_DEFINE_INT32(ASPD_TAS_GATE, 3);
 PARAM_DEFINE_INT32(ASPD_BETA_GATE, 1);
 
 /**
- * Controls when to apply the new esstimated airspeed scale
+ * Controls when to apply the new estimated airspeed scale(s)
  *
- * @value 0 Disable airspeed scale estimation completely
- * @value 1 Do not apply the new gains (logging and inside wind estimator)
- * @value 2 Apply the new scale after disarm
- * @value 3 Apply the new gains in air
+ * @value 0 Do not automatically apply the estimated scale
+ * @value 1 Apply the estimated scale after disarm
+ * @value 2 Apply the estimated scale in air
  * @group Airspeed Validator
  */
-PARAM_DEFINE_INT32(ASPD_SCALE_APPLY, 2);
+PARAM_DEFINE_INT32(ASPD_SCALE_APPLY, 1);
 
 /**
  * Scale of airspeed sensor 1
@@ -146,12 +145,18 @@ PARAM_DEFINE_INT32(ASPD_PRIMARY, 1);
 /**
  * Enable checks on airspeed sensors
  *
- * If set to true then the data comming from the airspeed sensors is checked for validity. Only applied if ASPD_PRIMARY > 0.
+ * Controls which checks are run to check airspeed data for validity. Only applied if ASPD_PRIMARY > 0.
+ * Note that the data missing check is enabled if any of the options is set.
  *
- * @boolean
+ * @min 0
+ * @max 15
+ * @bit 0 Only data missing check (triggers if more than 1s no data)
+ * @bit 1 Data stuck (triggers if data is exactly constant for 2s)
+ * @bit 2 Innovation check (see ASPD_FS_INNOV)
+ * @bit 3 Load factor check (triggers if measurement is below stall speed)
  * @group Airspeed Validator
  */
-PARAM_DEFINE_INT32(ASPD_DO_CHECKS, 1);
+PARAM_DEFINE_INT32(ASPD_DO_CHECKS, 7);
 
 /**
  * Enable fallback to sensor-less airspeed estimation
@@ -167,34 +172,34 @@ PARAM_DEFINE_INT32(ASPD_DO_CHECKS, 1);
 PARAM_DEFINE_INT32(ASPD_FALLBACK_GW, 0);
 
 /**
- * Airspeed failsafe consistency threshold
+ * Airspeed failure innovation threshold
  *
- * This specifies the minimum airspeed test ratio required to trigger a failsafe. Larger values make the check less sensitive,
- * smaller values make it more sensitive. Start with a value of 1.0 when tuning. When tas_test_ratio is > 1.0 it indicates the
- * inconsistency between predicted and measured airspeed is large enough to cause the wind EKF to reject airspeed measurements.
+ * This specifies the minimum airspeed innovation required to trigger a failsafe. Larger values make the check less sensitive,
+ * smaller values make it more sensitive. Large innovations indicate an inconsistency between predicted (groundspeed - windspeeed)
+ * and measured airspeed.
  * The time required to detect a fault when the threshold is exceeded depends on the size of the exceedance and is controlled by the ASPD_FS_INTEG parameter.
-*
+ *
+ * @unit m/s
  * @min 0.5
- * @max 3.0
+ * @max 10.0
  * @decimal 1
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_FS_INNOV, 1.0f);
+PARAM_DEFINE_FLOAT(ASPD_FS_INNOV, 5.f);
 
 /**
- * Airspeed failsafe consistency delay
+ * Airspeed failure innovation integral threshold
  *
- * This sets the time integral of airspeed test ratio exceedance above ASPD_FS_INNOV required to trigger a failsafe.
- * For example if ASPD_FS_INNOV is 1 and estimator_status.tas_test_ratio is 2.0, then the exceedance is 1.0 and the integral will
- * rise at a rate of 1.0/second. A negative value disables the check. Larger positive values make the check less sensitive, smaller positive values
- * make it more sensitive.
+ * This sets the time integral of airspeed innovation exceedance above ASPD_FS_INNOV required to trigger a failsafe.
+ * Larger values make the check less sensitive, smaller positive values make it more sensitive.
  *
- * @unit s
- * @max 30.0
+ * @unit m
+ * @min 0.0
+ * @max 50.0
  * @decimal 1
  * @group Airspeed Validator
  */
-PARAM_DEFINE_FLOAT(ASPD_FS_INTEG, 5.0f);
+PARAM_DEFINE_FLOAT(ASPD_FS_INTEG, 10.f);
 
 /**
  * Airspeed failsafe stop delay

@@ -104,7 +104,7 @@ WindEstimator::update(uint64_t time_now)
 	_wind_estimator_reset = false;
 
 	// run covariance prediction at 1Hz
-	if (time_now - _time_last_update < 1000 * 1000 || _time_last_update == 0) {
+	if (time_now - _time_last_update < 1_s || _time_last_update == 0) {
 		if (_time_last_update == 0) {
 			_time_last_update = time_now;
 		}
@@ -116,7 +116,7 @@ WindEstimator::update(uint64_t time_now)
 	_time_last_update = time_now;
 
 	float q_w = _wind_p_var;
-	float q_k_tas = _disable_tas_scale_estimate ? 0.f : _tas_scale_p_var;
+	float q_k_tas = _tas_scale_p_var;
 
 	float SPP0 = dt * dt;
 	float SPP1 = SPP0 * q_w;
@@ -149,7 +149,7 @@ WindEstimator::fuse_airspeed(uint64_t time_now, const float true_airspeed, const
 	}
 
 	// don't fuse faster than 10Hz
-	if (time_now - _time_last_airspeed_fuse < 100 * 1000) {
+	if (time_now - _time_last_airspeed_fuse < 100_ms) {
 		return;
 	}
 
@@ -161,13 +161,12 @@ WindEstimator::fuse_airspeed(uint64_t time_now, const float true_airspeed, const
 	const float v_d = velI(2);
 
 	// calculate airspeed from ground speed and wind states (without scale)
-	const float airspeed_predicted_raw = sqrtf((v_n - _state(INDEX_W_N)) * (v_n - _state(INDEX_W_N)) + (v_e - _state(
-			INDEX_W_E)) *
-					     (v_e - _state(INDEX_W_E)) + v_d * v_d);
+	const float airspeed_predicted_raw = sqrtf((v_n - _state(INDEX_W_N)) * (v_n - _state(INDEX_W_N)) +
+					     (v_e - _state(INDEX_W_E)) * (v_e - _state(INDEX_W_E)) + v_d * v_d);
 
 	// compute state observation matrix H
 	const float HH0 = airspeed_predicted_raw;
-	const float HH1 = _state(INDEX_TAS_SCALE) / HH0;
+	const float HH1 = _state(INDEX_TAS_SCALE) / math::max(HH0, 0.1f);
 
 	matrix::Matrix<float, 1, 3> H_tas;
 	H_tas(0, 0) = HH1 * (-v_n + _state(INDEX_W_N));
@@ -181,10 +180,6 @@ WindEstimator::fuse_airspeed(uint64_t time_now, const float true_airspeed, const
 	matrix::Matrix<float, 3, 1> K = _P * H_tas.transpose();
 	K /= S(0, 0);
 
-	if (_disable_tas_scale_estimate) {
-		K(2, 0) = 0.f;
-	}
-
 	// compute innovation
 	const float airspeed_pred = _state(INDEX_TAS_SCALE) * airspeed_predicted_raw;
 	_tas_innov = true_airspeed - airspeed_pred;
@@ -195,13 +190,13 @@ WindEstimator::fuse_airspeed(uint64_t time_now, const float true_airspeed, const
 	bool reinit_filter = false;
 	bool meas_is_rejected = false;
 
+	// note: _time_rejected_tas and reinit_filter are not used anymore as filter can't get reset due to tas rejection
 	meas_is_rejected = check_if_meas_is_rejected(time_now, _tas_innov, _tas_innov_var, _tas_gate, _time_rejected_tas,
 			   reinit_filter);
 
-	reinit_filter |= _tas_innov_var < 0.0f;
-
-	if (meas_is_rejected || reinit_filter) {
-		if (reinit_filter) {
+	if (meas_is_rejected || _tas_innov_var < 0.f) {
+		// only reset filter if _tas_innov_var gets unfeasible, but not never if tas measurement is rejected
+		if (_tas_innov_var < 0.0f) {
 			_initialised =	initialise(velI, matrix::Vector2f(0.1f, 0.1f), true_airspeed);
 		}
 
@@ -229,7 +224,7 @@ WindEstimator::fuse_beta(uint64_t time_now, const matrix::Vector3f &velI, const 
 	}
 
 	// don't fuse faster than 10Hz
-	if (time_now - _time_last_beta_fuse < 100 * 1000) {
+	if (time_now - _time_last_beta_fuse < 100_ms) {
 		return;
 	}
 
@@ -271,10 +266,6 @@ WindEstimator::fuse_beta(uint64_t time_now, const matrix::Vector3f &velI, const 
 	matrix::Matrix<float, 3, 1> K = _P * H_beta.transpose();
 	K /= S(0, 0);
 
-	if (_disable_tas_scale_estimate) {
-		K(2, 0) = 0.f;
-	}
-
 	// compute predicted side slip angle
 	matrix::Vector3f rel_wind(velI(0) - _state(INDEX_W_N), velI(1) - _state(INDEX_W_E), velI(2));
 	matrix::Dcmf R_body_to_earth(q_att);
@@ -310,7 +301,7 @@ WindEstimator::fuse_beta(uint64_t time_now, const matrix::Vector3f &velI, const 
 	// apply correction to state
 	_state(INDEX_W_N) += _beta_innov * K(0, 0);
 	_state(INDEX_W_E) += _beta_innov * K(1, 0);
-	_state(INDEX_TAS_SCALE) +=  _beta_innov * K(2, 0);
+	_state(INDEX_TAS_SCALE) += _beta_innov * K(2, 0);
 
 	// update covariance matrix
 	_P = _P - K * H_beta * _P;
@@ -363,7 +354,7 @@ WindEstimator::check_if_meas_is_rejected(uint64_t time_now, float innov, float i
 		time_meas_rejected = 0;
 	}
 
-	reinit_filter = time_now - time_meas_rejected > 5 * 1000 * 1000 && time_meas_rejected != 0;
+	reinit_filter = time_now - time_meas_rejected > 5_s && time_meas_rejected != 0;
 
 	return time_meas_rejected != 0;
 }
