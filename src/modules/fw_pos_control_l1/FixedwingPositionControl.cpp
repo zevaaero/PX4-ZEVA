@@ -806,7 +806,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		_control_mode_current = FW_POSCTRL_MODE_AUTO;
 
 		/* reset hold yaw */
-		_hdg_hold_yaw = _yaw;
+		_hdg_hold_yaw = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 		/* get circle mode */
 		bool was_circle_mode = _l1_control.circle_mode();
@@ -996,7 +996,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 			_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, nav_speed_2d);
 			_att_sp.roll_body = _l1_control.get_roll_setpoint();
-			_att_sp.yaw_body = _l1_control.nav_bearing();
+			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 			float adapted_mission_airspeed = 0.0f;
 
@@ -1018,7 +1018,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_l1_control.navigate_loiter(curr_wp, curr_pos, loiter_radius, loiter_direction, nav_speed_2d);
 
 			_att_sp.roll_body = _l1_control.get_roll_setpoint();
-			_att_sp.yaw_body = _l1_control.nav_bearing();
+			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 			float alt_sp = pos_sp_curr.alt;
 			float adapted_mission_airspeed = 0.0f;
@@ -1096,14 +1096,14 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		if (_control_mode_current != FW_POSCTRL_MODE_POSITION) {
 			/* Need to init because last loop iteration was in a different mode */
-			_hdg_hold_yaw = _yaw;
+			_hdg_hold_yaw = _yaw; // yaw is not controlled, so set setpoint to current yaw
 			_hdg_hold_enabled = false; // this makes sure the waypoints are reset below
 			_yaw_lock_engaged = false;
 
 			/* reset setpoints from other modes (auto) otherwise we won't
 			 * level out without new manual input */
 			_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
-			_att_sp.yaw_body = NAN;
+			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 		}
 
 		_control_mode_current = FW_POSCTRL_MODE_POSITION;
@@ -1167,7 +1167,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				/* just switched back from non heading-hold to heading hold */
 				if (!_hdg_hold_enabled) {
 					_hdg_hold_enabled = true;
-					_hdg_hold_yaw = _yaw;
+					_hdg_hold_yaw = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 					get_waypoint_heading_distance(_hdg_hold_yaw, _hdg_hold_prev_wp, _hdg_hold_curr_wp, true);
 				}
@@ -1187,7 +1187,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, ground_speed);
 
 				_att_sp.roll_body = _l1_control.get_roll_setpoint();
-				_att_sp.yaw_body = _l1_control.nav_bearing();
+				_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 				if (in_takeoff_situation()) {
 					/* limit roll motion to ensure enough lift */
@@ -1212,7 +1212,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 
 			_att_sp.roll_body = roll_sp_new;
-			_att_sp.yaw_body = NAN;
+			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 		}
 
 	} else if (_control_mode.flag_control_altitude_enabled && _control_mode.flag_control_manual_enabled) {
@@ -1260,7 +1260,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		_att_sp.roll_body = _manual_control_setpoint.y * radians(_param_fw_man_r_max.get());
 
-		_att_sp.yaw_body = NAN;
+		_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 	} else if (_control_mode.flag_control_altitude_enabled && !_control_mode.flag_control_manual_enabled) {
 		// if in Auto flight and position not valid, set fixed roll setpoint (GPS failure mode)
@@ -1285,7 +1285,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 
 		_att_sp.roll_body = math::radians(_param_fw_gpsf_r.get()); // open loop loiter bank angle
-		_att_sp.yaw_body = NAN;
+		_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 	} else if (_control_mode.flag_control_climb_rate_enabled && !_control_mode.flag_control_altitude_enabled) {
 		/* DESCEND mode, without position and altitude control, just descend rate is controlled.
@@ -1309,7 +1309,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 					   _param_fw_t_sink_min.get());
 
 		_att_sp.roll_body = math::radians(_param_fw_gpsf_r.get()); // open loop loiter bank angle
-		_att_sp.yaw_body = NAN;
+		_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 	} else {
 		_control_mode_current = FW_POSCTRL_MODE_OTHER;
@@ -1470,7 +1470,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 
 		// assign values
 		_att_sp.roll_body = _runway_takeoff.getRoll(_l1_control.get_roll_setpoint());
-		_att_sp.yaw_body = _runway_takeoff.getYaw(_l1_control.nav_bearing());
+		_att_sp.yaw_body = _runway_takeoff.getYaw(_yaw);
 		_att_sp.fw_control_yaw = _runway_takeoff.controlYaw();
 		_att_sp.pitch_body = _runway_takeoff.getPitch(get_tecs_pitch());
 
@@ -1511,7 +1511,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 
 			_l1_control.navigate_waypoints(prev_wp, curr_wp, curr_pos, ground_speed);
 			_att_sp.roll_body = _l1_control.get_roll_setpoint();
-			_att_sp.yaw_body = _l1_control.nav_bearing();
+			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 			/* Select throttle: only in LAUNCHDETECTION_RES_DETECTED_ENABLEMOTORS we want to use
 			 * full throttle, otherwise we use idle throttle */
@@ -1670,7 +1670,7 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2d
 	}
 
 	_att_sp.roll_body = _l1_control.get_roll_setpoint();
-	_att_sp.yaw_body = _l1_control.nav_bearing();
+	_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 
 	if (_land_noreturn_horizontal) {
 		/* limit roll motion to prevent wings from touching the ground first */
