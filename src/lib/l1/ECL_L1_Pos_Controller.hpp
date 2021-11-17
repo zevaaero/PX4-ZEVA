@@ -199,11 +199,6 @@ public:
 	void set_roll_slew_rate(float roll_slew_rate) { _roll_slew_rate = roll_slew_rate; }
 
 	/**
-	 * Set maximum allowed tangential velocity in wrong direction when loitering.
-	 */
-	void set_l1_op_tan_vel(float l1_op_tan_vel) { _l1_op_tan_vel = l1_op_tan_vel; }
-
-	/**
 	 * Set control loop dt. The value will be used to apply roll angle setpoint slew rate limiting.
 	 */
 	void set_dt(float dt) { _dt = dt;}
@@ -232,8 +227,6 @@ private:
 	float _roll_setpoint{0.0f};	///< current roll angle setpoint in radians
 	float _roll_slew_rate{0.0f};	///< roll angle setpoint slew rate limit in rad/s
 	float _dt{0};				///< control loop time in seconds
-
-	float _l1_op_tan_vel{0.5f};		///< maximum allowed tangential velocity in wrong direction when loitering
 
 	bool _has_guidance_updated =
 		false;	///< this flag is set to true by any of the guidance methods. This flag has to be manually reset using has_guidance_updated_reset()

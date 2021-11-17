@@ -843,24 +843,6 @@ PARAM_DEFINE_FLOAT(FW_T_TAS_R_TC, 0.2f);
 PARAM_DEFINE_FLOAT(FW_T_SEB_R_FF, 1.0f);
 
 /**
- * (Experimental) Max opposite tangent velocity
- *
- * Maximum allowed tangential velocity in the wrong direction when being in loitering mode.
- * Increasing this value reduces the chance of the vehicle entering an orbit through the center
- * (instead of joining tangentially). Having it too high increases the chance that the vehicle
- * tries for too long to achieve a certain loiter entry that is actually impossible due to
- * wind situation and bank angle limits.
- * This parameter is only meant for development and should be removed once a good value is found.
- *
- * @min 0.0
- * @max 5
- * @decimal 1
- * @increment 0.1
- * @group FW L1 Control
- */
-PARAM_DEFINE_FLOAT(FW_L1_OP_TAN_VEL, 0.5f);
-
-/**
  * Default target climbrate.
  *
  *

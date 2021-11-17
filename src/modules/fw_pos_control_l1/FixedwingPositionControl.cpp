@@ -105,7 +105,6 @@ FixedwingPositionControl::parameters_update()
 	_l1_control.set_l1_period(_param_fw_l1_period.get());
 	_l1_control.set_l1_roll_limit(radians(_param_fw_r_lim.get()));
 	_l1_control.set_roll_slew_rate(radians(_param_fw_l1_r_slew_max.get()));
-	_l1_control.set_l1_op_tan_vel(_param_fw_l1_op_tan_vel.get());
 
 	// TECS parameters
 	_tecs.set_max_climb_rate(_param_fw_t_clmb_max.get());
