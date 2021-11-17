@@ -2346,6 +2346,7 @@ Commander::run()
 		const bool in_low_battery_failsafe = _battery_warning > battery_status_s::BATTERY_WARNING_LOW;
 		const bool in_mag_fault_failsafe = (_estimator_status_sub.get().control_mode_flags
 						    & (1 << estimator_status_s::CS_MAG_FAULT));
+		const bool in_data_link_loss_failsafe = _status.failsafe && _status.data_link_lost;
 
 		// Geofence actions
 		const bool geofence_action_enabled = _geofence_result.geofence_action != geofence_result_s::GF_ACTION_NONE;
@@ -2535,7 +2536,7 @@ Commander::run()
 			// Abort autonomous mode and switch to position mode if sticks are moved significantly
 			// but only if actually in air.
 			if ((_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING)
-			    && !in_low_battery_failsafe && !_geofence_warning_action_on && !in_mag_fault_failsafe
+			    && !in_low_battery_failsafe && !_geofence_warning_action_on && !in_mag_fault_failsafe && !in_data_link_loss_failsafe
 			    && _armed.armed
 			    && !_status_flags.rc_input_blocked
 			    && manual_control_setpoint.valid
