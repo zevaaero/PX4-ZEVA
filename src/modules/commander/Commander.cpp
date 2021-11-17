@@ -2664,13 +2664,14 @@ Commander::run()
 
 		/* Check for failure detector status */
 		if (_failure_detector.update(_status, _vehicle_control_mode)) {
-			_status.failure_detector_status = _failure_detector.getStatus();
+			_status.failure_detector_status = _failure_detector.getStatus().value;
+			auto fd_status_flags = _failure_detector.getStatusFlags();
 			_status_changed = true;
 
 			if (_armed.armed) {
 				const hrt_abstime time_at_arm = _status.armed_time;
 
-				if (_status.failure_detector_status & vehicle_status_s::FAILURE_ARM_ESC) {
+				if (fd_status_flags.arm_escs) {
 					// Check within the motor spool up time before the takeoff
 					if (hrt_elapsed_time(&time_at_arm) < _param_com_spoolup_time.get() * 1_s) {
 						disarm(arm_disarm_reason_t::failure_detector);
@@ -2679,7 +2680,7 @@ Commander::run()
 					}
 				}
 
-				if (_status.failure_detector_status & vehicle_status_s::FAILURE_BATTERY) {
+				if (fd_status_flags.battery) {
 					// Check within the motor spool up time before the takeoff. Has no effect if battery_status
 					// is published at a lower rate than the spoolup time demands
 					if (hrt_elapsed_time(&time_at_arm) < _param_com_spoolup_time.get() * 1_s) {
@@ -2688,8 +2689,7 @@ Commander::run()
 					}
 				}
 
-				if (_status.failure_detector_status & (vehicle_status_s::FAILURE_ROLL | vehicle_status_s::FAILURE_PITCH |
-								       vehicle_status_s::FAILURE_ALT | vehicle_status_s::FAILURE_EXT)) {
+				if (fd_status_flags.roll || fd_status_flags.pitch || fd_status_flags.alt || fd_status_flags.ext) {
 					const bool is_right_after_takeoff = hrt_elapsed_time(&_status.takeoff_time) < (1_s * _param_com_lkdown_tko.get());
 
 					if (is_right_after_takeoff && !_lockdown_triggered) {
@@ -2729,13 +2729,13 @@ Commander::run()
 					}
 				}
 
-				if (_status.failure_detector_status & vehicle_status_s::FAILURE_HIGH_WIND) {
+				if (fd_status_flags.high_wind) {
 					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_RTL, _status_flags, _internal_state);
 					_status_changed = true;
 					mavlink_log_critical(&_mavlink_log_pub, "Too high wind abort operation and RTL");
 				}
 
-				if ((_status.failure_detector_status & vehicle_status_s::FAILURE_IMBALANCED_PROP)
+				if (fd_status_flags.imbalanced_prop
 				    && !_imbalanced_propeller_check_triggered) {
 					_status_changed = true;
 					_imbalanced_propeller_check_triggered = true;
@@ -2918,7 +2918,14 @@ Commander::run()
 			/* publish failure_detector data */
 			failure_detector_status_s fd_status{};
 			fd_status.timestamp = hrt_absolute_time();
-			fd_status.failure_status = _failure_detector.getStatus();
+			fd_status.fd_roll = _failure_detector.getStatusFlags().roll;
+			fd_status.fd_pitch = _failure_detector.getStatusFlags().pitch;
+			fd_status.fd_alt = _failure_detector.getStatusFlags().alt;
+			fd_status.fd_ext = _failure_detector.getStatusFlags().ext;
+			fd_status.fd_arm_escs = _failure_detector.getStatusFlags().arm_escs;
+			fd_status.fd_high_wind = _failure_detector.getStatusFlags().high_wind;
+			fd_status.fd_battery = _failure_detector.getStatusFlags().battery;
+			fd_status.fd_imbalanced_prop = _failure_detector.getStatusFlags().imbalanced_prop;
 			fd_status.imbalanced_prop_metric = _failure_detector.getImbalancedPropMetric();
 			_failure_detector_status_pub.publish(fd_status);
 		}
