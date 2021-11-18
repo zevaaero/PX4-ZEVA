@@ -19,7 +19,6 @@ jobs:
           px4_fmu-v3,
           px4_fmu-v4,
           px4_fmu-v5,
-          px4_fmu-v5,
           px4_fmu-v5x,
           px4_fmu-v6x
           ]
