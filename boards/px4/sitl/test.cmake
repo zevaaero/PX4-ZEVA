@@ -47,6 +47,7 @@ px4_add_board(
 		navigator
 		mc_autotune_attitude_control
 		rc_update
+		manual_control
 		replay
 		rover_pos_control
 		sensors

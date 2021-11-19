@@ -68,6 +68,7 @@ px4_add_board(
 		mavlink
 		navigator
 		rc_update
+		manual_control
 		sensors
 		temperature_compensation
 		vmount

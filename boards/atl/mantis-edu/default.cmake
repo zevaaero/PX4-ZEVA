@@ -33,6 +33,7 @@ px4_add_board(
 		#micrortps_bridge
 		navigator
 		rc_update
+		manual_control
 		sensors
 		sih
 		vmount

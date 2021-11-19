@@ -49,6 +49,7 @@ px4_add_board(
 		navigator
 		battery_status
 		rc_update
+		manual_control
 		sensors
 		temperature_compensation
 		#vmount
