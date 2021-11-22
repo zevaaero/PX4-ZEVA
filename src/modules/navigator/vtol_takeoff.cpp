@@ -51,7 +51,7 @@ VtolTakeoff::VtolTakeoff(Navigator *navigator) :
 void
 VtolTakeoff::on_activation()
 {
-	if (_navigator->hasSafeArea()) {
+	if (_navigator->home_position_valid()) {
 		set_takeoff_position();
 		_takeoff_state = vtol_takeoff_state::TAKEOFF_HOVER;
 	}
@@ -67,8 +67,8 @@ VtolTakeoff::on_active()
 				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 
 				_mission_item.nav_cmd = NAV_CMD_WAYPOINT;
-				_front_trans_heading_sp_rad = getClosestTransitionHeading();
-				_mission_item.yaw = _front_trans_heading_sp_rad;
+				_mission_item.yaw = wrap_pi(get_bearing_to_next_waypoint(_navigator->get_home_position()->lat,
+							    _navigator->get_home_position()->lon, _loiter_location(0), _loiter_location(1)));
 				_mission_item.force_heading = true;
 				mission_apply_limitation(_mission_item);
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
@@ -86,7 +86,8 @@ VtolTakeoff::on_active()
 				set_vtol_transition_item(&_mission_item, vtol_vehicle_status_s::VEHICLE_VTOL_STATE_FW);
 				position_setpoint_triplet_s *pos_sp_triplet = _navigator->get_position_setpoint_triplet();
 				pos_sp_triplet->previous = pos_sp_triplet->current;
-				generate_waypoint_from_heading(&pos_sp_triplet->current, _mission_item.yaw);
+				pos_sp_triplet->current.lat = _loiter_location(0);
+				pos_sp_triplet->current.lon = _loiter_location(1);
 				_navigator->set_position_setpoint_triplet_updated();
 
 				issue_command(_mission_item);
@@ -116,7 +117,8 @@ VtolTakeoff::on_active()
 				_mission_item.altitude = _navigator->get_home_position()->alt + _param_loiter_alt.get();
 
 				mission_item_to_position_setpoint(_mission_item, &pos_sp_triplet->current);
-				generate_waypoint_from_heading(&pos_sp_triplet->current, _front_trans_heading_sp_rad);
+				pos_sp_triplet->current.lat = _loiter_location(0);
+				pos_sp_triplet->current.lon = _loiter_location(1);
 				pos_sp_triplet->current.type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 
 				_mission_item.lat = pos_sp_triplet->current.lat;
@@ -150,16 +152,6 @@ VtolTakeoff::on_active()
 	}
 }
 
-void VtolTakeoff::generate_waypoint_from_heading(struct position_setpoint_s *setpoint, float yaw)
-{
-	waypoint_from_heading_and_distance(
-		_navigator->get_home_position()->lat, _navigator->get_home_position()->lon,
-		yaw, _navigator->getSafeAreaRadiusMeter() * cosf(M_PI_F / _navigator->getNumSectors()) - _param_loiter_radius_m.get(),
-		&(setpoint->lat), &(setpoint->lon));
-	setpoint->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-	setpoint->yaw = yaw;
-}
-
 void
 VtolTakeoff::set_takeoff_position()
 {
@@ -183,29 +175,4 @@ VtolTakeoff::set_takeoff_position()
 	pos_sp_triplet->next.valid = false;
 
 	_navigator->set_position_setpoint_triplet_updated();
-}
-
-float VtolTakeoff::getClosestTransitionHeading()
-{
-	const float vehicle_heading = _navigator->get_local_position()->heading;
-	uint8_t min_index = 0;
-	float delta_heading_prev = INFINITY;
-	const float sector_angle = 2 * M_PI_F / _navigator->getNumSectors();
-
-	for (int i = 0; i < _navigator->getNumSectors(); i++) {
-		if (_navigator->getSafeAreaSectorClearBitmap() & (1 << i)) {
-
-			const float center_heading_sector = sector_angle * i + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) +
-							    sector_angle * 0.5f;
-			const float delta_heading = wrap_pi(vehicle_heading - center_heading_sector);
-
-			if (fabsf(delta_heading) < delta_heading_prev) {
-				min_index = i;
-				delta_heading_prev = fabsf(delta_heading);
-			}
-		}
-	}
-
-	return wrap_pi(sector_angle * min_index + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) + sector_angle *
-		       0.5f);
 }

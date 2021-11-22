@@ -31,51 +31,80 @@
  *
  ****************************************************************************/
 /**
- * @file vtol_takeoff.h
- *
- * Helper class to do a VTOL takeoff and transition into a loiter.
+ * @file safe_point_land.hpp
+ * This file defines helper structs that are used to define land approaches which consists of a land location and a number of
+ * loiter circles. Each loiter circle defines a possible approach for landing at the land location.
  *
  */
 
 #pragma once
 
-#include "navigator_mode.h"
-#include "mission_block.h"
-
 #include <lib/mathlib/mathlib.h>
+#include <geo/geo.h>
 
-#include <px4_platform_common/module_params.h>
-class VtolTakeoff : public MissionBlock, public ModuleParams
-{
-public:
-	VtolTakeoff(Navigator *navigator);
-	~VtolTakeoff() = default;
+struct loiter_point_s {
+	loiter_point_s() { reset(); }
+	double lat;
+	double lon;
+	float height_m;
+	float loiter_radius_m;
 
-	void on_activation() override;
-	void on_active() override;
+	void reset()
+	{
+		lat = lon = static_cast<double>(NAN);
+		height_m = NAN;
+		loiter_radius_m = NAN;
+	}
 
-	void setTransitionAltitudeAbsolute(const float alt_amsl) {_transition_alt_amsl = alt_amsl; }
+	bool isValid() { return PX4_ISFINITE(lat) && PX4_ISFINITE(lon) && PX4_ISFINITE(height_m); }
+};
 
-	void setLoiterLocation(matrix::Vector2d loiter_location) { _loiter_location = loiter_location; }
-	void setLoiterHeight(const float height_m) { _loiter_height = height_m; }
+// defines one land location and a maximum of num_approaches_max loiter points
+struct land_approaches_s {
 
-private:
+	static constexpr uint8_t num_approaches_max = 8;
+	loiter_point_s approaches[num_approaches_max];
+	matrix::Vector2d land_location_lat_lon;
 
-	enum class vtol_takeoff_state {
-		TAKEOFF_HOVER = 0,
-		ALIGN_HEADING,
-		TRANSITION,
-		CLIMB,
-		ABORT_TAKEOFF_AND_LAND
-	} _takeoff_state;
+	land_approaches_s()
+	{
+		resetAllApproaches();
+	}
 
-	float _transition_alt_amsl{0.f};	// absolute altitude at which vehicle will transition to forward flight
-	matrix::Vector2d _loiter_location;
-	float _loiter_height{0};
+	void resetAllApproaches()
+	{
+		for (uint8_t i = 0; i < num_approaches_max; i++) {
+			approaches[i].reset();
+		}
+	}
 
-	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt
-	)
+	bool isAnyApproachValid()
+	{
+		for (uint8_t i = 0; i < num_approaches_max; i++) {
+			if (approaches[i].isValid()) {
+				return true;
+			}
+		}
 
-	void set_takeoff_position();
+		return false;
+	}
+
+	float getMaxDistLandToLoiterCircle()
+	{
+		// returns negative infinity if there is no valid approach
+		float dist_max = -INFINITY;
+
+		for (uint8_t i = 0; i < num_approaches_max; i++) {
+			if (approaches[i].isValid()) {
+				float dist = get_distance_to_next_waypoint(land_location_lat_lon(0), land_location_lat_lon(1), approaches[i].lat,
+						approaches[i].lon) + approaches[i].loiter_radius_m;
+
+				if (dist > dist_max) {
+					dist_max = dist;
+				}
+			}
+		}
+
+		return dist_max;
+	}
 };
