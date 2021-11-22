@@ -224,23 +224,6 @@ struct mission_fence_point_s {
 	uint8_t _padding0[5];				/**< padding struct size to alignment boundary  */
 };
 
-/**
- * Safe Point (Rally Point).
- * Corresponds to the DM_KEY_SAFE_POINTS dataman item
- */
-struct mission_safe_point_s {
-	double lat;
-	double lon;
-	float alt;
-	float safe_area_radius;
-	uint16_t safe_area_sector_clear_bitmap;
-	int16_t safe_area_first_sector_offset_degrees;
-	uint16_t nav_cmd;				/**< navigation command					*/
-	uint8_t safe_area_sector_count;
-	uint8_t frame;					/**< MAV_FRAME */
-	//uint8_t _padding0[8];				/**< padding struct size to alignment boundary  */
-};
-
 #if (__GNUC__ >= 5) || __clang__
 #pragma GCC diagnostic pop
 #endif // GCC >= 5 || Clang
