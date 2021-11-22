@@ -41,6 +41,7 @@
 
 #include "navigator_mode.h"
 #include "mission_block.h"
+#include "safe_point_land.hpp"
 
 #include <lib/mathlib/mathlib.h>
 
@@ -66,20 +67,18 @@ private:
 
 	matrix::Vector2<double> _land_pos_lat_lon;
 	matrix::Vector2<double> _loiter_pos_lat_lon;
+	loiter_point_s _land_approach;
 
 	static constexpr float _min_loiter_time_before_land = 10.0f;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt,
 		(ParamFloat<px4::params::RTL_DESCEND_ALT>) _param_descend_alt_rel_m,
-		(ParamFloat<px4::params::RTL_RETURN_ALT>) _param_return_alt_rel_m,
-		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_loiter_radius_m
+		(ParamFloat<px4::params::RTL_RETURN_ALT>) _param_return_alt_rel_m
 	)
 
 	void set_loiter_position();
 
-	void generate_waypoint_from_heading(struct position_setpoint_s *setpoint, float yaw);
-
-	float getBestLandingHeading();
+	loiter_point_s chooseBestLandingApproach();
 
 };

@@ -791,8 +791,7 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 						       || status.in_transition_mode;
 
 			// deny entering failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
-			// altitude. This is to prevent maneuvers which do not comply with the restrictions given by the VTOL safe area.
-			// the vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
+			// altitude. the vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
 			const bool deny_failsafe = status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF && in_forward_flight
 						   && !mission_finished;
 
