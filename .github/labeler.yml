@@ -1,5 +1,5 @@
 version: 1
 labels:
-  - label: "v2.5"
+  - label: "v2.6"
     title: ".*"
 
