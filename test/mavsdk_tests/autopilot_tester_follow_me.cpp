@@ -201,16 +201,6 @@ void FollowTargetSimulator::check_follow_angle(FollowMe::Config config, std::arr
 	}
 }
 
-AutopilotTesterFollowMe::AutopilotTesterFollowMe() : AutopilotTester()
-{
-
-}
-
-AutopilotTesterFollowMe::~AutopilotTesterFollowMe()
-{
-
-}
-
 void AutopilotTesterFollowMe::connect(const std::string uri)
 {
 	AutopilotTester::connect(uri);

@@ -106,8 +106,8 @@ private:
 class AutopilotTesterFollowMe : public AutopilotTester
 {
 public:
-	AutopilotTesterFollowMe();
-	~AutopilotTesterFollowMe();
+	AutopilotTesterFollowMe() = default;
+	~AutopilotTesterFollowMe() = default;
 	void connect(const std::string uri);
 
 	void straight_line_test(const float altitude_m, const bool stream_velocity);
