@@ -61,7 +61,6 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/action_request.h>
-#include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/cpuload.h>
@@ -239,9 +238,7 @@ private:
 		(ParamFloat<px4::params::COM_LKDOWN_TKO>) _param_com_lkdown_tko,
 
 		// Engine failure
-		(ParamFloat<px4::params::COM_EF_THROT>) _param_ef_throttle_thres,
-		(ParamFloat<px4::params::COM_EF_C2T>) _param_ef_current2throttle_thres,
-		(ParamFloat<px4::params::COM_EF_TIME>) _param_ef_time_thres,
+		(ParamInt<px4::params::COM_ACT_FAIL_ACT>) _param_com_actuator_failure_act,
 
 		(ParamBool<px4::params::COM_ARM_WO_GPS>) _param_arm_without_gps,
 		(ParamBool<px4::params::COM_ARM_MIS_REQ>) _param_arm_mission_required,
@@ -257,7 +254,6 @@ private:
 		(ParamInt<px4::params::CBRK_SUPPLY_CHK>) _param_cbrk_supply_chk,
 		(ParamInt<px4::params::CBRK_USB_CHK>) _param_cbrk_usb_chk,
 		(ParamInt<px4::params::CBRK_AIRSPD_CHK>) _param_cbrk_airspd_chk,
-		(ParamInt<px4::params::CBRK_ENGINEFAIL>) _param_cbrk_enginefail,
 		(ParamInt<px4::params::CBRK_FLIGHTTERM>) _param_cbrk_flightterm,
 		(ParamInt<px4::params::CBRK_VELPOSERR>) _param_cbrk_velposerr,
 		(ParamInt<px4::params::CBRK_VTOLARMING>) _param_cbrk_vtolarming,
@@ -289,6 +285,14 @@ private:
 	enum class RcOverrideBits : int32_t {
 		AUTO_MODE_BIT = (1 << 0),
 		OFFBOARD_MODE_BIT = (1 << 1),
+	};
+
+	enum class ActuatorFailureActions {
+		DISABLED = 0,
+		AUTO_LOITER = 1,
+		AUTO_LAND = 2,
+		AUTO_RTL = 3,
+		TERMINATE = 4,
 	};
 
 	/* Decouple update interval and hysteresis counters, all depends on intervals */
@@ -351,7 +355,6 @@ private:
 	hrt_abstime	_last_esc_status_updated{0};
 
 	uint8_t		_battery_warning{battery_status_s::BATTERY_WARNING_NONE};
-	float		_battery_current{0.0f};
 	uint8_t		_last_connected_batteries{0};
 	uint32_t	_last_battery_custom_fault[battery_status_s::CONNECTED_BATTERIES_MAX] {};
 	uint16_t	_last_battery_fault[battery_status_s::CONNECTED_BATTERIES_MAX] {};
@@ -378,7 +381,6 @@ private:
 
 	hrt_abstime	_boot_timestamp{0};
 	hrt_abstime	_last_disarmed_timestamp{0};
-	hrt_abstime	_timestamp_engine_healthy{0}; ///< absolute time when engine was healty
 	hrt_abstime	_overload_start{0};		///< time when CPU overload started
 
 	uint32_t	_counter{0};
@@ -411,7 +413,6 @@ private:
 
 	// Subscriptions
 	uORB::Subscription					_action_request_sub {ORB_ID(action_request)};
-	uORB::Subscription					_actuator_controls_sub{ORB_ID_VEHICLE_ATTITUDE_CONTROLS};
 	uORB::Subscription					_cmd_sub {ORB_ID(vehicle_command)};
 	uORB::Subscription					_cpuload_sub{ORB_ID(cpuload)};
 	uORB::Subscription					_esc_status_sub{ORB_ID(esc_status)};

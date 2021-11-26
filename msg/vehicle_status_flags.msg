@@ -21,7 +21,6 @@ bool condition_escs_failure		      # set to true if one or more ESCs reporting e
 
 bool circuit_breaker_engaged_power_check
 bool circuit_breaker_engaged_airspd_check
-bool circuit_breaker_engaged_enginefailure_check
 bool circuit_breaker_flight_termination_disabled
 bool circuit_breaker_engaged_usb_check
 bool circuit_breaker_engaged_posfailure_check	# set to true when the position valid checks have been disabled
