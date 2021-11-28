@@ -596,7 +596,7 @@ static inline navigation_mode_t navigation_mode(uint8_t main_state)
 	case commander_state_s::MAIN_STATE_ORBIT: return navigation_mode_t::orbit;
 	}
 
-	static_assert(commander_state_s::MAIN_STATE_MAX - 1 == (int)navigation_mode_t::auto_vtol_takeoff,
+	static_assert(commander_state_s::MAIN_STATE_MAX - 2 == (int)navigation_mode_t::auto_vtol_takeoff,
 		      "enum definition mismatch");
 
 	return navigation_mode_t::unknown;
@@ -1847,6 +1847,7 @@ Commander::run()
 	const param_t param_man_arm_gesture = param_find("MAN_ARM_GESTURE");
 
 	/* initialize */
+	_internal_state.main_state = commander_state_s::MAIN_STATE_INIT;
 	led_init();
 	buzzer_init();
 
@@ -2501,11 +2502,12 @@ Commander::run()
 
 				const bool mode_switch_mapped = (_param_rc_map_fltmode.get() > 0) || (_param_rc_map_mode_sw.get() > 0);
 				const bool is_mavlink = manual_control_setpoint.data_source > manual_control_setpoint_s::SOURCE_RC;
+				const bool position_is_valid = _status_flags.condition_global_position_valid || _status_flags.condition_local_position_valid;
 
-				if (!_armed.armed && (is_mavlink || !mode_switch_mapped) && (_internal_state.main_state_changes == 0)) {
-					// if there's never been a mode change force position control as initial state
-					_internal_state.main_state = commander_state_s::MAIN_STATE_POSCTL;
-					_internal_state.main_state_changes++;
+				if (!_armed.armed && (is_mavlink || !mode_switch_mapped) && (_internal_state.main_state == commander_state_s::MAIN_STATE_INIT) && position_is_valid) {
+
+					// if there's never been a mode change and position becomes valid switch to position mode
+					main_state_transition(_status, commander_state_s::MAIN_STATE_POSCTL, _status_flags, _internal_state);
 				}
 
 				_status.rc_signal_lost = false;
@@ -3378,6 +3380,11 @@ Commander::update_control_mode()
 		_vehicle_control_mode.flag_control_climb_rate_enabled = true;
 		_vehicle_control_mode.flag_control_position_enabled = !_status.in_transition_mode;
 		_vehicle_control_mode.flag_control_velocity_enabled = !_status.in_transition_mode;
+		break;
+	case vehicle_status_s::NAVIGATION_STATE_INIT:
+		// TODO: this needs to be fixed, if rate controller is disabled PX4 will hang because something is waiting or busy looping on actuator_controls!
+		// When MulticopterRateControl is publishing actuator_controls_s everything works fine, for now we just keep rate controller enabled.
+		_vehicle_control_mode.flag_control_rates_enabled = true;
 		break;
 
 	default:
