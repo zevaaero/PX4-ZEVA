@@ -320,6 +320,10 @@ union px4_custom_mode get_px4_custom_mode(uint8_t nav_state)
 		custom_mode.main_mode = PX4_CUSTOM_MAIN_MODE_POSCTL;
 		custom_mode.sub_mode = PX4_CUSTOM_SUB_MODE_POSCTL_ORBIT;
 		break;
+
+	case vehicle_status_s::NAVIGATION_STATE_INIT:
+		custom_mode.main_mode = PX4_CUSTOM_MAIN_MODE_INIT;
+		break;
 	}
 
 	return custom_mode;
