@@ -671,10 +671,10 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 		} else if (calling_reason == arm_disarm_reason_t::rc_stick
 			   || calling_reason == arm_disarm_reason_t::rc_switch
 			   || calling_reason == arm_disarm_reason_t::rc_button) {
-			mavlink_log_critical(&_mavlink_log_pub, "Arming denied: switch to manual mode first\t");
+			mavlink_log_critical(&_mavlink_log_pub, "Arming denied: switch flight mode\t");
 			events::send(events::ID("commander_arm_denied_not_manual"),
 			{events::Log::Critical, events::LogInternal::Info},
-			"Arming denied: switch to manual mode first");
+			"Arming denied: switch flight mode");
 			tune_negative(true);
 			return TRANSITION_DENIED;
 		}
@@ -2502,9 +2502,11 @@ Commander::run()
 
 				const bool mode_switch_mapped = (_param_rc_map_fltmode.get() > 0) || (_param_rc_map_mode_sw.get() > 0);
 				const bool is_mavlink = manual_control_setpoint.data_source > manual_control_setpoint_s::SOURCE_RC;
-				const bool position_is_valid = _status_flags.condition_global_position_valid || _status_flags.condition_local_position_valid;
+				const bool position_is_valid = _status_flags.condition_global_position_valid
+							       || _status_flags.condition_local_position_valid;
 
-				if (!_armed.armed && (is_mavlink || !mode_switch_mapped) && (_internal_state.main_state == commander_state_s::MAIN_STATE_INIT) && position_is_valid) {
+				if (!_armed.armed && (is_mavlink || !mode_switch_mapped)
+				    && (_internal_state.main_state == commander_state_s::MAIN_STATE_INIT) && position_is_valid) {
 
 					// if there's never been a mode change and position becomes valid switch to position mode
 					main_state_transition(_status, commander_state_s::MAIN_STATE_POSCTL, _status_flags, _internal_state);
@@ -3381,6 +3383,7 @@ Commander::update_control_mode()
 		_vehicle_control_mode.flag_control_position_enabled = !_status.in_transition_mode;
 		_vehicle_control_mode.flag_control_velocity_enabled = !_status.in_transition_mode;
 		break;
+
 	case vehicle_status_s::NAVIGATION_STATE_INIT:
 		// TODO: this needs to be fixed, if rate controller is disabled PX4 will hang because something is waiting or busy looping on actuator_controls!
 		// When MulticopterRateControl is publishing actuator_controls_s everything works fine, for now we just keep rate controller enabled.
