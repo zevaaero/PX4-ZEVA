@@ -407,7 +407,7 @@ Syslink::handle_message(syslink_message_t *msg)
 
 		_battery.setConnected(true);
 		_battery.updateVoltage(vbat);
-		_battery.updateBatteryStatus(t);
+		_battery.updateAndPublishBatteryStatus(t);
 
 		// Update battery charge state
 		if (charging) {
