@@ -43,6 +43,7 @@ px4_add_board(
 		power_monitor/ina228
 		power_monitor/ina238
 		power_monitor/power_monitor_selector_auterion
+		pps_capture
 		protocol_splitter
 		pwm_input
 		pwm_out_sim
