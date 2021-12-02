@@ -105,7 +105,7 @@ jobs:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       run: |
           test/mavsdk_tests/mavsdk_test_runner.py \
-            --speed-factor 20 \
+            --speed-factor 1 \
             --abort-early \
             --model ${{ matrix.config.model }} \
             --build-dir build/px4_sitl_rtps/ \
