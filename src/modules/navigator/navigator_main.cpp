@@ -1912,7 +1912,7 @@ void Navigator::readVtolHomeLandApproachesFromStorage()
 				break;
 			}
 
-			if (get_distance_to_next_waypoint(mission_item.lat, mission_item.lon, _home_pos.lat, _home_pos.lon) < 10.0f) {
+			if (!mission_item.is_mission_rally_point) {
 				foundHomeLandApproaches = true;
 				_vtol_home_land_approaches.land_location_lat_lon = matrix::Vector2d(mission_item.lat, mission_item.lon);
 			}
