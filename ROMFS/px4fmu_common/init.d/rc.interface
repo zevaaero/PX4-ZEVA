@@ -215,7 +215,10 @@ then
 	fi
 fi
 
-param set PWM_AUX_OUT ${PWM_AUX_OUT}
+if [ $PWM_AUX_OUT != none ]
+then
+	param set PWM_AUX_OUT ${PWM_AUX_OUT}
+fi
 
 if [ $OUTPUT_MODE = pwm_out -o $OUTPUT_MODE = io ]
 then
