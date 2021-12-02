@@ -45,6 +45,12 @@ jobs:
     # Clone model database
     - name: Clone model database
       run: git clone --recursive git@github.com:Auterion/ci_gazebo_models.git $HOME/ci_gazebo_models
+    - name: Checkout matching version
+      run: |
+          cd $HOME/ci_gazebo_models
+          git checkout 30c50f715b906f1fdd6e74ad099a2747cb761951
+          git submodule update --init --recursive
+          cd -
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       shell: cmake -P {0}
