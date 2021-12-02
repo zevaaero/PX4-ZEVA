@@ -2258,7 +2258,6 @@ void Mission::updateChachedCommandsUpToIndex(const int end_index)
 		mission_item_s mission_item = {};
 
 		if (readMissionItemAtIndex(_mission, i, mission_item)) {
-			cache_command(_mission_item);
 			cache_command(mission_item);
 		}
 	}
