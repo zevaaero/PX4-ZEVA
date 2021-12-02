@@ -265,13 +265,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 		failed = true;
 	}
 
-	if (status.nav_state == vehicle_status_s::NAVIGATION_STATE_INIT) {
-		// We can avoid sending a notification, if user tries to arm will be asked to switch mode
-		failed = true;
-	}
-
 	if (status.failsafe) {
-
 		if (report_failures) {
 			mavlink_log_critical(mavlink_log_pub, "Arming Denied: vehicle is in failsafe mode. Switch flight mode first");
 		}

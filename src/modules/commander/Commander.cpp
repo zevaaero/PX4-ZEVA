@@ -594,9 +594,13 @@ static inline navigation_mode_t navigation_mode(uint8_t main_state)
 	case commander_state_s::MAIN_STATE_AUTO_PRECLAND: return navigation_mode_t::auto_precland;
 
 	case commander_state_s::MAIN_STATE_ORBIT: return navigation_mode_t::orbit;
+
+	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF: return navigation_mode_t::auto_vtol_takeoff;
+
+	case commander_state_s::MAIN_STATE_INIT: return navigation_mode_t::init;
 	}
 
-	static_assert(commander_state_s::MAIN_STATE_MAX - 2 == (int)navigation_mode_t::auto_vtol_takeoff,
+	static_assert(commander_state_s::MAIN_STATE_MAX - 1 == (int)navigation_mode_t::init,
 		      "enum definition mismatch");
 
 	return navigation_mode_t::unknown;
@@ -672,7 +676,7 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 			   || calling_reason == arm_disarm_reason_t::rc_switch
 			   || calling_reason == arm_disarm_reason_t::rc_button) {
 			mavlink_log_critical(&_mavlink_log_pub, "Arming denied: switch flight mode\t");
-			events::send(events::ID("commander_arm_denied_not_manual"),
+			events::send(events::ID("commander_arm_denied_flight_mode"),
 			{events::Log::Critical, events::LogInternal::Info},
 			"Arming denied: switch flight mode");
 			tune_negative(true);
@@ -765,6 +769,7 @@ Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
 {
+	_internal_state.main_state = commander_state_s::MAIN_STATE_INIT;
 	_auto_disarm_landed.set_hysteresis_time_from(false, _param_com_disarm_preflight.get() * 1_s);
 
 	_land_detector.landed = true;
@@ -1847,7 +1852,6 @@ Commander::run()
 	const param_t param_man_arm_gesture = param_find("MAN_ARM_GESTURE");
 
 	/* initialize */
-	_internal_state.main_state = commander_state_s::MAIN_STATE_INIT;
 	led_init();
 	buzzer_init();
 
@@ -2507,7 +2511,6 @@ Commander::run()
 
 				if (!_armed.armed && (is_mavlink || !mode_switch_mapped)
 				    && (_internal_state.main_state == commander_state_s::MAIN_STATE_INIT) && position_is_valid) {
-
 					// if there's never been a mode change and position becomes valid switch to position mode
 					main_state_transition(_status, commander_state_s::MAIN_STATE_POSCTL, _status_flags, _internal_state);
 				}
