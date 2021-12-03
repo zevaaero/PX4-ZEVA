@@ -195,7 +195,7 @@ void RTL::find_RTL_destination(bool force_update)
 			continue;
 		}
 
-		if (mission_safe_point.nav_cmd == NAV_CMD_RALLY_POINT) {
+		if (mission_safe_point.nav_cmd == NAV_CMD_RALLY_POINT && mission_safe_point.is_mission_rally_point == 1) {
 
 			// TODO: take altitude into account for distance measurement
 			dlat = mission_safe_point.lat - global_position.lat;
