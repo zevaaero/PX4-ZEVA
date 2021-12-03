@@ -686,7 +686,7 @@ Navigator::run()
 					readVtolHomeLandApproachesFromStorage();
 				}
 
-				if (hasVtolHomeLandApproach() && _use_vtol_land_navigation_mode_for_rtl) {
+				if (hasVtolHomeLandApproach() && _use_vtol_land_navigation_mode_for_rtl && _rtl.getDestinationTypeHomeLanding()) {
 					if (_navigation_mode == &_vtol_takeoff && !get_mission_result()->finished) {
 						// if we are in the middle of a vtol takeoff then let's wait until we have established the loiter
 						navigation_mode_new = &_vtol_takeoff;
