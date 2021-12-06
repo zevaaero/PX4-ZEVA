@@ -48,7 +48,7 @@ jobs:
     - name: Checkout matching version
       run: |
           cd $HOME/ci_gazebo_models
-          git checkout 30c50f715b906f1fdd6e74ad099a2747cb761951
+          git checkout 8f8f58be7edd6f5b06a7b11b0b196b9a188d24ac
           git submodule update --init --recursive
           cd -
     - name: Prepare ccache timestamp
