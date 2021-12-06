@@ -84,25 +84,17 @@ public:
 	float full_cell_voltage() { return _params.v_charged; }
 
 	/**
-	 * The function that returns pointer to the battery status
-	 */
-
-	battery_status_s *getBatteryStatus() { return &_battery_status; }
-
-	/**
 	 * Update current battery status message.
 	 *
+	 * @param voltage_raw: Battery voltage, in Volts
+	 * @param current_raw: Battery current, in Amps
 	 * @param timestamp: Time at which the ADC was read (use hrt_absolute_time())
-	 * @param voltage_v: Battery voltage, in Volts
-	 * @param current_a: Battery current, in Amps
-	 * @param connected: Flag indicating battery connection
 	 * @param source: Source type in relation to BAT%d_SOURCE param.
 	 * @param priority: The brick number -1. The term priority refers to the Vn connection on the LTC4417
 	 * @param throttle_normalized: Throttle of the vehicle, between 0 and 1
-	 * @param publish: The flag that can disable publishing battery status. It is true by default
 	 */
 	void updateBatteryStatus(const hrt_abstime &timestamp, float voltage_v, float current_a, bool connected,
-				 int source, int priority, float throttle_normalized, bool publish = true);
+				 int source, int priority, float throttle_normalized);
 
 protected:
 	struct {
@@ -145,7 +137,6 @@ private:
 
 	uORB::PublicationMulti<battery_status_s> _battery_status_pub{ORB_ID(battery_status)};
 
-	battery_status_s _battery_status{};
 	bool _battery_initialized{false};
 	AlphaFilter<float> _voltage_filter_v;
 	AlphaFilter<float> _current_filter_a;
