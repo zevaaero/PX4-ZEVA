@@ -43,6 +43,7 @@ px4_add_board(
 		pca9685
 		pca9685_pwm_out
 		power_monitor/ina226
+		power_monitor/power_monitor_selector_auterion
 		#protocol_splitter
 		pwm_input
 		pwm_out_sim
