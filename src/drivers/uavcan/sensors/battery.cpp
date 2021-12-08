@@ -67,11 +67,9 @@ UavcanBatteryBridge::battery_sub_cb(const uavcan::ReceivedDataStructure<uavcan::
 
 	/* Override data that is expected to arrive from UAVCAN msg*/
 	battery_status_s battery_status = _battery.getBatteryStatus();
-	battery_status.remaining = msg.state_of_charge_pct / 100.0f; // overwrite _battery estimation
 	battery_status.temperature = msg.temperature + CONSTANTS_ABSOLUTE_NULL_CELSIUS; // Kelvin to Celcius
-	battery_status.capacity = msg.full_charge_capacity_wh; // overwrite _battery capacity from parameter
 	itoa(msg.model_instance_id, battery_status.serial_number, 10);
-	battery_status.id = msg.getSrcNodeID().get(); // overwrite zero _battery index
+	battery_status.id = msg.getSrcNodeID().get(); // overwrite zeroed index from _battery
 
 	publish(msg.getSrcNodeID().get(), &battery_status);
 }
