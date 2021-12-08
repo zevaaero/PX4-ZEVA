@@ -179,7 +179,7 @@ bool TerrainProvider::loadCache(CacheItem &item)
 
 			item.x_count = header.num_points_x;
 			item.y_count = header.num_points_y;
-			map_projection_init(&item.ref, header.lat_sw, header.lon_sw);
+			item.ref.initReference(header.lat_sw, header.lon_sw);
 
 			if (item.x_count * item.y_count > _cache_data_size) {
 				PX4_ERR("File contains too many items (%i*%i > %i)", item.x_count, item.y_count, _cache_data_size);
@@ -251,11 +251,12 @@ bool TerrainProvider::lookup(double lat, double lon, float &elevation_m)
 
 bool TerrainProvider::getElevationFromCache(CacheItem &item, double lat, double lon, float &elevation_m)
 {
-	float x, y;
-
-	if (map_projection_project(&item.ref, lat, lon, &x, &y) != 0) {
+	if (!item.ref.isInitialized()) {
 		return false;
 	}
+
+	float x, y;
+	item.ref.project(lat, lon, x, y);
 
 	x /= _grid_spacing_m;
 	y /= _grid_spacing_m;
@@ -264,20 +265,24 @@ bool TerrainProvider::getElevationFromCache(CacheItem &item, double lat, double 
 
 	if (ix < 0 || ix >= item.x_count - 1) {
 		// getting here is a bug, but we don't want to spam the console
-		double ref_lat, ref_lon;
-		map_projection_reference(&item.ref, &ref_lat, &ref_lon);
+		double ref_lat = item.ref.getProjectionReferenceLat();
+		double ref_lon = item.ref.getProjectionReferenceLon();
 		PX4_DEBUG("x index out of range: %i, %i, x=%.3f, lat=%.3f, ref lat=%.3f, max lat=%.3f, lat/delta=%.3f",
 			  ix, item.x_count, (double)x, lat, math::degrees(ref_lat), math::degrees(ref_lat) + util::delta_lat_lon_deg,
 			  lat / util::delta_lat_lon_deg);
+		(void)ref_lat;
+		(void)ref_lon;
 		return false;
 	}
 
 	if (iy < 0 || iy >= item.y_count - 1) {
-		double ref_lat, ref_lon;
-		map_projection_reference(&item.ref, &ref_lat, &ref_lon);
+		double ref_lat = item.ref.getProjectionReferenceLat();
+		double ref_lon = item.ref.getProjectionReferenceLon();
 		PX4_DEBUG("y index out of range: %i, %i, y=%.3f, lon=%.3f, ref lon=%.3f, max lon=%.3f, lon/delta=%.3f",
 			  iy, item.y_count, (double)y, lon, math::degrees(ref_lon), math::degrees(ref_lon) + util::delta_lat_lon_deg,
 			  lon / util::delta_lat_lon_deg);
+		(void)ref_lat;
+		(void)ref_lon;
 		return false;
 	}
 

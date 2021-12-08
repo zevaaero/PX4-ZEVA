@@ -52,6 +52,8 @@ CameraFeedback::init()
 		return false;
 	}
 
+	_capture_pub.advertise();
+
 	return true;
 }
 

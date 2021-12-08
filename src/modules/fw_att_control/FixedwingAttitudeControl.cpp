@@ -65,6 +65,8 @@ FixedwingAttitudeControl::FixedwingAttitudeControl(bool vtol) :
 	_pitch_ctrl.set_max_rate_pos(radians(_param_fw_acro_y_max.get()));
 	_pitch_ctrl.set_max_rate_neg(radians(_param_fw_acro_y_max.get()));
 	_yaw_ctrl.set_max_rate(radians(_param_fw_acro_z_max.get()));
+
+	_rate_ctrl_status_pub.advertise();
 }
 
 FixedwingAttitudeControl::~FixedwingAttitudeControl()
@@ -254,7 +256,7 @@ float FixedwingAttitudeControl::get_airspeed_and_update_scaling()
 	/*
 	 * For scaling our actuators using anything less than the stall
 	 * speed doesn't make any sense - its the strongest reasonable deflection we
-	 * want to do in flight and its the baseline a human pilot would choose.
+	 * want to do in flight and it's the baseline a human pilot would choose.
 	 *
 	 * Forcing the scaling to this value allows reasonable handheld tests.
 	 */

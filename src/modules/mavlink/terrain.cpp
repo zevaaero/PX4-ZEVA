@@ -96,7 +96,6 @@ int TerrainUploader::updateArea(const hrt_abstime &now, double lat_sw, double lo
 
 	// calculate the number of pending blocks
 	_num_4x4_blocks_pending = 0;
-	map_projection_reference_s ref;
 
 	for (double lat = _lat_start; lat <= _lat_end; lat += util::delta_lat_lon_deg) {
 		for (double lon = _lon_start; lon <= _lon_end; lon += util::delta_lat_lon_deg) {
@@ -104,9 +103,9 @@ int TerrainUploader::updateArea(const hrt_abstime &now, double lat_sw, double lo
 				continue;
 			}
 
-			map_projection_init(&ref, lat, lon);
+			MapProjection ref(lat, lon);
 			float x, y;
-			map_projection_project(&ref, lat + util::delta_lat_lon_deg, lon + util::delta_lat_lon_deg, &x, &y);
+			ref.project(lat + util::delta_lat_lon_deg, lon + util::delta_lat_lon_deg, x, y);
 			int num_items_x = (x + _latest_request.grid_spacing) / _latest_request.grid_spacing +
 					  1; // see TerrainUploader::File::init()
 			int num_items_y = (y + _latest_request.grid_spacing) / _latest_request.grid_spacing + 1;
@@ -375,10 +374,9 @@ int TerrainUploader::File::init(double lat, double lon, int grid_spacing_m)
 		return 1;
 	}
 
-	map_projection_init(&_ref, _header.lat_sw, _header.lon_sw);
+	_ref.initReference(_header.lat_sw, _header.lon_sw);
 	float x, y;
-	map_projection_project(&_ref, _header.lat_sw + util::delta_lat_lon_deg, _header.lon_sw + util::delta_lat_lon_deg, &x,
-			       &y);
+	_ref.project(_header.lat_sw + util::delta_lat_lon_deg, _header.lon_sw + util::delta_lat_lon_deg, x, y);
 	_header.num_points_x = (x + grid_spacing_m) / grid_spacing_m +
 			       1; // add grid_spacing to ensure overlap and one more as x/spacing is the max index
 	_header.num_points_y = (y + grid_spacing_m) / grid_spacing_m + 1;
@@ -492,7 +490,7 @@ bool TerrainUploader::File::nextMavlinkRequest(mavlink_terrain_request_t &reques
 	}
 
 	double lat, lon;
-	map_projection_reproject(&_ref, _x * _header.grid_spacing_m, _y * _header.grid_spacing_m, &lat, &lon);
+	_ref.reproject(_x * _header.grid_spacing_m, _y * _header.grid_spacing_m, lat, lon);
 	request.lat = lat * 1e7;
 	request.lon = lon * 1e7;
 	// fill in the block bits we want

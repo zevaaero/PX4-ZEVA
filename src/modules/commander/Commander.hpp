@@ -48,6 +48,7 @@
 // publications
 #include <uORB/Publication.hpp>
 #include <uORB/topics/actuator_armed.h>
+#include <uORB/topics/actuator_test.h>
 #include <uORB/topics/failure_detector_status.h>
 #include <uORB/topics/home_position.h>
 #include <uORB/topics/test_motor.h>
@@ -149,6 +150,7 @@ private:
 	bool handle_command(const vehicle_command_s &cmd);
 
 	unsigned handle_command_motor_test(const vehicle_command_s &cmd);
+	unsigned handle_command_actuator_test(const vehicle_command_s &cmd);
 
 	void executeActionRequest(const action_request_s &action_request);
 
@@ -175,13 +177,13 @@ private:
 
 	void UpdateEstimateValidity();
 
-	void CheckWindAndWarn();
-
 	bool shutdown_if_allowed();
 
 	bool stabilization_required();
 
 	void send_parachute_command();
+
+	void checkWindAndWarn();
 
 	DEFINE_PARAMETERS(
 
@@ -276,7 +278,7 @@ private:
 		(ParamFloat<px4::params::BAT_CRIT_THR>) _param_bat_crit_thr,
 
 		(ParamFloat<px4::params::COM_SPOOLUP_TIME>) _param_com_spoolup_time,
-		(ParamFloat<px4::params::NAV_GPSF_LT>) _param_gps_fail_openloop_loiter_time
+		(ParamInt<px4::params::FW_GPSF_LT>) _param_gps_fail_openloop_loiter_time
 
 	)
 
@@ -331,6 +333,7 @@ private:
 	bool		_flight_termination_triggered{false};
 	bool		_lockdown_triggered{false};
 	bool            _imbalanced_propeller_check_triggered{false};
+
 
 	hrt_abstime	_datalink_last_heartbeat_gcs{0};
 	hrt_abstime	_datalink_last_heartbeat_avoidance_system{0};
@@ -449,6 +452,7 @@ private:
 	uORB::Publication<commander_state_s>			_commander_state_pub{ORB_ID(commander_state)};
 	uORB::Publication<failure_detector_status_s>		_failure_detector_status_pub{ORB_ID(failure_detector_status)};
 	uORB::Publication<test_motor_s>				_test_motor_pub{ORB_ID(test_motor)};
+	uORB::Publication<actuator_test_s>			_actuator_test_pub{ORB_ID(actuator_test)};
 	uORB::Publication<vehicle_control_mode_s>		_control_mode_pub{ORB_ID(vehicle_control_mode)};
 	uORB::Publication<vehicle_status_flags_s>		_vehicle_status_flags_pub{ORB_ID(vehicle_status_flags)};
 	uORB::Publication<vehicle_status_s>			_status_pub{ORB_ID(vehicle_status)};

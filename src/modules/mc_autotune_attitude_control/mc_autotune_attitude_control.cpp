@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -45,6 +45,7 @@ McAutotuneAttitudeControl::McAutotuneAttitudeControl() :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
 {
+	_autotune_attitude_control_status_pub.advertise();
 	reset();
 }
 
@@ -682,3 +683,4 @@ extern "C" __EXPORT int mc_autotune_attitude_control_main(int argc, char *argv[]
 {
 	return McAutotuneAttitudeControl::main(argc, argv);
 }
+

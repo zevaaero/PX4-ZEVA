@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019-2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,8 +48,7 @@ struct wq_config_t {
 
 namespace wq_configurations
 {
-static constexpr wq_config_t rate_ctrl{"wq:rate_ctrl", 1952, 0}; // PX4 inner loop highest priority
-static constexpr wq_config_t ctrl_alloc{"wq:ctrl_alloc", 9500, 0}; // PX4 control allocation, same priority as rate_ctrl
+static constexpr wq_config_t rate_ctrl{"wq:rate_ctrl", 3000, 0}; // PX4 inner loop highest priority
 
 static constexpr wq_config_t SPI0{"wq:SPI0", 2336, -1};
 static constexpr wq_config_t SPI1{"wq:SPI1", 2336, -2};
@@ -77,16 +76,16 @@ static constexpr wq_config_t hp_default{"wq:hp_default", 1900, -18};
 
 static constexpr wq_config_t uavcan{"wq:uavcan", 3624, -19};
 
-static constexpr wq_config_t UART0{"wq:UART0", 1536, -21};
-static constexpr wq_config_t UART1{"wq:UART1", 1536, -22};
-static constexpr wq_config_t UART2{"wq:UART2", 1536, -23};
-static constexpr wq_config_t UART3{"wq:UART3", 1536, -24};
-static constexpr wq_config_t UART4{"wq:UART4", 1536, -25};
-static constexpr wq_config_t UART5{"wq:UART5", 1536, -26};
-static constexpr wq_config_t UART6{"wq:UART6", 1536, -27};
-static constexpr wq_config_t UART7{"wq:UART7", 1536, -28};
-static constexpr wq_config_t UART8{"wq:UART8", 1536, -29};
-static constexpr wq_config_t UART_UNKNOWN{"wq:UART_UNKNOWN", 1536, -30};
+static constexpr wq_config_t UART0{"wq:UART0", 1632, -21};
+static constexpr wq_config_t UART1{"wq:UART1", 1632, -22};
+static constexpr wq_config_t UART2{"wq:UART2", 1632, -23};
+static constexpr wq_config_t UART3{"wq:UART3", 1632, -24};
+static constexpr wq_config_t UART4{"wq:UART4", 1632, -25};
+static constexpr wq_config_t UART5{"wq:UART5", 1632, -26};
+static constexpr wq_config_t UART6{"wq:UART6", 1632, -27};
+static constexpr wq_config_t UART7{"wq:UART7", 1632, -28};
+static constexpr wq_config_t UART8{"wq:UART8", 1632, -29};
+static constexpr wq_config_t UART_UNKNOWN{"wq:UART_UNKNOWN", 1632, -30};
 
 static constexpr wq_config_t lp_default{"wq:lp_default", 1920, -50};
 

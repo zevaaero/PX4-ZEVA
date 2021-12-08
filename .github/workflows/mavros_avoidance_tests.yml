@@ -52,8 +52,9 @@ jobs:
           mkdir -p ~/.ccache
           echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
           echo "compression = true" >> ~/.ccache/ccache.conf
-          echo "compression_level = 5" >> ~/.ccache/ccache.conf
+          echo "compression_level = 6" >> ~/.ccache/ccache.conf
           echo "max_size = 100M" >> ~/.ccache/ccache.conf
+          echo "hash_dir = false" >> ~/.ccache/ccache.conf
           ccache -s
           ccache -z
 
@@ -81,6 +82,7 @@ jobs:
       run: |
         export
         ./test/rostest_avoidance_run.sh ${{matrix.config.test_file}} mission:=${{matrix.config.mission}} vehicle:=${{matrix.config.vehicle}} || true
+      timeout-minutes: 45
 
     - name: Look at core files
       if: failure()

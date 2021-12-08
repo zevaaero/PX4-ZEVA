@@ -240,7 +240,6 @@ FixedwingPositionControl::vehicle_command_poll()
 				abort_landing(true);
 			}
 		}
-
 	}
 }
 
@@ -595,7 +594,7 @@ FixedwingPositionControl::status_publish()
 
 	pos_ctrl_status.timestamp = hrt_absolute_time();
 
-	pos_ctrl_status.type = _type;
+	pos_ctrl_status.type = _position_sp_type;
 
 	_pos_ctrl_status_pub.publish(pos_ctrl_status);
 }
@@ -949,8 +948,6 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 		}
 
-		_type = position_sp_type;
-
 
 		if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
 			_att_sp.thrust_body[0] = 0.0f;
@@ -1094,7 +1091,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		/* POSITION CONTROL: pitch stick moves altitude setpoint, throttle stick sets airspeed,
 		   heading is set to a distant waypoint */
 
-		if (_control_mode_current != FW_POSCTRL_MODE_POSITION) {
+		if (_control_mode_current != FW_POSCTRL_MODE_MANUAL_POSITION) {
 			/* Need to init because last loop iteration was in a different mode */
 			_hdg_hold_yaw = _yaw; // yaw is not controlled, so set setpoint to current yaw
 			_hdg_hold_enabled = false; // this makes sure the waypoints are reset below
@@ -1106,7 +1103,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_att_sp.yaw_body = _yaw; // yaw is not controlled, so set setpoint to current yaw
 		}
 
-		_control_mode_current = FW_POSCTRL_MODE_POSITION;
+		_control_mode_current = FW_POSCTRL_MODE_MANUAL_POSITION;
 
 		float pitch_limit_min = _param_fw_p_lim_min.get();
 
@@ -1218,7 +1215,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 	} else if (_control_mode.flag_control_altitude_enabled && _control_mode.flag_control_manual_enabled) {
 		/* ALTITUDE CONTROL: pitch stick moves altitude setpoint, throttle stick sets airspeed */
 
-		_control_mode_current = FW_POSCTRL_MODE_ALTITUDE;
+		_control_mode_current = FW_POSCTRL_MODE_MANUAL_ALTITUDE;
 
 		// reset to normal cruise mode
 		reset_cruise_mode(now);
@@ -1494,7 +1491,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 				}
 
 				/* Detect launch using body X (forward) acceleration */
-				_launchDetector.update(now, _body_acceleration(0));
+				_launchDetector.update(dt, _body_acceleration(0));
 
 				/* update our copy of the launch detection state */
 				_launch_detection_state = _launchDetector.getLaunchDetected();
@@ -1861,7 +1858,7 @@ float
 FixedwingPositionControl::get_tecs_thrust()
 {
 	if (_is_tecs_running) {
-		return _tecs.get_throttle_setpoint();
+		return min(_tecs.get_throttle_setpoint(), 1.f);
 	}
 
 	// return 0 to prevent stale tecs state when it's not running
@@ -1925,11 +1922,11 @@ FixedwingPositionControl::Run()
 
 		if (_control_mode.flag_control_offboard_enabled) {
 			// Convert Local setpoints to global setpoints
-			if (!map_projection_initialized(&_global_local_proj_ref)
-			    || (_global_local_proj_ref.timestamp != _local_pos.ref_timestamp)) {
+			if (!_global_local_proj_ref.isInitialized()
+			    || (_global_local_proj_ref.getProjectionReferenceTimestamp() != _local_pos.ref_timestamp)) {
 
-				map_projection_init_timestamped(&_global_local_proj_ref, _local_pos.ref_lat, _local_pos.ref_lon,
-								_local_pos.ref_timestamp);
+				_global_local_proj_ref.initReference(_local_pos.ref_lat, _local_pos.ref_lon,
+								     _local_pos.ref_timestamp);
 				_global_local_alt0 = _local_pos.ref_alt;
 			}
 
@@ -1940,7 +1937,8 @@ FixedwingPositionControl::Run()
 					double lat;
 					double lon;
 
-					if (map_projection_reproject(&_global_local_proj_ref, trajectory_setpoint.x, trajectory_setpoint.y, &lat, &lon) == 0) {
+					if (_global_local_proj_ref.isInitialized()) {
+						_global_local_proj_ref.reproject(trajectory_setpoint.x, trajectory_setpoint.y, lat, lon);
 						_pos_sp_triplet = {}; // clear any existing
 
 						_pos_sp_triplet.timestamp = trajectory_setpoint.timestamp;

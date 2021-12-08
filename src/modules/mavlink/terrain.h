@@ -142,7 +142,7 @@ private:
 		void getCurrentFileName(char *filename, int len);
 
 		FileHeader _header;
-		map_projection_reference_s _ref;
+		MapProjection _ref;
 		int _fd{-1};
 		int _x{-1};
 		int _y{-1};

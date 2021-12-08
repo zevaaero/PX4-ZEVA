@@ -1914,10 +1914,9 @@ bool MavlinkMissionManager::get_mission_area(double home_pos_lat, double home_po
 	// add a margin
 	const float margin_m = 200; // margin around the area in meters
 
-	map_projection_reference_s ref;
-	map_projection_init(&ref, lat_sw, lon_sw);
+	MapProjection ref(lat_sw, lon_sw);
 	double lat, lon;
-	map_projection_reproject(&ref, margin_m, margin_m, &lat, &lon);
+	ref.reproject(margin_m, margin_m, lat, lon);
 	double margin_lat = matrix::wrap(lat, -90., 90.) - lat_sw;
 	double margin_lon = matrix::wrap(lon, -180., 180.) - lon_sw;
 

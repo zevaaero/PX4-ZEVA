@@ -691,6 +691,9 @@ PARAM_DEFINE_INT32(COM_REARM_GRACE, 1);
  * if position is unavailable Altitude mode.
  * Note: Only has an effect on multicopters, and VTOLs in multicopter mode.
  *
+ * This parameter is not considered in case of a GPS failure (Descend flight mode), where stick
+ * override is always enabled.
+ *
  * @min 0
  * @max 3
  * @bit 0 Enable override during auto modes (except for in critical battery reaction)

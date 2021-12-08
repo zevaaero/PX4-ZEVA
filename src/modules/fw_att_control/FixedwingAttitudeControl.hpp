@@ -223,7 +223,7 @@ private:
 	ECL_YawController		_yaw_ctrl;
 	ECL_WheelController		_wheel_ctrl;
 
-	void control_flaps(float dt);
+	void control_flaps(const float dt);
 
 	void updateActuatorControlsStatus(float dt);
 

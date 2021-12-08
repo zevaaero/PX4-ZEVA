@@ -91,7 +91,6 @@ public:
 	void reActivate() override;
 	bool updateInitialize() override;
 	bool update() override;
-	bool updateFinalize() override;
 
 	/**
 	 * Sets an external yaw handler which can be used to implement a different yaw control strategy.
@@ -110,8 +109,6 @@ protected:
 	void _ekfResetHandlerVelocityZ(float delta_vz) override;
 	void _ekfResetHandlerHeading(float delta_psi) override;
 
-	void _generateSetpoints(); /**< Generate setpoints along line. */
-	void _generateHeading();
 	void _checkEmergencyBraking();
 	bool _generateHeadingAlongTraj(); /**< Generates heading along trajectory. */
 	bool isTargetModified() const;
@@ -120,11 +117,7 @@ protected:
 	/** determines when to trigger a takeoff (ignored in flight) */
 	bool _checkTakeoff() override { return _want_takeoff; };
 
-	void _prepareIdleSetpoints();
 	void _prepareLandSetpoints();
-	void _prepareVelocitySetpoints();
-	void _prepareTakeoffSetpoints();
-	void _preparePositionSetpoints();
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
 
 	void updateParams() override; /**< See ModuleParam class */
@@ -178,14 +171,11 @@ protected:
 					(ParamFloat<px4::params::MPC_XY_TRAJ_P>) _param_mpc_xy_traj_p,
 					(ParamFloat<px4::params::MPC_XY_ERR_MAX>) _param_mpc_xy_err_max,
 					(ParamFloat<px4::params::MPC_LAND_SPEED>) _param_mpc_land_speed,
-					(ParamFloat<px4::params::MPC_LAND_CRWL>) _param_mpc_land_crawl_speed,
 					(ParamInt<px4::params::MPC_LAND_RC_HELP>) _param_mpc_land_rc_help,
 					(ParamFloat<px4::params::MPC_LAND_ALT1>)
-					_param_mpc_land_alt1, // altitude at which we start ramping down speed
+					_param_mpc_land_alt1, // altitude at which speed limit downwards reaches maximum speed
 					(ParamFloat<px4::params::MPC_LAND_ALT2>)
-					_param_mpc_land_alt2, // altitude at which we descend at land speed
-					(ParamFloat<px4::params::MPC_LAND_ALT3>)
-					_param_mpc_land_alt3, // altitude where we switch to crawl speed, if distance sensor available
+					_param_mpc_land_alt2, // altitude at which speed limit downwards reached minimum speed
 					(ParamFloat<px4::params::MPC_TKO_SPEED>) _param_mpc_tko_speed,
 					(ParamFloat<px4::params::MPC_TKO_RAMP_T>)
 					_param_mpc_tko_ramp_t, // time constant for smooth takeoff ramp
@@ -206,8 +196,8 @@ private:
 	_triplet_next_wp; /**< next triplet from navigator which may differ from the intenal one (_next_wp) depending on the vehicle state.*/
 	matrix::Vector2f _closest_pt; /**< closest point to the vehicle position on the line previous - target */
 
-	map_projection_reference_s _reference_position{}; /**< Structure used to project lat/lon setpoint into local frame. */
-	float _reference_altitude{NAN};  /**< Altitude relative to ground. */
+	MapProjection _reference_position{}; /**< Class used to project lat/lon setpoint into local frame. */
+	float _reference_altitude{NAN}; /**< Altitude relative to ground. */
 	hrt_abstime _time_stamp_reference{0}; /**< time stamp when last reference update occured. */
 
 	WeatherVane *_ext_yaw_handler{nullptr};	/**< external weathervane library, used to implement a yaw control law that turns the vehicle nose into the wind */

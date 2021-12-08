@@ -73,6 +73,12 @@ public:
 		RTL_DESTINATION_SAFE_POINT,
 	};
 
+	enum RTLHeadingMode {
+		RTL_NAVIGATION_HEADING = 0,
+		RTL_DESTINATION_HEADING,
+		RTL_CURRENT_HEADING,
+	};
+
 	RTL(Navigator *navigator, TerrainFollowerWrapper &terrain_follower);
 
 	~RTL() = default;
@@ -82,7 +88,7 @@ public:
 	void on_activation() override;
 	void on_active() override;
 
-	void find_RTL_destination(bool force_update = false);
+	void find_RTL_destination();
 
 	void set_return_alt_min(bool min) { _rtl_alt_min = min; }
 
@@ -161,24 +167,26 @@ private:
 	hrt_abstime _time_last_terrain_checked{0};
 
 	float _rtl_alt{0.0f};	// AMSL altitude at which the vehicle should return to the home position
-	bool _rtl_alt_min{false};
 	float _rtl_loiter_rad{50.0f};		// radius at which a fixed wing would loiter while descending
+
 	bool _climb_and_return_done{false};	// this flag is set to true if RTL is active and we are past the climb state and return state
 	bool _climb_done{false}; 			// this flag is set to true if RTL is active and we are past the climb state
+	bool _rtl_alt_min{false};
 
 	TerrainFollowerWrapper &_terrain_follower;
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::RTL_RETURN_ALT>) _param_rtl_return_alt,
+		(ParamFloat<px4::params::RTL_RETURN_ALT>)  _param_rtl_return_alt,
 		(ParamFloat<px4::params::RTL_DESCEND_ALT>) _param_rtl_descend_alt,
-		(ParamFloat<px4::params::RTL_LAND_DELAY>) _param_rtl_land_delay,
-		(ParamFloat<px4::params::RTL_MIN_DIST>) _param_rtl_min_dist,
-		(ParamInt<px4::params::RTL_TYPE>) _param_rtl_type,
-		(ParamInt<px4::params::RTL_CONE_ANG>) _param_rtl_cone_half_angle_deg,
-		(ParamInt<px4::params::RTL_PLD_MD>) _param_rtl_pld_md,
-		(ParamFloat<px4::params::RTL_LOITER_RAD>) _param_rtl_loiter_rad,
+		(ParamFloat<px4::params::RTL_LAND_DELAY>)  _param_rtl_land_delay,
+		(ParamFloat<px4::params::RTL_MIN_DIST>)    _param_rtl_min_dist,
+		(ParamInt<px4::params::RTL_TYPE>)          _param_rtl_type,
+		(ParamInt<px4::params::RTL_CONE_ANG>)      _param_rtl_cone_half_angle_deg,
+		(ParamInt<px4::params::RTL_PLD_MD>)        _param_rtl_pld_md,
+		(ParamFloat<px4::params::RTL_LOITER_RAD>)  _param_rtl_loiter_rad,
+		(ParamInt<px4::params::RTL_HDG_MD>)        _param_rtl_hdg_md,
 		(ParamFloat<px4::params::RTL_TIME_FACTOR>) _param_rtl_time_factor,
-		(ParamInt<px4::params::RTL_TIME_MARGIN>) _param_rtl_time_margin
+		(ParamInt<px4::params::RTL_TIME_MARGIN>)   _param_rtl_time_margin
 	)
 
 	param_t		_param_mpc_z_vel_max_up{PARAM_INVALID};

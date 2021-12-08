@@ -249,17 +249,14 @@ MissionBlock::is_mission_item_reached()
 			if (curr_sp->valid) {
 
 				// location of gate (mission item)
-				struct map_projection_reference_s ref_pos;
-				map_projection_init(&ref_pos, _mission_item.lat, _mission_item.lon);
+				MapProjection ref_pos{_mission_item.lat, _mission_item.lon};
 
 				// current setpoint
-				matrix::Vector2f gate_to_curr_sp;
-				map_projection_project(&ref_pos, curr_sp->lat, curr_sp->lon, &gate_to_curr_sp(0), &gate_to_curr_sp(1));
+				matrix::Vector2f gate_to_curr_sp = ref_pos.project(curr_sp->lat, curr_sp->lon);
 
 				// system position
-				matrix::Vector2f vehicle_pos;
-				map_projection_project(&ref_pos, _navigator->get_global_position()->lat, _navigator->get_global_position()->lon,
-						       &vehicle_pos(0), &vehicle_pos(1));
+				matrix::Vector2f vehicle_pos = ref_pos.project(_navigator->get_global_position()->lat,
+							       _navigator->get_global_position()->lon);
 				const float dot_product = vehicle_pos.dot(gate_to_curr_sp.normalized());
 
 				// if the dot product (projected vector) is positive, then
@@ -344,9 +341,10 @@ MissionBlock::is_mission_item_reached()
 				_waypoint_yaw_reached = true;
 			}
 
-			// Temporary hack: Always accept yaw during takeoff.
-			// TODO: Navigator needs to handle a yaw reset properly and adjust its yaw setpoint.
-			// FlightTaskAuto is currently also ignoring the yaw setpoint during takeoff because of this.
+			// Always accept yaw during takeoff
+			// TODO: Ideally Navigator would handle a yaw reset and adjust its yaw setpoint, making the
+			// following no longer necessary.
+			// FlightTaskAuto is currently also ignoring the yaw setpoint during takeoff and thus "handling" it.
 			if (_mission_item.nav_cmd == vehicle_command_s::VEHICLE_CMD_NAV_TAKEOFF) {
 				_waypoint_yaw_reached = true;
 			}

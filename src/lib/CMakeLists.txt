@@ -31,9 +31,6 @@
 #
 ############################################################################
 
-px4_add_git_submodule(TARGET git_matrix PATH "matrix")
-px4_add_git_submodule(TARGET git_monocypher PATH "crypto/monocypher")
-
 add_subdirectory(airspeed)
 add_subdirectory(avoidance)
 add_subdirectory(battery)
@@ -46,12 +43,13 @@ add_subdirectory(controllib)
 add_subdirectory(conversion)
 add_subdirectory(crypto)
 add_subdirectory(drivers)
-add_subdirectory(geo)
 add_subdirectory(field_sensor_bias_estimator)
+add_subdirectory(geo)
 add_subdirectory(hysteresis)
 add_subdirectory(l1)
 add_subdirectory(landing_slope)
 add_subdirectory(led)
+add_subdirectory(matrix)
 add_subdirectory(mathlib)
 add_subdirectory(mixer)
 add_subdirectory(mixer_module)

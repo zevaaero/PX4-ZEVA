@@ -84,6 +84,11 @@ extern const uint16_t latency_bucket_count;
 extern const uint16_t latency_buckets[LATENCY_BUCKET_COUNT];
 extern uint32_t latency_counters[LATENCY_BUCKET_COUNT + 1];
 
+typedef struct latency_info {
+	uint16_t                bucket;
+	uint32_t                counter;
+} latency_info_t;
+
 /**
  * Get absolute time in [us] (does not wrap).
  */
@@ -109,15 +114,6 @@ static inline hrt_abstime hrt_elapsed_time(const hrt_abstime *then)
 {
 	return hrt_absolute_time() - *then;
 }
-
-/**
- * Compute the delta between a timestamp taken in the past
- * and now.
- *
- * This function is safe to use even if the timestamp is updated
- * by an interrupt during execution.
- */
-__EXPORT extern hrt_abstime hrt_elapsed_time_atomic(const volatile hrt_abstime *then);
 
 /**
  * Store the absolute time in an interrupt-safe fashion.
@@ -208,8 +204,36 @@ static inline void px4_lockstep_progress(int component) { }
 static inline void px4_lockstep_wait_for_components(void) { }
 #endif /* defined(ENABLE_LOCKSTEP_SCHEDULER) */
 
-__END_DECLS
 
+/* Latency counter functions */
+
+static inline uint16_t get_latency_bucket_count(void) { return LATENCY_BUCKET_COUNT; }
+
+#if defined(CONFIG_BUILD_FLAT) || !defined(__PX4_NUTTX)
+
+static inline latency_info_t get_latency(uint16_t bucket_idx, uint16_t counter_idx)
+{
+	latency_info_t ret = {latency_buckets[bucket_idx], latency_counters[counter_idx]};
+	return ret;
+}
+
+static inline void reset_latency_counters(void)
+{
+	for (int i = 0; i <= get_latency_bucket_count(); i++) {
+		latency_counters[i] = 0;
+	}
+}
+
+#else
+
+/* NuttX protected/kernel build interface functions */
+
+latency_info_t get_latency(uint16_t bucket_idx, uint16_t counter_idx);
+void reset_latency_counters(void);
+
+#endif
+
+__END_DECLS
 
 
 #ifdef	__cplusplus

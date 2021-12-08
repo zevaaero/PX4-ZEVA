@@ -86,7 +86,6 @@ Navigator::Navigator() :
 	_precland(this),
 	_rtl(this, _terrain_follower),
 	_engineFailure(this),
-	_gpsFailure(this),
 	_follow_target(this)
 {
 	/* Create a list of our possible navigation types */
@@ -94,13 +93,12 @@ Navigator::Navigator() :
 	_navigation_mode_array[1] = &_loiter;
 	_navigation_mode_array[2] = &_rtl;
 	_navigation_mode_array[3] = &_engineFailure;
-	_navigation_mode_array[4] = &_gpsFailure;
-	_navigation_mode_array[5] = &_takeoff;
-	_navigation_mode_array[6] = &_land;
-	_navigation_mode_array[7] = &_precland;
-	_navigation_mode_array[8] = &_follow_target;
-	_navigation_mode_array[9] = &_vtol_takeoff;
-	_navigation_mode_array[10] = &_vtol_land;
+	_navigation_mode_array[4] = &_takeoff;
+	_navigation_mode_array[5] = &_land;
+	_navigation_mode_array[6] = &_precland;
+	_navigation_mode_array[7] = &_follow_target;
+	_navigation_mode_array[8] = &_vtol_takeoff;
+	_navigation_mode_array[9] = &_vtol_land;
 
 	_handle_back_trans_dec_mss = param_find("VT_B_DEC_MSS");
 	_handle_reverse_delay = param_find("VT_B_REV_DEL");
@@ -472,7 +470,6 @@ Navigator::run()
 						}
 					}
 
-					rep->previous.valid = true;
 					rep->previous.timestamp = hrt_absolute_time();
 
 					rep->current.valid = true;
@@ -509,6 +506,7 @@ Navigator::run()
 					rep->current.type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 					rep->current.loiter_radius = get_loiter_radius();
 					rep->current.loiter_direction = 1;
+					rep->current.cruising_throttle = get_cruising_throttle();
 
 					if (PX4_ISFINITE(cmd.param1)) {
 						rep->current.loiter_radius = fabsf(cmd.param1);
@@ -518,8 +516,6 @@ Navigator::run()
 					rep->current.lat = position_setpoint.lat;
 					rep->current.lon = position_setpoint.lon;
 					rep->current.alt = position_setpoint.alt;
-
-					rep->current.cruising_throttle = get_cruising_throttle();
 
 					rep->current.valid = true;
 					rep->current.timestamp = hrt_absolute_time();
@@ -835,11 +831,6 @@ Navigator::run()
 			navigation_mode_new = &_engineFailure;
 			break;
 
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL:
-			_pos_sp_triplet_published_invalid_once = false;
-			navigation_mode_new = &_gpsFailure;
-			break;
-
 		case vehicle_status_s::NAVIGATION_STATE_AUTO_FOLLOW_TARGET:
 			_pos_sp_triplet_published_invalid_once = false;
 			navigation_mode_new = &_follow_target;
@@ -876,8 +867,7 @@ Navigator::run()
 
 		if (_vstatus.nav_state != _previous_nav_state) {
 			if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_FIXED_BANK_LOITER) {
-				PX4_WARN("GPS invalid, fixed-bank loitering for %.0f s, then descend if not recovered",
-					 (double)_param_nav_gpsf_lt.get());
+				PX4_WARN("GPS invalid, fixed-bank loitering, then descend.");
 
 			} else if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_DESCEND) {
 				// if vehicle is a VTOL in fixed-wing mode, switch to hover for the DESCEND mode
@@ -922,6 +912,20 @@ Navigator::run()
 			if (did_not_switch_takeoff_to_loiter && did_not_switch_to_loiter_with_valid_loiter_setpoint) {
 				reset_triplets();
 			}
+
+			// transition to hover in Descend mode
+			if (_vstatus.nav_state == vehicle_status_s::NAVIGATION_STATE_DESCEND &&
+			    _vstatus.is_vtol && _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING &&
+			    force_vtol()) {
+				vehicle_command_s vcmd = {};
+				vcmd.command = NAV_CMD_DO_VTOL_TRANSITION;
+				vcmd.param1 = vtol_vehicle_status_s::VEHICLE_VTOL_STATE_MC;
+				publish_vehicle_cmd(&vcmd);
+				mavlink_log_info(&_mavlink_log_pub, "Transition to hover mode and descend.\t");
+				events::send(events::ID("navigator_transition_descend"), events::Log::Critical,
+					     "Transition to hover mode and descend");
+			}
+
 		}
 
 		_navigation_mode = navigation_mode_new;

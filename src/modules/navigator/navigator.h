@@ -44,7 +44,6 @@
 #include "enginefailure.h"
 #include "follow_target.h"
 #include "geofence.h"
-#include "gpsfailure.h"
 #include "land.h"
 #include "precland.h"
 #include "loiter.h"
@@ -90,7 +89,7 @@ using namespace time_literals;
 /**
  * Number of navigation modes that need on_active/on_inactive calls
  */
-#define NAVIGATOR_MODE_ARRAY_SIZE 11
+#define NAVIGATOR_MODE_ARRAY_SIZE 10
 
 struct custom_action_s {
 	int8_t id{-1};
@@ -395,8 +394,7 @@ private:
 		(ParamInt<px4::params::MIS_TKO_LAND_REQ>) _para_mis_takeoff_land_req,
 		(ParamFloat<px4::params::MIS_YAW_TMT>) _param_mis_yaw_tmt,
 		(ParamFloat<px4::params::MIS_YAW_ERR>) _param_mis_yaw_err,
-		(ParamInt<px4::params::TF_TERRAIN_EN>) _param_tf_terrain_en,
-		(ParamFloat<px4::params::NAV_GPSF_LT>) _param_nav_gpsf_lt	/**< GPS failure fixed-bank loitering time*/
+		(ParamInt<px4::params::TF_TERRAIN_EN>) _param_tf_terrain_en
 	)
 
 	struct traffic_buffer_s {
@@ -485,7 +483,6 @@ private:
 	PrecLand	_precland;			/**< class for handling precision land commands */
 	RTL 		_rtl;				/**< class that handles RTL */
 	EngineFailure	_engineFailure;			/**< class that handles the engine failure mode (FW only!) */
-	GpsFailure	_gpsFailure;			/**< class that handles the OBC gpsfailure loss mode */
 	FollowTarget	_follow_target;
 
 	NavigatorMode *_navigation_mode_array[NAVIGATOR_MODE_ARRAY_SIZE];	/**< array of navigation modes */

@@ -470,11 +470,39 @@ _file_write(dm_item_t item, unsigned index, dm_persitence_t persistence, const v
 
 	count += DM_SECTOR_HDR_SIZE;
 
-	if (lseek(dm_operations_data.file.fd, offset, SEEK_SET) != offset) {
-		return -1;
+	bool write_success = false;
+
+	for (int i = 0; i < 2; i++) {
+		int ret_seek = lseek(dm_operations_data.file.fd, offset, SEEK_SET);
+
+		if (ret_seek < 0) {
+			PX4_ERR("file write lseek failed %d", errno);
+			continue;
+		}
+
+		if (ret_seek != offset) {
+			PX4_ERR("file write lseek failed, incorrect offset %d vs %d", ret_seek, offset);
+			continue;
+		}
+
+		int ret_write = write(dm_operations_data.file.fd, buffer, count);
+
+		if (ret_write < 0) {
+			PX4_ERR("file write failed %d", errno);
+			continue;
+		}
+
+		if (ret_write != (ssize_t)count) {
+			PX4_ERR("file write failed, wrote %d bytes, expected %zu", ret_write, count);
+			continue;
+
+		} else {
+			write_success = true;
+			break;
+		}
 	}
 
-	if ((write(dm_operations_data.file.fd, buffer, count)) != (ssize_t)count) {
+	if (!write_success) {
 		return -1;
 	}
 
@@ -547,16 +575,37 @@ _file_read(dm_item_t item, unsigned index, void *buf, size_t count)
 		return -E2BIG;
 	}
 
-	/* Read the prefix and data */
 	int len = -1;
+	bool read_success = false;
 
-	if (lseek(dm_operations_data.file.fd, offset, SEEK_SET) == offset) {
+	for (int i = 0; i < 2; i++) {
+		int ret_seek = lseek(dm_operations_data.file.fd, offset, SEEK_SET);
+
+		if (ret_seek < 0) {
+			PX4_ERR("file read lseek failed %d", errno);
+			continue;
+		}
+
+		if (ret_seek != offset) {
+			PX4_ERR("file read lseek failed, incorrect offset %d vs %d", ret_seek, offset);
+			continue;
+		}
+
+		/* Read the prefix and data */
 		len = read(dm_operations_data.file.fd, buffer, count + DM_SECTOR_HDR_SIZE);
+
+		/* Check for read error */
+		if (len >= 0) {
+			read_success = true;
+			break;
+
+		} else {
+			PX4_ERR("file read failed %d", errno);
+		}
 	}
 
-	/* Check for read error */
-	if (len < 0) {
-		return -errno;
+	if (!read_success) {
+		return -1;
 	}
 
 	/* A zero length entry is a empty entry */
@@ -875,6 +924,7 @@ dm_write(dm_item_t item, unsigned index, dm_persitence_t persistence, const void
 
 	/* get a work item and queue up a write request */
 	if ((work = create_work_item()) == nullptr) {
+		PX4_ERR("dm_write create_work_item failed");
 		perf_end(_dm_write_perf);
 		return -1;
 	}
@@ -907,6 +957,7 @@ dm_read(dm_item_t item, unsigned index, void *buf, size_t count)
 
 	/* get a work item and queue up a read request */
 	if ((work = create_work_item()) == nullptr) {
+		PX4_ERR("dm_read create_work_item failed");
 		perf_end(_dm_read_perf);
 		return -1;
 	}
@@ -936,6 +987,7 @@ dm_clear(dm_item_t item)
 
 	/* get a work item and queue up a clear request */
 	if ((work = create_work_item()) == nullptr) {
+		PX4_ERR("dm_clear create_work_item failed");
 		return -1;
 	}
 
@@ -1021,6 +1073,7 @@ dm_restart(dm_reset_reason reason)
 
 	/* get a work item and queue up a restart request */
 	if ((work = create_work_item()) == nullptr) {
+		PX4_ERR("dm_restart create_work_item failed");
 		return -1;
 	}
 
@@ -1090,11 +1143,6 @@ task_main(int argc, char *argv[])
 	_dm_read_perf = perf_alloc(PC_ELAPSED, MODULE_NAME": read");
 	_dm_write_perf = perf_alloc(PC_ELAPSED, MODULE_NAME": write");
 
-	/* see if we need to erase any items based on restart type */
-	int32_t sys_restart_val;
-
-	const char *restart_type_str = "Unknown restart";
-
 	int ret = g_dm_ops->initialize(max_offset);
 
 	if (ret) {
@@ -1102,29 +1150,14 @@ task_main(int argc, char *argv[])
 		goto end;
 	}
 
-	if (param_get(param_find("SYS_RESTART_TYPE"), &sys_restart_val) == OK) {
-		if (sys_restart_val == DM_INIT_REASON_POWER_ON) {
-			restart_type_str = "Power on restart";
-			g_dm_ops->restart(DM_INIT_REASON_POWER_ON);
-
-		} else if (sys_restart_val == DM_INIT_REASON_IN_FLIGHT) {
-			restart_type_str = "In flight restart";
-			g_dm_ops->restart(DM_INIT_REASON_IN_FLIGHT);
-		}
-	}
-
 	switch (backend) {
 	case BACKEND_FILE:
-		if (sys_restart_val != DM_INIT_REASON_POWER_ON) {
-			PX4_INFO("%s, data manager file '%s' size is %u bytes",
-				 restart_type_str, k_data_manager_device_path, max_offset);
-		}
+		PX4_INFO("data manager file '%s' size is %u bytes", k_data_manager_device_path, max_offset);
 
 		break;
 
 	case BACKEND_RAM:
-		PX4_INFO("%s, data manager RAM size is %u bytes",
-			 restart_type_str, max_offset);
+		PX4_INFO("data manager RAM size is %u bytes", max_offset);
 		break;
 
 	default:

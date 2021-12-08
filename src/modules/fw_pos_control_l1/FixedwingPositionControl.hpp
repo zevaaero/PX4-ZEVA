@@ -172,7 +172,7 @@ private:
 
 	perf_counter_t	_loop_perf;				///< loop performance counter
 
-	map_projection_reference_s _global_local_proj_ref{};
+	MapProjection _global_local_proj_ref{};
 	float	_global_local_alt0{NAN};
 
 	float 	_manual_height_rate_setpoint_m_s{NAN};
@@ -253,16 +253,19 @@ private:
 	float _manual_control_setpoint_altitude{0.0f};
 	float _manual_control_setpoint_airspeed{0.0f};
 
+	hrt_abstime _time_in_fixed_bank_loiter{0};
+
 	ECL_L1_Pos_Controller	_l1_control;
 	TECS			_tecs;
 
-	uint8_t _type{0};
+	uint8_t _position_sp_type{0};
 	enum FW_POSCTRL_MODE {
 		FW_POSCTRL_MODE_AUTO,
-		FW_POSCTRL_MODE_POSITION,
-		FW_POSCTRL_MODE_ALTITUDE,
-		FW_POSCTRL_MODE_CLIMBRATE,
 		FW_POSCTRL_MODE_AUTO_ALTITUDE,
+		FW_POSCTRL_MODE_AUTO_CLIMBRATE,
+		FW_POSCTRL_MODE_MANUAL_POSITION,
+		FW_POSCTRL_MODE_MANUAL_ALTITUDE,
+		FW_POSCTRL_MODE_CLIMBRATE,
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER};		///< used to check the mode in the last control loop iteration. Use to check if the last iteration was in the same mode.
 
@@ -331,17 +334,12 @@ private:
 	 */
 	float		get_terrain_altitude_takeoff(float takeoff_alt);
 
+	float getManualHeightRateSetpoint();
+
 	/**
 	 * Check if we are in a takeoff situation
 	 */
 	bool 		in_takeoff_situation();
-
-	/**
-	 * Update desired altitude base on user pitch stick input
-	 *
-	 * @param dt Time step
-	 */
-	float		getManualHeightRateSetpoint();
 
 	bool		control_position(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed,
 					 const position_setpoint_s &pos_sp_prev,
@@ -439,6 +437,10 @@ private:
 		(ParamFloat<px4::params::FW_THR_SLEW_MAX>) _param_fw_thr_slew_max,
 
 		(ParamInt<px4::params::FW_POS_STK_CONF>) _param_fw_pos_stk_conf,
+
+
+		(ParamInt<px4::params::FW_GPSF_LT>) _param_nav_gpsf_lt,
+		(ParamFloat<px4::params::FW_GPSF_R>) _param_nav_gpsf_r,
 
 		// external parameters
 		(ParamInt<px4::params::FW_ARSP_MODE>) _param_fw_arsp_mode,

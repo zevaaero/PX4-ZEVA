@@ -22,6 +22,7 @@
 
 . ${R}etc/init.d/rc.uuv_defaults
 
+
 # disable circuit breaker for airspeed sensor
 param set-default CBRK_AIRSPD_CHK 162128
 # companion computer is connected via USB permanently

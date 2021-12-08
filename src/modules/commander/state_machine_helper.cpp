@@ -119,7 +119,7 @@ const char *const nav_state_names[vehicle_status_s::NAVIGATION_STATE_MAX] = {
 	"6: unallocated",
 	"7: unallocated",
 	"AUTO_LANDENGFAIL",
-	"AUTO_LANDGPSFAIL",
+	"9: unallocated",
 	"ACRO",
 	"11: UNUSED",
 	"DESCEND",
@@ -883,6 +883,8 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 			status.nav_state = vehicle_status_s::NAVIGATION_STATE_OFFBOARD;
 		}
 
+		break;
+
 	default:
 		break;
 	}
@@ -992,21 +994,14 @@ void set_link_loss_nav_state(vehicle_status_s &status, actuator_armed_s &armed,
 			return;
 
 		} else {
-			if (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-				if (status_flags.condition_local_position_valid) {
-					status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
-					return;
+			if (status_flags.condition_local_position_valid) {
+				status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LAND;
 
-				} else if (status_flags.condition_local_altitude_valid) {
-					status.nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
-					return;
-				}
-
-			} else {
-				// TODO: FW position controller doesn't run without condition_global_position_valid
-				status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL;
-				return;
+			} else if (status_flags.condition_local_altitude_valid) {
+				status.nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 			}
+
+			return;
 		}
 
 	// FALLTHROUGH
@@ -1074,13 +1069,7 @@ void set_offboard_loss_nav_state(vehicle_status_s &status, actuator_armed_s &arm
 
 	// If none of the above worked, try to mitigate
 	if (status_flags.condition_local_altitude_valid) {
-		if (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-			status.nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
-
-		} else {
-			// TODO: FW position controller doesn't run without condition_global_position_valid
-			status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL;
-		}
+		status.nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 	} else {
 		status.nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;
@@ -1153,13 +1142,7 @@ void set_offboard_loss_rc_nav_state(vehicle_status_s &status, actuator_armed_s &
 	// If none of the above worked, try to mitigate
 	if (status_flags.condition_local_altitude_valid) {
 		//TODO: Add case for rover
-		if (status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
-			status.nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
-
-		} else {
-			// TODO: FW position controller doesn't run without condition_global_position_valid
-			status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDGPSFAIL;
-		}
+		status.nav_state = vehicle_status_s::NAVIGATION_STATE_DESCEND;
 
 	} else {
 		status.nav_state = vehicle_status_s::NAVIGATION_STATE_TERMINATION;

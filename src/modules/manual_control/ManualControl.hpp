@@ -132,3 +132,4 @@ private:
 		(ParamInt<px4::params::COM_FLTMODE6>) _param_fltmode_6
 	)
 };
+

@@ -54,6 +54,7 @@ MulticopterPositionControl::MulticopterPositionControl(bool vtol) :
 	_failsafe_land_hysteresis.set_hysteresis_time_from(false, LOITER_TIME_BEFORE_DESCEND);
 	_tilt_limit_slew_rate.setSlewRate(.2f);
 	reset_setpoint_to_nan(_setpoint);
+	_takeoff_status_pub.advertise();
 }
 
 MulticopterPositionControl::~MulticopterPositionControl()
@@ -393,7 +394,6 @@ void MulticopterPositionControl::Run()
 				// make sure takeoff ramp is not amended by acceleration feed-forward
 				if (!flying) {
 					_setpoint.acceleration[2] = NAN;
-
 					// hover_thrust maybe reset on takeoff
 					_control.setHoverThrust(_param_mpc_thr_hover.get());
 				}

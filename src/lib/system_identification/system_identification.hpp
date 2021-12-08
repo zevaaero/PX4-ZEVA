@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,9 +39,9 @@
 
 #pragma once
 
+#include <lib/mathlib/math/filter/AlphaFilter.hpp>
 #include <matrix/matrix/math.hpp>
 #include <mathlib/mathlib.h>
-#include <mathlib/math/filter/AlphaFilter.hpp>
 #include <mathlib/math/filter/LowPassFilter2p.hpp>
 #include <px4_platform_common/defines.h>
 
@@ -100,3 +100,4 @@ private:
 	AlphaFilter<float> _fitness_lpf;
 	float _dt{0.1f};
 };
+

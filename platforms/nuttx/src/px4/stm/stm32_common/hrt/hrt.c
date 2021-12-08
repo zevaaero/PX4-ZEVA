@@ -720,21 +720,6 @@ abstime_to_ts(struct timespec *ts, hrt_abstime abstime)
 }
 
 /**
- * Compare a time value with the current time as atomic operation
- */
-hrt_abstime
-hrt_elapsed_time_atomic(const volatile hrt_abstime *then)
-{
-	irqstate_t flags = px4_enter_critical_section();
-
-	hrt_abstime delta = hrt_absolute_time() - *then;
-
-	px4_leave_critical_section(flags);
-
-	return delta;
-}
-
-/**
  * Store the absolute time in an interrupt-safe fashion
  */
 void
@@ -1002,5 +987,22 @@ hrt_call_delay(struct hrt_call *entry, hrt_abstime delay)
 {
 	entry->deadline = hrt_absolute_time() + delay;
 }
+
+#if !defined(CONFIG_BUILD_FLAT)
+/* These functions are inlined in all but NuttX protected/kernel builds */
+
+latency_info_t get_latency(uint16_t bucket_idx, uint16_t counter_idx)
+{
+	latency_info_t ret = {latency_buckets[bucket_idx], latency_counters[counter_idx]};
+	return ret;
+}
+
+void reset_latency_counters(void)
+{
+	for (int i = 0; i <= get_latency_bucket_count(); i++) {
+		latency_counters[i] = 0;
+	}
+}
+#endif
 
 #endif /* HRT_TIMER */

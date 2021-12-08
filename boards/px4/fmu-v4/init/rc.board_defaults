@@ -3,6 +3,7 @@
 # board specific defaults
 #------------------------------------------------------------------------------
 
+
 # start MAVLink on Wifi (ESP8266 port). Except for the TealOne airframe.
 if ! param compare SYS_AUTOSTART 4250
 then

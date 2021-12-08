@@ -40,7 +40,7 @@
 #pragma once
 
 #include "FlightTask.hpp"
-#include <mathlib/math/filter/AlphaFilter.hpp>
+#include <lib/mathlib/math/filter/AlphaFilter.hpp>
 #include <uORB/SubscriptionInterval.hpp>
 #include <uORB/topics/parameter_update.h>
 #include <drivers/drv_hrt.h>

@@ -52,7 +52,6 @@ px4_add_module(
 		mag_calibration.cpp
 		rc_calibration.cpp
 		state_machine_helper.cpp
-		lm_fit.cpp
 		worker_thread.cpp
 	DEPENDS
 		circuit_breaker

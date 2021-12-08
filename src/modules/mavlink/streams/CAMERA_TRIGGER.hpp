@@ -65,12 +65,12 @@ private:
 
 	uORB::Subscription _camera_trigger_sub{ORB_ID(camera_trigger)};
 	uORB::Subscription _camera_status_sub{ORB_ID(camera_status)};
-	int _sequence{1};
 	camera_status_s _camera_status = {
 		0,	//timestamp
 		0,	//target_sys_id
 		MAV_COMP_ID_CAMERA // active_comp_id
 	};
+	int _sequence {1};
 
 	bool send() override
 	{

@@ -52,7 +52,7 @@
 class TECS
 {
 public:
-	TECS() = default;
+	TECS();
 	~TECS() = default;
 
 	// no copy, assignment, move, move assignment
@@ -183,8 +183,6 @@ private:
 
 	static constexpr float _jerk_max =
 		1000.0f;	// maximum jerk for creating height rate trajectories, we want infinite jerk so set a high value
-
-	uORB::Publication<tecs_status_s>	_tecs_status_pub{ORB_ID(tecs_status)};	///< TECS status publication
 
 	enum ECL_TECS_MODE _tecs_mode {ECL_TECS_MODE_NORMAL};
 
@@ -368,5 +366,7 @@ private:
 	_alt_control_traj_generator;	// generates height rate and altitude setpoint trajectory when altitude is commanded
 	ManualVelocitySmoothingZ
 	_velocity_control_traj_generator;	// generates height rate and altitude setpoint trajectory when height rate is commanded
+
+	uORB::Publication<tecs_status_s>                    _tecs_status_pub{ORB_ID(tecs_status)};
 
 };

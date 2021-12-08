@@ -91,7 +91,7 @@ private:
 		unsigned used_tick{};
 		int x_count{};
 		int y_count{};
-		map_projection_reference_s ref{};
+		MapProjection ref{};
 		int16_t *data{nullptr};
 	};
 

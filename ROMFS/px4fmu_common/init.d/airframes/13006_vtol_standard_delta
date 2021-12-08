@@ -17,6 +17,7 @@
 #
 # @board px4_fmu-v2 exclude
 # @board bitcraze_crazyflie exclude
+# @board holybro_kakutef7 exclude
 #
 
 . ${R}etc/init.d/rc.vtol_defaults
@@ -25,7 +26,6 @@
 param set-default MC_ROLLRATE_I 0.01
 param set-default MC_PITCHRATE_I 0.01
 param set-default MC_YAW_P 3.5
-
 
 param set-default MC_YAWRATE_MAX 50
 

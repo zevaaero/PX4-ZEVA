@@ -1,10 +1,7 @@
 #!/bin/sh
 #
-# PX4 FMUv5X specific board MAVLink startup script.
+# board specific MAVLink startup script.
 #------------------------------------------------------------------------------
-
-# Start MAVLink on the USB port
-mavlink start -d /dev/ttyACM0
 
 # if skynode base board is detected start Mavlink on Telem2
 if ver hwtypecmp V5X90 V5X91 V5Xa0 V5Xa1 V5X80 V5X81

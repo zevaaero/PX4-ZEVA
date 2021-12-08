@@ -43,7 +43,7 @@
 
 #pragma once
 
-#include <mathlib/math/filter/AlphaFilter.hpp>
+#include <lib/mathlib/math/filter/AlphaFilter.hpp>
 #include <matrix/matrix/math.hpp>
 #include <mathlib/mathlib.h>
 #include <px4_platform_common/module_params.h>
@@ -53,13 +53,13 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/battery_status.h>
-#include <uORB/topics/esc_status.h>
 #include <uORB/topics/sensor_selection.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_imu_status.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/esc_status.h>
 #include <uORB/topics/pwm_input.h>
 #include <uORB/topics/wind.h>
 
@@ -105,12 +105,12 @@ private:
 	systemlib::Hysteresis _esc_failure_hysteresis{false};
 	systemlib::Hysteresis _battery_failure_hysteresis{false};
 
+	uORB::SubscriptionMultiArray<battery_status_s> _battery_status_subs{ORB_ID::battery_status};
+
 	static constexpr float _imbalanced_prop_lpf_time_constant{5.f};
 	AlphaFilter<float> _imbalanced_prop_lpf{};
 	uint32_t _selected_accel_device_id{0};
 	hrt_abstime _imu_status_timestamp_prev{0};
-
-	uORB::SubscriptionMultiArray<battery_status_s> _battery_status_subs{ORB_ID::battery_status};
 
 	uORB::Subscription _vehicule_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription _esc_status_sub{ORB_ID(esc_status)};

@@ -49,7 +49,7 @@
 #ifndef MAVLINK_FTP_UNIT_TEST
 #include "mavlink_main.h"
 #else
-#include <v2.0/standard/mavlink.h>
+#include <mavlink.h>
 #endif
 
 using namespace time_literals;
@@ -166,7 +166,7 @@ MavlinkFTP::_process_request(
 	// basic sanity checks; must validate length before use
 	if (payload->size > kMaxDataLength) {
 		errorCode = kErrInvalidDataSize;
-		PX4_WARN("invalid data size");
+		PX4_WARN("invalid data size: %d", payload->size);
 		goto out;
 	}
 
@@ -188,11 +188,8 @@ MavlinkFTP::_process_request(
 	}
 
 
-
-	PX4_DEBUG("ftp: channel %" PRIu8 " opc %" PRIu8 " size %" PRIu8 " offset %" PRIu32, _getServerChannel(),
-		  payload->opcode,
-		  payload->size,
-		  payload->offset);
+	PX4_DEBUG("ftp: channel %" PRIu8 " opc %" PRIu8 " size %" PRIu8 " offset %" PRIu32,
+		  _getServerChannel(), payload->opcode, payload->size, payload->offset);
 
 	switch (payload->opcode) {
 	case kCmdNone:
@@ -565,7 +562,7 @@ MavlinkFTP::_workRead(PayloadHeader *payload)
 		return kErrFailErrno;
 	}
 
-	int bytes_read = ::read(_session_info.fd, &payload->data[0], kMaxDataLength);
+	int bytes_read = ::read(_session_info.fd, &payload->data[0], payload->size);
 
 	if (bytes_read < 0) {
 		// Negative return indicates error other than eof
@@ -589,7 +586,6 @@ MavlinkFTP::_workBurst(PayloadHeader *payload, uint8_t target_system_id, uint8_t
 	}
 
 	PX4_DEBUG("FTP: burst offset:%" PRIu32, payload->offset);
-
 	// Setup for streaming sends
 	_session_info.stream_download = true;
 	_session_info.stream_offset = payload->offset;
@@ -1056,9 +1052,7 @@ void MavlinkFTP::send()
 #ifndef MAVLINK_FTP_UNIT_TEST
 	// Skip send if not enough room
 	unsigned max_bytes_to_send = _mavlink->get_free_tx_buf();
-
 	PX4_DEBUG("MavlinkFTP::send max_bytes_to_send(%u) get_free_tx_buf(%u)", max_bytes_to_send, _mavlink->get_free_tx_buf());
-
 
 	if (max_bytes_to_send < get_size()) {
 		return;

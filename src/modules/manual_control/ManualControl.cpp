@@ -412,3 +412,4 @@ extern "C" __EXPORT int manual_control_main(int argc, char *argv[])
 {
 	return ManualControl::main(argc, argv);
 }
+

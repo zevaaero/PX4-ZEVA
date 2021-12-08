@@ -40,7 +40,7 @@
 #pragma once
 
 #include <drivers/drv_hrt.h>
-#include <mathlib/math/filter/AlphaFilter.hpp>
+#include <lib/mathlib/math/filter/AlphaFilter.hpp>
 #include <lib/perf/perf_counter.h>
 #include <lib/pid_design/pid_design.hpp>
 #include <lib/system_identification/system_identification.hpp>
@@ -200,3 +200,4 @@ private:
 	static constexpr float _publishing_dt_s = 100e-3f;
 	static constexpr hrt_abstime _publishing_dt_hrt = 100_ms;
 };
+

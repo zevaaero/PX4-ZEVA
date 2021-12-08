@@ -324,3 +324,4 @@ void PositionSmoothing::_generateTrajectory(
 
 	VelocitySmoothing::timeSynchronization(_trajectory, 3);
 }
+

@@ -1269,6 +1269,15 @@ int Logger::get_log_file_name(LogType type, char *file_name, size_t file_name_si
 		replay_suffix = "_replayed";
 	}
 
+	const char *crypto_suffix = "";
+#if defined(PX4_CRYPTO)
+
+	if (_param_sdlog_crypto_algorithm.get() != 0) {
+		crypto_suffix = "c";
+	}
+
+#endif
+
 	char *log_file_name = _file_name[(int)type].log_file_name;
 
 	if (time_ok) {
@@ -1280,7 +1289,8 @@ int Logger::get_log_file_name(LogType type, char *file_name, size_t file_name_si
 
 		char log_file_name_time[16] = "";
 		strftime(log_file_name_time, sizeof(log_file_name_time), "%H_%M_%S", &tt);
-		snprintf(log_file_name, sizeof(LogFileName::log_file_name), "%s%s.ulg", log_file_name_time, replay_suffix);
+		snprintf(log_file_name, sizeof(LogFileName::log_file_name), "%s%s.ulg%s", log_file_name_time, replay_suffix,
+			 crypto_suffix);
 		snprintf(file_name + n, file_name_size - n, "/%s", log_file_name);
 
 		if (notify) {
@@ -1310,7 +1320,8 @@ int Logger::get_log_file_name(LogType type, char *file_name, size_t file_name_si
 		/* look for the next file that does not exist */
 		while (file_number <= MAX_NO_LOGFILE) {
 			/* format log file path: e.g. /fs/microsd/log/sess001/log001.ulg */
-			snprintf(log_file_name, sizeof(LogFileName::log_file_name), "log%03" PRIu16 "%s.ulg", file_number, replay_suffix);
+			snprintf(log_file_name, sizeof(LogFileName::log_file_name), "log%03" PRIu16 "%s.ulg%s", file_number, replay_suffix,
+				 crypto_suffix);
 			snprintf(file_name + n, file_name_size - n, "/%s", log_file_name);
 
 			if (!util::file_exist(file_name)) {
@@ -1368,9 +1379,17 @@ void Logger::start_log_file(LogType type)
 		return;
 	}
 
+#if defined(PX4_CRYPTO)
+	_writer.set_encryption_parameters(
+		(px4_crypto_algorithm_t)_param_sdlog_crypto_algorithm.get(),
+		_param_sdlog_crypto_key.get(),
+		_param_sdlog_crypto_exchange_key.get());
+#endif
+
 	_writer.start_log_file(type, file_name);
 	_writer.select_write_backend(LogWriter::BackendFile);
 	_writer.set_need_reliable_transfer(true);
+
 	write_header(type);
 	write_version(type);
 	write_formats(type);
@@ -1607,7 +1626,37 @@ void Logger::write_format(LogType type, const orb_metadata &meta, WrittenFormats
 	PX4_DEBUG("writing format for %s", meta.o_name);
 
 	// Write the current format (we don't need to check if we already added it to written_formats)
-	int format_len = snprintf(msg.format, sizeof(msg.format), "%s:%s", meta.o_name, meta.o_fields);
+	int format_len = snprintf(msg.format, sizeof(msg.format), "%s:", meta.o_name);
+
+	for (int format_idx = 0; meta.o_fields[format_idx] != 0;) {
+		const char *end_field = strchr(meta.o_fields + format_idx, ';');
+
+		if (!end_field) {
+			PX4_ERR("Format error in %s", meta.o_fields);
+			return;
+		}
+
+		const char *c_type = orb_get_c_type(meta.o_fields[format_idx]);
+
+		if (c_type) {
+			format_len += snprintf(msg.format + format_len, sizeof(msg.format) - format_len, "%s", c_type);
+			++format_idx;
+		}
+
+		int len = end_field - (meta.o_fields + format_idx) + 1;
+
+		if (len >= (int)sizeof(msg.format) - format_len) {
+			PX4_WARN("skip topic %s, format string is too large, max is %zu", meta.o_name,
+				 sizeof(ulog_message_format_s::format));
+			return;
+		}
+
+		memcpy(msg.format + format_len, meta.o_fields + format_idx, len);
+		format_len += len;
+		format_idx += len;
+	}
+
+	msg.format[format_len] = '\0';
 	size_t msg_size = sizeof(msg) - sizeof(msg.format) + format_len;
 	msg.msg_size = msg_size - ULOG_MSG_HEADER_LEN;
 
@@ -1618,7 +1667,7 @@ void Logger::write_format(LogType type, const orb_metadata &meta, WrittenFormats
 	}
 
 	// Now go through the fields and check for nested type usages.
-	// o_fields looks like this for example: "uint64_t timestamp;uint8_t[5] array;"
+	// o_fields looks like this for example: "<chr> timestamp;<chr>[5] array;"
 	const char *fmt = meta.o_fields;
 
 	while (fmt && *fmt) {
@@ -1651,20 +1700,7 @@ void Logger::write_format(LogType type, const orb_metadata &meta, WrittenFormats
 		type_name[type_length] = '\0';
 
 		// ignore built-in types
-		if (strcmp(type_name, "int8_t") != 0 &&
-		    strcmp(type_name, "uint8_t") != 0 &&
-		    strcmp(type_name, "int16_t") != 0 &&
-		    strcmp(type_name, "uint16_t") != 0 &&
-		    strcmp(type_name, "int16_t") != 0 &&
-		    strcmp(type_name, "uint16_t") != 0 &&
-		    strcmp(type_name, "int32_t") != 0 &&
-		    strcmp(type_name, "uint32_t") != 0 &&
-		    strcmp(type_name, "int64_t") != 0 &&
-		    strcmp(type_name, "uint64_t") != 0 &&
-		    strcmp(type_name, "float") != 0 &&
-		    strcmp(type_name, "double") != 0 &&
-		    strcmp(type_name, "bool") != 0 &&
-		    strcmp(type_name, "char") != 0) {
+		if (orb_get_c_type(type_name[0]) == nullptr) {
 
 			// find orb meta for type
 			const orb_metadata *const *topics = orb_get_topics();

@@ -1,0 +1,5 @@
+menuconfig DRIVERS_POWER_MONITOR_SELECTOR_AUTERION
+	bool "power_monitor_selector_auterion"
+	default n
+	---help---
+		Enable support for power_monitor_selector_auterion

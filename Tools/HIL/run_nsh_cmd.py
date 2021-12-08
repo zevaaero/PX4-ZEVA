@@ -70,7 +70,7 @@ def do_nsh_cmd(port, baudrate, cmd):
     success_cmd = "cmd succeeded!"
 
     # wait for command echo
-    serial_cmd = '{0}; echo "{1}"\r\n'.format(cmd, success_cmd)
+    serial_cmd = '{0}; echo "{1}"; echo "{2}";\r\n'.format(cmd, success_cmd, success_cmd)
     ser.write(serial_cmd.encode("ascii"))
     ser.flush()
     while True:
@@ -92,7 +92,7 @@ def do_nsh_cmd(port, baudrate, cmd):
 
 
     timeout_start = time.time()
-    timeout = 180 # 3 minutes
+    timeout = 240 # 4 minutes
 
     return_code = 0
 

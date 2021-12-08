@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2015-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -277,8 +277,8 @@ void Tiltrotor::update_mc_state()
 	_alternate_motor_on = false;
 
 	/*Motor spin up: define the first second after arming as motor spin up time, during which
-	* the tilt is set to the value of VT_TILT_SPINUP. This allowes the user to set a spin up
-	* tilt angle in case the propellers don't spin up smootly in full upright (MC mode) position.
+	* the tilt is set to the value of VT_TILT_SPINUP. This allows the user to set a spin up
+	* tilt angle in case the propellers don't spin up smoothly in full upright (MC mode) position.
 	*/
 
 	const int spin_up_duration_p1 = 1000_ms; // duration of 1st phase of spinup (at fixed tilt)

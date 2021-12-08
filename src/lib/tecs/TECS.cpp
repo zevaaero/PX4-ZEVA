@@ -50,6 +50,11 @@ static constexpr float DT_MAX = 1.0f;	///< max value of _dt allowed before a fil
  * @author Paul Riseborough
  */
 
+TECS::TECS()
+{
+	_tecs_status_pub.advertise();
+}
+
 /*
  * This function implements a complementary filter to estimate the climb rate when
  * inertial nav data is not available. It also calculates a true airspeed derivative
@@ -443,7 +448,7 @@ void TECS::_updateTrajectoryGenerationConstraints()
 {
 	_alt_control_traj_generator.setMaxJerk(_jerk_max);
 	_alt_control_traj_generator.setMaxAccel(_vert_accel_limit);
-	_alt_control_traj_generator.setMaxVel(fmaxf(_max_climb_rate, _max_sink_rate));
+	_alt_control_traj_generator.setMaxVel(fmax(_max_climb_rate, _max_sink_rate));
 
 	_velocity_control_traj_generator.setMaxJerk(_jerk_max);
 	_velocity_control_traj_generator.setMaxAccelUp(_vert_accel_limit);
