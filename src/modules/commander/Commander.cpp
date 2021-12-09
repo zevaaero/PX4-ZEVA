@@ -509,7 +509,6 @@ static constexpr const char *battery_fault_reason_str(battery_fault_reason_t bat
 	case battery_fault_reason_t::hardware_fault: return "hardware fault";
 
 	case battery_fault_reason_t::over_temperature: return "near temperature limit";
-
 	}
 
 	return "";
@@ -3819,8 +3818,8 @@ void Commander::battery_status_check()
 					for (uint8_t fault_index = 0; fault_index <= static_cast<uint8_t>(battery_fault_reason_t::_max);
 					     fault_index++) {
 						if (battery.faults & (1 << fault_index)) {
-							mavlink_log_emergency(&_mavlink_log_pub, "Battery %d: %s. %s \t", index + 1,
-									      battery_fault_reason_str(static_cast<battery_fault_reason_t>(fault_index)),  _armed.armed ? "Land now!" : "");
+							mavlink_log_emergency(&_mavlink_log_pub, "Battery %d: %s. %s\t", index + 1,
+									      battery_fault_reason_str(static_cast<battery_fault_reason_t>(fault_index)), _armed.armed ? "Land now!" : "");
 
 							events::px4::enums::suggested_action_t action = _armed.armed ? events::px4::enums::suggested_action_t::land :
 									events::px4::enums::suggested_action_t::none;

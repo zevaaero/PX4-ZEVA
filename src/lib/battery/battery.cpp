@@ -152,7 +152,7 @@ void Battery::updateBatteryStatus(const hrt_abstime &timestamp, float voltage_v,
 		_battery_status.voltage_cell_v[i] = _battery_status.voltage_filtered_v / max_cells;
 	}
 
-	_battery_status.faults = determineFaults();
+	_battery_status.faults = determineFaults(voltage_v);
 	_battery_status.timestamp = hrt_absolute_time();
 
 	if ((source == _params.source) && publish) {
@@ -231,12 +231,12 @@ uint8_t Battery::determineWarning(float state_of_charge)
 	}
 }
 
-uint16_t Battery::determineFaults()
+uint16_t Battery::determineFaults(const float voltage_v)
 {
 	uint16_t faults{0};
 
 	if ((_params.n_cells > 0)
-	    && (_voltage_v > (_params.n_cells * _params.v_charged * 1.05f))) {
+	    && (voltage_v > (_params.n_cells * _params.v_charged * 1.05f))) {
 		faults |= (1 << battery_status_s::BATTERY_FAULT_SPIKES);
 	}
 
