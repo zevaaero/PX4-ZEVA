@@ -295,7 +295,7 @@
                         },
                         "9": {
                             "name": "hardware_fault",
-                            "description": "Battery reported an hardware problem"
+                            "description": "Battery reported a hardware problem"
                         },
                         "10": {
                             "name": "over_temperature",
