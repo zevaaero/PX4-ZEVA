@@ -79,10 +79,6 @@ MavlinkReceiver::~MavlinkReceiver()
 #if !defined(CONSTRAINED_FLASH)
 	delete[] _received_msg_stats;
 #endif // !CONSTRAINED_FLASH
-
-	if (_mavlink->get_instance_id() == 0) {
-		_terrain_uploader.deinit();
-	}
 }
 
 MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
@@ -102,14 +98,6 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 
 	if (_handle_tf_terrain_en != PARAM_INVALID) {
 		param_get(_handle_tf_terrain_en, &_param_tf_terrain_en);
-	}
-
-
-	// let the main instance initialize the terrain uploader, if enabled
-	if (_mavlink->get_instance_id() == 0 && _param_tf_terrain_en > 0) {
-		if (!_terrain_uploader.init(_param_tf_terrain_en)) {
-			PX4_ERR("Terrain uploader init failed");
-		}
 	}
 }
 
@@ -3189,6 +3177,13 @@ MavlinkReceiver::run()
 
 #endif // MAVLINK_UDP
 
+	// let the main instance initialize the terrain uploader, if enabled
+	if (_mavlink->is_primary_instance() && _param_tf_terrain_en > 0) {
+		if (!_terrain_uploader.init(_param_tf_terrain_en)) {
+			PX4_ERR("Terrain uploader init failed");
+		}
+	}
+
 	ssize_t nread = 0;
 	hrt_abstime last_send_update = 0;
 
@@ -3369,7 +3364,7 @@ void MavlinkReceiver::update_terrain_uploader(const hrt_abstime &now)
 	bool home_position_changed = false;
 
 	// let only the main mavlink instance listen for home position changes
-	if (_mavlink->get_instance_id() == 0 && _home_position_sub.updated()
+	if (_mavlink->is_primary_instance() && _home_position_sub.updated()
 	    && now - _last_home_position_changed > 5_s) {
 		_last_home_position_changed = now;
 		home_position_changed = true;

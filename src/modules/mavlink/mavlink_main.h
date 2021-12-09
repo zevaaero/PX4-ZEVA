@@ -179,6 +179,8 @@ public:
 	void			check_events_enable() { _should_check_events.store(true); }
 	void			check_events_disable() { _should_check_events.store(false); }
 
+	bool			is_primary_instance() const { return check_events(); /* TODO: rename when this goes upstream */ }
+
 	int			get_uart_fd() const { return _uart_fd; }
 
 	/**
