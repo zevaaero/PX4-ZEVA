@@ -66,8 +66,9 @@ private:
 		(const uavcan::ReceivedDataStructure<uavcan::equipment::power::BatteryInfo> &) >
 		BatteryInfoCbBinder;
 
+	static constexpr int BATTERY_INDEX = 1;
 	static constexpr int SAMPLE_INTERVAL_US = 20_ms; // assume higher frequency UAVCAN feedback than 50Hz
-	Battery _battery{0, this, SAMPLE_INTERVAL_US, battery_status_s::BATTERY_SOURCE_EXTERNAL};
+	Battery _battery{BATTERY_INDEX, this, SAMPLE_INTERVAL_US, battery_status_s::BATTERY_SOURCE_EXTERNAL};
 
 	uavcan::Subscriber<uavcan::equipment::power::BatteryInfo, BatteryInfoCbBinder> _sub_battery;
 };
