@@ -31,8 +31,8 @@
 #
 ############################################################################
 px4_add_module(
-	MODULE drivers__power_monitor_selector_auterion
-	MAIN power_monitor_selector_auterion
+	MODULE drivers__power_monitor_pm_selector_auterion
+	MAIN pm_selector_auterion
 	SRCS
 		PowerMonitorSelectorAuterion.cpp
 	DEPENDS

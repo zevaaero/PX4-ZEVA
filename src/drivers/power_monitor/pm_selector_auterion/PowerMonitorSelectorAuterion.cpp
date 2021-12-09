@@ -171,14 +171,14 @@ Driver for starting and auto-detecting different power monitors.
 
 )DESCR_STR");
 
-	PRINT_MODULE_USAGE_NAME("power_monitor_selector_auterion", "driver");
+	PRINT_MODULE_USAGE_NAME("pm_selector_auterion", "driver");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
 	return 0;
 }
 
-extern "C" __EXPORT int power_monitor_selector_auterion_main(int argc, char *argv[])
+extern "C" __EXPORT int pm_selector_auterion_main(int argc, char *argv[])
 {
 	return PowerMonitorSelectorAuterion::main(argc, argv);
 }

@@ -50,7 +50,7 @@ then
 	bmm150 -I -R 6 start
 
 	# Auto start power monitors
-	power_monitor_selector_auterion start
+	pm_selector_auterion start
 
 else
 	#FMUv5Xbase board orientation
