@@ -355,8 +355,7 @@ void MulticopterPositionControl::Run()
 
 			if (_vehicle_control_mode.flag_control_offboard_enabled) {
 
-				bool want_takeoff = _vehicle_control_mode.flag_armed && _vehicle_land_detected.landed
-						    && hrt_elapsed_time(&_setpoint.timestamp) < 1_s;
+				const bool want_takeoff = _vehicle_control_mode.flag_armed && hrt_elapsed_time(&_setpoint.timestamp) < 1_s;
 
 				if (want_takeoff && PX4_ISFINITE(_setpoint.z)
 				    && (_setpoint.z < states.position(2))) {
@@ -484,7 +483,7 @@ void MulticopterPositionControl::Run()
 			_vehicle_attitude_setpoint_pub.publish(attitude_setpoint);
 
 		} else {
-			// an update is necessary here because otherwise the takeoff state doesn't get skiped with non-altitude-controlled modes
+			// an update is necessary here because otherwise the takeoff state doesn't get skipped with non-altitude-controlled modes
 			_takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed, false, 10.f, true,
 						    time_stamp_now);
 		}
