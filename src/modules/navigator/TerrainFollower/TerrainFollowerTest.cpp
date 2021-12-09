@@ -69,7 +69,7 @@ public:
 	{
 
 		_terrain_follower.setHomeAltitude(_home_alt_amsl_m);
-		map_projection_init(&_ref, _home_global(0), _home_global(1));
+		_ref.initReference(_home_global(0), _home_global(1));
 	}
 
 	~TerrainFollowerStateSetter() {};
@@ -77,7 +77,7 @@ public:
 	matrix::Vector3<double> setCurrentPosNEU(const Vector3f &pos_NEU)
 	{
 		double lat, lon;
-		map_projection_reproject(&_ref, pos_NEU(0), pos_NEU(1), &lat, &lon);
+		_ref.reproject(pos_NEU(0), pos_NEU(1), lat, lon);
 		_terrain_follower.setCurrentPosition(Vector2d(lat, lon), pos_NEU(2) + _home_alt_amsl_m);
 		return matrix::Vector3<double> (lat, lon, pos_NEU(2) + _home_alt_amsl_m);
 	}
@@ -85,7 +85,7 @@ public:
 	mission_item_s setTargetMissionItem(Vector3f pos_NEU)
 	{
 		double lat, lon;
-		map_projection_reproject(&_ref, pos_NEU(0), pos_NEU(1), &lat, &lon);
+		_ref.reproject(pos_NEU(0), pos_NEU(1), lat, lon);
 		Vector2d target_pos_lat_lon(lat, lon);
 
 		mission_item_s target_mission_item = {};
@@ -111,7 +111,7 @@ private:
 	Vector2d _home_global = Vector2d(42.1, 8.2);
 	float _home_alt_amsl_m = 200.0;
 
-	struct map_projection_reference_s _ref = {};
+	MapProjection _ref;
 
 };
 

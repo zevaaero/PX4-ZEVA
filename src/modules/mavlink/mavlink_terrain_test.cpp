@@ -79,11 +79,10 @@ TestData::TestData(int grid_spacing, double lat_sw_conf, double lon_sw_conf, dou
 	_lat_ne_data = lat_ne + margin;
 	_lon_ne_data = lon_ne + margin;
 
-	map_projection_reference_s ref;
-	map_projection_init(&ref, _lat_sw_data, _lon_sw_data);
+	MapProjection ref(_lat_sw_data, _lon_sw_data);
 	double lat, lon;
 	// get approximate delta lat/lon for the grid spacing
-	map_projection_reproject(&ref, grid_spacing, grid_spacing, &lat, &lon);
+	ref.reproject(grid_spacing, grid_spacing, lat, lon);
 
 	double dlat = lat - _lat_sw_data;
 	double dlon = lon - _lon_sw_data;
@@ -213,8 +212,7 @@ void MavlinkTerrainTest::uploadData(TerrainUploader &uploader, TestData &dataset
 			ASSERT_LE(request_lon, 180.);
 
 			// feed in requested data
-			map_projection_reference_s ref;
-			map_projection_init(&ref, request_lat, request_lon);
+			MapProjection ref(request_lat, request_lon);
 			bool had_previous_request = false;
 			bool should_abort_request = false;
 
@@ -237,8 +235,7 @@ void MavlinkTerrainTest::uploadData(TerrainUploader &uploader, TestData &dataset
 					for (int x_block = 0; x_block < block_size; ++x_block) {
 						for (int y_block = 0; y_block < block_size; ++y_block) {
 							double lat_cur, lon_cur;
-							map_projection_reproject(&ref, x_offset + x_block * grid_spacing, y_offset + y_block * grid_spacing, &lat_cur,
-										 &lon_cur);
+							ref.reproject(x_offset + x_block * grid_spacing, y_offset + y_block * grid_spacing, lat_cur, lon_cur);
 							data.data[y_block + block_size * x_block] = dataset.lookup(lat_cur, lon_cur);
 						}
 					}
