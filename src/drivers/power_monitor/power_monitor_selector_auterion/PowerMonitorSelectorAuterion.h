@@ -65,12 +65,14 @@ private:
 
 	bool init();
 
+	int ina226_probe(uint32_t instance);
+
 	uORB::Subscription	_actuator_armed_sub{ORB_ID(actuator_armed)};		///< system armed control topic
 
 	struct Sensor {
 		const char *name;
 		const char *i2c_addr;
-		const char *bus_number;
+		const uint8_t bus_number;
 		float shunt_value;
 		bool started;
 	};
@@ -82,28 +84,28 @@ private:
 		{
 			.name = "ina226",
 			.i2c_addr = "0x41",
-			.bus_number = "1",
+			.bus_number = 1,
 			.shunt_value = 0.0008f,
 			.started = false
 		},
 		{
 			.name = "ina226",
 			.i2c_addr = "0x40",
-			.bus_number = "1",
+			.bus_number = 1,
 			.shunt_value = 0.0005f,
 			.started = false
 		},
 		{
 			.name = "ina226",
 			.i2c_addr = "0x41",
-			.bus_number = "2",
+			.bus_number = 2,
 			.shunt_value = 0.0008f,
 			.started = false
 		},
 		{
 			.name = "ina226",
 			.i2c_addr = "0x40",
-			.bus_number = "2",
+			.bus_number = 2,
 			.shunt_value = 0.0005f,
 			.started = false
 		}
