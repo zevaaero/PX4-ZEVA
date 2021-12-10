@@ -3390,6 +3390,7 @@ Commander::update_control_mode()
 	case vehicle_status_s::NAVIGATION_STATE_INIT:
 		// TODO: this needs to be fixed, if rate controller is disabled PX4 will hang because something is waiting or busy looping on actuator_controls!
 		// When MulticopterRateControl is publishing actuator_controls_s everything works fine, for now we just keep rate controller enabled.
+		// For the proper fix the output initialization needs to be handled as well.
 		_vehicle_control_mode.flag_control_rates_enabled = true;
 		break;
 
