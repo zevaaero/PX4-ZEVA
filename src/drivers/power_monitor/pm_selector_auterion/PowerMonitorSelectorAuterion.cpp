@@ -36,6 +36,7 @@
  */
 
 #include "PowerMonitorSelectorAuterion.h"
+#include "../ina226/ina226.h"
 
 #include <builtin/builtin.h>
 #include <sys/wait.h>
@@ -83,51 +84,89 @@ void PowerMonitorSelectorAuterion::Run()
 
 		if (!_sensors[i].started) {
 
-			const char *start_argv[] {
-				_sensors[i].name,
-				"-X", "-b",  _sensors[i].bus_number, "-a", _sensors[i].i2c_addr,
-				"-t", "1", "-q", "start", NULL
-			};
+			int ret_val = ina226_probe(i);
 
-			int status = PX4_ERROR;
-			int pid = exec_builtin(_sensors[i].name, (char **)start_argv, NULL, 0);
+			if (ret_val == PX4_OK) {
 
-			if (pid != -1) {
-				waitpid(pid, &status, WUNTRACED);
-			}
+				float current_shunt_value = 0.0f;
+				param_get(param_find("INA226_SHUNT"), &current_shunt_value);
 
-			float current_shunt_value = 0.0f;
-			param_get(param_find("INA226_SHUNT"), &current_shunt_value);
+				if (fabsf(current_shunt_value - _sensors[i].shunt_value) > FLT_EPSILON) {
+					param_set(param_find("INA226_SHUNT"), &(_sensors[i].shunt_value));
+				}
 
-			if (
-				(status == PX4_OK) &&
-				(fabsf(current_shunt_value - _sensors[i].shunt_value) > FLT_EPSILON)
-			) {
-
-				const char *stop_argv[] {
+				char bus_number[4] = {0};
+				itoa(_sensors[i].bus_number, bus_number, 10);
+				const char *start_argv[] {
 					_sensors[i].name,
-					"-X", "-b",  _sensors[i].bus_number, "-a", _sensors[i].i2c_addr,
-					"-t", "1", "-q", "stop", NULL
+					"-X", "-b", bus_number, "-a", _sensors[i].i2c_addr,
+					"-t", "1", "-q", "start", NULL
 				};
 
-				exec_builtin(_sensors[i].name, (char **)stop_argv, NULL, 0);
-				param_set(param_find("INA226_SHUNT"), &(_sensors[i].shunt_value));
-
-				status = PX4_ERROR;
-				pid =  exec_builtin(_sensors[i].name, (char **)start_argv, NULL, 0);
+				int status = PX4_ERROR;
+				int pid =  exec_builtin(_sensors[i].name, (char **)start_argv, NULL, 0);
 
 				if (pid != -1) {
 					waitpid(pid, &status, WUNTRACED);
 				}
-			}
 
-			if (status == PX4_OK) {
-				_sensors[i].started = true;
+				if (status == PX4_OK) {
+					_sensors[i].started = true;
+				}
 			}
 		}
 	}
 
 	ScheduleDelayed(RUN_INTERVAL);
+}
+
+int PowerMonitorSelectorAuterion::ina226_probe(uint32_t instance)
+{
+	struct i2c_master_s *i2c = px4_i2cbus_initialize(_sensors[instance].bus_number);
+	int ret = PX4_ERROR;
+
+	if (i2c != nullptr) {
+
+		struct i2c_msg_s msgv[2];
+
+		uint8_t txdata[1] = {0};
+		uint8_t rxdata[2] = {0};
+
+		msgv[0].frequency = I2C_SPEED_STANDARD;
+		msgv[0].addr = static_cast<uint16_t>(strtol(_sensors[instance].i2c_addr, NULL, 0));
+		msgv[0].flags = 0;
+		msgv[0].buffer = txdata;
+		msgv[0].length = sizeof(txdata);
+
+		msgv[1].frequency = I2C_SPEED_STANDARD;
+		msgv[1].addr = static_cast<uint16_t>(strtol(_sensors[instance].i2c_addr, NULL, 0));
+		msgv[1].flags = I2C_M_READ;
+		msgv[1].buffer = rxdata;
+		msgv[1].length = sizeof(rxdata);
+
+		txdata[0] = {INA226_MFG_ID};
+		ret = I2C_TRANSFER(i2c, msgv, 2);
+		uint16_t value = static_cast<uint16_t>(rxdata[1] | rxdata[0] << 8);
+
+		if (ret != PX4_OK || value != INA226_MFG_ID_TI) {
+
+			ret = PX4_ERROR;
+
+		} else {
+
+			txdata[0] = {INA226_MFG_DIEID};
+			ret = I2C_TRANSFER(i2c, msgv, 2);
+			value = static_cast<uint16_t>(rxdata[1] | rxdata[0] << 8);
+
+			if (ret != PX4_OK || value != INA226_MFG_DIE) {
+				ret = PX4_ERROR;
+			}
+		}
+
+		px4_i2cbus_uninitialize(i2c);
+	}
+
+	return ret;
 }
 
 int PowerMonitorSelectorAuterion::task_spawn(int argc, char *argv[])

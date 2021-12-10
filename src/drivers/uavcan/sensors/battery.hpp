@@ -43,8 +43,6 @@
 #include <drivers/drv_hrt.h>
 #include <px4_platform_common/module_params.h>
 #include <uORB/topics/battery_status.h>
-#include <uORB/Subscription.hpp>
-#include <uORB/topics/actuator_controls.h>
 
 using namespace time_literals;
 
@@ -73,7 +71,4 @@ private:
 	Battery _battery{BATTERY_INDEX, this, SAMPLE_INTERVAL_US, battery_status_s::BATTERY_SOURCE_EXTERNAL};
 
 	uavcan::Subscriber<uavcan::equipment::power::BatteryInfo, BatteryInfoCbBinder> _sub_battery;
-
-	actuator_controls_s  _actuator_controls{};
-	uORB::Subscription  _actuators_sub{ORB_ID(actuator_controls_0)};
 };
