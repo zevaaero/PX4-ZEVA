@@ -180,9 +180,12 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_radio_status(msg);
 		break;
 
+#if !defined(CONSTRAINED_FLASH)
+
 	case MAVLINK_MSG_ID_RADIO_STATUS_EXTENSIONS:
 		handle_message_radio_status_extensions(msg);
 		break;
+#endif // !CONSTRAINED_FLASH
 
 	case MAVLINK_MSG_ID_MANUAL_CONTROL:
 		handle_message_manual_control(msg);
@@ -1685,6 +1688,7 @@ MavlinkReceiver::handle_message_radio_status(mavlink_message_t *msg)
 void
 MavlinkReceiver::handle_message_radio_status_extensions(mavlink_message_t *msg)
 {
+#if !defined(CONSTRAINED_FLASH)
 	mavlink_radio_status_extensions_t rstatus;
 	mavlink_msg_radio_status_extensions_decode(msg, &rstatus);
 
@@ -1699,6 +1703,7 @@ MavlinkReceiver::handle_message_radio_status_extensions(mavlink_message_t *msg)
 	status.air_time = rstatus.air_time;
 
 	_radio_status_extensions_pub.publish(status);
+#endif // !CONSTRAINED_FLASH
 }
 
 void
