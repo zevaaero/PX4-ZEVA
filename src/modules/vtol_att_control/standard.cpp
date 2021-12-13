@@ -338,8 +338,6 @@ void Standard::update_mc_state()
 void Standard::update_fw_state()
 {
 	VtolType::update_fw_state();
-
-	VtolType::set_alternate_motor_state(motor_state::DISABLED);
 }
 
 /**
