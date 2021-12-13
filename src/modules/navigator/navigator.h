@@ -373,6 +373,8 @@ public:
 	void	stop_capturing_images();
 	void	disable_camera_trigger();
 
+	void 		calculate_breaking_stop(double &lat, double &lon, float &yaw);
+
 private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad,	/**< loiter radius for fixedwing */
