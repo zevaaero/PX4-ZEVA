@@ -72,13 +72,16 @@ void ManualControl::Run()
 		updateParams();
 
 		_stick_arm_hysteresis.set_hysteresis_time_from(false, _param_com_rc_arm_hyst.get() * 1_ms);
-		_stick_disarm_hysteresis.set_hysteresis_time_from(false, _param_com_rc_arm_hyst.get() * 1_ms);
+		_stick_disarm_hysteresis_ground.set_hysteresis_time_from(false, _param_com_rc_arm_hyst.get() * 1_ms);
+		_stick_disarm_hysteresis_in_air.set_hysteresis_time_from(false, _param_rc_disarm_air_hyst.get() * 1_ms);
 		_stick_kill_hysteresis.set_hysteresis_time_from(false, 10_s);
 		_button_hysteresis.set_hysteresis_time_from(false, _param_com_rc_arm_hyst.get() * 1_ms);
 
 		_selector.setRcInMode(_param_com_rc_in_mode.get());
 		_selector.setTimeout(_param_com_rc_loss_t.get() * 1_s);
 	}
+
+	_vehicle_land_detected_sub.update();
 
 	const hrt_abstime now = hrt_absolute_time();
 	_selector.updateValidityOfChosenInput(now);
@@ -247,7 +250,8 @@ void ManualControl::Run()
 		_z_diff.reset();
 		_r_diff.reset();
 		_stick_arm_hysteresis.set_state_and_update(false, now);
-		_stick_disarm_hysteresis.set_state_and_update(false, now);
+		_stick_disarm_hysteresis_ground.set_state_and_update(false, now);
+		_stick_disarm_hysteresis_in_air.set_state_and_update(false, now);
 		_stick_kill_hysteresis.set_state_and_update(false, now);
 		_button_hysteresis.set_state_and_update(false, now);
 	}
@@ -276,10 +280,13 @@ void ManualControl::processStickGestures(const manual_control_setpoint_s &input)
 	// Disarm gesture
 	const bool left_stick_lower_left = (input.z < 0.1f) && (input.r < -0.9f);
 
-	const bool previous_stick_disarm_hysteresis = _stick_disarm_hysteresis.get_state();
-	_stick_disarm_hysteresis.set_state_and_update(left_stick_lower_left && right_stick_centered, input.timestamp);
+	systemlib::Hysteresis &disarm_hysteresis = _vehicle_land_detected_sub.get().landed ? _stick_disarm_hysteresis_ground :
+			_stick_disarm_hysteresis_in_air;
+	const bool previous_stick_disarm_hysteresis = disarm_hysteresis.get_state();
+	_stick_disarm_hysteresis_ground.set_state_and_update(left_stick_lower_left && right_stick_centered, input.timestamp);
+	_stick_disarm_hysteresis_in_air.set_state_and_update(left_stick_lower_left && right_stick_centered, input.timestamp);
 
-	if (_param_man_arm_gesture.get() && !previous_stick_disarm_hysteresis && _stick_disarm_hysteresis.get_state()) {
+	if (_param_man_arm_gesture.get() && !previous_stick_disarm_hysteresis && disarm_hysteresis.get_state()) {
 		sendActionRequest(action_request_s::ACTION_DISARM, action_request_s::SOURCE_RC_STICK_GESTURE);
 	}
 

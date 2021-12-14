@@ -46,6 +46,7 @@
 #include <uORB/topics/manual_control_switches.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/Publication.hpp>
 #include <uORB/SubscriptionInterval.hpp>
 #include <uORB/SubscriptionCallback.hpp>
@@ -95,9 +96,11 @@ private:
 		{this, ORB_ID(manual_control_input), 2},
 	};
 	uORB::SubscriptionCallbackWorkItem _manual_control_switches_sub{this, ORB_ID(manual_control_switches)};
+	uORB::SubscriptionData<vehicle_land_detected_s> _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
 
 	systemlib::Hysteresis _stick_arm_hysteresis{false};
-	systemlib::Hysteresis _stick_disarm_hysteresis{false};
+	systemlib::Hysteresis _stick_disarm_hysteresis_ground{false};
+	systemlib::Hysteresis _stick_disarm_hysteresis_in_air{false};
 	systemlib::Hysteresis _stick_kill_hysteresis{false};
 	systemlib::Hysteresis _button_hysteresis{false};
 
@@ -123,6 +126,7 @@ private:
 		(ParamFloat<px4::params::COM_RC_STICK_OV>) _param_com_rc_stick_ov,
 		(ParamBool<px4::params::MAN_ARM_GESTURE>) _param_man_arm_gesture,
 		(ParamInt<px4::params::COM_RC_ARM_HYST>) _param_com_rc_arm_hyst,
+		(ParamInt<px4::params::COM_RC_DARM_A_H>) _param_rc_disarm_air_hyst,
 		(ParamBool<px4::params::COM_ARM_SWISBTN>) _param_com_arm_swisbtn,
 		(ParamInt<px4::params::COM_FLTMODE1>) _param_fltmode_1,
 		(ParamInt<px4::params::COM_FLTMODE2>) _param_fltmode_2,
