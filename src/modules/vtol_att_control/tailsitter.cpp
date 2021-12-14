@@ -287,9 +287,6 @@ void Tailsitter::waiting_on_tecs()
 void Tailsitter::update_fw_state()
 {
 	VtolType::update_fw_state();
-
-
-	VtolType::set_alternate_motor_state(motor_state::DISABLED);
 }
 
 /**
