@@ -1047,6 +1047,8 @@ PARAM_DEFINE_FLOAT(EKF2_RNG_PITCH, 0.0f);
 /**
  * Range sensor aid.
  *
+ * WARNING: Deprecated, use MPC_ALT_MODE instead. This feature will be removed in the next release
+ *
  * If this parameter is enabled then the estimator will make use of the range finder measurements
  * to estimate it's height even if range sensor is not the primary height source. It will only do so if conditions
  * for range measurement fusion are met. This enables the range finder to be used during low speed and low altitude
@@ -1062,7 +1064,7 @@ PARAM_DEFINE_FLOAT(EKF2_RNG_PITCH, 0.0f);
  * @value 0 Range aid disabled
  * @value 1 Range aid enabled
  */
-PARAM_DEFINE_INT32(EKF2_RNG_AID, 1);
+PARAM_DEFINE_INT32(EKF2_RNG_AID, 0);
 
 /**
  * Maximum horizontal velocity allowed for range aid mode.
