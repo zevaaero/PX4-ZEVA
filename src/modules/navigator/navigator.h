@@ -228,7 +228,7 @@ public:
 
 	bool isFlyingVtolHomeLandApproach() { return _navigation_mode == &_vtol_land;}
 
-	land_approaches_s getVtolHomeLandArea() { return  _vtol_home_land_approaches;}
+	const land_approaches_s &getVtolHomeLandArea() { return  _vtol_home_land_approaches;}
 
 	/**
 	 * Get the cruising speed
