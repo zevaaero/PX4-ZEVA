@@ -2211,7 +2211,7 @@ void Mission::replay_cached_commands()
 		issue_command(_last_camera_mode_command);
 	}
 
-	if (_last_gimbal_configure_command.nav_cmd > 0) {
+	if (_last_camera_trigger_command.nav_cmd > 0) {
 		issue_command(_last_camera_trigger_command);
 	}
 }
