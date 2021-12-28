@@ -110,3 +110,11 @@ jobs:
             --model ${{ matrix.config.model }} \
             --build-dir build/px4_sitl_rtps/ \
             $HOME/ci_gazebo_models/configs/sitl.json
+    - name: Upload custom SITL logs as artifacts
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: flight-logs-${{ matrix.config.model }}
+        path: build/px4_sitl_rtps/tmp_mavsdk_tests/rootfs/log/
+        retention-days: 5
+        
