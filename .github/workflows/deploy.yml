@@ -69,7 +69,7 @@ jobs:
         path: distro/
         title: "Update FMU binaries to latest develop | ${{ steps.update_binaries.outputs.timestamp }}"
         body: "Updates FMU binaries from latest APX4 develop build. Created in ${{ steps.update_binaries.outputs.timestamp }}."
-        reviewers: DanielePettenuzzo,QuentinVecchio
+        reviewers: DanielePettenuzzo,ThomasDebrunner
         commit-message: "src: fmu: update binaries to latest develop"
         author: auterionci <ci@auterion.com>
         committer: auterionci <ci@auterion.com>

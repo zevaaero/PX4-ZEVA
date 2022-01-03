@@ -145,7 +145,7 @@ jobs:
         path: distro/
         title: "Release ${{ steps.references.outputs.release }} FMU binaries update | ${{ steps.references.outputs.timestamp }}"
         body: "Updates FMU binaries for release ${{ steps.references.outputs.release }}, created in ${{ steps.references.outputs.timestamp }}."
-        reviewers: DanielePettenuzzo,QuentinVecchio
+        reviewers: DanielePettenuzzo,ThomasDebrunner
         commit-message: "src: fmu: update binaries for release ${{ steps.references.outputs.release }}"
         author: auterionci <ci@auterion.com>
         committer: auterionci <ci@auterion.com>
