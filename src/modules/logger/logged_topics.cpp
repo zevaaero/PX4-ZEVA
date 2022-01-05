@@ -62,7 +62,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("commander_state");
 	add_topic("cpuload");
 	add_topic("esc_status", 250);
-	add_topic("failure_detector_status");
+	add_topic("failure_detector_status", 100);
 	add_topic("follow_target_status", 100);
 	add_topic("follow_target", 500);
 	add_topic("follow_target_estimator", 100);
