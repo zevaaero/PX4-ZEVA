@@ -56,7 +56,7 @@ struct loiter_point_s {
 		loiter_radius_m = NAN;
 	}
 
-	bool isValid() { return PX4_ISFINITE(lat) && PX4_ISFINITE(lon) && PX4_ISFINITE(height_m); }
+	bool isValid() const { return PX4_ISFINITE(lat) && PX4_ISFINITE(lon) && PX4_ISFINITE(height_m); }
 };
 
 // defines one land location and a maximum of num_approaches_max loiter points
@@ -78,7 +78,7 @@ struct land_approaches_s {
 		}
 	}
 
-	bool isAnyApproachValid()
+	bool isAnyApproachValid() const
 	{
 		for (uint8_t i = 0; i < num_approaches_max; i++) {
 			if (approaches[i].isValid()) {
@@ -89,7 +89,7 @@ struct land_approaches_s {
 		return false;
 	}
 
-	float getMaxDistLandToLoiterCircle()
+	float getMaxDistLandToLoiterCircle() const
 	{
 		// returns negative infinity if there is no valid approach
 		float dist_max = -INFINITY;
