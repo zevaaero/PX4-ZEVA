@@ -105,6 +105,7 @@ jobs:
           test/mavsdk_tests/mavsdk_test_runner.py \
             --speed-factor 1 \
             --abort-early \
+            --verbose \
             --model ${{ matrix.config.model }} \
             --build-dir build/px4_sitl_rtps/ \
             ci_gazebo_models/configs/sitl.json
