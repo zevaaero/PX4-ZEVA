@@ -146,6 +146,16 @@ add_custom_command(
 # copy extras into ROMFS
 set(extras_dependencies)
 
+# copy board manifest if configured
+if(manifest_bin)
+	list(APPEND extras_dependencies
+		copy_manifest_bin
+		${manifest_bin}
+	)
+	file(RELATIVE_PATH manifest_bin_relative ${PX4_SOURCE_DIR} ${manifest_bin})
+	message(STATUS "ROMFS:  Adding ${manifest_bin_relative} -> /etc/extras/${manifest_bin_name}")
+endif()
+
 # copy px4io binary if configured
 if(config_io_board)
 	list(APPEND extras_dependencies
