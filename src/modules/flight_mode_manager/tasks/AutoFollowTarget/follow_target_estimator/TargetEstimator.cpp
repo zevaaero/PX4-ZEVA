@@ -226,9 +226,8 @@ void TargetEstimator::measurement_update(follow_target_s follow_target)
 	// Decompose follow_target message into the individual measurements for position and velocity
 	const Vector3f vel_measured{follow_target.vx, follow_target.vy, follow_target.vz};
 	Vector3f pos_measured{NAN, NAN, -(follow_target.alt - _vehicle_local_position.ref_alt)};
-	map_projection_init(&_reference_position, _vehicle_local_position.ref_lat, _vehicle_local_position.ref_lon);
-	map_projection_project(&_reference_position,
-			       follow_target.lat, follow_target.lon, &pos_measured(0), &pos_measured(1));
+	_reference_position.initReference(_vehicle_local_position.ref_lat, _vehicle_local_position.ref_lon);
+	_reference_position.project(follow_target.lat, follow_target.lon, pos_measured(0), pos_measured(1));
 
 	// Initialize filter if necessary
 	if (_last_follow_target_timestamp == 0) {
@@ -321,8 +320,8 @@ Vector3<double> TargetEstimator::get_lat_lon_alt_est() const
 	Vector3<double> lat_lon_alt{(double)NAN, (double)NAN, (double)NAN};
 
 	if (PX4_ISFINITE(_filter_states.pos_ned_est(0)) && PX4_ISFINITE(_filter_states.pos_ned_est(0))) {
-		map_projection_reproject(&_reference_position, _filter_states.pos_ned_est(0), _filter_states.pos_ned_est(1),
-					 &lat_lon_alt(0), &lat_lon_alt(1));
+		_reference_position.reproject(_filter_states.pos_ned_est(0), _filter_states.pos_ned_est(1),
+					      lat_lon_alt(0), lat_lon_alt(1));
 		lat_lon_alt(2) = -(double)_filter_states.pos_ned_est(2) + (double)_vehicle_local_position.ref_alt;
 	}
 

@@ -191,7 +191,7 @@ protected:
 	filter_gains_s _filter_gains;
 	filter_states_s _filter_states;
 
-	map_projection_reference_s _reference_position{};
+	MapProjection _reference_position{};
 	vehicle_local_position_s _vehicle_local_position{};
 
 	hrt_abstime _last_iteration_timestamp{0};
