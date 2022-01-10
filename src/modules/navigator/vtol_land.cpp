@@ -158,29 +158,13 @@ VtolLand::on_active()
 	}
 }
 
-void VtolLand::generate_waypoint_from_heading(struct position_setpoint_s *setpoint, float yaw)
-{
-	waypoint_from_heading_and_distance(
-		_navigator->get_global_position()->lat, _navigator->get_global_position()->lon,
-		yaw, _navigator->getSafeAreaRadiusMeter(),
-		&(setpoint->lat), &(setpoint->lon));
-	setpoint->type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-	setpoint->yaw = yaw;
-}
-
 void
 VtolLand::set_loiter_position()
 {
-	double lat, lon;
 
-	waypoint_from_heading_and_distance(
-		_land_pos_lat_lon(0), _land_pos_lat_lon(1),
-		getBestLandingHeading(), _navigator->getSafeAreaRadiusMeter() * cosf(M_PI_F / _navigator->getNumSectors()) -
-		_param_loiter_radius_m.get(),
-		&lat, &lon);
-
-	_loiter_pos_lat_lon(0) = lat;
-	_loiter_pos_lat_lon(1) = lon;
+	_land_approach = chooseBestLandingApproach();
+	_loiter_pos_lat_lon(0) = _land_approach.lat;
+	_loiter_pos_lat_lon(1) = _land_approach.lon;
 
 	_mission_item.lat  = _loiter_pos_lat_lon(0);
 	_mission_item.lon = _loiter_pos_lat_lon(1);
@@ -212,28 +196,34 @@ VtolLand::set_loiter_position()
 	_navigator->set_position_setpoint_triplet_updated();
 }
 
-float VtolLand::getBestLandingHeading()
+loiter_point_s VtolLand::chooseBestLandingApproach()
 {
 	wind_s *wind = _navigator->get_wind();
 	const float wind_direction = atan2f(wind->windspeed_east, wind->windspeed_north);
-	uint8_t min_index = 0;
-	float delta_heading_prev = INFINITY;
-	const float sector_angle = 2 * M_PI_F / _navigator->getNumSectors();
+	int8_t min_index = -1;
+	float wind_angle_prev = INFINITY;
 
-	for (int i = 0; i < 8; i++) {
-		if (_navigator->getSafeAreaSectorClearBitmap() & (1 << i)) {
+	land_approaches_s land_approaches = _navigator->getVtolHomeLandArea();
 
-			const float center_heading_sector = sector_angle * i + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) +
-							    sector_angle * 0.5f;
-			const float delta_heading = wrap_pi(wind_direction - center_heading_sector);
+	for (int i = 0; i < land_approaches.num_approaches_max; i++) {
 
-			if (fabsf(delta_heading) < delta_heading_prev) {
+		if (land_approaches.approaches[i].isValid()) {
+			const float wind_angle = wrap_pi(get_bearing_to_next_waypoint(_navigator->get_home_position()->lat,
+							 _navigator->get_home_position()->lon, land_approaches.approaches[i].lat,
+							 land_approaches.approaches[i].lon) - wind_direction);
+
+			if (fabsf(wind_angle) < wind_angle_prev) {
 				min_index = i;
-				delta_heading_prev = fabsf(delta_heading);
 			}
+
 		}
 	}
 
-	return wrap_pi(sector_angle * min_index + math::radians(_navigator->getSafeAreaSectorOffsetDegrees()) + sector_angle *
-		       0.5f);
+	if (min_index >= 0) {
+		return land_approaches.approaches[min_index];
+
+	} else {
+
+		return loiter_point_s();
+	}
 }

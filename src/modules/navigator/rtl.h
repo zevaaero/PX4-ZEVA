@@ -106,6 +106,8 @@ public:
 
 	bool getDestinationTypeMissionLanding() { return _destination.type == RTL_DESTINATION_MISSION_LANDING; }
 
+	bool getDestinationTypeHomeLanding() { return _destination.type == RTL_DESTINATION_HOME; }
+
 private:
 
 	void set_rtl_item(bool do_user_feedback);

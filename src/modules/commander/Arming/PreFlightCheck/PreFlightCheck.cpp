@@ -265,6 +265,14 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 		failed = true;
 	}
 
+	if (status.failsafe) {
+		if (report_failures) {
+			mavlink_log_critical(mavlink_log_pub, "Arming Denied: vehicle is in failsafe mode. Switch flight mode first");
+		}
+
+		failed = true;
+	}
+
 	failed = failed || !manualControlCheck(mavlink_log_pub, report_failures);
 	failed = failed || !cpuResourceCheck(mavlink_log_pub, report_failures);
 	failed = failed || !parachuteCheck(mavlink_log_pub, report_failures, status_flags);

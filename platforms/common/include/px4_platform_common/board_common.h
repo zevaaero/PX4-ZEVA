@@ -82,6 +82,10 @@
 #define BOARD_NUM_SPI_CFG_HW_VERSIONS 1
 #endif
 
+#ifndef BOARD_MTD_NUM_EEPROM
+#define BOARD_MTD_NUM_EEPROM 1
+#endif
+
 /* ADC defining tools
  * We want to normalize the V5 Sensing to V = (adc_dn) * ADC_V5_V_FULL_SCALE/(2 ^ ADC_BITS) * ADC_V5_SCALE)
  */
@@ -255,7 +259,7 @@
 
 #if defined(BOARD_HAS_HW_VERSIONING)
 #  define BOARD_HAS_VERSIONING 1
-#  define HW_VER_REV(v,r)       ((uint32_t)((v) & 0xff) << 8) | ((uint32_t)(r) & 0xff)
+#  define HW_VER_REV(v,r)       ((uint32_t)((v) & 0xffff) << 16) | ((uint32_t)(r) & 0xffff)
 #endif
 
 /* Default LED logical to color mapping */

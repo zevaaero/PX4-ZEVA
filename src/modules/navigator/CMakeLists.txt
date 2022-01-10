@@ -50,7 +50,6 @@ px4_add_module(
 		mission_feasibility_checker.cpp
 		geofence.cpp
 		enginefailure.cpp
-		follow_target.cpp
 		terrain_follower_wrapper.cpp
 		vtol_takeoff.cpp
 		vtol_land.cpp

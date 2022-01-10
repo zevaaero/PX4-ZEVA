@@ -85,8 +85,7 @@ Navigator::Navigator() :
 	_land(this),
 	_precland(this),
 	_rtl(this, _terrain_follower),
-	_engineFailure(this),
-	_follow_target(this)
+	_engineFailure(this)
 {
 	/* Create a list of our possible navigation types */
 	_navigation_mode_array[0] = &_mission;
@@ -96,9 +95,8 @@ Navigator::Navigator() :
 	_navigation_mode_array[4] = &_takeoff;
 	_navigation_mode_array[5] = &_land;
 	_navigation_mode_array[6] = &_precland;
-	_navigation_mode_array[7] = &_follow_target;
-	_navigation_mode_array[8] = &_vtol_takeoff;
-	_navigation_mode_array[9] = &_vtol_land;
+	_navigation_mode_array[7] = &_vtol_takeoff;
+	_navigation_mode_array[8] = &_vtol_land;
 
 	_handle_back_trans_dec_mss = param_find("VT_B_DEC_MSS");
 	_handle_reverse_delay = param_find("VT_B_REV_DEL");
@@ -111,9 +109,6 @@ Navigator::Navigator() :
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
 
 	reset_triplets();
-
-	// for safety we require the user to upload a new vtol safe area on every boot to make sure
-	clearSafeAreaFromStorage();
 }
 
 Navigator::~Navigator()
@@ -428,22 +423,7 @@ Navigator::run()
 						if (_vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
 						    && (get_position_setpoint_triplet()->current.type != position_setpoint_s::SETPOINT_TYPE_TAKEOFF)) {
 
-							// For multirotors we need to account for the braking distance, otherwise the vehicle will overshoot and go back
-							double lat, lon;
-							float course_over_ground = atan2f(_local_pos.vy, _local_pos.vx);
-
-							// predict braking distance
-
-							const float velocity_hor_abs = sqrtf(_local_pos.vx * _local_pos.vx + _local_pos.vy * _local_pos.vy);
-
-							float multirotor_braking_distance = math::trajectory::computeBrakingDistanceFromVelocity(velocity_hor_abs,
-											    _param_mpc_jerk_auto, _param_mpc_acc_hor, 0.6f * _param_mpc_jerk_auto);
-
-							waypoint_from_heading_and_distance(get_global_position()->lat, get_global_position()->lon, course_over_ground,
-											   multirotor_braking_distance, &lat, &lon);
-							rep->current.lat = lat;
-							rep->current.lon = lon;
-							rep->current.yaw = get_local_position()->heading;
+							calculate_breaking_stop(rep->current.lat, rep->current.lon, rep->current.yaw);
 							rep->current.yaw_valid = true;
 
 						} else {
@@ -556,6 +536,7 @@ Navigator::run()
 					// If one of them is non-finite set the current global position as target
 					rep->current.lat = get_global_position()->lat;
 					rep->current.lon = get_global_position()->lon;
+
 				}
 
 				rep->current.alt = cmd.param7;
@@ -569,8 +550,13 @@ Navigator::run()
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_NAV_VTOL_TAKEOFF) {
 
-				readSafeAreaFromStorage();
 				_vtol_takeoff.setTransitionAltitudeAbsolute(cmd.param7);
+
+				// after the transition the vehicle will establish on a loiter at this position
+				_vtol_takeoff.setLoiterLocation(matrix::Vector2d(cmd.param5, cmd.param6));
+
+				// loiter height is the height above takeoff altitude at which the vehicle will establish on a loiter circle
+				_vtol_takeoff.setLoiterHeight(cmd.param1);
 
 			} else if (cmd.command == vehicle_command_s::VEHICLE_CMD_DO_LAND_START) {
 
@@ -693,10 +679,10 @@ Navigator::run()
 
 				if (rtl_activated) {
 					_use_vtol_land_navigation_mode_for_rtl = _vstatus.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING;
-					readSafeAreaFromStorage();
+					readVtolHomeLandApproachesFromStorage();
 				}
 
-				if (hasSafeArea() && _use_vtol_land_navigation_mode_for_rtl) {
+				if (hasVtolHomeLandApproach() && _use_vtol_land_navigation_mode_for_rtl && _rtl.getDestinationTypeHomeLanding()) {
 					if (_navigation_mode == &_vtol_takeoff && !get_mission_result()->finished) {
 						// if we are in the middle of a vtol takeoff then let's wait until we have established the loiter
 						navigation_mode_new = &_vtol_takeoff;
@@ -831,11 +817,6 @@ Navigator::run()
 			navigation_mode_new = &_engineFailure;
 			break;
 
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_FOLLOW_TARGET:
-			_pos_sp_triplet_published_invalid_once = false;
-			navigation_mode_new = &_follow_target;
-			break;
-
 		case vehicle_status_s::NAVIGATION_STATE_MANUAL:
 		case vehicle_status_s::NAVIGATION_STATE_ACRO:
 		case vehicle_status_s::NAVIGATION_STATE_ALTCTL:
@@ -852,17 +833,10 @@ Navigator::run()
 			break;
 		}
 
-// Do not execute any state machine while we are disarmed
+		// Do not execute any state machine while we are disarmed
 		if (_vstatus.arming_state != vehicle_status_s::ARMING_STATE_ARMED) {
 			navigation_mode_new = nullptr;
 
-			if (_clear_safe_area_on_disarm) {
-				clearSafeAreaFromStorage();
-				_clear_safe_area_on_disarm = false;
-			}
-
-		} else { // armed
-			_clear_safe_area_on_disarm = true;
 		}
 
 		if (_vstatus.nav_state != _previous_nav_state) {
@@ -957,19 +931,19 @@ Navigator::run()
 
 void Navigator::geofence_breach_check(bool &have_geofence_position_data)
 {
-	bool vtol_outside_safe_area = true;
+	bool on_home_land_approach = false;
 
-	if (safeAreaActive() && _home_pos.valid_hpos) {
-		// if we are maneuvering inside a safe area, then ignore geofence breach avoidance
-		// otherwise it will disrupt takeoff/landing
-		// add 1.1 factor to get some margin
+	if (isFlyingVtolHomeLandApproach() && _home_pos.valid_hpos) {
+		// if we are executing a vtol land close to the home positon we ignore the geofence
+		// otherwise it will disrupt the landing and cause a dangerous situation
+		// add 1.1 factor safety margin
 		const float dist_to_home = get_distance_to_next_waypoint(_global_pos.lat, _global_pos.lon, _home_pos.lat,
 					   _home_pos.lon);
-		vtol_outside_safe_area = dist_to_home > 1.1f * getSafeAreaRadiusMeter();
+		on_home_land_approach = dist_to_home < 1.1f * _vtol_home_land_approaches.getMaxDistLandToLoiterCircle();
 	}
 
 	if (have_geofence_position_data &&
-	    vtol_outside_safe_area &&
+	    !on_home_land_approach &&
 	    (_geofence.getGeofenceAction() != geofence_result_s::GF_ACTION_NONE) &&
 	    (hrt_elapsed_time(&_last_geofence_check) > GEOFENCE_CHECK_INTERVAL_US)) {
 
@@ -1908,77 +1882,73 @@ bool Navigator::geofence_allows_position(const vehicle_global_position_s &pos)
 	return true;
 }
 
-void Navigator::readSafeAreaFromStorage()
+void Navigator::readVtolHomeLandApproachesFromStorage()
 {
 
-	_sector_bitmap = 0;
-	_offset_degrees = 0;
+	// go through all mission items in the rally point storage. If we find a mission item of type NAV_CMD_RALLY_POINT
+	// which is within 10m of our current home position then treat ALL following mission items of type NAV_CMD_LOITER_TO_ALT which come
+	// BEFORE the next mission item of type NAV_CMD_RALLY_POINT as land approaches for the home position
 
 	mission_stats_entry_s stats;
 	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
-	int num_safe_points = 0;
+	int num_mission_items = 0;
+	bool foundHomeLandApproaches = false;
+	uint8_t sector_counter = 0;
+
+	_vtol_home_land_approaches.resetAllApproaches();
 
 	if (ret == sizeof(mission_stats_entry_s)) {
-		num_safe_points = stats.num_items;
+		num_mission_items = stats.num_items;
 	}
 
-	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
-		mission_safe_point_s mission_safe_point;
+	for (int current_seq = 1; current_seq <= num_mission_items; ++current_seq) {
+		mission_item_s mission_item{};
 
-		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
-		    sizeof(mission_safe_point_s)) {
+		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_item, sizeof(mission_item_s)) !=
+		    sizeof(mission_item_s)) {
 			PX4_ERR("dm_read failed");
-			continue;
-		}
-
-		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
-			_sector_bitmap = mission_safe_point.safe_area_sector_clear_bitmap;
-			_offset_degrees = mission_safe_point.safe_area_first_sector_offset_degrees;
-			_safe_area_radius_m = mission_safe_point.safe_area_radius;
 			break;
 		}
 
+		if (mission_item.nav_cmd == NAV_CMD_RALLY_POINT) {
+
+			if (foundHomeLandApproaches) {
+				break;
+			}
+
+			if (!mission_item.is_mission_rally_point) {
+				foundHomeLandApproaches = true;
+				_vtol_home_land_approaches.land_location_lat_lon = matrix::Vector2d(mission_item.lat, mission_item.lon);
+			}
+
+			sector_counter = 0;
+		}
+
+		if (foundHomeLandApproaches && mission_item.nav_cmd == NAV_CMD_LOITER_TO_ALT) {
+			_vtol_home_land_approaches.approaches[sector_counter].lat = mission_item.lat;
+			_vtol_home_land_approaches.approaches[sector_counter].lon = mission_item.lon;
+			_vtol_home_land_approaches.approaches[sector_counter].height_m = mission_item.altitude;
+			_vtol_home_land_approaches.approaches[sector_counter].loiter_radius_m = mission_item.loiter_radius;
+			sector_counter++;
+		}
 	}
 }
 
-void Navigator::clearSafeAreaFromStorage()
+void Navigator::calculate_breaking_stop(double &lat, double &lon, float &yaw)
 {
-	mission_stats_entry_s stats;
-	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
-	int num_safe_points = 0;
+	// For multirotors we need to account for the braking distance, otherwise the vehicle will overshoot and go back
+	float course_over_ground = atan2f(_local_pos.vy, _local_pos.vx);
 
-	if (ret == sizeof(mission_stats_entry_s)) {
-		num_safe_points = stats.num_items;
-	}
+	// predict braking distance
 
-	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
-		mission_safe_point_s mission_safe_point;
+	const float velocity_hor_abs = sqrtf(_local_pos.vx * _local_pos.vx + _local_pos.vy * _local_pos.vy);
 
-		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
-		    sizeof(mission_safe_point_s)) {
-			PX4_ERR("dm_read failed");
-			continue;
-		}
+	float multirotor_braking_distance = math::trajectory::computeBrakingDistanceFromVelocity(velocity_hor_abs,
+					    _param_mpc_jerk_auto, _param_mpc_acc_hor, 0.6f * _param_mpc_jerk_auto);
 
-		if (mission_safe_point.nav_cmd == NAV_CMD_VTOL_SAFE_AREA) {
-			mission_safe_point.safe_area_sector_clear_bitmap = 0;
-			mission_safe_point.safe_area_first_sector_offset_degrees = 0;
-			mission_safe_point.safe_area_radius = -1;
-			_sector_bitmap = mission_safe_point.safe_area_sector_clear_bitmap;
-			_offset_degrees = mission_safe_point.safe_area_first_sector_offset_degrees;
-			_safe_area_radius_m = mission_safe_point.safe_area_radius;
-
-			const bool write_failed = dm_write(DM_KEY_SAFE_POINTS, current_seq, DM_PERSIST_POWER_ON_RESET, &mission_safe_point,
-							   sizeof(struct mission_safe_point_s)) != sizeof(struct mission_safe_point_s);
-
-			if (write_failed) {
-				PX4_ERR("Failed to clear VTOL safe area");
-			}
-
-			break;
-		}
-
-	}
+	waypoint_from_heading_and_distance(get_global_position()->lat, get_global_position()->lon, course_over_ground,
+					   multirotor_braking_distance, &lat, &lon);
+	yaw = get_local_position()->heading;
 }
 
 int Navigator::print_usage(const char *reason)

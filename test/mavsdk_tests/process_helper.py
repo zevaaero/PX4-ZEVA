@@ -68,22 +68,24 @@ class Runner:
 
     def process_output(self) -> None:
         assert self.process.stdout is not None
+        while True:
+            line = self.process.stdout.readline()
+            if not line and \
+                    (self.stop_thread.is_set() or self.poll is not None):
+                break
+            if not line or line == "\n":
+                continue
+            line = self.add_prefix(10, self.name, line)
+            self.output_queue.put(line)
+            self.log_fd.write(line)
+            self.log_fd.flush()
 
-        poll_obj = select.poll()
-        poll_obj.register(self.process.stdout, select.POLLIN)
+    def add_prefix(self, width: int, name: str, text: str) -> str:
+        return "[" + self.seconds() + "|" + name.ljust(width) + "] " + text
 
-        while not self.stop_thread.is_set():
-            poll_result = poll_obj.poll(0)
-            if poll_result:
-                line = self.process.stdout.readline()
-                if not line and \
-                        (self.stop_thread.is_set() or self.poll is not None):
-                    break
-                if not line or line == "\n":
-                    continue
-                self.output_queue.put(line)
-                self.log_fd.write(line)
-                self.log_fd.flush()
+    def seconds(self) -> str:
+        dt = time.time() - self.start_time
+        return "{: 8.03f}".format(dt)
 
     def poll(self) -> Optional[int]:
         return self.process.poll()
@@ -343,8 +345,12 @@ class TestRunner(Runner):
         super().__init__(log_dir, model, case, verbose)
         self.name = "mavsdk_tests"
         self.cwd = workspace_dir
-        self.cmd = os.path.join(workspace_dir, build_dir,
-                                "mavsdk_tests/mavsdk_tests")
-        self.args = ["--url", mavlink_connection,
+        self.cmd = "nice"
+        self.args = ["-5",
+                     os.path.join(
+                         workspace_dir,
+                         build_dir,
+                         "mavsdk_tests/mavsdk_tests"),
+                     "--url", mavlink_connection,
                      "--speed-factor", str(speed_factor),
                      case]

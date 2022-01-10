@@ -44,11 +44,11 @@ jobs:
 
     # Clone model database
     - name: Clone model database
-      run: git clone --recursive git@github.com:Auterion/ci_gazebo_models.git $HOME/ci_gazebo_models
+      run: git clone --recursive git@github.com:Auterion/ci_gazebo_models.git ci_gazebo_models
     - name: Checkout matching version
       run: |
-          cd $HOME/ci_gazebo_models
-          git checkout 8f8f58be7edd6f5b06a7b11b0b196b9a188d24ac
+          cd ci_gazebo_models
+          git checkout 058c1a84b7dd5602c0358ee19d821f2eb068455b
           git submodule update --init --recursive
           cd -
     - name: Prepare ccache timestamp
@@ -77,9 +77,7 @@ jobs:
         PX4_CMAKE_BUILD_TYPE: "RelWithDebInfo"
       run: export
     - name: Copy Custom airframe configs
-      run: |
-          cd $HOME/ci_gazebo_models
-          source $HOME/ci_gazebo_models/setup.bash $HOME/ci_gazebo_models $GITHUB_WORKSPACE build/px4_sitl_rtps
+      run: source ci_gazebo_models/setup.bash ci_gazebo_models .
       shell: bash
     - name: Build PX4
       env:
@@ -109,4 +107,11 @@ jobs:
             --abort-early \
             --model ${{ matrix.config.model }} \
             --build-dir build/px4_sitl_rtps/ \
-            $HOME/ci_gazebo_models/configs/sitl.json
+            ci_gazebo_models/configs/sitl.json
+    - name: Upload custom SITL logs as artifacts
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: flight-logs-${{ matrix.config.model }}
+        path: build/px4_sitl_rtps/tmp_mavsdk_tests/rootfs/log/
+        retention-days: 5

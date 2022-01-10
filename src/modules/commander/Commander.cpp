@@ -509,7 +509,6 @@ static constexpr const char *battery_fault_reason_str(battery_fault_reason_t bat
 	case battery_fault_reason_t::hardware_fault: return "hardware fault";
 
 	case battery_fault_reason_t::over_temperature: return "near temperature limit";
-
 	}
 
 	return "";
@@ -594,9 +593,13 @@ static inline navigation_mode_t navigation_mode(uint8_t main_state)
 	case commander_state_s::MAIN_STATE_AUTO_PRECLAND: return navigation_mode_t::auto_precland;
 
 	case commander_state_s::MAIN_STATE_ORBIT: return navigation_mode_t::orbit;
+
+	case commander_state_s::MAIN_STATE_AUTO_VTOL_TAKEOFF: return navigation_mode_t::auto_vtol_takeoff;
+
+	case commander_state_s::MAIN_STATE_INIT: return navigation_mode_t::init;
 	}
 
-	static_assert(commander_state_s::MAIN_STATE_MAX - 1 == (int)navigation_mode_t::auto_vtol_takeoff,
+	static_assert(commander_state_s::MAIN_STATE_MAX - 1 == (int)navigation_mode_t::init,
 		      "enum definition mismatch");
 
 	return navigation_mode_t::unknown;
@@ -654,7 +657,6 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 				"Arming denied: throttle above center");
 				tune_negative(true);
 				return TRANSITION_DENIED;
-
 			}
 
 			if (!_vehicle_control_mode.flag_control_climb_rate_enabled &&
@@ -670,10 +672,10 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 		} else if (calling_reason == arm_disarm_reason_t::rc_stick
 			   || calling_reason == arm_disarm_reason_t::rc_switch
 			   || calling_reason == arm_disarm_reason_t::rc_button) {
-			mavlink_log_critical(&_mavlink_log_pub, "Arming denied: switch to manual mode first\t");
-			events::send(events::ID("commander_arm_denied_not_manual"),
+			mavlink_log_critical(&_mavlink_log_pub, "Arming denied: switch flight mode\t");
+			events::send(events::ID("commander_arm_denied_flight_mode"),
 			{events::Log::Critical, events::LogInternal::Info},
-			"Arming denied: switch to manual mode first");
+			"Arming denied: switch flight mode");
 			tune_negative(true);
 			return TRANSITION_DENIED;
 		}
@@ -764,6 +766,7 @@ Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
 {
+	_internal_state.main_state = commander_state_s::MAIN_STATE_INIT;
 	_auto_disarm_landed.set_hysteresis_time_from(false, _param_com_disarm_preflight.get() * 1_s);
 
 	_land_detector.landed = true;
@@ -1362,7 +1365,7 @@ Commander::handle_command(const vehicle_command_s &cmd)
 					/* RC calibration */
 					answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED);
 					/* disable RC control input completely */
-					_status_flags.rc_input_blocked = true;
+					_status_flags.rc_calibration_in_progress = true;
 					mavlink_log_info(&_mavlink_log_pub, "Calibration: Disabling RC input\t");
 					events::send(events::ID("commander_calib_rc_off"), events::Log::Info,
 						     "Calibration: Disabling RC input");
@@ -1412,9 +1415,9 @@ Commander::handle_command(const vehicle_command_s &cmd)
 
 				} else if ((int)(cmd.param4) == 0) {
 					/* RC calibration ended - have we been in one worth confirming? */
-					if (_status_flags.rc_input_blocked) {
+					if (_status_flags.rc_calibration_in_progress) {
 						/* enable RC control input */
-						_status_flags.rc_input_blocked = false;
+						_status_flags.rc_calibration_in_progress = false;
 						mavlink_log_info(&_mavlink_log_pub, "Calibration: Restoring RC input\t");
 						events::send(events::ID("commander_calib_rc_on"), events::Log::Info,
 							     "Calibration: Restoring RC input");
@@ -1656,6 +1659,15 @@ Commander::handle_command_actuator_test(const vehicle_command_s &cmd)
 void Commander::executeActionRequest(const action_request_s &action_request)
 {
 	arm_disarm_reason_t arm_disarm_reason{};
+
+	// Silently ignore RC actions during RC calibration
+	if (_status_flags.rc_calibration_in_progress
+	    && (action_request.source == action_request_s::SOURCE_RC_STICK_GESTURE
+		|| action_request.source == action_request_s::SOURCE_RC_SWITCH
+		|| action_request.source == action_request_s::SOURCE_RC_BUTTON
+		|| action_request.source == action_request_s::SOURCE_RC_MODE_SLOT)) {
+		return;
+	}
 
 	switch (action_request.source) {
 	case action_request_s::SOURCE_RC_STICK_GESTURE: arm_disarm_reason = arm_disarm_reason_t::rc_stick; break;
@@ -2549,11 +2561,13 @@ Commander::run()
 
 				const bool mode_switch_mapped = (_param_rc_map_fltmode.get() > 0) || (_param_rc_map_mode_sw.get() > 0);
 				const bool is_mavlink = manual_control_setpoint.data_source > manual_control_setpoint_s::SOURCE_RC;
+				const bool position_is_valid = _status_flags.condition_global_position_valid
+							       || _status_flags.condition_local_position_valid;
 
-				if (!_armed.armed && (is_mavlink || !mode_switch_mapped) && (_internal_state.main_state_changes == 0)) {
-					// if there's never been a mode change force position control as initial state
-					_internal_state.main_state = commander_state_s::MAIN_STATE_POSCTL;
-					_internal_state.main_state_changes++;
+				if (!_armed.armed && (is_mavlink || !mode_switch_mapped)
+				    && (_internal_state.main_state == commander_state_s::MAIN_STATE_INIT) && position_is_valid) {
+					// if there's never been a mode change and position becomes valid switch to position mode
+					main_state_transition(_status, commander_state_s::MAIN_STATE_POSCTL, _status_flags, _internal_state);
 				}
 
 				_status.rc_signal_lost = false;
@@ -2562,8 +2576,7 @@ Commander::run()
 				_last_valid_manual_control_setpoint = manual_control_setpoint.timestamp;
 
 			} else {
-				if (_status_flags.rc_signal_found_once && !_status.rc_signal_lost
-				    && !_status_flags.condition_calibration_enabled && !_status_flags.rc_input_blocked) {
+				if (_status_flags.rc_signal_found_once && !_status.rc_signal_lost) {
 					mavlink_log_critical(&_mavlink_log_pub, "Manual control lost\t");
 					events::send(events::ID("commander_rc_lost"), {events::Log::Critical, events::LogInternal::Info},
 						     "Manual control lost");
@@ -2586,7 +2599,7 @@ Commander::run()
 			if ((_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING)
 			    && !in_low_battery_failsafe && !_geofence_warning_action_on && !in_mag_fault_failsafe && !in_data_link_loss_failsafe
 			    && _armed.armed
-			    && !_status_flags.rc_input_blocked
+			    && !_status_flags.rc_calibration_in_progress
 			    && manual_control_setpoint.valid
 			    && manual_control_setpoint.sticks_moving
 			    && override_enabled) {
@@ -3409,6 +3422,13 @@ Commander::update_control_mode()
 		_vehicle_control_mode.flag_control_velocity_enabled = true;
 		break;
 
+	case vehicle_status_s::NAVIGATION_STATE_INIT:
+		// TODO: this needs to be fixed, if rate controller is disabled PX4 will hang because something is waiting or busy looping on actuator_controls!
+		// When MulticopterRateControl is publishing actuator_controls_s everything works fine, for now we just keep rate controller enabled.
+		// For the proper fix the output initialization needs to be handled as well.
+		_vehicle_control_mode.flag_control_rates_enabled = true;
+		break;
+
 	default:
 		break;
 	}
@@ -3831,8 +3851,8 @@ void Commander::battery_status_check()
 					for (uint8_t fault_index = 0; fault_index <= static_cast<uint8_t>(battery_fault_reason_t::_max);
 					     fault_index++) {
 						if (battery.faults & (1 << fault_index)) {
-							mavlink_log_emergency(&_mavlink_log_pub, "Battery %d: %s. %s \t", index + 1,
-									      battery_fault_reason_str(static_cast<battery_fault_reason_t>(fault_index)),  _armed.armed ? "Land now!" : "");
+							mavlink_log_emergency(&_mavlink_log_pub, "Battery %d: %s. %s\t", index + 1,
+									      battery_fault_reason_str(static_cast<battery_fault_reason_t>(fault_index)), _armed.armed ? "Land now!" : "");
 
 							events::px4::enums::suggested_action_t action = _armed.armed ? events::px4::enums::suggested_action_t::land :
 									events::px4::enums::suggested_action_t::none;

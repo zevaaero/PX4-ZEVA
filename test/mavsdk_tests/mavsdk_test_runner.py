@@ -486,15 +486,12 @@ class Tester:
             runner.stop()
 
     def collect_runner_output(self) -> None:
-        max_name = max(len(runner.name) for runner in self.active_runners)
-
         for runner in self.active_runners:
             while True:
                 line = runner.get_output_line()
                 if not line:
                     break
 
-                line = self.add_name_prefix(max_name, runner.name, line)
                 self.add_to_combined_log(line)
                 if self.verbose:
                     print(line, end="")
@@ -573,10 +570,6 @@ class Tester:
             return f.read()
 
     @staticmethod
-    def add_name_prefix(width: int, name: str, text: str) -> str:
-        return colorize("[" + name.ljust(width) + "] " + text, color.RESET)
-
-    @staticmethod
     def determine_logfile_path(log_dir: str, desc: str) -> str:
         return os.path.join(log_dir, "log-{}.log".format(desc))
 
@@ -647,7 +640,7 @@ class Tester:
         else:
             return text_to_format.format(str(n) + " ")
 
-    def sigint_handler(self, sig: signal.Signals, frame: FrameType) \
+    def sigint_handler(self, sig: int, frame: Optional[FrameType]) \
             -> NoReturn:
         print("Received SIGINT")
         print("Stopping all processes ...")

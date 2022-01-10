@@ -173,7 +173,7 @@ void RTL::find_RTL_destination()
 	}
 
 	// compare to safe landing positions
-	mission_safe_point_s closest_safe_point {};
+	mission_item_s closest_safe_point {};
 	mission_stats_entry_s stats;
 	int ret = dm_read(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
 	int num_safe_points = 0;
@@ -186,15 +186,15 @@ void RTL::find_RTL_destination()
 	int closest_index = 0;
 
 	for (int current_seq = 1; current_seq <= num_safe_points; ++current_seq) {
-		mission_safe_point_s mission_safe_point;
+		mission_item_s mission_safe_point;
 
-		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_safe_point_s)) !=
-		    sizeof(mission_safe_point_s)) {
+		if (dm_read(DM_KEY_SAFE_POINTS, current_seq, &mission_safe_point, sizeof(mission_item_s)) !=
+		    sizeof(mission_item_s)) {
 			PX4_ERR("dm_read failed");
 			continue;
 		}
 
-		if (mission_safe_point.nav_cmd == NAV_CMD_RALLY_POINT) {
+		if (mission_safe_point.nav_cmd == NAV_CMD_RALLY_POINT && mission_safe_point.is_mission_rally_point == 1) {
 
 			// TODO: take altitude into account for distance measurement
 			dlat = mission_safe_point.lat - global_position.lat;
@@ -218,14 +218,14 @@ void RTL::find_RTL_destination()
 		case 0: // MAV_FRAME_GLOBAL
 			_destination.lat = closest_safe_point.lat;
 			_destination.lon = closest_safe_point.lon;
-			_destination.alt = closest_safe_point.alt;
+			_destination.alt = closest_safe_point.altitude;
 			_destination.yaw = home_landing_position.yaw;
 			break;
 
 		case 3: // MAV_FRAME_GLOBAL_RELATIVE_ALT
 			_destination.lat = closest_safe_point.lat;
 			_destination.lon = closest_safe_point.lon;
-			_destination.alt = closest_safe_point.alt + home_landing_position.alt; // alt of safe point is rel to home
+			_destination.alt = closest_safe_point.altitude + home_landing_position.alt; // alt of safe point is rel to home
 			_destination.yaw = home_landing_position.yaw;
 			break;
 

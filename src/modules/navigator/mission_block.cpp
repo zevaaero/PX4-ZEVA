@@ -548,8 +548,7 @@ MissionBlock::item_contains_position(const mission_item_s &item)
 	       item.nav_cmd == NAV_CMD_TAKEOFF ||
 	       item.nav_cmd == NAV_CMD_LOITER_TO_ALT ||
 	       item.nav_cmd == NAV_CMD_VTOL_TAKEOFF ||
-	       item.nav_cmd == NAV_CMD_VTOL_LAND ||
-	       item.nav_cmd == NAV_CMD_DO_FOLLOW_REPOSITION;
+	       item.nav_cmd == NAV_CMD_VTOL_LAND;
 }
 
 bool
@@ -669,6 +668,17 @@ MissionBlock::setLoiterItemFromCurrentPosition(struct mission_item_s *item)
 
 	item->lat = _navigator->get_global_position()->lat;
 	item->lon = _navigator->get_global_position()->lon;
+	item->altitude = _navigator->get_global_position()->alt;
+	item->loiter_radius = _navigator->get_loiter_radius();
+}
+
+void
+MissionBlock::setLoiterItemFromCurrentPositionWithBreaking(struct mission_item_s *item)
+{
+	setLoiterItemCommonFields(item);
+
+	_navigator->calculate_breaking_stop(item->lat, item->lon, item->yaw);
+
 	item->altitude = _navigator->get_global_position()->alt;
 	item->loiter_radius = _navigator->get_loiter_radius();
 }

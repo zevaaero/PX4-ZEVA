@@ -45,7 +45,6 @@
 #include <lib/mathlib/mathlib.h>
 
 #include <px4_platform_common/module_params.h>
-
 class VtolTakeoff : public MissionBlock, public ModuleParams
 {
 public:
@@ -56,6 +55,9 @@ public:
 	void on_active() override;
 
 	void setTransitionAltitudeAbsolute(const float alt_amsl) {_transition_alt_amsl = alt_amsl; }
+
+	void setLoiterLocation(matrix::Vector2d loiter_location) { _loiter_location = loiter_location; }
+	void setLoiterHeight(const float height_m) { _loiter_height = height_m; }
 
 private:
 
@@ -68,16 +70,12 @@ private:
 	} _takeoff_state;
 
 	float _transition_alt_amsl{0.f};	// absolute altitude at which vehicle will transition to forward flight
-	float _front_trans_heading_sp_rad{0.0f};
+	matrix::Vector2d _loiter_location;
+	float _loiter_height{0};
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt,
-		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_loiter_radius_m
+		(ParamFloat<px4::params::VTO_LOITER_ALT>) _param_loiter_alt
 	)
 
 	void set_takeoff_position();
-
-	void generate_waypoint_from_heading(struct position_setpoint_s *setpoint, float yaw);
-
-	float getClosestTransitionHeading();
 };

@@ -427,6 +427,7 @@ main_state_transition(const vehicle_status_s &status, const main_state_t new_mai
 
 		break;
 
+	case commander_state_s::MAIN_STATE_INIT:
 	case commander_state_s::MAIN_STATE_MAX:
 	default:
 		break;
@@ -715,7 +716,22 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
 
+		} else if (status.data_link_lost && data_link_loss_act_configured && !landed && is_armed) {
+			// failsafe: datalink is lost
+			// Trigger RTL
+			set_link_loss_nav_state(status, armed, status_flags, internal_state, data_link_loss_act, 0);
+
+			enable_failsafe(status, old_failsafe, mavlink_log_pub, event_failsafe_reason_t::no_datalink);
+
+		} else if (status.rc_signal_lost && status_flags.rc_signal_found_once && !data_link_loss_act_configured && is_armed) {
+			// Trigger failsafe on RC loss only if RC was present once before
+			// Otherwise fly without RC, as follow-target only depends on the datalink
+			enable_failsafe(status, old_failsafe, mavlink_log_pub, event_failsafe_reason_t::no_rc);
+
+			set_link_loss_nav_state(status, armed, status_flags, internal_state, rc_loss_act, 0);
+
 		} else {
+			// no failsafe, RC is not mandatory for follow_target
 			status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_FOLLOW_TARGET;
 		}
 
@@ -775,8 +791,7 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 						       || status.in_transition_mode;
 
 			// deny entering failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
-			// altitude. This is to prevent maneuvers which do not comply with the restrictions given by the VTOL safe area.
-			// the vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
+			// altitude. the vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
 			const bool deny_failsafe = status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF && in_forward_flight
 						   && !mission_finished;
 
@@ -882,6 +897,12 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 		} else {
 			status.nav_state = vehicle_status_s::NAVIGATION_STATE_OFFBOARD;
 		}
+
+		break;
+
+	case commander_state_s::MAIN_STATE_INIT:
+		status.nav_state = vehicle_status_s::NAVIGATION_STATE_INIT;
+		break;
 
 		break;
 
