@@ -27,7 +27,7 @@ bmm150 -I start
 # Possible internal Baro
 bmp388 -I -a 0x77 start
 
-if ver hwtypecmp V6X00
+if ver hwtypecmp V6X00000000
 then
 	bmp388 -I start
 else
