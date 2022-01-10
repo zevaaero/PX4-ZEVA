@@ -8,7 +8,6 @@ import subprocess
 import shutil
 import threading
 import errno
-import select
 from typing import Any, Dict, List, TextIO, Optional
 
 
