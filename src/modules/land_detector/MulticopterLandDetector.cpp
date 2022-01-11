@@ -189,8 +189,8 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 		_horizontal_movement = false; // not known
 	}
 
-	if (lpos_available && _vehicle_local_position.dist_bottom_valid) {
-		_below_gnd_effect_hgt = _vehicle_local_position.dist_bottom < _get_gnd_effect_altitude();
+	if (lpos_available && _vehicle_local_position.dist_bottom_valid && _param_lndmc_alt_gnd_effect.get() > 0) {
+		_below_gnd_effect_hgt = _vehicle_local_position.dist_bottom < _param_lndmc_alt_gnd_effect.get();
 
 	} else {
 		_below_gnd_effect_hgt = false;
@@ -332,16 +332,6 @@ float MulticopterLandDetector::_get_max_altitude()
 
 	} else {
 		return _param_lndmc_alt_max.get();
-	}
-}
-
-float MulticopterLandDetector::_get_gnd_effect_altitude()
-{
-	if (_param_lndmc_alt_gnd_effect.get() < 0.0f) {
-		return INFINITY;
-
-	} else {
-		return _param_lndmc_alt_gnd_effect.get();
 	}
 }
 
