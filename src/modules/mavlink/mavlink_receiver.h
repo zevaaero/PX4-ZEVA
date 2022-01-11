@@ -326,7 +326,6 @@ private:
 	uORB::Publication<vehicle_rates_setpoint_s>		_rates_sp_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_trajectory_bezier_s>		_trajectory_bezier_pub{ORB_ID(vehicle_trajectory_bezier)};
 	uORB::Publication<vehicle_trajectory_waypoint_s>	_trajectory_waypoint_pub{ORB_ID(vehicle_trajectory_waypoint)};
-	uORB::Publication<log_message_s>			_log_message_incoming_pub{ORB_ID(log_message_incoming)};
 	uORB::Publication<radio_status_extensions_s>		_radio_status_extensions_pub{ORB_ID(radio_status_extensions)};
 
 #if !defined(CONSTRAINED_FLASH)

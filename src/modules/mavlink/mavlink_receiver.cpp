@@ -2627,6 +2627,7 @@ MavlinkReceiver::handle_message_utm_global_position(mavlink_message_t *msg)
 	transponder_report_s t{};
 	t.timestamp = hrt_absolute_time();
 	mav_array_memcpy(t.uas_id, utm_pos.uas_id, PX4_GUID_BYTE_LENGTH);
+	t.icao_address = msg->sysid;
 	t.lat = utm_pos.lat * 1e-7;
 	t.lon = utm_pos.lon * 1e-7;
 	t.altitude = utm_pos.alt / 1000.0f;
@@ -2976,15 +2977,19 @@ void MavlinkReceiver::handle_message_generator_status(mavlink_message_t *msg)
 
 void MavlinkReceiver::handle_message_statustext(mavlink_message_t *msg)
 {
-	mavlink_statustext_t msg_statustext;
-	mavlink_msg_statustext_decode(msg, &msg_statustext);
+	if (msg->sysid == mavlink_system.sysid) {
+		// log message from the same system
 
-	if (_mavlink_statustext_handler.should_publish_previous(msg_statustext)) {
-		_log_message_incoming_pub.publish(_mavlink_statustext_handler.log_message());
-	}
+		mavlink_statustext_t statustext;
+		mavlink_msg_statustext_decode(msg, &statustext);
 
-	if (_mavlink_statustext_handler.should_publish_current(msg_statustext, hrt_absolute_time())) {
-		_log_message_incoming_pub.publish(_mavlink_statustext_handler.log_message());
+		if (_mavlink_statustext_handler.should_publish_previous(statustext)) {
+			_log_message_pub.publish(_mavlink_statustext_handler.log_message());
+		}
+
+		if (_mavlink_statustext_handler.should_publish_current(statustext, hrt_absolute_time())) {
+			_log_message_pub.publish(_mavlink_statustext_handler.log_message());
+		}
 	}
 }
 

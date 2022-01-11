@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -69,6 +69,8 @@ FixedwingPositionControl::FixedwingPositionControl(bool vtol) :
 
 	// limit to 50 Hz
 	_local_pos_sub.set_interval_ms(20);
+
+	_slew_rate_airspeed.setSlewRate(ASPD_SP_SLEW_RATE);
 
 	/* fetch initial parameter values */
 	parameters_update();
@@ -488,6 +490,7 @@ FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, c
 
 	return constrain(airspeed_setpoint, adjusted_min_airspeed, _param_fw_airspd_max.get());
 }
+
 
 void
 FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
@@ -1951,6 +1954,21 @@ FixedwingPositionControl::Run()
 						_pos_sp_triplet.current.cruising_speed = NAN; // ignored
 						_pos_sp_triplet.current.cruising_throttle = NAN; // ignored
 					}
+
+				} else if (PX4_ISFINITE(trajectory_setpoint.vx) && PX4_ISFINITE(trajectory_setpoint.vx)
+					   && PX4_ISFINITE(trajectory_setpoint.vz)) {
+					_pos_sp_triplet = {}; // clear any existing
+
+					_pos_sp_triplet.timestamp = trajectory_setpoint.timestamp;
+					_pos_sp_triplet.current.timestamp = trajectory_setpoint.timestamp;
+					_pos_sp_triplet.current.valid = true;
+					_pos_sp_triplet.current.type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+					_pos_sp_triplet.current.vx = trajectory_setpoint.vx;
+					_pos_sp_triplet.current.vy = trajectory_setpoint.vy;
+					_pos_sp_triplet.current.vz = trajectory_setpoint.vz;
+					_pos_sp_triplet.current.alt = NAN;
+					_pos_sp_triplet.current.cruising_speed = NAN; // ignored
+					_pos_sp_triplet.current.cruising_throttle = NAN; // ignored
 
 				} else {
 					mavlink_log_critical(&_mavlink_log_pub, "Invalid offboard setpoint\t");

@@ -60,6 +60,5 @@ private:
 	void cleanup();
 
 	bool _enabled{false};
-	int _fd{-1};
 };
 

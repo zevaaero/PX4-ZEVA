@@ -3,3 +3,4 @@ menuconfig DRIVERS_PPS_CAPTURE
 	default n
 	---help---
 		Enable support for pps_capture
+

@@ -172,7 +172,7 @@ void LoggedTopics::add_default_topics()
 	// log all raw sensors at minimal rate (at least 1 Hz)
 	add_topic_multi("battery_status", 200, 2);
 	add_topic_multi("differential_pressure", 1000, 2);
-	add_optional_topic_multi("distance_sensor", 1000, 2);
+	add_topic_multi("distance_sensor", 1000, 2);
 	add_topic_multi("optical_flow", 1000, 1);
 	add_optional_topic_multi("sensor_accel", 1000, 4);
 	add_optional_topic_multi("sensor_baro", 1000, 4);
@@ -206,8 +206,8 @@ void LoggedTopics::add_default_topics()
 		add_topic("actuator_servos", 100);
 		add_topic("vehicle_angular_acceleration", 20);
 		add_topic("vehicle_angular_acceleration_setpoint", 20);
-		add_topic("vehicle_thrust_setpoint", 20);
-		add_topic("vehicle_torque_setpoint", 20);
+		add_topic_multi("vehicle_thrust_setpoint", 20, 2);
+		add_topic_multi("vehicle_torque_setpoint", 20, 2);
 	}
 
 	int32_t mount_input_mode = -1;

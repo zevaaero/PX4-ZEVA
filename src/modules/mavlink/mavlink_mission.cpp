@@ -168,7 +168,7 @@ MavlinkMissionManager::update_active_mission(dm_item_t dataman_id, uint16_t coun
 		PX4_ERR("DM_KEY_MISSION_STATE lock failed");
 	}
 
-	int res = dm_write(DM_KEY_MISSION_STATE, 0, DM_PERSIST_POWER_ON_RESET, &mission, sizeof(mission_s));
+	int res = dm_write(DM_KEY_MISSION_STATE, 0, &mission, sizeof(mission_s));
 
 	/* unlock MISSION_STATE item */
 	if (dm_lock_ret == 0) {
@@ -199,6 +199,7 @@ MavlinkMissionManager::update_active_mission(dm_item_t dataman_id, uint16_t coun
 		return PX4_ERROR;
 	}
 }
+
 int
 MavlinkMissionManager::update_geofence_count(unsigned count)
 {
@@ -207,7 +208,7 @@ MavlinkMissionManager::update_geofence_count(unsigned count)
 	stats.update_counter = ++_geofence_update_counter; // this makes sure navigator will reload the fence data
 
 	/* update stats in dataman */
-	int res = dm_write(DM_KEY_FENCE_POINTS, 0, DM_PERSIST_POWER_ON_RESET, &stats, sizeof(mission_stats_entry_s));
+	int res = dm_write(DM_KEY_FENCE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
 
 	if (res == sizeof(mission_stats_entry_s)) {
 		_count[MAV_MISSION_TYPE_FENCE] = count;
@@ -234,7 +235,7 @@ MavlinkMissionManager::update_safepoint_count(unsigned count)
 	stats.update_counter = ++_safepoint_update_counter;
 
 	/* update stats in dataman */
-	int res = dm_write(DM_KEY_SAFE_POINTS, 0, DM_PERSIST_POWER_ON_RESET, &stats, sizeof(mission_stats_entry_s));
+	int res = dm_write(DM_KEY_SAFE_POINTS, 0, &stats, sizeof(mission_stats_entry_s));
 
 	if (res == sizeof(mission_stats_entry_s)) {
 		_count[MAV_MISSION_TYPE_RALLY] = count;
@@ -1170,8 +1171,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 				} else {
 					dm_item_t dm_item = _transfer_dataman_id;
 
-					write_failed = dm_write(dm_item, wp.seq, DM_PERSIST_POWER_ON_RESET, &mission_item,
-								sizeof(struct mission_item_s)) != sizeof(struct mission_item_s);
+					write_failed = dm_write(dm_item, wp.seq, &mission_item, sizeof(struct mission_item_s)) != sizeof(struct mission_item_s);
 
 					if (!write_failed) {
 						/* waypoint marked as current */
@@ -1207,7 +1207,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 				mission_fence_point.frame = mission_item.frame;
 
 				if (!check_failed) {
-					write_failed = dm_write(DM_KEY_FENCE_POINTS, wp.seq + 1, DM_PERSIST_POWER_ON_RESET, &mission_fence_point,
+					write_failed = dm_write(DM_KEY_FENCE_POINTS, wp.seq + 1, &mission_fence_point,
 								sizeof(mission_fence_point_s)) != sizeof(mission_fence_point_s);
 				}
 
@@ -1215,7 +1215,7 @@ MavlinkMissionManager::handle_mission_item_both(const mavlink_message_t *msg)
 			break;
 
 		case MAV_MISSION_TYPE_RALLY: { // Write a safe point / rally point
-				write_failed = dm_write(DM_KEY_SAFE_POINTS, wp.seq + 1, DM_PERSIST_POWER_ON_RESET, &mission_item,
+				write_failed = dm_write(DM_KEY_SAFE_POINTS, wp.seq + 1, &mission_item,
 							sizeof(mission_item)) != sizeof(mission_item);
 			}
 			break;

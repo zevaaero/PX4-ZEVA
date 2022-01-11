@@ -35,7 +35,7 @@ px4_add_module(
 	MAIN sd_stress
 	COMPILE_FLAGS
 	SRCS
-		sd_stress.c
+		sd_stress.cpp
 	DEPENDS
 	)
 

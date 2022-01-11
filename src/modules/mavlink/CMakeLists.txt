@@ -122,7 +122,7 @@ endif()
 
 px4_add_functional_gtest(SRC mavlink_terrain_test.cpp
 	EXTRA_SRCS terrain.cpp
-	INCLUDES ${MAVLINK_LIBRARY_DIR} ${MAVLINK_LIBRARY_DIR}/${MAVLINK_DIALECT}
+	INCLUDES ${MAVLINK_LIBRARY_DIR}/${MAVLINK_DIALECT}
 	LINKLIBS terrain geo
 	COMPILE_FLAGS
 		-DMODULE_NAME=\"mavlink\"
@@ -130,7 +130,7 @@ px4_add_functional_gtest(SRC mavlink_terrain_test.cpp
 	)
 
 px4_add_unit_gtest(SRC MavlinkStatustextHandlerTest.cpp
-	INCLUDES ${MAVLINK_LIBRARY_DIR} ${MAVLINK_LIBRARY_DIR}/${MAVLINK_DIALECT}
+	INCLUDES ${MAVLINK_LIBRARY_DIR}/${MAVLINK_DIALECT}
 	COMPILE_FLAGS
 		-Wno-address-of-packed-member # TODO: fix in c_library_v2
 		LINKLIBS modules__mavlink

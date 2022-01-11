@@ -355,6 +355,7 @@ public:
 	int 		get_takeoff_land_required() const { return _para_mis_takeoff_land_req.get(); }
 	float		get_yaw_timeout() const { return _param_mis_yaw_tmt.get(); }
 	float		get_yaw_threshold() const { return math::radians(_param_mis_yaw_err.get()); }
+	float		get_lndmc_alt_max() const { return _param_lndmc_alt_max.get(); }
 
 	float		get_vtol_back_trans_deceleration() const { return _param_back_trans_dec_mss; }
 	float		get_vtol_reverse_delay() const { return _param_reverse_delay; }
@@ -392,6 +393,7 @@ private:
 		(ParamInt<px4::params::MIS_TKO_LAND_REQ>) _para_mis_takeoff_land_req,
 		(ParamFloat<px4::params::MIS_YAW_TMT>) _param_mis_yaw_tmt,
 		(ParamFloat<px4::params::MIS_YAW_ERR>) _param_mis_yaw_err,
+		(ParamFloat<px4::params::LNDMC_ALT_MAX>)    _param_lndmc_alt_max,
 		(ParamInt<px4::params::TF_TERRAIN_EN>) _param_tf_terrain_en
 	)
 

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,6 +60,7 @@
 #include <lib/landing_slope/Landingslope.hpp>
 #include <lib/mathlib/mathlib.h>
 #include <lib/perf/perf_counter.h>
+#include <lib/slew_rate/SlewRate.hpp>
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/defines.h>
 #include <px4_platform_common/module.h>
@@ -112,6 +113,7 @@ static constexpr hrt_abstime T_ALT_TIMEOUT = 1_s; // time after which we abort l
 
 static constexpr float THROTTLE_THRESH =
 	0.05f;	///< max throttle from user which will not lead to motors spinning up in altitude controlled modes
+static constexpr float ASPD_SP_SLEW_RATE = 1.f; // slew rate limit for airspeed setpoint changes [m/s/S]
 
 class FixedwingPositionControl final : public ModuleBase<FixedwingPositionControl>, public ModuleParams,
 	public px4::WorkItem
@@ -155,6 +157,7 @@ private:
 	uORB::Subscription _wind_sub{ORB_ID(wind)};
 
 	uORB::Publication<vehicle_attitude_setpoint_s>		_attitude_sp_pub;
+	uORB::Publication<vehicle_local_position_setpoint_s> 	_local_pos_sp_pub{ORB_ID(vehicle_local_position_setpoint)};	///< vehicle local position setpoint publication
 	uORB::Publication<position_controller_status_s>		_pos_ctrl_status_pub{ORB_ID(position_controller_status)};			///< navigation capabilities publication
 	uORB::Publication<position_controller_landing_status_s>	_pos_ctrl_landing_status_pub{ORB_ID(position_controller_landing_status)};	///< landing status publication
 	uORB::PublicationMulti<orbit_status_s>			_orbit_status_pub{ORB_ID(orbit_status)};
@@ -315,6 +318,7 @@ private:
 
 	void		status_publish();
 	void		landing_status_publish();
+	void 		publishLocalPositionSetpoint(const position_setpoint_s &current_waypoint);
 
 	void		abort_landing(bool abort);
 
@@ -363,6 +367,8 @@ private:
 	void		reset_takeoff_state(bool force = false);
 	void		reset_landing_state();
 	void 		reset_transition_waypoint();
+
+	SlewRate<float> _slew_rate_airspeed;
 
 	/*
 	 * Call TECS : a wrapper function to call the TECS implementation
@@ -437,7 +443,6 @@ private:
 		(ParamFloat<px4::params::FW_THR_SLEW_MAX>) _param_fw_thr_slew_max,
 
 		(ParamInt<px4::params::FW_POS_STK_CONF>) _param_fw_pos_stk_conf,
-
 
 		(ParamInt<px4::params::FW_GPSF_LT>) _param_nav_gpsf_lt,
 		(ParamFloat<px4::params::FW_GPSF_R>) _param_nav_gpsf_r,

@@ -72,28 +72,7 @@ then
 			umount /fs/microsd
 
 		else
-			# very basic I/O test
-			set PX4_INIT_TEST_FILE "/fs/microsd/.px4_init_test_file"
-			date >> $PX4_INIT_TEST_FILE
-
-			if [ $? -eq 0 -a -f $PX4_INIT_TEST_FILE ]
-			then
-				cat $PX4_INIT_TEST_FILE
-				rm $PX4_INIT_TEST_FILE
-
-				if [ $? -eq 0 -a ! -f $PX4_INIT_TEST_FILE ]
-				then
-					set SDCARD_AVAILABLE yes
-				fi
-			fi
-			unset PX4_INIT_TEST_FILE
-
-			if [ $SDCARD_AVAILABLE = no ]
-			then
-				echo "ERROR [init] card I/O failure, formatting"
-				set SDCARD_FORMAT yes
-				umount /fs/microsd
-			fi
+			set SDCARD_AVAILABLE yes
 		fi
 	fi
 
@@ -189,6 +168,11 @@ else
 		# try importing from backup file
 		if [ -f "/fs/microsd/parameters_backup.bson" ]
 		then
+			echo "[init] importing from parameter backup"
+
+			# dump current backup file contents for comparison
+			param dump /fs/microsd/parameters_backup.bson
+
 			param import /fs/microsd/parameters_backup.bson
 		fi
 	fi
@@ -245,7 +229,16 @@ else
 	# Waypoint storage.
 	# REBOOTWORK this needs to start in parallel.
 	#
-	dataman start
+	if param compare SYS_DM_BACKEND 1
+	then
+		dataman start -r
+	else
+		if param compare SYS_DM_BACKEND 0
+		then
+			# dataman start default
+			dataman start
+		fi
+	fi
 
 	#
 	# Start the socket communication send_event handler.
