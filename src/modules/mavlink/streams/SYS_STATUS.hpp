@@ -91,6 +91,7 @@ private:
 
 			mavlink_sys_status_t msg{};
 
+#if 0 // TODO: revert once mavlink submodule gets updated
 			msg.onboard_control_sensors_present = static_cast<uint32_t>(status.onboard_control_sensors_present & 0xFFFFFFFF) |
 							      MAV_SYS_STATUS_EXTENSION_USED;
 			msg.onboard_control_sensors_enabled = static_cast<uint32_t>(status.onboard_control_sensors_enabled & 0xFFFFFFFF) |
@@ -104,6 +105,11 @@ private:
 					0xFFFFFFFF);
 			msg.onboard_control_sensors_health_extended = static_cast<uint32_t>((status.onboard_control_sensors_health >> 32u) &
 					0xFFFFFFFF);
+#else
+			msg.onboard_control_sensors_present = static_cast<uint32_t>(status.onboard_control_sensors_present & 0xFFFFFFFF);
+			msg.onboard_control_sensors_enabled = static_cast<uint32_t>(status.onboard_control_sensors_enabled & 0xFFFFFFFF);
+			msg.onboard_control_sensors_health = static_cast<uint32_t>(status.onboard_control_sensors_health & 0xFFFFFFFF);
+#endif
 
 			msg.load = cpuload.load * 1000.0f;
 
