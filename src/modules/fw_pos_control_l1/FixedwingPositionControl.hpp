@@ -486,7 +486,9 @@ private:
 		(ParamFloat<px4::params::FW_ECO_ALT_MIN>) _param_fw_eco_alt_min,
 		(ParamFloat<px4::params::FW_ECO_AD_THRLD>) _param_fw_eco_ad_thrld,
 
-		(ParamFloat<px4::params::FW_WIND_ARSP_SC>) _param_fw_wind_arsp_sc
+		(ParamFloat<px4::params::FW_WIND_ARSP_SC>) _param_fw_wind_arsp_sc,
+
+		(ParamFloat<px4::params::NAV_FW_ALT_RAD>) _param_nav_fw_alt_rad
 	)
 
 };
