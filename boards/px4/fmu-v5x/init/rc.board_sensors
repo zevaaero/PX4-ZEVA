@@ -11,8 +11,30 @@ then
 	ina226 -X -b 2 -t 2 -k start
 fi
 
-if ver hwtypecmp V5X00090000 V5X00090001 V5X00090002 V5X000a0000 V5X000a0001 V5X000a0002 V5X00080000 V5X00080001 V5X00080002 V5X00100001
+if ver hwtypecmp V5X00000000 V5X00000001 V5X00000002 V5X00010000
 then
+	#FMUv5Xbase board orientation
+
+	if ver hwtypecmp V5X00000000 V5X00000001
+	then
+		# Internal SPI BMI088
+		bmi088 -A -R 4 -s start
+		bmi088 -G -R 4 -s start
+	else
+		# Internal SPI bus ICM20649
+		icm20649 -s -R 6 start
+	fi
+
+	# Internal SPI bus ICM42688p
+	icm42688p -R 6 -s start
+
+	# Internal SPI bus ICM-20602 (hard-mounted)
+	icm20602 -R 10 -s start
+
+	# Internal magnetometer on I2c
+	bmm150 -I start
+
+else
 	#SKYNODE base fmu board orientation
 
 	if ver hwtypecmp V5X00090000 V5X00090001 V5X000a0000 V5X000a0001 V5X00080000 V5X00080001 V5X00100001
@@ -36,28 +58,6 @@ then
 
 	# Auto start power monitors
 	power_monitor_selector_auterion start
-
-else
-	#FMUv5Xbase board orientation
-
-	if ver hwtypecmp V5X00000000 V5X00000001
-	then
-		# Internal SPI BMI088
-		bmi088 -A -R 4 -s start
-		bmi088 -G -R 4 -s start
-	else
-		# Internal SPI bus ICM20649
-		icm20649 -s -R 6 start
-	fi
-
-	# Internal SPI bus ICM42688p
-	icm42688p -R 6 -s start
-
-	# Internal SPI bus ICM-20602 (hard-mounted)
-	icm20602 -R 10 -s start
-
-	# Internal magnetometer on I2c
-	bmm150 -I start
 
 fi
 
