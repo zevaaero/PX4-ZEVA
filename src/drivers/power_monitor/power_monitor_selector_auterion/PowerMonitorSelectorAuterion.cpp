@@ -51,12 +51,12 @@ PowerMonitorSelectorAuterion::~PowerMonitorSelectorAuterion() = default;
 bool PowerMonitorSelectorAuterion::init()
 {
 	int32_t sens_en = 0;
-	param_get(param_find("SENS_EN_INA226"), &sens_en);
+	param_get(param_find("INA226_ENABLE"), &sens_en);
 
 	if (sens_en == 1) {
 
 		sens_en = 0;
-		param_set(param_find("SENS_EN_INA226"), &sens_en);
+		param_set(param_find("INA226_ENABLE"), &sens_en);
 		const char *stop_argv[] {"ina226", "stop", NULL};
 		exec_builtin("ina226", (char **)stop_argv, NULL, 0);
 	}
