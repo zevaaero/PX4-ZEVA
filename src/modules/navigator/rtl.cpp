@@ -302,6 +302,9 @@ void RTL::on_activation()
 
 	set_rtl_item(true);
 
+	_navigator->acquire_gimbal_control();
+	_navigator->set_gimbal_neutral();
+	_navigator->release_gimbal_control();
 }
 
 void RTL::on_active()
