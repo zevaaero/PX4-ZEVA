@@ -112,7 +112,7 @@ FixedwingPositionControl::parameters_update()
 	_tecs.set_max_climb_rate(_param_fw_t_clmb_max.get());
 	_tecs.set_max_sink_rate(_param_fw_t_sink_max.get());
 	_tecs.set_speed_weight(_param_fw_t_spdweight.get());
-	_tecs.set_equivalent_airspeed_cruise(_param_fw_airspd_cruise.get());
+	_tecs.set_equivalent_airspeed_cruise(_param_fw_airspd_trim.get());
 	_tecs.set_equivalent_airspeed_min(_param_fw_airspd_min.get());
 	_tecs.set_equivalent_airspeed_max(_param_fw_airspd_max.get());
 	_tecs.set_min_sink_rate(_param_fw_t_sink_min.get());
@@ -178,8 +178,8 @@ FixedwingPositionControl::parameters_update()
 		check_ret = PX4_ERROR;
 	}
 
-	if (_param_fw_airspd_cruise.get() < _param_fw_airspd_min.get() ||
-	    _param_fw_airspd_cruise.get() > _param_fw_airspd_max.get()) {
+	if (_param_fw_airspd_trim.get() < _param_fw_airspd_min.get() ||
+	    _param_fw_airspd_trim.get() > _param_fw_airspd_max.get()) {
 		mavlink_log_critical(&_mavlink_log_pub, "Config invalid: Airspeed cruise out of min or max bounds\t");
 		/* EVENT
 		 * @description
@@ -190,7 +190,7 @@ FixedwingPositionControl::parameters_update()
 		events::send<float, float, float>(events::ID("fixedwing_position_control_conf_invalid_cruise_bounds"),
 						  events::Log::Error,
 						  "Invalid configuration: Airspeed cruise out of min or max bounds",
-						  _param_fw_airspd_max.get(), _param_fw_airspd_min.get(), _param_fw_airspd_cruise.get());
+						  _param_fw_airspd_max.get(), _param_fw_airspd_min.get(), _param_fw_airspd_trim.get());
 		check_ret = PX4_ERROR;
 	}
 
@@ -388,7 +388,7 @@ FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, c
 		const Vector2f &ground_speed, float dt)
 {
 	float airspeed_setpoint = _cruise_mode_current == CRUISE_MODE_DASH ? _param_fw_airspd_max.get() :
-				  _param_fw_airspd_cruise.get();
+				  _param_fw_airspd_trim.get();
 
 	// Adapt cruise airspeed setpoint based on wind estimate (disable in airspeed-less mode)
 	bool do_wind_based_airspeed_scaling = _airspeed_valid
@@ -428,13 +428,13 @@ FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, c
 		if (_manual_control_setpoint_airspeed < 0.5f) {
 			// lower half of throttle is min to cruise airspeed
 			airspeed_setpoint = _param_fw_airspd_min.get() +
-					    (_param_fw_airspd_cruise.get() - _param_fw_airspd_min.get()) *
+					    (_param_fw_airspd_trim.get() - _param_fw_airspd_min.get()) *
 					    _manual_control_setpoint_airspeed * 2;
 
 		} else {
 			// upper half of throttle is cruise to max airspeed
-			airspeed_setpoint = _param_fw_airspd_cruise.get() +
-					    (_param_fw_airspd_max.get() - _param_fw_airspd_cruise.get()) *
+			airspeed_setpoint = _param_fw_airspd_trim.get() +
+					    (_param_fw_airspd_max.get() - _param_fw_airspd_trim.get()) *
 					    (_manual_control_setpoint_airspeed * 2 - 1);
 		}
 
@@ -1530,7 +1530,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 			if (_param_fw_clmbout_diff.get() > 0.0f && altitude_error > _param_fw_clmbout_diff.get()) {
 				/* enforce a minimum of 10 degrees pitch up on takeoff, or take parameter */
 				tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-							   _param_fw_airspd_cruise.get(),
+							   _param_fw_airspd_trim.get(),
 							   radians(_param_fw_p_lim_min.get()),
 							   radians(takeoff_pitch_max_deg),
 							   _param_fw_thr_min.get(),
@@ -1545,7 +1545,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 
 			} else {
 				tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-							   get_cruise_airspeed_setpoint(now, _param_fw_airspd_cruise.get(), ground_speed, dt),
+							   get_cruise_airspeed_setpoint(now, _param_fw_airspd_trim.get(), ground_speed, dt),
 							   radians(_param_fw_p_lim_min.get()),
 							   radians(_param_fw_p_lim_max.get()),
 							   _param_fw_thr_min.get(),
