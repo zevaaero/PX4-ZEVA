@@ -843,6 +843,8 @@ PARAM_DEFINE_FLOAT(FW_GPSF_R, 15.0f);
 /**
  * Eco Mode: Throttle limit max
  *
+ * APX4 custom parameter.
+ *
  * @unit norm
  * @min 0.0
  * @max 1.0
@@ -856,6 +858,7 @@ PARAM_DEFINE_FLOAT(FW_THR_MAX_E, 1.0f);
  * Eco target climbrate.
  *
  * The rate at which the vehicle will climb in autonomous modes to achieve altitude setpoints in Eco mode.
+ * APX4 custom parameter.
  *
  * @unit m/s
  * @min 0.5
@@ -869,6 +872,8 @@ PARAM_DEFINE_FLOAT(FW_T_CLMB_R_SP_E, 3.0f);
 /**
  * Eco Mode: Speed <--> Altitude priority
  *
+ * APX4 custom parameter.
+ *
  * @min 0.0
  * @max 2.0
  * @decimal 1
@@ -881,6 +886,7 @@ PARAM_DEFINE_FLOAT(FW_T_SPDWEIGHT_E, 1.8f);
  * Eco Mode: Altitude error time constant.
  *
  * Normally larger than FW_T_ALT_TC to have looser altitude control and in turn less throttle changes.
+ * APX4 custom parameter.
  *
  * @min 2.0
  * @decimal 1
@@ -893,6 +899,7 @@ PARAM_DEFINE_FLOAT(FW_T_ALT_TC_E, 10.0f);
  * Eco TECS mode max altitude undershoot
  *
  * Eco mode is disabled if the current altitude is more than this value below the setpoint.
+ * APX4 custom parameter.
  *
  * @min 1.0
  * @max 50.0
@@ -906,6 +913,7 @@ PARAM_DEFINE_FLOAT(FW_ECO_ALT_ERR_U, 10.f);
  * Eco TECS mode max altitude overshoot
  *
  * Eco mode is disabled if the current altitude is more than this value above the setpoint.
+ * APX4 custom parameter.
  *
  * @min 1.0
  * @max 50.0
@@ -919,6 +927,7 @@ PARAM_DEFINE_FLOAT(FW_ECO_ALT_ERR_O, 20.f);
  * Eco TECS mode min altitude
  *
  * Eco mode is disabled if the current altitude is below this relative altitude to home.
+ * APX4 custom parameter.
  *
  * @min -200.0
  * @max 200.0
@@ -932,6 +941,7 @@ PARAM_DEFINE_FLOAT(FW_ECO_ALT_MIN, 50.f);
  * Airspeed threshold for Eco
  *
  * Eco mode is disabled if the airspeed setpoint is above this value.
+ * APX4 custom parameter.
  *
  * @min -1.0
  * @max 50.0
@@ -947,6 +957,7 @@ PARAM_DEFINE_FLOAT(FW_ECO_AD_THRLD, -1.f);
  * Multiplying this factor with the current absolute wind estimate gives the airspeed offset
  * added to the minimum airspeed setpoint limit. This helps to make the
  * system more robust against disturbances in high wind.
+ * APX4 custom parameter.
  *
  * airspeed_min_adjusted = FW_AIRSPD_MIN + FW_WIND_ARSP_SC * wind.length()
  *

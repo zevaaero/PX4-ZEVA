@@ -178,7 +178,6 @@ private:
 	MapProjection _global_local_proj_ref{};
 	float	_global_local_alt0{NAN};
 
-	float 	_manual_height_rate_setpoint_m_s{NAN};
 	float	_takeoff_ground_alt{0.0f};			///< ground altitude at which plane was launched
 	float	_hdg_hold_yaw{0.0f};				///< hold heading for velocity mode
 	bool	_hdg_hold_enabled{false};			///< heading hold enabled
@@ -268,7 +267,6 @@ private:
 		FW_POSCTRL_MODE_AUTO_CLIMBRATE,
 		FW_POSCTRL_MODE_MANUAL_POSITION,
 		FW_POSCTRL_MODE_MANUAL_ALTITUDE,
-		FW_POSCTRL_MODE_CLIMBRATE,
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER};		///< used to check the mode in the last control loop iteration. Use to check if the last iteration was in the same mode.
 
@@ -281,12 +279,14 @@ private:
 		STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT = (1 << 1)
 	};
 
+	// APX4 custom start
 	hrt_abstime _last_time_eco_checks_failed{0};
 
 	enum FW_MODES {
 		CRUISE_MODE_NORMAL,
 		CRUISE_MODE_ECO,
 	} _cruise_mode_current{CRUISE_MODE_NORMAL};		///< used to make flight mode based vehicle limit adaptions (e.g. airspeed setpoint)
+	// APX4 custom end
 
 	// Update our local parameter cache.
 	int		parameters_update();
@@ -329,15 +329,39 @@ private:
 	 */
 	bool 		in_takeoff_situation();
 
-	bool		control_position(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed,
-					 const position_setpoint_s &pos_sp_prev,
-					 const position_setpoint_s &pos_sp_curr, const position_setpoint_s &pos_sp_next);
-	void		control_takeoff(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed,
-					const position_setpoint_s &pos_sp_prev,
-					const position_setpoint_s &pos_sp_curr);
-	void		control_landing(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed,
-					const position_setpoint_s &pos_sp_prev,
-					const position_setpoint_s &pos_sp_curr);
+	/**
+	 * Update desired altitude base on user pitch stick input
+	 *
+	 * @param dt Time step
+	 */
+	void		update_desired_altitude(float dt);
+	uint8_t		handle_setpoint_type(const uint8_t setpoint_type, const position_setpoint_s &pos_sp_curr);
+	void		control_auto(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed,
+				     const position_setpoint_s &pos_sp_prev,
+				     const position_setpoint_s &pos_sp_curr, const position_setpoint_s &pos_sp_next);
+
+	void		control_auto_fixed_bank_alt_hold(const hrt_abstime &now);
+	void		control_auto_descend(const hrt_abstime &now);
+
+	void		control_auto_position(const hrt_abstime &now, const float dt, const Vector2d &curr_pos,
+					      const Vector2f &ground_speed,
+					      const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr);
+	void		control_auto_loiter(const hrt_abstime &now, const float dt, const Vector2d &curr_pos,
+					    const Vector2f &ground_speed,
+					    const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr, const position_setpoint_s &pos_sp_next);
+	void		control_auto_velocity(const hrt_abstime &now, const float dt, const Vector2d &curr_pos,
+					      const Vector2f &ground_speed,
+					      const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr);
+	void		control_auto_takeoff(const hrt_abstime &now, const float dt,  const Vector2d &curr_pos,
+					     const Vector2f &ground_speed,
+					     const position_setpoint_s &pos_sp_prev,
+					     const position_setpoint_s &pos_sp_curr);
+	void		control_auto_landing(const hrt_abstime &now, const float dt, const Vector2d &curr_pos,
+					     const Vector2f &ground_speed,
+					     const position_setpoint_s &pos_sp_prev,
+					     const position_setpoint_s &pos_sp_curr);
+	void		control_manual_altitude(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed);
+	void		control_manual_position(const hrt_abstime &now, const Vector2d &curr_pos, const Vector2f &ground_speed);
 
 	float		get_tecs_pitch();
 	float		get_tecs_thrust();
@@ -346,11 +370,14 @@ private:
 	float		get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cruise_airspeed,
 			const Vector2f &ground_speed, float dt);
 
-	void		update_cruise_mode(const hrt_abstime &now, float pos_sp_cruising_speed);
+	void		update_cruise_mode(const hrt_abstime &now, float pos_sp_cruising_speed); // APX4 custom
 
 	void		reset_takeoff_state(bool force = false);
 	void		reset_landing_state();
-	void 		reset_transition_waypoint();
+	Vector2f 	get_nav_speed_2d(const Vector2f &ground_speed);
+	void		set_control_mode_current(const hrt_abstime &now, bool pos_sp_curr_valid);
+
+	void publishOrbitStatus(const position_setpoint_s pos_sp);
 
 	SlewRate<float> _slew_rate_airspeed;
 
@@ -440,7 +467,7 @@ private:
 
 		(ParamFloat<px4::params::FW_GPSF_R>) _param_fw_gpsf_r,
 
-		// Auterion custom params
+		// APX4 custom params
 		(ParamFloat<px4::params::FW_T_ALT_TC_E>) _param_fw_t_h_error_tc_eco,
 		(ParamFloat<px4::params::FW_T_SPDWEIGHT_E>) _param_fw_t_spdweight_eco,
 		(ParamFloat<px4::params::FW_THR_MAX_E>) _param_fw_thr_max_eco,
