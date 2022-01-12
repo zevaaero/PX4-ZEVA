@@ -918,7 +918,7 @@ PARAM_DEFINE_FLOAT(FW_ECO_ALT_ERR_O, 20.f);
 /**
  * Eco TECS mode min altitude
  *
- * Eco mode can be enabled if above this relative altitude to home.
+ * Eco mode is disabled if the current altitude is below this relative altitude to home.
  *
  * @min -200.0
  * @max 200.0
@@ -929,16 +929,17 @@ PARAM_DEFINE_FLOAT(FW_ECO_ALT_ERR_O, 20.f);
 PARAM_DEFINE_FLOAT(FW_ECO_ALT_MIN, 50.f);
 
 /**
- * Minimum time in band to enable Eco
+ * Airspeed threshold for Eco
  *
- * Automatically switch to Eco mode if within Eco requirements (above FW_ECO_H_MIN, altitude smaller than FW_ECO_ALT_ERR).
- * Set to negative value to disable automatic switch to Eco.
+ * Eco mode is disabled if the airspeed setpoint is above this value.
  *
- * @min -1
- * @max 1000
+ * @min -1.0
+ * @max 50.0
+ * @decimal 1
+ * @increment 0.1
  * @group FW TECS
  */
-PARAM_DEFINE_INT32(FW_ECO_BAND_T, -1);
+PARAM_DEFINE_FLOAT(FW_ECO_AD_THRLD, -1.f);
 
 /**
  * Wind-based airspeed scaling factor
@@ -957,13 +958,3 @@ PARAM_DEFINE_INT32(FW_ECO_BAND_T, -1);
  * @group FW TECS
  */
 PARAM_DEFINE_FLOAT(FW_WIND_ARSP_SC, 0.0f);
-
-/**
- * Enable/disable dash mode (for 60s, then the param is automatically reset)
- *
- * This is only an intermediate step, to be replaced by a mavlink message from the groundstation (action on button press)
- *
- * @boolean
- * @group FW TECS
- */
-PARAM_DEFINE_INT32(FW_DASH_EN, 0);

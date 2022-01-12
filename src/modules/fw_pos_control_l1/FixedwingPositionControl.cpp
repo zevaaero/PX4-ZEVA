@@ -444,9 +444,15 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, con
 
 
 void
-FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
+FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now, float pos_sp_cruising_speed)
 {
-	// Fixed-wing cruise mode selection logic. This
+	// Auterion custom function for cruise mode setting (Eco/Normal)
+
+	float airspeed_setpoint = _param_fw_airspd_trim.get();
+
+	if (PX4_ISFINITE(pos_sp_cruising_speed) && pos_sp_cruising_speed > FLT_EPSILON)  {
+		airspeed_setpoint = pos_sp_cruising_speed;
+	}
 
 	const float eco_altitude_amsl_min = max(_tecs.get_hgt_setpoint() - _param_fw_eco_alt_err_u.get(),
 						_local_pos.ref_alt + _param_fw_eco_alt_min.get());
@@ -455,67 +461,18 @@ FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now)
 	const bool within_safe_altitude_band = _current_altitude <= eco_altitude_amsl_max
 					       && _current_altitude >= eco_altitude_amsl_min;
 
-	// reset timer if outside of safe altitude band or in dash mode
-	if (!within_safe_altitude_band || _cruise_mode_current == CRUISE_MODE_DASH) {
-		_last_time_outside_of_band = now;
+	const bool speed_check = _param_fw_eco_ad_thrld.get() > FLT_EPSILON && airspeed_setpoint < _param_fw_eco_ad_thrld.get();
+
+	const bool eco_checks_fail = speed_check && within_safe_altitude_band
+				     && _tecs.get_flight_phase() == tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
+
+	// reset timer if outside of safe altitude band or above airspeed threshold
+	if (!eco_checks_fail) {
+		_last_time_eco_checks_failed = now;
 	}
 
-	const bool auto_switch_to_eco = _param_fw_eco_band_t.get() >= 0
-					&& hrt_elapsed_time(&_last_time_outside_of_band) > (_param_fw_eco_band_t.get() * 1_s);
-
-	const bool disable_eco_climb_descend = !_param_fw_eco_c_d_en_mavlink.get() &&
-					       _tecs.get_flight_phase() != tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
-
-	bool switch_to_dash = false;
-	bool switch_out_of_dash = false;
-
-	if (_cruise_mode_current != CRUISE_MODE_DASH && _param_fw_dash_en_mavlink.get() && within_safe_altitude_band) {
-		_time_since_dash_mode_started = now;
-		switch_to_dash = true;
-
-	} else if (_cruise_mode_current == CRUISE_MODE_DASH &&
-		   (hrt_elapsed_time(&_time_since_dash_mode_started) > 60_s || !_param_fw_dash_en_mavlink.get() ||
-		    !within_safe_altitude_band)) {
-		_param_fw_dash_en_mavlink.set(false);
-		_param_fw_dash_en_mavlink.commit_no_notification();
-		switch_out_of_dash = true;
-	}
-
-	switch (_cruise_mode_current) {
-	case CRUISE_MODE_NORMAL:
-		if (switch_to_dash) {
-			_cruise_mode_current = CRUISE_MODE_DASH;
-
-		} else if (auto_switch_to_eco && !disable_eco_climb_descend) {
-			_cruise_mode_current = CRUISE_MODE_ECO;
-		}
-
-		break;
-
-	case CRUISE_MODE_ECO:
-		if (switch_to_dash) {
-			_cruise_mode_current = CRUISE_MODE_DASH;
-
-		} else if (!within_safe_altitude_band || disable_eco_climb_descend) {
-			_cruise_mode_current = CRUISE_MODE_NORMAL;
-		}
-
-		break;
-
-	case CRUISE_MODE_DASH:
-		if (switch_out_of_dash) {
-			_cruise_mode_current = CRUISE_MODE_NORMAL;
-		}
-
-		break;
-	}
-}
-
-void
-FixedwingPositionControl::reset_cruise_mode(const hrt_abstime &now)
-{
-	_cruise_mode_current = CRUISE_MODE_NORMAL;
-	_last_time_outside_of_band = now;
+	// set mode to Eco if conditions are okay since 30s
+	_cruise_mode_current = hrt_elapsed_time(&_last_time_eco_checks_failed) > 30_s ? CRUISE_MODE_ECO : CRUISE_MODE_NORMAL;
 }
 
 void
@@ -750,7 +707,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		_tecs.reset_state();
 	}
 
-	update_cruise_mode(now);
+	update_cruise_mode(now, pos_sp_curr.cruising_speed);
 
 	if (((_control_mode.flag_control_auto_enabled && _control_mode.flag_control_position_enabled) ||
 	     _control_mode.flag_control_offboard_enabled) && pos_sp_curr.valid) {

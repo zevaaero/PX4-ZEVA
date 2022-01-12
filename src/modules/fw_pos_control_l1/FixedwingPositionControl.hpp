@@ -281,15 +281,11 @@ private:
 		STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT = (1 << 1)
 	};
 
-	hrt_abstime _last_time_outside_of_band{0};
-
-	hrt_abstime _time_since_dash_mode_started{0};
-
+	hrt_abstime _last_time_eco_checks_failed{0};
 
 	enum FW_MODES {
 		CRUISE_MODE_NORMAL,
 		CRUISE_MODE_ECO,
-		CRUISE_MODE_DASH,
 	} _cruise_mode_current{CRUISE_MODE_NORMAL};		///< used to make flight mode based vehicle limit adaptions (e.g. airspeed setpoint)
 
 	// Update our local parameter cache.
@@ -349,9 +345,8 @@ private:
 	float		get_manual_airspeed_setpoint();
 	float		get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cruise_airspeed,
 			const Vector2f &ground_speed, float dt);
-	void		update_wind_mode();
-	void		update_cruise_mode(const hrt_abstime &now);
-	void		reset_cruise_mode(const hrt_abstime &now);
+
+	void		update_cruise_mode(const hrt_abstime &now, float pos_sp_cruising_speed);
 
 	void		reset_takeoff_state(bool force = false);
 	void		reset_landing_state();
@@ -445,6 +440,7 @@ private:
 
 		(ParamFloat<px4::params::FW_GPSF_R>) _param_fw_gpsf_r,
 
+		// Auterion custom params
 		(ParamFloat<px4::params::FW_T_ALT_TC_E>) _param_fw_t_h_error_tc_eco,
 		(ParamFloat<px4::params::FW_T_SPDWEIGHT_E>) _param_fw_t_spdweight_eco,
 		(ParamFloat<px4::params::FW_THR_MAX_E>) _param_fw_thr_max_eco,
@@ -453,7 +449,7 @@ private:
 		(ParamFloat<px4::params::FW_ECO_ALT_ERR_U>) _param_fw_eco_alt_err_u,
 		(ParamFloat<px4::params::FW_ECO_ALT_ERR_O>) _param_fw_eco_alt_err_o,
 		(ParamFloat<px4::params::FW_ECO_ALT_MIN>) _param_fw_eco_alt_min,
-		(ParamInt<px4::params::FW_ECO_BAND_T>) _param_fw_eco_band_t,
+		(ParamFloat<px4::params::FW_ECO_AD_THRLD>) _param_fw_eco_ad_thrld,
 
 		(ParamFloat<px4::params::FW_WIND_ARSP_SC>) _param_fw_wind_arsp_sc
 	)
