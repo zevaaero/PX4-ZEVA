@@ -342,47 +342,6 @@ FixedwingPositionControl::vehicle_attitude_poll()
 	}
 }
 
-void
-FixedwingPositionControl::update_wind_mode()
-{
-	/* If the corresponding wind threshold values are set, the wind state will change if these values are
-	 * passed for a certain amount of time. The wind state is then used to increase airspeed (high wind),
-	 * resp. decrease (low wind). It takes longer to move to a lower wind state than to a higher,
-	 * as in general higher airspeed is safer. */
-
-	wind_s wind_estimate;
-
-	if (_wind_sub.update(&wind_estimate)) {
-		const matrix::Vector2f wind(wind_estimate.windspeed_north, wind_estimate.windspeed_east);
-		FW_WIND_MODE fw_wind_mode_detected(FW_WIND_MODE_NORMAL);
-
-		if (_param_fw_wind_thld_h.get() > FLT_EPSILON && wind.length() > _param_fw_wind_thld_h.get()) {
-			fw_wind_mode_detected = FW_WIND_MODE_HIGH;
-
-		} else if (_param_fw_wind_thld_l.get() > FLT_EPSILON && wind.length() < _param_fw_wind_thld_l.get()) {
-			fw_wind_mode_detected = FW_WIND_MODE_LOW;
-		}
-
-		if (fw_wind_mode_detected != _fw_wind_mode_detected_prev) {
-			_first_time_current_mode_detected = hrt_absolute_time();
-		}
-
-		const float min_time_detection_mode_down = 60.0f; // min time to switch to lower wind state
-		const float time_since_new_mode_detected = hrt_elapsed_time(&_first_time_current_mode_detected) * 1e-6f;
-
-		// immediately switch to higher wind mode after detection, but require minimum time within lower wind to switch to lower mode
-		if (fw_wind_mode_detected > _fw_wind_mode_current) {
-			_fw_wind_mode_current = fw_wind_mode_detected;
-
-		} else if (fw_wind_mode_detected < _fw_wind_mode_current
-			   && time_since_new_mode_detected > min_time_detection_mode_down) {
-			_fw_wind_mode_current = fw_wind_mode_detected;
-		}
-
-		_fw_wind_mode_detected_prev = fw_wind_mode_detected;
-	}
-}
-
 float
 FixedwingPositionControl::get_manual_airspeed_setpoint()
 {
@@ -421,28 +380,16 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, con
 	float airspeed_min_adjusted = _param_fw_airspd_min.get();
 
 	// Adapt min airspeed setpoint based on wind estimate (disable in airspeed-less mode)
-	const bool do_wind_based_airspeed_scaling = _airspeed_valid
-			&& (_param_fw_wind_thld_h.get() > FLT_EPSILON || _param_fw_wind_thld_l.get() > FLT_EPSILON);
+	if (_airspeed_valid && _param_fw_wind_arsp_sc.get() > FLT_EPSILON) {
+		wind_s wind_estimate;
 
-	if (do_wind_based_airspeed_scaling) {
-		FixedwingPositionControl::update_wind_mode();
+		if (_wind_sub.update(&wind_estimate)) {
+			const matrix::Vector2f wind(wind_estimate.windspeed_north, wind_estimate.windspeed_east);
 
-		switch (_fw_wind_mode_current) {
-		case FW_WIND_MODE_HIGH:
-			airspeed_min_adjusted += _param_fw_wind_arsp_of.get();
-			break;
-
-		case FW_WIND_MODE_LOW:
-			airspeed_min_adjusted -= _param_fw_wind_arsp_of.get();
-			break;
-
-		default:
-			break;
+			if (PX4_ISFINITE(wind.length())) {
+				airspeed_min_adjusted += constrain(_param_fw_wind_arsp_sc.get() * wind.length(), 0.f, 3.0f);
+			}
 		}
-
-	} else {
-		_fw_wind_mode_current = FW_WIND_MODE_NORMAL;
-		_fw_wind_mode_detected_prev = FW_WIND_MODE_NORMAL;
 	}
 
 	// Adapt cruise airspeed when otherwise the min groundspeed couldn't be maintained

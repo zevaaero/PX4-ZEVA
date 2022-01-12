@@ -272,15 +272,6 @@ private:
 		FW_POSCTRL_MODE_OTHER
 	} _control_mode_current{FW_POSCTRL_MODE_OTHER};		///< used to check the mode in the last control loop iteration. Use to check if the last iteration was in the same mode.
 
-	hrt_abstime _first_time_current_mode_detected{0};		///< last time in normal wind mode
-
-	enum FW_WIND_MODE {
-		FW_WIND_MODE_LOW,
-		FW_WIND_MODE_NORMAL,
-		FW_WIND_MODE_HIGH,
-	} _fw_wind_mode_current{FW_WIND_MODE_NORMAL};		///< used to make wind-based airspeed setpoint adaptions
-
-	FW_WIND_MODE _fw_wind_mode_detected_prev{FW_WIND_MODE_NORMAL};
 
 	param_t _param_handle_airspeed_trans{PARAM_INVALID};
 	float _param_airspeed_trans{NAN};
@@ -384,10 +375,6 @@ private:
 		(ParamFloat<px4::params::FW_AIRSPD_TRIM>) _param_fw_airspd_trim,
 		(ParamFloat<px4::params::FW_AIRSPD_STALL>) _param_fw_airspd_stall,
 
-		(ParamFloat<px4::params::FW_WIND_THLD_H>) _param_fw_wind_thld_h,
-		(ParamFloat<px4::params::FW_WIND_THLD_L>) _param_fw_wind_thld_l,
-		(ParamFloat<px4::params::FW_WIND_ARSP_OF>) _param_fw_wind_arsp_of,
-
 		(ParamFloat<px4::params::FW_CLMBOUT_DIFF>) _param_fw_clmbout_diff,
 
 		(ParamFloat<px4::params::FW_GND_SPD_MIN>) _param_fw_gnd_spd_min,
@@ -468,10 +455,7 @@ private:
 		(ParamFloat<px4::params::FW_ECO_ALT_MIN>) _param_fw_eco_alt_min,
 		(ParamInt<px4::params::FW_ECO_BAND_T>) _param_fw_eco_band_t,
 
-		// these params are supposed to be replaced by mavlink messages
-		(ParamBool<px4::params::FW_ECO_C_D_EN>) _param_fw_eco_c_d_en_mavlink,
-		(ParamBool<px4::params::FW_DASH_EN>) _param_fw_dash_en_mavlink
-
+		(ParamFloat<px4::params::FW_WIND_ARSP_SC>) _param_fw_wind_arsp_sc
 	)
 
 };
