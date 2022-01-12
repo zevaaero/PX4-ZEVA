@@ -384,26 +384,56 @@ FixedwingPositionControl::update_wind_mode()
 }
 
 float
-FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
+FixedwingPositionControl::get_manual_airspeed_setpoint()
+{
+	float altctrl_airspeed = _param_fw_airspd_trim.get();
+
+	if (_param_fw_pos_stk_conf.get() & STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT) {
+		// neutral throttle corresponds to trim airspeed
+		if (_manual_control_setpoint_airspeed < 0.5f) {
+			// lower half of throttle is min to trim airspeed
+			altctrl_airspeed = _param_fw_airspd_min.get() +
+					   (_param_fw_airspd_trim.get() - _param_fw_airspd_min.get()) *
+					   _manual_control_setpoint_airspeed * 2;
+
+		} else {
+			// upper half of throttle is trim to max airspeed
+			altctrl_airspeed = _param_fw_airspd_trim.get() +
+					   (_param_fw_airspd_max.get() - _param_fw_airspd_trim.get()) *
+					   (_manual_control_setpoint_airspeed * 2 - 1);
+		}
+	}
+
+	return altctrl_airspeed;
+}
+
+float
+FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cruise_airspeed,
 		const Vector2f &ground_speed, float dt)
 {
-	float airspeed_setpoint = _cruise_mode_current == CRUISE_MODE_DASH ? _param_fw_airspd_max.get() :
-				  _param_fw_airspd_trim.get();
+	float airspeed_setpoint = _param_fw_airspd_trim.get();
 
-	// Adapt cruise airspeed setpoint based on wind estimate (disable in airspeed-less mode)
-	bool do_wind_based_airspeed_scaling = _airspeed_valid
-					      && (_param_fw_wind_thld_h.get() > FLT_EPSILON || _param_fw_wind_thld_l.get() > FLT_EPSILON);
+	// Adapt cruise airspeed setpoint if given from other source (e.g. position setpoint)
+	if (PX4_ISFINITE(pos_sp_cruise_airspeed) && pos_sp_cruise_airspeed > FLT_EPSILON) {
+		airspeed_setpoint = pos_sp_cruise_airspeed;
+	}
+
+	float airspeed_min_adjusted = _param_fw_airspd_min.get();
+
+	// Adapt min airspeed setpoint based on wind estimate (disable in airspeed-less mode)
+	const bool do_wind_based_airspeed_scaling = _airspeed_valid
+			&& (_param_fw_wind_thld_h.get() > FLT_EPSILON || _param_fw_wind_thld_l.get() > FLT_EPSILON);
 
 	if (do_wind_based_airspeed_scaling) {
 		FixedwingPositionControl::update_wind_mode();
 
 		switch (_fw_wind_mode_current) {
 		case FW_WIND_MODE_HIGH:
-			airspeed_setpoint += _param_fw_wind_arsp_of.get();
+			airspeed_min_adjusted += _param_fw_wind_arsp_of.get();
 			break;
 
 		case FW_WIND_MODE_LOW:
-			airspeed_setpoint -= _param_fw_wind_arsp_of.get();
+			airspeed_min_adjusted -= _param_fw_wind_arsp_of.get();
 			break;
 
 		default:
@@ -413,31 +443,6 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, con
 	} else {
 		_fw_wind_mode_current = FW_WIND_MODE_NORMAL;
 		_fw_wind_mode_detected_prev = FW_WIND_MODE_NORMAL;
-	}
-
-	// Adapt cruise airspeed setpoint if given from other source (e.g. position setpoint)
-	if (PX4_ISFINITE(pos_sp_cru_airspeed) && pos_sp_cru_airspeed > 0.1f) {
-		airspeed_setpoint = constrain(pos_sp_cru_airspeed, _param_fw_airspd_min.get(), _param_fw_airspd_max.get());
-
-	} else if (!_control_mode.flag_control_offboard_enabled && !_control_mode.flag_control_auto_enabled &&
-		   (_param_fw_pos_stk_conf.get() & STICK_CONFIG_ENABLE_AIRSPEED_SP_MANUAL_BIT)) {
-		// No airspeed setpoint is given through position setpoint. The FW_POS_STK_CONF parameter defines if the use of
-		// stick input for airspeed setpoint change in manual mode is enabled.
-		// The airspeed setpoint from the sticks overwrites wind-based airspeed adaptions.
-
-		if (_manual_control_setpoint_airspeed < 0.5f) {
-			// lower half of throttle is min to cruise airspeed
-			airspeed_setpoint = _param_fw_airspd_min.get() +
-					    (_param_fw_airspd_trim.get() - _param_fw_airspd_min.get()) *
-					    _manual_control_setpoint_airspeed * 2;
-
-		} else {
-			// upper half of throttle is cruise to max airspeed
-			airspeed_setpoint = _param_fw_airspd_trim.get() +
-					    (_param_fw_airspd_max.get() - _param_fw_airspd_trim.get()) *
-					    (_manual_control_setpoint_airspeed * 2 - 1);
-		}
-
 	}
 
 	// Adapt cruise airspeed when otherwise the min groundspeed couldn't be maintained
@@ -466,29 +471,28 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, con
 	 * lift is proportional to airspeed^2 so the increase in stall speed is Vsacc = Vs * sqrt(n)
 	 */
 
-	float adjusted_min_airspeed = _param_fw_airspd_min.get();
-
 	if (_airspeed_valid && PX4_ISFINITE(_att_sp.roll_body)) {
 
-		adjusted_min_airspeed = constrain(_param_fw_airspd_stall.get() / sqrtf(cosf(_att_sp.roll_body)),
+		airspeed_min_adjusted = constrain(_param_fw_airspd_stall.get() / sqrtf(cosf(_att_sp.roll_body)),
 						  _param_fw_airspd_min.get(), _param_fw_airspd_max.get());
 	}
 
-	// constrain airspeed setpoint changes with slew rate of 1 m/s/s
-	const float airspeed_setpoint_slew_rate = 1.f;
+	// constrain setpoint
+	airspeed_setpoint = constrain(airspeed_setpoint, airspeed_min_adjusted, _param_fw_airspd_max.get());
 
-	// initialize to current airspeed setpoint
-	if (!PX4_ISFINITE(_last_airspeed_setpoint)) {
-		_last_airspeed_setpoint = airspeed_setpoint;
+	// initialize to current airspeed setpoint, also if previous setpoint is out of bounds to not apply slew rate in that case
+	const bool outside_of_limits = _slew_rate_airspeed.getState() < airspeed_min_adjusted
+				       || _slew_rate_airspeed.getState() > _param_fw_airspd_max.get();
+
+	if (!PX4_ISFINITE(_slew_rate_airspeed.getState()) || outside_of_limits) {
+		_slew_rate_airspeed.setForcedValue(airspeed_setpoint);
+
+	} else if (dt > FLT_EPSILON) {
+		// constrain airspeed setpoint changes with slew rate of ASPD_SP_SLEW_RATE m/s/s
+		airspeed_setpoint = _slew_rate_airspeed.update(airspeed_setpoint, dt);
 	}
 
-	if (dt > FLT_EPSILON) {
-		airspeed_setpoint = constrain(airspeed_setpoint, _last_airspeed_setpoint - airspeed_setpoint_slew_rate * dt,
-					      _last_airspeed_setpoint + airspeed_setpoint_slew_rate * dt);
-		_last_airspeed_setpoint = airspeed_setpoint;
-	}
-
-	return constrain(airspeed_setpoint, adjusted_min_airspeed, _param_fw_airspd_max.get());
+	return airspeed_setpoint;
 }
 
 
@@ -1320,8 +1324,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		/* do not publish the setpoint */
 		setpoint = false;
 
-		// reset last airspeed setpoint
-		_last_airspeed_setpoint = NAN;
+		// reset airspeed setpoint slew rate
+		_slew_rate_airspeed.setForcedValue(NAN);
 
 		/* reset landing and takeoff state */
 		if (!_last_manual) {

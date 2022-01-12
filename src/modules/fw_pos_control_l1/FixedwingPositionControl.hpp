@@ -301,9 +301,6 @@ private:
 		CRUISE_MODE_DASH,
 	} _cruise_mode_current{CRUISE_MODE_NORMAL};		///< used to make flight mode based vehicle limit adaptions (e.g. airspeed setpoint)
 
-	float _last_airspeed_setpoint{NAN};
-
-
 	// Update our local parameter cache.
 	int		parameters_update();
 
@@ -358,7 +355,8 @@ private:
 	float		get_tecs_pitch();
 	float		get_tecs_thrust();
 
-	float		get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
+	float		get_manual_airspeed_setpoint();
+	float		get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cruise_airspeed,
 			const Vector2f &ground_speed, float dt);
 	void		update_wind_mode();
 	void		update_cruise_mode(const hrt_abstime &now);
