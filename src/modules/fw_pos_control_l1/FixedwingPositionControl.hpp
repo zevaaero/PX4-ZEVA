@@ -358,7 +358,7 @@ private:
 	float		get_tecs_pitch();
 	float		get_tecs_thrust();
 
-	float		get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
+	float		get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
 			const Vector2f &ground_speed, float dt);
 	void		update_wind_mode();
 	void		update_cruise_mode(const hrt_abstime &now);

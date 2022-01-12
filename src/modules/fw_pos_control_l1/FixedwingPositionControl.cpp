@@ -384,7 +384,7 @@ FixedwingPositionControl::update_wind_mode()
 }
 
 float
-FixedwingPositionControl::get_cruise_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
+FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, const float pos_sp_cru_airspeed,
 		const Vector2f &ground_speed, float dt)
 {
 	float airspeed_setpoint = _cruise_mode_current == CRUISE_MODE_DASH ? _param_fw_airspd_max.get() :
@@ -1005,7 +1005,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 
 			tecs_update_pitch_throttle(now, position_sp_alt,
-						   get_cruise_airspeed_setpoint(now, adapted_mission_airspeed, ground_speed, dt),
+						   get_auto_airspeed_setpoint(now, adapted_mission_airspeed, ground_speed, dt),
 						   radians(_param_fw_p_lim_min.get()),
 						   radians(_param_fw_p_lim_max.get()),
 						   tecs_fw_thr_min,
@@ -1057,7 +1057,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			}
 
 			tecs_update_pitch_throttle(now, alt_sp,
-						   get_cruise_airspeed_setpoint(now, adapted_mission_airspeed, ground_speed, dt),
+						   get_auto_airspeed_setpoint(now, adapted_mission_airspeed, ground_speed, dt),
 						   radians(_param_fw_p_lim_min.get()),
 						   radians(_param_fw_p_lim_max.get()),
 						   tecs_fw_thr_min,
@@ -1132,7 +1132,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		}
 
 		tecs_update_pitch_throttle(now, altitude_sp_amsl,
-					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
+					   get_auto_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
@@ -1247,7 +1247,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		}
 
 		tecs_update_pitch_throttle(now, altitude_sp_amsl,
-					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
+					   get_auto_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
@@ -1273,7 +1273,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		float target_altitude_amsl = 0.0f;
 
 		tecs_update_pitch_throttle(now, target_altitude_amsl,
-					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
+					   get_auto_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
@@ -1297,7 +1297,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		reset_cruise_mode(now);
 
 		tecs_update_pitch_throttle(now, _current_altitude,
-					   get_cruise_airspeed_setpoint(now, 0.0f, ground_speed, dt),
+					   get_auto_airspeed_setpoint(now, 0.0f, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
@@ -1457,7 +1457,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 		const float takeoff_pitch_max_deg = _runway_takeoff.getMaxPitch(_param_fw_p_lim_max.get());
 
 		tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-					   get_cruise_airspeed_setpoint(now, _runway_takeoff.getMinAirspeedScaling() * _param_fw_airspd_min.get(), ground_speed,
+					   get_auto_airspeed_setpoint(now, _runway_takeoff.getMinAirspeedScaling() * _param_fw_airspd_min.get(), ground_speed,
 							   dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(takeoff_pitch_max_deg),
@@ -1545,7 +1545,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 
 			} else {
 				tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-							   get_cruise_airspeed_setpoint(now, _param_fw_airspd_trim.get(), ground_speed, dt),
+							   get_auto_airspeed_setpoint(now, _param_fw_airspd_trim.get(), ground_speed, dt),
 							   radians(_param_fw_p_lim_min.get()),
 							   radians(_param_fw_p_lim_max.get()),
 							   _param_fw_thr_min.get(),
@@ -1765,7 +1765,7 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2d
 		const float throttle_land = _param_fw_thr_min.get() + (_param_fw_thr_max.get() - _param_fw_thr_min.get()) * 0.1f;
 
 		tecs_update_pitch_throttle(now, terrain_alt + flare_curve_alt_rel,
-					   get_cruise_airspeed_setpoint(now, airspeed_land, ground_speed, dt),
+					   get_auto_airspeed_setpoint(now, airspeed_land, ground_speed, dt),
 					   radians(_param_fw_lnd_fl_pmin.get()),
 					   radians(_param_fw_lnd_fl_pmax.get()),
 					   0.0f,
@@ -1835,7 +1835,7 @@ FixedwingPositionControl::control_landing(const hrt_abstime &now, const Vector2d
 		const float airspeed_approach = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
 
 		tecs_update_pitch_throttle(now, altitude_desired,
-					   get_cruise_airspeed_setpoint(now, airspeed_approach, ground_speed, dt),
+					   get_auto_airspeed_setpoint(now, airspeed_approach, ground_speed, dt),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
