@@ -957,7 +957,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_att_sp.roll_body = 0.0f;
 			_att_sp.pitch_body = radians(_param_fw_psp_off.get());
 
-		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_POSITION) {
+		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_POSITION
+			   || (position_sp_type == position_setpoint_s::SETPOINT_TYPE_LAND && _vehicle_status.in_transition_mode)) {
 			// waypoint is a plain navigation waypoint
 			float position_sp_alt = pos_sp_curr.alt;
 
