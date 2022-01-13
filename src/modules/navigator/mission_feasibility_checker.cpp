@@ -719,6 +719,8 @@ MissionFeasibilityChecker::checkTakeoffLandAvailable()
 		break;
 
 	case 5:
+		_navigator->readVtolHomeLandApproachesFromStorage();
+
 		if (!_navigator->get_land_detected()->landed && !_navigator->hasVtolHomeLandApproach()) {
 			resTakeoffLandReq = _has_landing;
 

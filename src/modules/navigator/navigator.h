@@ -372,6 +372,8 @@ public:
 
 	void 		calculate_breaking_stop(double &lat, double &lon, float &yaw);
 
+	void 		readVtolHomeLandApproachesFromStorage();
+
 private:
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::NAV_LOITER_RAD>) _param_nav_loiter_rad,	/**< loiter radius for fixedwing */
@@ -532,6 +534,4 @@ private:
 	bool 		geofence_allows_position(const vehicle_global_position_s &pos);
 
 	void		reset_custom_action();
-
-	void 		readVtolHomeLandApproachesFromStorage();
 };
