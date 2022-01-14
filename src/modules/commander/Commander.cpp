@@ -768,7 +768,6 @@ Commander::Commander() :
 	_failure_detector(this)
 {
 	_internal_state.main_state = commander_state_s::MAIN_STATE_INIT;
-	_auto_disarm_landed.set_hysteresis_time_from(false, _param_com_disarm_preflight.get() * 1_s);
 
 	_land_detector.landed = true;
 
@@ -1976,6 +1975,7 @@ Commander::run()
 			_arm_requirements.geofence = _param_geofence_action.get() > geofence_result_s::GF_ACTION_NONE;
 
 			_auto_disarm_killed.set_hysteresis_time_from(false, _param_com_kill_disarm.get() * 1_s);
+			_offboard_available.set_hysteresis_time_from(true, _param_com_of_loss_t.get() * 1_s);
 
 			/* check for unsafe Airmode settings: yaw airmode requires the use of an arming switch */
 			if (param_airmode != PARAM_INVALID && param_man_arm_gesture != PARAM_INVALID) {
@@ -1994,8 +1994,6 @@ Commander::run()
 						     "Yaw Airmode requires disabling the stick arm gesture");
 				}
 			}
-
-			_offboard_available.set_hysteresis_time_from(true, _param_com_of_loss_t.get() * 1e6f);
 
 			param_init_forced = false;
 		}
