@@ -4011,12 +4011,13 @@ void Commander::estimator_check()
 
 		if (!mag_fault_prev && mag_fault) {
 			if (_vehicle_control_mode.flag_control_velocity_enabled) {
-				if (_status_flags.condition_global_position_valid && _status_flags.condition_home_position_valid) {
-					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_RTL, _status_flags, _internal_state);
-
-				} else if (_status_flags.condition_global_position_valid || (_status_flags.condition_local_position_valid
-						&& _status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING)) {
-					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LAND, _status_flags, _internal_state);
+				// If RTL denied, do land
+				if (main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_RTL, _status_flags,
+							  _internal_state) == TRANSITION_DENIED) {
+					if (_status_flags.condition_global_position_valid || (_status_flags.condition_local_position_valid
+							&& _status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING)) {
+						main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LAND, _status_flags, _internal_state);
+					}
 				}
 			}
 
