@@ -283,6 +283,28 @@ FixedwingPositionControl::airspeed_poll()
 }
 
 void
+FixedwingPositionControl::wind_poll()
+{
+	if (_wind_sub.updated()) {
+		wind_s wind;
+		_wind_sub.update(&wind);
+
+		// assumes wind is valid if finite
+		_wind_valid = PX4_ISFINITE(wind.windspeed_north)
+			      && PX4_ISFINITE(wind.windspeed_east);
+
+		_time_wind_last_received = hrt_absolute_time();
+
+		_wind_vel(0) = wind.windspeed_north;
+		_wind_vel(1) = wind.windspeed_east;
+
+	} else {
+		// invalidate wind estimate usage after subscription timeout
+		_wind_valid = _wind_valid && (hrt_absolute_time() - _time_wind_last_received) < T_WIND_EST_TIMEOUT;
+	}
+}
+
+void
 FixedwingPositionControl::manual_control_setpoint_poll()
 {
 	_manual_control_setpoint_sub.update(&_manual_control_setpoint);
@@ -381,16 +403,8 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, con
 	float airspeed_min_adjusted = _param_fw_airspd_min.get();
 
 	// Adapt min airspeed setpoint based on wind estimate (disable in airspeed-less mode)
-	if (_airspeed_valid && _param_fw_wind_arsp_sc.get() > FLT_EPSILON) {
-		wind_s wind_estimate;
-
-		if (_wind_sub.update(&wind_estimate)) {
-			const matrix::Vector2f wind(wind_estimate.windspeed_north, wind_estimate.windspeed_east);
-
-			if (PX4_ISFINITE(wind.length())) {
-				airspeed_min_adjusted += constrain(_param_fw_wind_arsp_sc.get() * wind.length(), 0.f, 3.0f);
-			}
-		}
+	if (_airspeed_valid && _wind_valid && _param_fw_wind_arsp_sc.get() > FLT_EPSILON) {
+		airspeed_min_adjusted += constrain(_param_fw_wind_arsp_sc.get() * _wind_vel.length(), 0.f, 3.0f);
 	}
 
 	// Adapt cruise airspeed when otherwise the min groundspeed couldn't be maintained
@@ -2053,6 +2067,7 @@ FixedwingPositionControl::Run()
 		vehicle_attitude_poll();
 		vehicle_command_poll();
 		vehicle_control_mode_poll();
+		wind_poll();
 
 		if (_vehicle_land_detected_sub.updated()) {
 			vehicle_land_detected_s vehicle_land_detected;

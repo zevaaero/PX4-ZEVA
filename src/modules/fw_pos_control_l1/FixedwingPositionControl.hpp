@@ -114,6 +114,8 @@ static constexpr hrt_abstime T_ALT_TIMEOUT = 1_s; // time after which we abort l
 static constexpr float THROTTLE_THRESH =
 	0.05f;	///< max throttle from user which will not lead to motors spinning up in altitude controlled modes
 static constexpr float ASPD_SP_SLEW_RATE = 1.f; // slew rate limit for airspeed setpoint changes [m/s/S]
+static constexpr hrt_abstime T_WIND_EST_TIMEOUT =
+	10_s; // time after which the wind estimate is disabled if no longer updating
 
 class FixedwingPositionControl final : public ModuleBase<FixedwingPositionControl>, public ModuleParams,
 	public px4::WorkItem
@@ -230,6 +232,11 @@ private:
 	float _airspeed{0.0f};
 	float _eas2tas{1.0f};
 
+	/* wind estimates */
+	Vector2f _wind_vel{0.0f, 0.0f}; ///< wind velocity vector [m/s]
+	bool _wind_valid{false}; ///< flag if a valid wind estimate exists
+	hrt_abstime _time_wind_last_received{0}; ///< last time wind estimate was received in microseconds. Used to detect timeouts.
+
 	float _pitch{0.0f};
 	float _yaw{0.0f};
 	float _yawrate{0.0f};
@@ -299,6 +306,7 @@ private:
 	void		vehicle_command_poll();
 	void		vehicle_control_mode_poll();
 	void		vehicle_status_poll();
+	void        	wind_poll();
 
 	void		status_publish();
 	void		landing_status_publish();
