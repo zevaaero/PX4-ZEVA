@@ -1377,7 +1377,8 @@ void EKF2::UpdateAirspeedSample(ekf2_timestamps_s &ekf2_timestamps)
 		const float true_airspeed_m_s = airspeed.true_airspeed_m_s * _airspeed_scale_factor;
 
 		// only set airspeed data if condition for airspeed fusion are met
-		if ((_param_ekf2_arsp_thr.get() > FLT_EPSILON) && (true_airspeed_m_s > _param_ekf2_arsp_thr.get())) {
+		if ((_param_ekf2_arsp_thr.get() > FLT_EPSILON) && (true_airspeed_m_s > _param_ekf2_arsp_thr.get())
+		    && _ekf.control_status_flags().fixed_wing) {
 
 			airspeedSample airspeed_sample {
 				.time_us = airspeed.timestamp,
