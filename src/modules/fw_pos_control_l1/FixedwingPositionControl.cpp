@@ -402,7 +402,8 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const hrt_abstime &now, con
 
 	float airspeed_min_adjusted = _param_fw_airspd_min.get();
 
-	// Adapt min airspeed setpoint based on wind estimate (disable in airspeed-less mode)
+	// Adapt min airspeed setpoint based on wind estimate for stall prevention (disable in airspeed-less mode)
+	// Constrain increase to max 3m/s to make robust against bad (too high) wind speed estimates.
 	if (_airspeed_valid && _wind_valid && _param_fw_wind_arsp_sc.get() > FLT_EPSILON) {
 		airspeed_min_adjusted += constrain(_param_fw_wind_arsp_sc.get() * _wind_vel.length(), 0.f, 3.0f);
 	}
@@ -477,11 +478,11 @@ FixedwingPositionControl::update_cruise_mode(const hrt_abstime &now, float pos_s
 
 	const bool speed_check = _param_fw_eco_ad_thrld.get() > FLT_EPSILON && airspeed_setpoint < _param_fw_eco_ad_thrld.get();
 
-	const bool eco_checks_fail = speed_check && within_safe_altitude_band
-				     && _tecs.get_flight_phase() == tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
+	const bool eco_checks = speed_check && within_safe_altitude_band
+				&& _tecs.get_flight_phase() == tecs_status_s::TECS_FLIGHT_PHASE_LEVEL;
 
 	// reset timer if one of the check fails
-	if (!eco_checks_fail) {
+	if (!eco_checks) {
 		_last_time_eco_checks_failed = now;
 	}
 

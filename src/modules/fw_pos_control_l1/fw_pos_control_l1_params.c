@@ -956,7 +956,8 @@ PARAM_DEFINE_FLOAT(FW_ECO_AD_THRLD, -1.f);
  *
  * Multiplying this factor with the current absolute wind estimate gives the airspeed offset
  * added to the minimum airspeed setpoint limit. This helps to make the
- * system more robust against disturbances in high wind.
+ * system more robust against disturbances (turbulence) in high wind.
+ * The airspeed increase is limited to 3 m/s.
  * APX4 custom parameter.
  *
  * airspeed_min_adjusted = FW_AIRSPD_MIN + FW_WIND_ARSP_SC * wind.length()
