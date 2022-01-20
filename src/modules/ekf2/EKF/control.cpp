@@ -622,23 +622,13 @@ void Ekf::controlGpsFusion()
 			bool is_yaw_failure = false;
 
 			if ((recent_takeoff_nav_failure || inflight_nav_failure) && _time_last_hor_vel_fuse > 0) {
-				// Do sanity check to see if the innovation failures is likely caused by a yaw angle error
-				// by measuring the angle between the velocity estimate and the last velocity observation
-				// Only use those vectors if their norm if they are larger than 4 times their noise standard deviation
-				const float vel_obs_xy_norm_sq = _last_vel_obs.xy().norm_squared();
-				const float vel_state_xy_norm_sq = _state.vel.xy().norm_squared();
+				if (isYawEmergencyEstimateAvailable()) {
+					const float euler_yaw = shouldUse321RotationSequence(_R_to_earth)
+								? getEuler321Yaw(_R_to_earth)
+								: getEuler312Yaw(_R_to_earth);
+					const float yaw_error = wrap_pi(euler_yaw - _yawEstimator.getYaw());
 
-				const float vel_obs_threshold_sq = fmaxf(sq(4.f) * (_last_vel_obs_var(0) + _last_vel_obs_var(1)), sq(0.4f));
-				const float vel_state_threshold_sq = fmaxf(sq(4.f) * (P(4, 4) + P(5, 5)), sq(0.4f));
-
-				if (vel_obs_xy_norm_sq > vel_obs_threshold_sq && vel_state_xy_norm_sq > vel_state_threshold_sq) {
-					const float obs_dot_vel = Vector2f(_last_vel_obs).dot(_state.vel.xy());
-					const float cos_sq = sq(obs_dot_vel) / (vel_state_xy_norm_sq * vel_obs_xy_norm_sq);
-
-					if (cos_sq < sq(cosf(math::radians(25.f))) || obs_dot_vel < 0.f) {
-						// The angle between the observation and the velocity estimate is greater than 25 degrees
-						is_yaw_failure = true;
-					}
+					is_yaw_failure = fabsf(yaw_error) > math::radians(25.f);
 				}
 			}
 
