@@ -142,6 +142,7 @@ public:
 
 protected:
 	mavsdk::Param *getParams() const { return _param.get();}
+	mavsdk::Telemetry *getTelemetry() const { return _telemetry.get();}
 	mavsdk::ManualControl *getManualControl() const { return _manual_control.get();}
 	std::shared_ptr<System> get_system() { return _mavsdk.systems().at(0);}
 	Telemetry::GroundTruth getHome()
