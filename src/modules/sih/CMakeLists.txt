@@ -42,8 +42,6 @@ px4_add_module(
 		sih.hpp
 	DEPENDS
 		mathlib
-		drivers_accelerometer
-		drivers_gyroscope
 		drivers_magnetometer
 		px4_work_queue
 	)

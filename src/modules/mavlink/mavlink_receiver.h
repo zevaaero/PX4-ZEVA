@@ -50,8 +50,6 @@
 #include "tune_publisher.h"
 
 #include <geo/geo.h>
-#include <lib/drivers/accelerometer/PX4Accelerometer.hpp>
-#include <lib/drivers/gyroscope/PX4Gyroscope.hpp>
 #include <lib/drivers/magnetometer/PX4Magnetometer.hpp>
 #include <lib/systemlib/mavlink_log.h>
 #include <px4_platform_common/module_params.h>
@@ -364,8 +362,6 @@ private:
 		BARO		= 0b1101000000000,
 		DIFF_PRESS	= 0b10000000000
 	};
-	PX4Accelerometer *_px4_accel{nullptr};
-	PX4Gyroscope *_px4_gyro{nullptr};
 	PX4Magnetometer *_px4_mag{nullptr};
 
 	float _global_local_alt0{NAN};

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019-2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,8 +57,6 @@ Sih::Sih() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl)
 {
-	_px4_accel.set_temperature(T1_C);
-	_px4_gyro.set_temperature(T1_C);
 	_px4_mag.set_temperature(T1_C);
 
 	parameters_updated();
@@ -136,8 +134,8 @@ void Sih::Run()
 	reconstruct_sensors_signals();
 
 	// update IMU every iteration
-	_px4_accel.update(_now, _acc(0), _acc(1), _acc(2));
-	_px4_gyro.update(_now, _gyro(0), _gyro(1), _gyro(2));
+	//_px4_accel.update(_now, _acc(0), _acc(1), _acc(2));
+	//_px4_gyro.update(_now, _gyro(0), _gyro(1), _gyro(2));
 
 	// magnetometer published at 50 Hz
 	if (_now - _mag_time >= 20_ms
