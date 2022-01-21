@@ -3928,8 +3928,8 @@ void Commander::battery_status_check()
 
 		if (_param_com_bat_act_t.get() > 0.f
 		    && failsafe_action != commander_state_s::MAIN_STATE_MAX) {
-			mavlink_log_critical(&_mavlink_log_pub, "Executing %s in %d seconds",
-					     main_state_str(failsafe_action), static_cast<uint16_t>(_param_com_bat_act_t.get()));
+			mavlink_log_gcs_critical(&_mavlink_log_pub, "Executing %s in %d seconds",
+						 main_state_str(failsafe_action), static_cast<uint16_t>(_param_com_bat_act_t.get()));
 			events::send<events::px4::enums::navigation_mode_t, uint16_t>(events::ID("commander_low_bat_action"), {events::Log::Critical, events::LogInternal::Warning},
 					"Executing {1} in {2} seconds",
 					navigation_mode(failsafe_action), static_cast<uint16_t>(_param_com_bat_act_t.get()));
