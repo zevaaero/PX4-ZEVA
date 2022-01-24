@@ -223,7 +223,7 @@ private:
 		(ParamInt<px4::params::RC_MAP_GEAR_SW>) _param_rc_map_gear_sw,
 		(ParamInt<px4::params::RC_MAP_STAB_SW>) _param_rc_map_stab_sw,
 		(ParamInt<px4::params::RC_MAP_MAN_SW>) _param_rc_map_man_sw,
-		(ParamInt<px4::params::RC_MAP_FLTM_BTN>) _param_rc_map_flightmode_buttons,
+		(ParamInt<px4::params::RC_MAP_FLTM_BTN>) _param_rc_map_fltm_btn,
 
 		(ParamInt<px4::params::RC_MAP_AUX1>) _param_rc_map_aux1,
 		(ParamInt<px4::params::RC_MAP_AUX2>) _param_rc_map_aux2,

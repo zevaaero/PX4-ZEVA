@@ -293,7 +293,7 @@ RCUpdate::map_flight_modes_buttons()
 	}
 
 	// If the functionality is disabled we don't need to map channels
-	const int flightmode_buttons = _param_rc_map_flightmode_buttons.get();
+	const int flightmode_buttons = _param_rc_map_fltm_btn.get();
 
 	if (flightmode_buttons == 0) {
 		return;
@@ -604,7 +604,7 @@ void RCUpdate::UpdateManualSwitches(const hrt_abstime &timestamp_sample)
 		switches.stab_switch      = get_rc_sw2pos_position(rc_channels_s::FUNCTION_STAB,      _param_rc_stab_th.get());
 		switches.posctl_switch    = get_rc_sw2pos_position(rc_channels_s::FUNCTION_POSCTL,    _param_rc_posctl_th.get());
 
-	} else if (_param_rc_map_flightmode_buttons.get() > 0) {
+	} else if (_param_rc_map_fltm_btn.get() > 0) {
 		switches.mode_slot = manual_control_switches_s::MODE_SLOT_NONE;
 		bool is_consistent_button_press = false;
 
