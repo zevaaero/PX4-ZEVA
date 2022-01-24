@@ -225,6 +225,7 @@ private:
 
 		(ParamInt<px4::params::RC_MAP_FLTMODE>) _param_rc_map_fltmode,
 		(ParamInt<px4::params::RC_MAP_MODE_SW>) _param_rc_map_mode_sw,
+		(ParamInt<px4::params::RC_MAP_FLTM_BTN>) _param_rc_map_fltm_btn,
 
 		// Offboard
 		(ParamFloat<px4::params::COM_OF_LOSS_T>) _param_com_of_loss_t,

@@ -1673,6 +1673,7 @@ void Commander::executeActionRequest(const action_request_s &action_request)
 
 		// if there's never been a mode change force RC switch as initial state
 		if (action_request.source == action_request_s::SOURCE_RC_MODE_SLOT
+		    && (_param_rc_map_fltm_btn.get() == 0)
 		    && !_armed.armed && (_internal_state.main_state_changes == 0)
 		    && (action_request.mode == commander_state_s::MAIN_STATE_ALTCTL
 			|| action_request.mode == commander_state_s::MAIN_STATE_POSCTL)) {
