@@ -100,7 +100,7 @@ void PowerMonitorSelectorAuterion::Run()
 				const char *start_argv[] {
 					_sensors[i].name,
 					"-X", "-b", bus_number, "-a", _sensors[i].i2c_addr,
-					"-t", "1", "-q", "start", NULL
+					"-t", _sensors[i].id, "-q", "start", NULL
 				};
 
 				int status = PX4_ERROR;

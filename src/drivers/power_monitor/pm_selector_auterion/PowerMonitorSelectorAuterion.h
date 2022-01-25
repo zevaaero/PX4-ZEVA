@@ -75,6 +75,7 @@ private:
 		const uint8_t bus_number;
 		float shunt_value;
 		bool started;
+		const char *id;
 	};
 
 	static constexpr int RUN_INTERVAL{500_ms};
@@ -86,28 +87,32 @@ private:
 			.i2c_addr = "0x41",
 			.bus_number = 1,
 			.shunt_value = 0.0008f,
-			.started = false
+			.started = false,
+			.id = "1"
 		},
 		{
 			.name = "ina226",
 			.i2c_addr = "0x40",
 			.bus_number = 1,
 			.shunt_value = 0.0005f,
-			.started = false
+			.started = false,
+			.id = "1"
 		},
 		{
 			.name = "ina226",
 			.i2c_addr = "0x41",
 			.bus_number = 2,
 			.shunt_value = 0.0008f,
-			.started = false
+			.started = false,
+			.id = "2"
 		},
 		{
 			.name = "ina226",
 			.i2c_addr = "0x40",
 			.bus_number = 2,
 			.shunt_value = 0.0005f,
-			.started = false
+			.started = false,
+			.id = "2"
 		}
 	};
 };
