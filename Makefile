@@ -250,6 +250,7 @@ define deprecation_warning
 	$(warning $(1) has been deprecated and will be removed, please use $(2)!)
 endef
 
+.PHONY: skynode
 skynode: skynode_rtps
 
 skynode_rtps:
