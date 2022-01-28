@@ -223,8 +223,8 @@
 
 // Base                   FMUM
 #define V6X00000000   HW_VER_REV(0x0,0x0) // FMUV6X,                 Rev 0
-#define V6X00000001   HW_VER_REV(0x1,0x0) // BMP388 moved to I2C2,   ?
-#define V6x00900000   HW_VER_REV(0x0,0x09) // 			      ?
+#define V6X00000001   HW_VER_REV(0x0,0x1) // BMP388 moved to I2C2,   Rev 1
+#define V6X00090000   HW_VER_REV(0x9,0x0) // 			      Rev 0
 
 /* HEATER
  * PWM in future

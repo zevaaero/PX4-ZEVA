@@ -85,7 +85,7 @@ static px4_hw_mft_list_entry_t mft_lists[] = {
 //  ver_rev
 	{V6X00000000, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)},
 	{V6X00000001, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)}, // BMP388 moved to I2C2
-	{V6x00900000, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)},
+	{V6X00090000, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)},
 };
 
 /************************************************************************************

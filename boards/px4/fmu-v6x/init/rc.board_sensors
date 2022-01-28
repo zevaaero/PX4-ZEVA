@@ -26,7 +26,7 @@ then
 fi
 
 
-if ver hwtypecmp V6X90 #for Skynode
+if ver hwtypecmp V6X00000000 V6X00090000 #for Skynode
 then
   # Internal SPI BMI088
   bmi088 -A -R 2 -s start
@@ -41,7 +41,7 @@ then
   # Internal magnetometer on I2c
   bmm150 -I -R 6 start
 
-else #v6x base
+else # v6x base
   # Internal SPI BMI088
   bmi088 -A -R 4 -s start
   bmi088 -G -R 4 -s start
@@ -62,10 +62,10 @@ ist8310 -X -b 1 -R 10 start
 # Possible internal Baro
 bmp388 -I -a 0x77 start
 
-if ver hwtypecmp V6X00 V6X90000000
+if ver hwtypecmp V6X00000000 V6X00090000 # for Skynode
 then
 	bmp388 -I start
-else
+else # v6x base
 	bmp388 -X start
 fi
 
