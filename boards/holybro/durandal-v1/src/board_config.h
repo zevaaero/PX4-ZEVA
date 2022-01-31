@@ -160,6 +160,9 @@
 #define GPIO_HW_VER_SENSE    /* PC2   */ GPIO_ADC123_INP12
 #define HW_INFO_INIT         "VD%04x%04x"
 
+#define VD00000000   HW_VER_REV(0x0,0x0) // Durandal,  Ver 0        Rev 0
+#define VD00000001   HW_VER_REV(0x0,0x1) // Durandal,  Ver 0        Rev 1
+
 /* CAN Silence
  *
  * Silent mode control \ ESC Mux select
