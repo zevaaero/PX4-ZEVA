@@ -104,6 +104,13 @@ MavlinkMissionManager::init_offboard_mission()
 			_count[MAV_MISSION_TYPE_MISSION] = mission_state.count;
 			_current_seq = mission_state.current_seq;
 
+			if (_current_seq >= _count[MAV_MISSION_TYPE_MISSION] &&
+			    !(_current_seq <= 0 && _count[MAV_MISSION_TYPE_MISSION] == 0)) {
+				PX4_ERR("mission corrupted, len %i, seq %i. Clearing..", (int)_count[MAV_MISSION_TYPE_MISSION], (int)_current_seq);
+				update_active_mission(_dataman_id == DM_KEY_WAYPOINTS_OFFBOARD_0 ? DM_KEY_WAYPOINTS_OFFBOARD_1 :
+						      DM_KEY_WAYPOINTS_OFFBOARD_0, 0, 0, true);
+			}
+
 		} else if (ret < 0) {
 			PX4_WARN("offboard mission init failed (%i)", ret);
 		}
