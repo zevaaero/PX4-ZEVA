@@ -124,7 +124,7 @@ ControlAllocator::parameters_updated()
 		_control_allocation[i]->updateParameters();
 	}
 
-	update_effectiveness_matrix_if_needed(true);
+	update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::CONFIGURATION_UPDATE);
 }
 
 void
@@ -208,7 +208,7 @@ ControlAllocator::update_effectiveness_source()
 		switch (source) {
 		case EffectivenessSource::NONE:
 		case EffectivenessSource::MULTIROTOR:
-			tmp = new ActuatorEffectivenessRotors(this);
+			tmp = new ActuatorEffectivenessMultirotor(this);
 			break;
 
 		case EffectivenessSource::STANDARD_VTOL:
@@ -293,7 +293,8 @@ ControlAllocator::Run()
 
 		if (_handled_motor_failure_bitmask == 0) {
 			// We don't update the geometry after an actuator failure, as it could lead to unexpected results
-			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore)
+			// (e.g. a user could add/remove motors, such that the bitmask isn't correct anymore).
+			// Also the matrix normalization scales are not updated in the motor failure case.
 			updateParams();
 			parameters_updated();
 		}
@@ -368,7 +369,8 @@ ControlAllocator::Run()
 
 		check_for_motor_failures();
 
-		update_effectiveness_matrix_if_needed();
+
+		update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::NO_EXTERNAL_UPDATE);
 
 		// Set control setpoint vector(s)
 		matrix::Vector<float, NUM_AXES> c[ActuatorEffectiveness::MAX_NUM_MATRICES];
@@ -420,15 +422,16 @@ ControlAllocator::Run()
 }
 
 void
-ControlAllocator::update_effectiveness_matrix_if_needed(bool force)
+ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReason reason)
 {
 	ActuatorEffectiveness::Configuration config{};
 
-	if (!force && hrt_elapsed_time(&_last_effectiveness_update) < 100_ms) { // rate-limit updates
+	if (reason == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE
+	    && hrt_elapsed_time(&_last_effectiveness_update) < 100_ms) { // rate-limit updates
 		return;
 	}
 
-	if (_actuator_effectiveness->getEffectivenessMatrix(config, force)) {
+	if (_actuator_effectiveness->getEffectivenessMatrix(config, reason)) {
 		_last_effectiveness_update = hrt_absolute_time();
 
 		memcpy(_control_allocation_selection_indexes, config.matrix_selection_indexes,
@@ -523,7 +526,7 @@ ControlAllocator::update_effectiveness_matrix_if_needed(bool force)
 			// Assign control effectiveness matrix
 			int total_num_actuators = config.num_actuators_matrix[i];
 			_control_allocation[i]->setEffectivenessMatrix(config.effectiveness_matrices[i], config.trim[i],
-					config.linearization_point[i], total_num_actuators, force);
+					config.linearization_point[i], total_num_actuators, reason == EffectivenessUpdateReason::CONFIGURATION_UPDATE);
 		}
 
 		trims.timestamp = hrt_absolute_time();
@@ -664,12 +667,7 @@ ControlAllocator::check_for_motor_failures()
 						if (_handled_motor_failure_bitmask == 0 && num_motors_failed == 1) {
 							_handled_motor_failure_bitmask = failure_detector_status.motor_failure_mask;
 							PX4_WARN("Removing motor from allocation (0x%x)", _handled_motor_failure_bitmask);
-
-							for (int i = 0; i < _num_control_allocation; ++i) {
-								_control_allocation[i]->setHadActuatorFailure(true);
-							}
-
-							update_effectiveness_matrix_if_needed(true);
+							update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MOTOR_ACTIVATION_UPDATE);
 						}
 					}
 					break;
@@ -685,11 +683,7 @@ ControlAllocator::check_for_motor_failures()
 			PX4_INFO("Restoring all motors");
 			_handled_motor_failure_bitmask = 0;
 
-			for (int i = 0; i < _num_control_allocation; ++i) {
-				_control_allocation[i]->setHadActuatorFailure(false);
-			}
-
-			update_effectiveness_matrix_if_needed(true);
+			update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::MOTOR_ACTIVATION_UPDATE);
 		}
 	}
 }
