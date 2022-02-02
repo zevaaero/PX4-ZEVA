@@ -774,6 +774,9 @@ int protocol_splitter_main(int argc, char *argv[])
 
 		strncpy(objects->device_name, argv[2], sizeof(objects->device_name));
 		sem_init(&objects->r_lock, 1, 1);
+		// Disable prio inheritance to ensure rtps never gets boosted (as there is a known case where the receiver
+		// busy loops)
+		px4_sem_setprotocol(&objects->r_lock, SEM_PRIO_NONE);
 		sem_init(&objects->w_lock, 1, 1);
 		objects->read_buffer = new ReadBuffer();
 		objects->mavlink2 = new Mavlink2Dev(objects->read_buffer);
