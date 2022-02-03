@@ -655,6 +655,10 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 			   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, true,
 					   gps_fail_openloop_loiter_time_s)) {
 			// nothing to do - everything done in check_invalid_pos_nav_state
+
+		} else if (status_flags.vtol_transition_failure) {
+			status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
+
 		} else if (status.data_link_lost && data_link_loss_act_configured && !landed && is_armed) {
 			// Data link lost, data link loss reaction configured -> do configured reaction
 			enable_failsafe(status, old_failsafe, mavlink_log_pub, event_failsafe_reason_t::no_datalink);
@@ -777,8 +781,9 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 
 			// deny entering failsafe while doing a vtol takeoff after the vehicle has started a transition and before it reaches the loiter
 			// altitude. the vtol takeoff navigaton mode will set mission_finished to true as soon as the loiter is established
-			const bool deny_failsafe = status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF && in_forward_flight
-						   && !mission_finished;
+			const bool deny_link_failsafe = status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF
+							&& in_forward_flight
+							&& !mission_finished;
 
 			if (status.engine_failure) {
 				status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_LANDENGFAIL;
@@ -787,13 +792,17 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 				   && check_invalid_pos_nav_state(status, old_failsafe, mavlink_log_pub, status_flags, false, false,
 						   gps_fail_openloop_loiter_time_s)) {
 				// nothing to do - everything done in check_invalid_pos_nav_state
-			} else if (status.data_link_lost && data_link_loss_act_configured && !landed && is_armed && !deny_failsafe) {
+
+			} else if (status_flags.vtol_transition_failure) {
+				status.nav_state = vehicle_status_s::NAVIGATION_STATE_AUTO_RTL;
+
+			} else if (status.data_link_lost && data_link_loss_act_configured && !landed && is_armed && !deny_link_failsafe) {
 				// Data link lost, data link loss reaction configured -> do configured reaction
 				enable_failsafe(status, old_failsafe, mavlink_log_pub, event_failsafe_reason_t::no_datalink);
 				set_link_loss_nav_state(status, armed, status_flags, internal_state, data_link_loss_act, 0);
 
 			} else if (status.rc_signal_lost && !(param_com_rcl_except & RCLossExceptionBits::RCL_EXCEPT_HOLD)
-				   && status_flags.rc_signal_found_once && is_armed && !landed && !deny_failsafe) {
+				   && status_flags.rc_signal_found_once && is_armed && !landed && !deny_link_failsafe) {
 				// RC link lost, rc loss not disabled in loiter, RC was used before -> RC loss reaction after delay
 				// Safety pilot expects to be able to take over by RC in case anything unexpected happens
 				enable_failsafe(status, old_failsafe, mavlink_log_pub, event_failsafe_reason_t::no_rc);
@@ -801,7 +810,7 @@ bool set_nav_state(vehicle_status_s &status, actuator_armed_s &armed, commander_
 
 			} else if (status.rc_signal_lost && !(param_com_rcl_except & RCLossExceptionBits::RCL_EXCEPT_HOLD)
 				   && status.data_link_lost && !data_link_loss_act_configured
-				   && is_armed && !landed && !deny_failsafe) {
+				   && is_armed && !landed && !deny_link_failsafe) {
 				// All links lost, no data link loss reaction configured -> immediately do RC loss reaction
 				// Lost all communication, by default it's considered unsafe to continue the mission
 				// This is only reached when flying mission completely without RC (it was not present since boot)
