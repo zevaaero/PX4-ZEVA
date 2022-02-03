@@ -3876,7 +3876,8 @@ void Commander::battery_status_check()
 	    && PX4_ISFINITE(worst_battery_time_s)
 	    && rtl_time_estimate.safe_time_estimate >= worst_battery_time_s
 	    && _internal_state.main_state != commander_state_s::MAIN_STATE_AUTO_RTL
-	    && _internal_state.main_state != commander_state_s::MAIN_STATE_AUTO_LAND) {
+	    && _internal_state.main_state != commander_state_s::MAIN_STATE_AUTO_LAND
+	    && _battery_failsafe_timestamp == 0) {
 		// Try to trigger RTL
 		if (main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_RTL, _status_flags,
 					  _internal_state) == TRANSITION_CHANGED) {
