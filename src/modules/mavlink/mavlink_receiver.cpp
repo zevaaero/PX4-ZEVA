@@ -225,6 +225,10 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		handle_message_battery_status(msg);
 		break;
 
+	case MAVLINK_MSG_ID_CAN_FRAME:
+		handle_message_can_frame(msg);
+		break;
+
 	case MAVLINK_MSG_ID_SERIAL_CONTROL:
 		handle_message_serial_control(msg);
 		break;
@@ -1768,6 +1772,24 @@ MavlinkReceiver::handle_message_battery_status(mavlink_message_t *msg)
 	}
 
 	_battery_pub.publish(battery_status);
+}
+
+void
+MavlinkReceiver::handle_message_can_frame(mavlink_message_t *msg)
+{
+	mavlink_can_frame_t mavlink_can_frame;
+	mavlink_msg_can_frame_decode(msg, &mavlink_can_frame);
+
+	can_frame_s can_frame{};
+	//msg.target_system = 0;
+	//msg.target_component = 0;
+	//can_frame.bus = mavlink_can_frame.bus;
+	can_frame.id = mavlink_can_frame.id;
+	can_frame.dlc = mavlink_can_frame.len;
+	memcpy(can_frame.data, mavlink_can_frame.data, sizeof(mavlink_can_frame.data));
+
+	can_frame.timestamp = hrt_absolute_time();
+	_can_frame_pub.publish(can_frame);
 }
 
 void
