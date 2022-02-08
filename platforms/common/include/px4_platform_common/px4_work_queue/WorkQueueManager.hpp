@@ -53,7 +53,7 @@ static constexpr wq_config_t ctrl_alloc{"wq:ctrl_alloc", 9500, 0}; // PX4 contro
 
 static constexpr wq_config_t SPI0{"wq:SPI0", 2336, -1};
 static constexpr wq_config_t SPI1{"wq:SPI1", 2336, -2};
-static constexpr wq_config_t SPI2{"wq:SPI2", 2336, -3};
+static constexpr wq_config_t SPI2{"wq:SPI2", 2360, -3};
 static constexpr wq_config_t SPI3{"wq:SPI3", 2336, -4};
 static constexpr wq_config_t SPI4{"wq:SPI4", 2336, -5};
 static constexpr wq_config_t SPI5{"wq:SPI5", 2336, -6};
