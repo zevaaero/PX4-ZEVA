@@ -899,7 +899,7 @@ MissionFeasibilityChecker::checkFlightTime(const mission_s &mission, int max_fli
 		param_get(param_find("MPC_Z_VEL_MAX_UP"), &takeoff_speed);
 		param_get(param_find("MPC_Z_VEL_MAX_DN"), &land_speed);
 
-		if ((cruise_speed <= 0) && (hover_speed <= 0) && (takeoff_speed <= 0) && (land_speed <= 0)) {
+		if ((cruise_speed <= 0) || (hover_speed <= 0) || (takeoff_speed <= 0) || (land_speed <= 0)) {
 			success = false;
 		}
 
@@ -910,7 +910,7 @@ MissionFeasibilityChecker::checkFlightTime(const mission_s &mission, int max_fli
 			param_get(param_find("MPC_Z_VEL_MAX_UP"), &takeoff_speed);
 			param_get(param_find("MPC_Z_VEL_MAX_DN"), &land_speed);
 
-			if ((hover_speed <= 0) && (takeoff_speed <= 0) && (land_speed <= 0)) {
+			if ((hover_speed <= 0) || (takeoff_speed <= 0) || (land_speed <= 0)) {
 				success = false;
 			}
 
@@ -921,7 +921,7 @@ MissionFeasibilityChecker::checkFlightTime(const mission_s &mission, int max_fli
 			param_get(param_find("FW_T_CLMB_MAX"), &takeoff_speed);
 			param_get(param_find("FW_T_SINK_MIN"), &land_speed);
 
-			if ((cruise_speed <= 0) && (takeoff_speed <= 0) && (land_speed <= 0)) {
+			if ((cruise_speed <= 0) || (takeoff_speed <= 0) || (land_speed <= 0)) {
 				success = false;
 			}
 
