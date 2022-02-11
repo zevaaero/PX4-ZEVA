@@ -1083,7 +1083,7 @@ MissionFeasibilityChecker::checkFlightTime(const mission_s &mission, int max_fli
 		if (static_cast<int>(total_time) > max_flight_time) {
 			/* total time is over the limit */
 			mavlink_log_critical(_navigator->get_mavlink_log_pub(),
-					     "Total flight time: %d min and %d sec. \nFlight time is limmited to: %d min and %d sec ",
+					     "Total flight time: %d min and %d sec. \nFlight time is limited to: %d min and %d sec.",
 					     ((int)total_time / 60), ((int)total_time % 60), ((int)max_flight_time / 60), ((int)max_flight_time % 60));
 
 			_navigator->get_mission_result()->warning = true;
