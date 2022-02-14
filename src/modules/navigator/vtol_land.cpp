@@ -214,6 +214,7 @@ loiter_point_s VtolLand::chooseBestLandingApproach()
 
 			if (fabsf(wind_angle) < wind_angle_prev) {
 				min_index = i;
+				wind_angle_prev = fabsf(wind_angle);
 			}
 
 		}
