@@ -163,8 +163,16 @@ VtolLand::set_loiter_position()
 {
 
 	_land_approach = chooseBestLandingApproach();
-	_loiter_pos_lat_lon(0) = _land_approach.lat;
-	_loiter_pos_lat_lon(1) = _land_approach.lon;
+
+	if (PX4_ISFINITE(_land_approach.lat) && PX4_ISFINITE(_land_approach.lon)) {
+		_loiter_pos_lat_lon(0) = _land_approach.lat;
+		_loiter_pos_lat_lon(1) = _land_approach.lon;
+
+	} else {
+		_loiter_pos_lat_lon(0) = _navigator->get_home_position()->lat;
+		_loiter_pos_lat_lon(1) = _navigator->get_home_position()->lon;
+	}
+
 
 	_mission_item.lat  = _loiter_pos_lat_lon(0);
 	_mission_item.lon = _loiter_pos_lat_lon(1);
