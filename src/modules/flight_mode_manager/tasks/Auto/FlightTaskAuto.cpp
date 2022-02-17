@@ -804,10 +804,14 @@ void FlightTaskAuto::_prepareLandSetpoints()
 					     _param_mpc_land_alt2.get(), _param_mpc_land_alt1.get(),
 					     _param_mpc_land_speed.get(), _param_mpc_z_vel_max_dn.get());
 
-	bool range_dist_available = PX4_ISFINITE(_dist_to_bottom);
+	if (PX4_ISFINITE(_dist_to_bottom)) {
+		const Vector3f home_pos(_sub_home_position.get().x, _sub_home_position.get().y, _sub_home_position.get().z);
+		const bool is_close_to_home = !Vector2f(home_pos - _position).longerThan(50.f)
+					      && (_position(2) > (home_pos(2) - 30.f));
 
-	if (range_dist_available && _dist_to_bottom <= _param_mpc_land_alt3.get()) {
-		vertical_speed = _param_mpc_land_crawl_speed.get();
+		if (is_close_to_home && _dist_to_bottom <= _param_mpc_land_alt3.get()) {
+			vertical_speed = _param_mpc_land_crawl_speed.get();
+		}
 	}
 
 	if (_type_previous != WaypointType::land) {
