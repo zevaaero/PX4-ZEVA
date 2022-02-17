@@ -302,6 +302,10 @@ void RTL::on_activation()
 
 	set_rtl_item(true);
 
+	// reset cruising speed and throttle to default for RTL
+	_navigator->set_cruising_speed();
+	_navigator->set_cruising_throttle();
+
 	_navigator->acquire_gimbal_control();
 	_navigator->set_gimbal_neutral();
 	_navigator->release_gimbal_control();
