@@ -69,6 +69,7 @@
 #include "streams/CAMERA_IMAGE_CAPTURED.hpp"
 #include "streams/CAMERA_TRIGGER.hpp"
 #include "streams/COLLISION.hpp"
+#include "streams/COMMAND_CANCEL.hpp"
 #include "streams/COMMAND_LONG.hpp"
 #include "streams/COMPONENT_INFORMATION.hpp"
 #include "streams/DISTANCE_SENSOR.hpp"
@@ -329,72 +330,6 @@ union px4_custom_mode get_px4_custom_mode(uint8_t nav_state)
 	return custom_mode;
 }
 
-
-class MavlinkStreamCommandCancel : public MavlinkStream
-{
-public:
-	const char *get_name() const override
-	{
-		return MavlinkStreamCommandCancel::get_name_static();
-	}
-
-	static constexpr const char *get_name_static()
-	{
-		return "COMMAND_CANCEL";
-	}
-
-	static constexpr uint16_t get_id_static()
-	{
-		return MAVLINK_MSG_ID_COMMAND_CANCEL;
-	}
-
-	uint16_t get_id() override
-	{
-		return get_id_static();
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamCommandCancel(mavlink);
-	}
-
-	unsigned get_size() override
-	{
-		return MAVLINK_MSG_ID_SYS_STATUS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
-	}
-
-private:
-	uORB::Subscription _cmd_cancel_sub{ORB_ID(vehicle_command_cancel)};
-
-	/* do not allow top copying this class */
-	MavlinkStreamCommandCancel(MavlinkStreamCommandCancel &) = delete;
-	MavlinkStreamCommandCancel &operator = (const MavlinkStreamCommandCancel &) = delete;
-
-protected:
-	explicit MavlinkStreamCommandCancel(Mavlink *mavlink) : MavlinkStream(mavlink)
-	{}
-
-	bool send() override
-	{
-		struct vehicle_command_cancel_s cmd_cancel;
-
-		if (_cmd_cancel_sub.update(&cmd_cancel)) {
-
-			mavlink_command_cancel_t msg{};
-
-			msg.command = cmd_cancel.command;
-			msg.target_system = cmd_cancel.target_system;
-			msg.target_component = cmd_cancel.target_component;
-
-			mavlink_msg_command_cancel_send_struct(_mavlink->get_channel(), &msg);
-
-			return true;
-		}
-
-		return false;
-	}
-};
-
 static const StreamListItem streams_list[] = {
 #if defined(HEARTBEAT_HPP)
 	create_stream_list_item<MavlinkStreamHeartbeat>(),
@@ -402,10 +337,12 @@ static const StreamListItem streams_list[] = {
 #if defined(STATUSTEXT_HPP)
 	create_stream_list_item<MavlinkStreamStatustext>(),
 #endif // STATUSTEXT_HPP
+#if defined(COMMAND_CANCEL_HPP)
+	create_stream_list_item<MavlinkStreamCommandCancel>(),
+#endif // COMMAND_CANCEL_HPP
 #if defined(COMMAND_LONG_HPP)
 	create_stream_list_item<MavlinkStreamCommandLong>(),
 #endif // COMMAND_LONG_HPP
-	create_stream_list_item<MavlinkStreamCommandCancel>(),
 #if defined(SYSTEM_TIME_HPP)
 	create_stream_list_item<MavlinkStreamSysStatus>(),
 #endif // SYSTEM_TIME_HPP
