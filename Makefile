@@ -250,7 +250,8 @@ define deprecation_warning
 	$(warning $(1) has been deprecated and will be removed, please use $(2)!)
 endef
 
-skynode: skynode_rtps
+skynode:
+	$(MAKE) px4_fmu-v5x $(ARGS)
 
 skynode_rtps:
 	$(MAKE) px4_fmu-v5x_rtps $(ARGS)
