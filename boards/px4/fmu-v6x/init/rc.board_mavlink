@@ -4,6 +4,4 @@
 #------------------------------------------------------------------------------
 
 # Start MAVLink on the USB port
-# INFO: USB stream on ttyACM0 no longer needs to be started here
-# since https://github.com/PX4/PX4-Autopilot/pull/16180
 mavlink start -d /dev/ttyS4 -b 3000000 -r 290000 -m onboard -x -z
