@@ -97,12 +97,20 @@ jobs:
         apt install -y gh
 
     - name: Upload development artifacts
-      run: gh release upload --clobber ${{ github.event.release.tag_name }} development-nuttx-targets.zip
+      run: |
+        for i in $(seq 10); do \
+        echo "Attempt $i..."
+        gh release upload --clobber ${{ github.event.release.tag_name }} development-nuttx-targets.zip \
+        && s=0 && break || s=$? && sleep 15; done; (exit $s)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload production artifacts
-      run: gh release upload --clobber ${{ github.event.release.tag_name }} production-nuttx-targets.zip
+      run: |
+        for i in $(seq 10); do \
+        echo "Attempt $i..."
+        gh release upload --clobber ${{ github.event.release.tag_name }} production-nuttx-targets.zip \
+        && s=0 && break || s=$? && sleep 15; done; (exit $s)
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
