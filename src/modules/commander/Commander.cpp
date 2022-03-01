@@ -4125,6 +4125,46 @@ void Commander::estimator_check()
 	_status_flags.condition_angular_velocity_valid = (hrt_elapsed_time(&angular_velocity.timestamp) < 1_s)
 			&& PX4_ISFINITE(angular_velocity.xyz[0]) && PX4_ISFINITE(angular_velocity.xyz[1])
 			&& PX4_ISFINITE(angular_velocity.xyz[2]);
+
+	// gps
+	const bool condition_gps_position_was_valid = _status_flags.condition_gps_position_valid;
+
+	if (_vehicle_gps_position_sub.updated()) {
+		vehicle_gps_position_s vehicle_gps_position;
+
+		if (_vehicle_gps_position_sub.copy(&vehicle_gps_position)) {
+
+			bool time = (vehicle_gps_position.timestamp != 0) && (hrt_elapsed_time(&vehicle_gps_position.timestamp) < 1_s);
+
+			bool fix = vehicle_gps_position.fix_type >= 2;
+			bool eph = vehicle_gps_position.eph < _param_com_pos_fs_eph.get();
+			bool epv = vehicle_gps_position.epv < _param_com_pos_fs_epv.get();
+			bool evh = vehicle_gps_position.s_variance_m_s < _param_com_vel_fs_evh.get();
+
+			_vehicle_gps_position_valid.set_state_and_update(time && fix && eph && epv && evh, hrt_absolute_time());
+			_status_flags.condition_gps_position_valid = _vehicle_gps_position_valid.get_state();
+
+			_vehicle_gps_position_timestamp_last = vehicle_gps_position.timestamp;
+		}
+
+	} else {
+		const hrt_abstime now_us = hrt_absolute_time();
+
+		if (now_us > _vehicle_gps_position_timestamp_last + GPS_VALID_TIME) {
+			_vehicle_gps_position_valid.set_state_and_update(false, now_us);
+			_status_flags.condition_gps_position_valid = false;
+		}
+	}
+
+	// only notify in fixed-wing flight mode for now (as in hover flight a failsafe action is anyway immediately triggered)
+	if (_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING && _armed.armed) {
+		if (condition_gps_position_was_valid && !_status_flags.condition_gps_position_valid) {
+			mavlink_log_critical(&_mavlink_log_pub, "GNSS data invalid. Return to land advised\t");
+
+		} else if (!condition_gps_position_was_valid && _status_flags.condition_gps_position_valid) {
+			mavlink_log_critical(&_mavlink_log_pub, "GNSS data valid again\t");
+		}
+	}
 }
 
 void Commander::UpdateEstimateValidity()
