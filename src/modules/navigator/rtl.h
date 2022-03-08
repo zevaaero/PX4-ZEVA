@@ -98,9 +98,9 @@ public:
 
 	bool getClimbDone() {return _climb_done;}
 
-	bool getDestinationTypeMissionLanding() { return _destination.type == RTL_DESTINATION_MISSION_LANDING; }
-
 	bool getDestinationTypeHomeLanding() { return _destination.type == RTL_DESTINATION_HOME; }
+
+	bool getShouldEngageMissionForLanding() const { return _should_engange_mission_for_landing; }
 
 private:
 
@@ -167,6 +167,7 @@ private:
 	float _rtl_loiter_rad{50.0f};		// radius at which a fixed wing would loiter while descending
 	bool _climb_and_return_done{false};	// this flag is set to true if RTL is active and we are past the climb state and return state
 	bool _climb_done{false}; 			// this flag is set to true if RTL is active and we are past the climb state
+	bool _should_engange_mission_for_landing{false};
 
 	TerrainFollowerWrapper &_terrain_follower;
 
