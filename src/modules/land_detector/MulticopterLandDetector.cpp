@@ -236,7 +236,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 	_close_to_ground_or_skipped_check = _is_close_to_ground() || skip_close_to_ground_check;
 
 	// When not armed, consider to have ground-contact
-	if (!_armed) {
+	if (!_spooled_up) {
 		return true;
 	}
 
@@ -248,7 +248,7 @@ bool MulticopterLandDetector::_get_ground_contact_state()
 bool MulticopterLandDetector::_get_maybe_landed_state()
 {
 	// When not armed, consider to be maybe-landed
-	if (!_armed) {
+	if (!_spooled_up) {
 		return true;
 	}
 
@@ -316,7 +316,7 @@ bool MulticopterLandDetector::_get_landed_state()
 	}
 
 	// When not armed, consider to be landed
-	if (!_armed) {
+	if (!_spooled_up) {
 		return true;
 	}
 

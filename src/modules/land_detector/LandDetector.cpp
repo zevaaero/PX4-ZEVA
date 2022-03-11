@@ -85,6 +85,12 @@ void LandDetector::Run()
 		_armed = actuator_armed.armed;
 	}
 
+	if (!_previous_armed_state && _armed) {
+		_arming_time = hrt_absolute_time();
+	}
+
+	_spooled_up = _armed && ((hrt_absolute_time() - _arming_time) > _param_com_spoolup_time.get() * 1_s);
+
 	vehicle_acceleration_s vehicle_acceleration;
 
 	if (_vehicle_acceleration_sub.update(&vehicle_acceleration)) {

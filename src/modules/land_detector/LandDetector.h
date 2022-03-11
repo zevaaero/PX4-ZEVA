@@ -155,6 +155,7 @@ protected:
 	matrix::Vector3f _acceleration{};
 
 	bool _armed{false};
+	bool _spooled_up{false};
 	bool _previous_armed_state{false};	///< stores the previous actuator_armed.armed state
 	bool _dist_bottom_is_observable{false};
 
@@ -172,6 +173,7 @@ private:
 
 	bool _high_hysteresis_active{false};
 	hrt_abstime _takeoff_time{0};
+	hrt_abstime _arming_time{0};
 	hrt_abstime _total_flight_time{0};	///< total vehicle flight time in microseconds
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")};
@@ -189,7 +191,8 @@ private:
 	DEFINE_PARAMETERS_CUSTOM_PARENT(
 		ModuleParams,
 		(ParamInt<px4::params::LND_FLIGHT_T_HI>) _param_total_flight_time_high,
-		(ParamInt<px4::params::LND_FLIGHT_T_LO>) _param_total_flight_time_low
+		(ParamInt<px4::params::LND_FLIGHT_T_LO>) _param_total_flight_time_low,
+		(ParamFloat<px4::params::COM_SPOOLUP_TIME>) _param_com_spoolup_time
 	);
 };
 
