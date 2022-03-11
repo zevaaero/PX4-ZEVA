@@ -88,8 +88,11 @@ private:
 	 */
 	void calcMagInconsistency();
 
+	bool SensorCalibrationSave(int sensor_index);
+	void SensorCalibrationSave();
+
+	void SensorCalibrationUpdate();
 	void UpdateMagBiasEstimate();
-	void UpdateMagCalibration();
 	void UpdatePowerCompensation();
 
 	static constexpr int MAX_SENSOR_COUNT = 4;
@@ -113,13 +116,23 @@ private:
 	// Used to check, save and use learned magnetometer biases
 	uORB::SubscriptionMultiArray<estimator_sensor_bias_s> _estimator_sensor_bias_subs{ORB_ID::estimator_sensor_bias};
 
-	bool _in_flight_mag_cal_available{false}; ///< from navigation filter
+	bool _in_flight_cal_available{false}; ///< from navigation filter
 
-	struct MagCal {
+	struct InFlightCalibration {
 		uint32_t device_id{0};
 		matrix::Vector3f offset{};
 		matrix::Vector3f variance{};
-	} _mag_cal[ORB_MULTI_MAX_INSTANCES] {};
+		uint8_t estimator_instance{0};
+	} _learned_calibration[ORB_MULTI_MAX_INSTANCES] {};
+
+	// State variance assumed for magnetometer bias storage.
+	// This is a reference variance used to calculate the fraction of learned magnetometer bias that will be used to update the stored value.
+	// Larger values cause a larger fraction of the learned biases to be used.
+	static constexpr float BIAS_VAR_REF = 2.5e-7f;
+	static constexpr float MIN_BIAS_VAR_ALLOWED = BIAS_VAR_REF * 0.01f;
+	static constexpr float MAX_BIAS_VAR_ALLOWED = BIAS_VAR_REF * 100.f;
+
+	hrt_abstime _in_flight_calibration_check_timestamp_last{0};
 
 	uORB::SubscriptionCallbackWorkItem _sensor_sub[MAX_SENSOR_COUNT] {
 		{this, ORB_ID(sensor_mag), 0},
@@ -127,6 +140,8 @@ private:
 		{this, ORB_ID(sensor_mag), 2},
 		{this, ORB_ID(sensor_mag), 3}
 	};
+
+	static constexpr hrt_abstime IN_FLIGHT_CALIBRATION_QUIET_PERIOD_US{10_s};
 
 	hrt_abstime _last_calibration_update{0};
 
