@@ -76,7 +76,7 @@ bool PreFlightCheck::preflightCheck(orb_advert_t *mavlink_log_pub, vehicle_statu
 
 			/* check all sensors individually, but fail only for mandatory ones */
 			for (unsigned i = 0; i < max_optional_mag_count; i++) {
-				const bool required = (i < max_mandatory_mag_count) && (sys_has_mag == 1);
+				const bool required = ((i < max_mandatory_mag_count) || isMagRequired(i)) && (sys_has_mag == 1);
 				bool report_fail = report_failures;
 
 				int32_t device_id = -1;

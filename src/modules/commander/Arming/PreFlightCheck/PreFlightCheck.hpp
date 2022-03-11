@@ -94,6 +94,7 @@ public:
 				bool report_fail = true);
 
 private:
+	static bool isMagRequired(uint8_t instance);
 	static bool magnetometerCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &status, const uint8_t instance,
 				      const bool optional, int32_t &device_id, const bool report_fail);
 	static bool magConsistencyCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &status, const bool report_status);
