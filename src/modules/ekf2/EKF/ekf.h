@@ -244,6 +244,10 @@ public:
 	Vector3f getAccelBiasVariance() const { return Vector3f{P(13, 13), P(14, 14), P(15, 15)} / sq(_dt_ekf_avg); } // get the accelerometer bias variance in m/s**2
 	Vector3f getMagBiasVariance() const { return Vector3f{P(19, 19), P(20, 20), P(21, 21)}; }
 
+	float getAccelBiasLimit() const { return _params.acc_bias_lim; }
+	float getGyroBiasLimit() const { return math::radians(20.f); } // 20 degrees/s
+	float getMagBiasLimit() const { return 0.5f; } // 0.5 Gauss
+
 	bool accel_bias_inhibited() const { return _accel_bias_inhibit[0] || _accel_bias_inhibit[1] || _accel_bias_inhibit[2]; }
 
 	const auto &state_reset_status() const { return _state_reset_status; }

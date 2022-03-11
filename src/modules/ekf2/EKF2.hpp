@@ -206,6 +206,7 @@ private:
 	struct InFlightCalibration {
 		hrt_abstime last_us{0};         ///< last time the EKF was operating a mode that estimates accelerometer biases (uSec)
 		hrt_abstime total_time_us{0};   ///< accumulated calibration time since the last save
+		matrix::Vector3f bias{};
 		bool cal_available{false};      ///< true when an unsaved valid calibration for the XYZ accelerometer bias is available
 	};
 
