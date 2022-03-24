@@ -43,7 +43,7 @@
 
 #define commandParamToInt(n) static_cast<int>(n >= 0 ? n + 0.5f : n - 0.5f)
 
-static constexpr int capture_channel = 5; ///< FMU output 6
+static constexpr int capture_channel = 6; ///< FMU output 7
 
 namespace camera_capture
 {
