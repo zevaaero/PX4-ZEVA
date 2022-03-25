@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020-2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,7 +56,7 @@ namespace sensor_configuration
 
 static constexpr int MAX_SENSOR_COUNT = 4; // TODO: per sensor?
 
-int8_t FindCurrentCalibrationIndex(const char *sensor_type, uint32_t device_id)
+int8_t FindCurrentConfigurationIndex(const char *prefix, const char *sensor_type, uint32_t device_id)
 {
 	if (device_id == 0) {
 		return -1;
@@ -64,7 +64,7 @@ int8_t FindCurrentCalibrationIndex(const char *sensor_type, uint32_t device_id)
 
 	for (unsigned i = 0; i < MAX_SENSOR_COUNT; ++i) {
 		char str[20] {};
-		sprintf(str, "CAL_%s%u_ID", sensor_type, i);
+		sprintf(str, "%s_%s%u_ID", prefix, sensor_type, i);
 
 		int32_t device_id_val = 0;
 
@@ -87,10 +87,11 @@ int8_t FindCurrentCalibrationIndex(const char *sensor_type, uint32_t device_id)
 	return -1;
 }
 
-int8_t FindAvailableCalibrationIndex(const char *sensor_type, uint32_t device_id, int8_t preferred_index)
+int8_t FindAvailableConfigurationIndex(const char *prefix, const char *sensor_type, uint32_t device_id,
+				       int8_t preferred_index)
 {
 	// if this device is already using a calibration slot then keep it
-	int calibration_index = FindCurrentCalibrationIndex(sensor_type, device_id);
+	int calibration_index = FindCurrentConfigurationIndex(prefix, sensor_type, device_id);
 
 	if (calibration_index >= 0) {
 		return calibration_index;
@@ -103,7 +104,7 @@ int8_t FindAvailableCalibrationIndex(const char *sensor_type, uint32_t device_id
 
 	for (unsigned i = 0; i < MAX_SENSOR_COUNT; ++i) {
 		char str[20] {};
-		sprintf(str, "CAL_%s%u_ID", sensor_type, i);
+		sprintf(str, "%s_%s%u_ID", prefix, sensor_type, i);
 		int32_t device_id_val = 0;
 
 		if (param_get(param_find_no_notification(str), &device_id_val) == PX4_OK) {
@@ -134,11 +135,11 @@ int8_t FindAvailableCalibrationIndex(const char *sensor_type, uint32_t device_id
 	return calibration_index;
 }
 
-int32_t GetCalibrationParamInt32(const char *sensor_type, const char *cal_type, uint8_t instance)
+int32_t GetConfigurationParamInt32(const char *prefix, const char *sensor_type, const char *cal_type, uint8_t instance)
 {
 	// eg CAL_MAGn_ID/CAL_MAGn_ROT
 	char str[20] {};
-	sprintf(str, "CAL_%s%" PRIu8 "_%s", sensor_type, instance, cal_type);
+	sprintf(str, "%s_%s%" PRIu8 "_%s", prefix, sensor_type, instance, cal_type);
 
 	int32_t value = 0;
 
@@ -149,11 +150,11 @@ int32_t GetCalibrationParamInt32(const char *sensor_type, const char *cal_type, 
 	return value;
 }
 
-float GetCalibrationParamFloat(const char *sensor_type, const char *cal_type, uint8_t instance)
+float GetConfigurationParamFloat(const char *prefix, const char *sensor_type, const char *cal_type, uint8_t instance)
 {
 	// eg CAL_BAROn_OFF
 	char str[20] {};
-	sprintf(str, "CAL_%s%" PRIu8 "_%s", sensor_type, instance, cal_type);
+	sprintf(str, "%s_%s%" PRIu8 "_%s", prefix, sensor_type, instance, cal_type);
 
 	float value = NAN;
 
@@ -164,7 +165,8 @@ float GetCalibrationParamFloat(const char *sensor_type, const char *cal_type, ui
 	return value;
 }
 
-Vector3f GetCalibrationParamsVector3f(const char *sensor_type, const char *cal_type, uint8_t instance)
+Vector3f GetConfigurationParamsVector3f(const char *prefix, const char *sensor_type, const char *cal_type,
+					uint8_t instance)
 {
 	Vector3f values{0.f, 0.f, 0.f};
 
@@ -174,7 +176,7 @@ Vector3f GetCalibrationParamsVector3f(const char *sensor_type, const char *cal_t
 		char axis_char = 'X' + axis;
 
 		// eg CAL_MAGn_{X,Y,Z}OFF
-		sprintf(str, "CAL_%s%" PRIu8 "_%c%s", sensor_type, instance, axis_char, cal_type);
+		sprintf(str, "%s_%s%" PRIu8 "_%c%s", prefix, sensor_type, instance, axis_char, cal_type);
 
 		if (param_get(param_find(str), &values(axis)) != 0) {
 			PX4_ERR("failed to get %s", str);
@@ -184,7 +186,8 @@ Vector3f GetCalibrationParamsVector3f(const char *sensor_type, const char *cal_t
 	return values;
 }
 
-bool SetCalibrationParamsVector3f(const char *sensor_type, const char *cal_type, uint8_t instance, Vector3f values)
+bool SetConfigurationParamsVector3f(const char *prefix, const char *sensor_type, const char *cal_type, uint8_t instance,
+				    Vector3f values)
 {
 	int ret = PX4_OK;
 	char str[20] {};
@@ -193,7 +196,7 @@ bool SetCalibrationParamsVector3f(const char *sensor_type, const char *cal_type,
 		char axis_char = 'X' + axis;
 
 		// eg CAL_MAGn_{X,Y,Z}OFF
-		sprintf(str, "CAL_%s%" PRIu8 "_%c%s", sensor_type, instance, axis_char, cal_type);
+		sprintf(str, "%s_%s%" PRIu8 "_%c%s", prefix, sensor_type, instance, axis_char, cal_type);
 
 		if (param_set_no_notification(param_find(str), &values(axis)) != 0) {
 			PX4_ERR("failed to set %s = %.4f", str, (double)values(axis));

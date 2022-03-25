@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,33 +31,51 @@
  *
  ****************************************************************************/
 
-/**
- * Multi GPS Blending Control Mask.
- *
- * Set bits in the following positions to set which GPS accuracy metrics will be used to calculate the blending weight. Set to zero to disable and always used first GPS instance.
- * 0 : Set to true to use speed accuracy
- * 1 : Set to true to use horizontal position accuracy
- * 2 : Set to true to use vertical position accuracy
- *
- * @group Sensors
- * @min 0
- * @max 7
- * @bit 0 use speed accuracy
- * @bit 1 use hpos accuracy
- * @bit 2 use vpos accuracy
- */
-PARAM_DEFINE_INT32(SENS_GPS_MASK, 7);
+#pragma once
 
-/**
- * Multi GPS Blending Time Constant
- *
- * Sets the longest time constant that will be applied to the calculation of GPS position and height offsets used to correct data from multiple GPS data for steady state position differences.
- *
- *
- * @group Sensors
- * @min 1.0
- * @max 100.0
- * @unit s
- * @decimal 1
- */
-PARAM_DEFINE_FLOAT(SENS_GPS_TAU, 10.0f);
+#include <lib/matrix/matrix/math.hpp>
+#include <px4_platform_common/px4_config.h>
+
+namespace sensor_configuration
+{
+class GNSS
+{
+public:
+	static constexpr int MAX_SENSOR_COUNT = 4;
+
+	static constexpr uint8_t DEFAULT_PRIORITY = 50;
+
+	static constexpr const char *SensorString() { return "GNSS"; }
+
+	GNSS();
+	explicit GNSS(uint32_t device_id);
+
+	~GNSS() = default;
+
+	void PrintStatus();
+
+	bool set_configuration_index(int configuration_index);
+	void set_device_id(uint32_t device_id);
+	void set_position(const matrix::Vector3f &position) { _position = position; }
+
+	bool configured() const { return (_device_id != 0) && (_configuration_index >= 0); }
+	int8_t configuration_index() const { return _configuration_index; }
+	uint32_t device_id() const { return _device_id; }
+	bool enabled() const { return (_priority > 0); }
+	const matrix::Vector3f &position() const { return _position; }
+	const int32_t &priority() const { return _priority; }
+
+	bool ParametersLoad();
+	bool ParametersSave(int desired_configuration_index = -1, bool force = false);
+	void ParametersUpdate();
+
+	void Reset();
+
+private:
+	int8_t _configuration_index{-1};
+	uint32_t _device_id{0};
+	int32_t _priority{-1};
+
+	matrix::Vector3f _position{};
+};
+} // namespace sensor_configuration

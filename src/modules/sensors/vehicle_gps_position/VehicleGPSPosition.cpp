@@ -91,11 +91,31 @@ void VehicleGPSPosition::ParametersUpdate(bool force)
 			}
 		}
 
+		for (int instance = 0; instance < GPS_MAX_RECEIVERS; instance++) {
+			_configuration[instance].ParametersUpdate();
+
+			_gps_blending.setAntennaOffset(_configuration[instance].position(), instance);
+		}
+
 		_gps_blending.setBlendingUseSpeedAccuracy(_param_sens_gps_mask.get() & BLEND_MASK_USE_SPD_ACC);
 		_gps_blending.setBlendingUseHPosAccuracy(_param_sens_gps_mask.get() & BLEND_MASK_USE_HPOS_ACC);
 		_gps_blending.setBlendingUseVPosAccuracy(_param_sens_gps_mask.get() & BLEND_MASK_USE_VPOS_ACC);
 		_gps_blending.setBlendingTimeConstant(_param_sens_gps_tau.get());
-		_gps_blending.setPrimaryInstance(_param_sens_gps_prime.get());
+
+		// TODO: select highest priority
+		int primary_instance = -1;
+		uint8_t highest_priority = 0;
+
+		for (int instance = 0; instance < GPS_MAX_RECEIVERS; instance++) {
+			if (_configuration[instance].enabled() && _configuration[instance].priority() > highest_priority) {
+				primary_instance = instance;
+				highest_priority = _configuration[instance].priority();
+			}
+		}
+
+		if (primary_instance >= 0) {
+			//_gps_blending.setPrimaryInstance(primary_instance);
+		}
 	}
 }
 
@@ -116,11 +136,28 @@ void VehicleGPSPosition::Run()
 		if (gps_updated) {
 			any_gps_updated = true;
 
-			_sensor_gps_sub[i].copy(&gps_data);
-			_gps_blending.setGpsData(gps_data, i);
+			if (_sensor_gps_sub[i].copy(&gps_data)) {
 
-			if (!_sensor_gps_sub[i].registered()) {
-				_sensor_gps_sub[i].registerCallback();
+				if (gps_data.device_id != 0 && (gps_data.device_id != _configuration[i].device_id())) {
+					_configuration[i].set_device_id(gps_data.device_id);
+
+					_gps_blending.setAntennaOffset(_configuration[i].position(), i);
+
+					if (!_configuration[i].configured()) {
+						_configuration[i].ParametersSave(i);
+					}
+				}
+
+				if (_configuration[i].enabled()) {
+					_gps_blending.setGpsData(gps_data, i);
+
+					if (!_sensor_gps_sub[i].registered()) {
+						_sensor_gps_sub[i].registerCallback();
+					}
+
+				} else {
+					_sensor_gps_sub[i].unregisterCallback();
+				}
 			}
 		}
 	}
@@ -129,7 +166,54 @@ void VehicleGPSPosition::Run()
 		_gps_blending.update(hrt_absolute_time());
 
 		if (_gps_blending.isNewOutputDataAvailable()) {
-			Publish(_gps_blending.getOutputGpsData(), _gps_blending.getSelectedGps());
+
+			uint8_t selected = _gps_blending.getSelectedGps();
+
+			vehicle_gps_position_s gps_output{};
+
+			if (selected <= 2) {
+				// GNSS 0, 1, 2
+				_configuration[selected].position().copyTo(gps_output.position_offset);
+				gps_output.device_id = _configuration[selected].device_id();
+				gps_output.blended = false;
+
+			} else if (selected == 3) {
+				// GNSS blended
+				_gps_blending.blended_antenna_offset().copyTo(gps_output.position_offset);
+				gps_output.device_id = 0;
+				gps_output.blended = true;
+			}
+
+			const sensor_gps_s &gps = _gps_blending.getOutputGpsData();
+			gps_output.timestamp_sample = gps.timestamp;
+			gps_output.time_utc_usec = gps.time_utc_usec;
+			gps_output.lat = gps.lat;
+			gps_output.lon = gps.lon;
+			gps_output.alt = gps.alt;
+			gps_output.alt_ellipsoid = gps.alt_ellipsoid;
+			gps_output.s_variance_m_s = gps.s_variance_m_s;
+			gps_output.c_variance_rad = gps.c_variance_rad;
+			gps_output.eph = gps.eph;
+			gps_output.epv = gps.epv;
+			gps_output.hdop = gps.hdop;
+			gps_output.vdop = gps.vdop;
+			gps_output.noise_per_ms = gps.noise_per_ms;
+			gps_output.jamming_indicator = gps.jamming_indicator;
+			gps_output.jamming_state = gps.jamming_state;
+			gps_output.vel_m_s = gps.vel_m_s;
+			gps_output.vel_n_m_s = gps.vel_n_m_s;
+			gps_output.vel_e_m_s = gps.vel_e_m_s;
+			gps_output.vel_d_m_s = gps.vel_d_m_s;
+			gps_output.cog_rad = gps.cog_rad;
+			gps_output.timestamp_time_relative = gps.timestamp_time_relative;
+			gps_output.heading = gps.heading;
+			gps_output.heading_offset = gps.heading_offset;
+			gps_output.fix_type = gps.fix_type;
+			gps_output.vel_ned_valid = gps.vel_ned_valid;
+			gps_output.satellites_used = gps.satellites_used;
+			gps_output.timestamp = hrt_absolute_time();
+
+			_vehicle_gps_position_pub.publish(gps_output);
 		}
 	}
 
@@ -138,45 +222,15 @@ void VehicleGPSPosition::Run()
 	perf_end(_cycle_perf);
 }
 
-void VehicleGPSPosition::Publish(const sensor_gps_s &gps, uint8_t selected)
-{
-	vehicle_gps_position_s gps_output{};
-
-	gps_output.timestamp = gps.timestamp;
-	gps_output.time_utc_usec = gps.time_utc_usec;
-	gps_output.lat = gps.lat;
-	gps_output.lon = gps.lon;
-	gps_output.alt = gps.alt;
-	gps_output.alt_ellipsoid = gps.alt_ellipsoid;
-	gps_output.s_variance_m_s = gps.s_variance_m_s;
-	gps_output.c_variance_rad = gps.c_variance_rad;
-	gps_output.eph = gps.eph;
-	gps_output.epv = gps.epv;
-	gps_output.hdop = gps.hdop;
-	gps_output.vdop = gps.vdop;
-	gps_output.noise_per_ms = gps.noise_per_ms;
-	gps_output.jamming_indicator = gps.jamming_indicator;
-	gps_output.jamming_state = gps.jamming_state;
-	gps_output.vel_m_s = gps.vel_m_s;
-	gps_output.vel_n_m_s = gps.vel_n_m_s;
-	gps_output.vel_e_m_s = gps.vel_e_m_s;
-	gps_output.vel_d_m_s = gps.vel_d_m_s;
-	gps_output.cog_rad = gps.cog_rad;
-	gps_output.timestamp_time_relative = gps.timestamp_time_relative;
-	gps_output.heading = gps.heading;
-	gps_output.heading_offset = gps.heading_offset;
-	gps_output.fix_type = gps.fix_type;
-	gps_output.vel_ned_valid = gps.vel_ned_valid;
-	gps_output.satellites_used = gps.satellites_used;
-
-	gps_output.selected = selected;
-
-	_vehicle_gps_position_pub.publish(gps_output);
-}
-
 void VehicleGPSPosition::PrintStatus()
 {
 	//PX4_INFO_RAW("[vehicle_gps_position] selected GPS: %d\n", _gps_select_index);
+
+	for (int i = 0; i < GPS_MAX_RECEIVERS; i++) {
+		if (_configuration[i].device_id() != 0) {
+			_configuration[i].PrintStatus();
+		}
+	}
 }
 
 }; // namespace sensors

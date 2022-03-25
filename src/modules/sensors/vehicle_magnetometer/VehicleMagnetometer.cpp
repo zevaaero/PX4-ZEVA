@@ -63,7 +63,7 @@ VehicleMagnetometer::VehicleMagnetometer() :
 	// if publishing multiple mags advertise instances immediately for existing calibrations
 	if (!_param_sens_mag_mode.get()) {
 		for (int i = 0; i < MAX_SENSOR_COUNT; i++) {
-			uint32_t device_id_mag = sensor_configuration::GetCalibrationParamInt32("MAG", "ID", i);
+			uint32_t device_id_mag = sensor_configuration::GetConfigurationParamInt32("CAL", "MAG", "ID", i);
 
 			if (device_id_mag != 0) {
 				_vehicle_magnetometer_pub[i].advertise();

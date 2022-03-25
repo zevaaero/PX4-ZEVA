@@ -88,13 +88,14 @@ void VotedSensorsUpdate::parametersUpdate()
 		    && (imu.get().accel_device_id != 0) && (imu.get().gyro_device_id != 0)) {
 
 			// find corresponding configured accel priority
-			int8_t accel_cal_index = sensor_configuration::FindCurrentCalibrationIndex("ACC", imu.get().accel_device_id);
+			int8_t accel_cal_index = sensor_configuration::FindCurrentConfigurationIndex("CAL", "ACC", imu.get().accel_device_id);
 
 			if (accel_cal_index >= 0) {
 				// found matching CAL_ACCx_PRIO
 				int32_t accel_priority_old = _accel.priority_configured[uorb_index];
 
-				_accel.priority_configured[uorb_index] = sensor_configuration::GetCalibrationParamInt32("ACC", "PRIO", accel_cal_index);
+				_accel.priority_configured[uorb_index] = sensor_configuration::GetConfigurationParamInt32("CAL", "ACC", "PRIO",
+						accel_cal_index);
 
 				if (accel_priority_old != _accel.priority_configured[uorb_index]) {
 					if (_accel.priority_configured[uorb_index] == 0) {
@@ -111,13 +112,14 @@ void VotedSensorsUpdate::parametersUpdate()
 			}
 
 			// find corresponding configured gyro priority
-			int8_t gyro_cal_index = sensor_configuration::FindCurrentCalibrationIndex("GYRO", imu.get().gyro_device_id);
+			int8_t gyro_cal_index = sensor_configuration::FindCurrentConfigurationIndex("CAL", "GYRO", imu.get().gyro_device_id);
 
 			if (gyro_cal_index >= 0) {
 				// found matching CAL_GYROx_PRIO
 				int32_t gyro_priority_old = _gyro.priority_configured[uorb_index];
 
-				_gyro.priority_configured[uorb_index] = sensor_configuration::GetCalibrationParamInt32("GYRO", "PRIO", gyro_cal_index);
+				_gyro.priority_configured[uorb_index] = sensor_configuration::GetConfigurationParamInt32("CAL", "GYRO", "PRIO",
+									gyro_cal_index);
 
 				if (gyro_priority_old != _gyro.priority_configured[uorb_index]) {
 					if (_gyro.priority_configured[uorb_index] == 0) {

@@ -140,7 +140,7 @@ void Barometer::ParametersUpdate()
 		return;
 	}
 
-	_calibration_index = FindCurrentCalibrationIndex(SensorString(), _device_id);
+	_calibration_index = FindCurrentConfigurationIndex("CAL", SensorString(), _device_id);
 
 	if (_calibration_index == -1) {
 		// no saved calibration available
@@ -155,7 +155,7 @@ bool Barometer::ParametersLoad()
 {
 	if (_calibration_index >= 0 && _calibration_index < MAX_SENSOR_COUNT) {
 		// CAL_BAROx_PRIO
-		_priority = GetCalibrationParamInt32(SensorString(), "PRIO", _calibration_index);
+		_priority = GetConfigurationParamInt32("CAL", SensorString(), "PRIO", _calibration_index);
 
 		if ((_priority < 0) || (_priority > 100)) {
 			// reset to default, -1 is the uninitialized parameter value
@@ -165,14 +165,14 @@ bool Barometer::ParametersLoad()
 				PX4_ERR("%s %" PRIu32 " (%" PRId8 ") invalid priority %" PRId32 ", resetting", SensorString(), _device_id,
 					_calibration_index, _priority);
 
-				SetCalibrationParam(SensorString(), "PRIO", _calibration_index, CAL_PRIO_UNINITIALIZED);
+				SetConfigurationParam("CAL", SensorString(), "PRIO", _calibration_index, CAL_PRIO_UNINITIALIZED);
 			}
 
 			_priority = _external ? DEFAULT_EXTERNAL_PRIORITY : DEFAULT_PRIORITY;
 		}
 
 		// CAL_BAROx_OFF
-		set_offset(GetCalibrationParamFloat(SensorString(), "OFF", _calibration_index));
+		set_offset(GetConfigurationParamFloat("CAL", SensorString(), "OFF", _calibration_index));
 
 		return true;
 	}
@@ -203,7 +203,7 @@ bool Barometer::ParametersSave(int desired_calibration_index, bool force)
 
 		// ensure we have a valid calibration slot (matching existing or first available slot)
 		int8_t calibration_index_prev = _calibration_index;
-		_calibration_index = FindAvailableCalibrationIndex(SensorString(), _device_id, desired_calibration_index);
+		_calibration_index = FindAvailableConfigurationIndex("CAL", SensorString(), _device_id, desired_calibration_index);
 
 		if (calibration_index_prev >= 0 && (calibration_index_prev != _calibration_index)) {
 			PX4_WARN("%s %" PRIu32 " calibration index changed %" PRIi8 " -> %" PRIi8, SensorString(), _device_id,
@@ -214,9 +214,9 @@ bool Barometer::ParametersSave(int desired_calibration_index, bool force)
 	if (_calibration_index >= 0 && _calibration_index < MAX_SENSOR_COUNT) {
 		// save calibration
 		bool success = true;
-		success &= SetCalibrationParam(SensorString(), "ID", _calibration_index, _device_id);
-		success &= SetCalibrationParam(SensorString(), "PRIO", _calibration_index, _priority);
-		success &= SetCalibrationParam(SensorString(), "OFF", _calibration_index, _offset);
+		success &= SetConfigurationParam("CAL", SensorString(), "ID", _calibration_index, _device_id);
+		success &= SetConfigurationParam("CAL", SensorString(), "PRIO", _calibration_index, _priority);
+		success &= SetConfigurationParam("CAL", SensorString(), "OFF", _calibration_index, _offset);
 
 		return success;
 	}

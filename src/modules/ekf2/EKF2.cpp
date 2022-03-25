@@ -128,9 +128,6 @@ EKF2::EKF2(bool multi_mode, const px4::wq_config_t &config, bool replay_mode):
 	_param_ekf2_imu_pos_x(_params->imu_pos_body(0)),
 	_param_ekf2_imu_pos_y(_params->imu_pos_body(1)),
 	_param_ekf2_imu_pos_z(_params->imu_pos_body(2)),
-	_param_ekf2_gps_pos_x(_params->gps_pos_body(0)),
-	_param_ekf2_gps_pos_y(_params->gps_pos_body(1)),
-	_param_ekf2_gps_pos_z(_params->gps_pos_body(2)),
 	_param_ekf2_rng_pos_x(_params->rng_pos_body(0)),
 	_param_ekf2_rng_pos_y(_params->rng_pos_body(1)),
 	_param_ekf2_rng_pos_z(_params->rng_pos_body(2)),
@@ -1731,7 +1728,7 @@ void EKF2::UpdateGpsSample(ekf2_timestamps_s &ekf2_timestamps)
 		}
 
 		gps_message gps_msg{
-			.time_usec = vehicle_gps_position.timestamp,
+			.time_usec = vehicle_gps_position.timestamp_sample,
 			.lat = vehicle_gps_position.lat,
 			.lon = vehicle_gps_position.lon,
 			.alt = vehicle_gps_position.alt,
@@ -1751,6 +1748,7 @@ void EKF2::UpdateGpsSample(ekf2_timestamps_s &ekf2_timestamps)
 			.nsats = vehicle_gps_position.satellites_used,
 			.pdop = sqrtf(vehicle_gps_position.hdop *vehicle_gps_position.hdop
 				      + vehicle_gps_position.vdop * vehicle_gps_position.vdop),
+			.position_body = Vector3f{vehicle_gps_position.position_offset},
 		};
 		_ekf.setGpsData(gps_msg);
 

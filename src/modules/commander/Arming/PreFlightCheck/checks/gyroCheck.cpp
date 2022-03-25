@@ -82,7 +82,7 @@ bool PreFlightCheck::gyroCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &
 			is_calibration_valid = true;
 
 		} else {
-			is_calibration_valid = (sensor_configuration::FindCurrentCalibrationIndex("GYRO", gyro.get().device_id) >= 0);
+			is_calibration_valid = (sensor_configuration::FindCurrentConfigurationIndex("CAL", "GYRO", gyro.get().device_id) >= 0);
 		}
 	}
 

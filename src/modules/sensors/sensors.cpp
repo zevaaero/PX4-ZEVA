@@ -331,9 +331,9 @@ int Sensors::parameters_update()
 	// mark all existing sensor calibrations active even if sensor is missing
 	// this preserves the calibration in the event of a parameter export while the sensor is missing
 	for (int i = 0; i < MAX_SENSOR_COUNT; i++) {
-		uint32_t device_id_accel = sensor_configuration::GetCalibrationParamInt32("ACC",  "ID", i);
-		uint32_t device_id_gyro  = sensor_configuration::GetCalibrationParamInt32("GYRO", "ID", i);
-		uint32_t device_id_mag   = sensor_configuration::GetCalibrationParamInt32("MAG",  "ID", i);
+		uint32_t device_id_accel = sensor_configuration::GetConfigurationParamInt32("CAL", "ACC",  "ID", i);
+		uint32_t device_id_gyro  = sensor_configuration::GetConfigurationParamInt32("CAL", "GYRO", "ID", i);
+		uint32_t device_id_mag   = sensor_configuration::GetConfigurationParamInt32("CAL", "MAG",  "ID", i);
 
 		if (device_id_accel != 0) {
 			sensor_configuration::Accelerometer accel_cal(device_id_accel);
@@ -768,16 +768,16 @@ int Sensors::print_status()
 	PX4_INFO_RAW("Airspeed status:\n");
 	_airspeed_validator.print();
 
+	if (_vehicle_gps_position) {
+		PX4_INFO_RAW("\n");
+		_vehicle_gps_position->PrintStatus();
+	}
+
 	PX4_INFO_RAW("\n");
 	_vehicle_acceleration.PrintStatus();
 
 	PX4_INFO_RAW("\n");
 	_vehicle_angular_velocity.PrintStatus();
-
-	if (_vehicle_gps_position) {
-		PX4_INFO_RAW("\n");
-		_vehicle_gps_position->PrintStatus();
-	}
 
 	PX4_INFO_RAW("\n");
 

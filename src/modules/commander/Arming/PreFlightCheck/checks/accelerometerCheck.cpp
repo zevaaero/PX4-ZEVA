@@ -84,7 +84,7 @@ bool PreFlightCheck::accelerometerCheck(orb_advert_t *mavlink_log_pub, vehicle_s
 			is_calibration_valid = true;
 
 		} else {
-			is_calibration_valid = (sensor_configuration::FindCurrentCalibrationIndex("ACC", accel.get().device_id) >= 0);
+			is_calibration_valid = (sensor_configuration::FindCurrentConfigurationIndex("CAL", "ACC", accel.get().device_id) >= 0);
 		}
 
 		const float accel_magnitude = sqrtf(accel.get().x * accel.get().x

@@ -160,7 +160,7 @@ void Accelerometer::ParametersUpdate()
 		return;
 	}
 
-	_calibration_index = FindCurrentCalibrationIndex(SensorString(), _device_id);
+	_calibration_index = FindCurrentConfigurationIndex("CAL", SensorString(), _device_id);
 
 	if (_calibration_index == -1) {
 		// no saved calibration available
@@ -175,7 +175,7 @@ bool Accelerometer::ParametersLoad()
 {
 	if (_calibration_index >= 0 && _calibration_index < MAX_SENSOR_COUNT) {
 		// CAL_ACCx_ROT
-		int32_t rotation_value = GetCalibrationParamInt32(SensorString(), "ROT", _calibration_index);
+		int32_t rotation_value = GetConfigurationParamInt32("CAL", SensorString(), "ROT", _calibration_index);
 
 		if (_external) {
 			if ((rotation_value >= ROTATION_MAX) || (rotation_value < 0)) {
@@ -191,7 +191,7 @@ bool Accelerometer::ParametersLoad()
 		}
 
 		// CAL_ACCx_PRIO
-		_priority = GetCalibrationParamInt32(SensorString(), "PRIO", _calibration_index);
+		_priority = GetConfigurationParamInt32("CAL", SensorString(), "PRIO", _calibration_index);
 
 		if ((_priority < 0) || (_priority > 100)) {
 			// reset to default, -1 is the uninitialized parameter value
@@ -201,17 +201,17 @@ bool Accelerometer::ParametersLoad()
 				PX4_ERR("%s %" PRIu32 " (%" PRId8 ") invalid priority %" PRId32 ", resetting", SensorString(), _device_id,
 					_calibration_index, _priority);
 
-				SetCalibrationParam(SensorString(), "PRIO", _calibration_index, CAL_PRIO_UNINITIALIZED);
+				SetConfigurationParam("CAL", SensorString(), "PRIO", _calibration_index, CAL_PRIO_UNINITIALIZED);
 			}
 
 			_priority = _external ? DEFAULT_EXTERNAL_PRIORITY : DEFAULT_PRIORITY;
 		}
 
 		// CAL_ACCx_OFF{X,Y,Z}
-		set_offset(GetCalibrationParamsVector3f(SensorString(), "OFF", _calibration_index));
+		set_offset(GetConfigurationParamsVector3f("CAL", SensorString(), "OFF", _calibration_index));
 
 		// CAL_ACCx_SCALE{X,Y,Z}
-		set_scale(GetCalibrationParamsVector3f(SensorString(), "SCALE", _calibration_index));
+		set_scale(GetConfigurationParamsVector3f("CAL", SensorString(), "SCALE", _calibration_index));
 
 		return true;
 	}
@@ -251,7 +251,7 @@ bool Accelerometer::ParametersSave(int desired_calibration_index, bool force)
 
 		// ensure we have a valid calibration slot (matching existing or first available slot)
 		int8_t calibration_index_prev = _calibration_index;
-		_calibration_index = FindAvailableCalibrationIndex(SensorString(), _device_id, desired_calibration_index);
+		_calibration_index = FindAvailableConfigurationIndex("CAL", SensorString(), _device_id, desired_calibration_index);
 
 		if (calibration_index_prev >= 0 && (calibration_index_prev != _calibration_index)) {
 			PX4_WARN("%s %" PRIu32 " calibration index changed %" PRIi8 " -> %" PRIi8, SensorString(), _device_id,
@@ -262,16 +262,16 @@ bool Accelerometer::ParametersSave(int desired_calibration_index, bool force)
 	if (_calibration_index >= 0 && _calibration_index < MAX_SENSOR_COUNT) {
 		// save calibration
 		bool success = true;
-		success &= SetCalibrationParam(SensorString(), "ID", _calibration_index, _device_id);
-		success &= SetCalibrationParam(SensorString(), "PRIO", _calibration_index, _priority);
-		success &= SetCalibrationParamsVector3f(SensorString(), "OFF", _calibration_index, _offset);
-		success &= SetCalibrationParamsVector3f(SensorString(), "SCALE", _calibration_index, _scale);
+		success &= SetConfigurationParam("CAL", SensorString(), "ID", _calibration_index, _device_id);
+		success &= SetConfigurationParam("CAL", SensorString(), "PRIO", _calibration_index, _priority);
+		success &= SetConfigurationParamsVector3f("CAL", SensorString(), "OFF", _calibration_index, _offset);
+		success &= SetConfigurationParamsVector3f("CAL", SensorString(), "SCALE", _calibration_index, _scale);
 
 		if (_external) {
-			success &= SetCalibrationParam(SensorString(), "ROT", _calibration_index, (int32_t)_rotation_enum);
+			success &= SetConfigurationParam("CAL", SensorString(), "ROT", _calibration_index, (int32_t)_rotation_enum);
 
 		} else {
-			success &= SetCalibrationParam(SensorString(), "ROT", _calibration_index, -1); // internal
+			success &= SetConfigurationParam("CAL", SensorString(), "ROT", _calibration_index, -1); // internal
 		}
 
 		return success;
