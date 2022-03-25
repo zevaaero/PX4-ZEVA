@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
  *
  ****************************************************************************/
 
-#include "Barometer.hpp"
+#include "Gyroscope.hpp"
 
 #include "Utilities.hpp"
 
@@ -40,20 +40,20 @@
 using namespace matrix;
 using namespace time_literals;
 
-namespace calibration
+namespace sensor_configuration
 {
 
-Barometer::Barometer()
+Gyroscope::Gyroscope()
 {
 	Reset();
 }
 
-Barometer::Barometer(uint32_t device_id)
+Gyroscope::Gyroscope(uint32_t device_id)
 {
 	set_device_id(device_id);
 }
 
-void Barometer::set_device_id(uint32_t device_id)
+void Gyroscope::set_device_id(uint32_t device_id)
 {
 	bool external = DeviceExternal(device_id);
 
@@ -69,7 +69,7 @@ void Barometer::set_device_id(uint32_t device_id)
 	}
 }
 
-void Barometer::SensorCorrectionsUpdate(bool force)
+void Gyroscope::SensorCorrectionsUpdate(bool force)
 {
 	// check if the selected sensor has updated
 	if (_sensor_correction_sub.updated() || force) {
@@ -84,22 +84,19 @@ void Barometer::SensorCorrectionsUpdate(bool force)
 		if (_sensor_correction_sub.copy(&corrections)) {
 			// find sensor_corrections index
 			for (int i = 0; i < MAX_SENSOR_COUNT; i++) {
-				if (corrections.baro_device_ids[i] == _device_id) {
+				if (corrections.gyro_device_ids[i] == _device_id) {
 					switch (i) {
 					case 0:
-						_thermal_offset = corrections.baro_offset_0;
+						_thermal_offset = Vector3f{corrections.gyro_offset_0};
 						return;
-
 					case 1:
-						_thermal_offset = corrections.baro_offset_1;
+						_thermal_offset = Vector3f{corrections.gyro_offset_1};
 						return;
-
 					case 2:
-						_thermal_offset = corrections.baro_offset_2;
+						_thermal_offset = Vector3f{corrections.gyro_offset_2};
 						return;
-
 					case 3:
-						_thermal_offset = corrections.baro_offset_3;
+						_thermal_offset = Vector3f{corrections.gyro_offset_3};
 						return;
 					}
 				}
@@ -107,14 +104,14 @@ void Barometer::SensorCorrectionsUpdate(bool force)
 		}
 
 		// zero thermal offset if not found
-		_thermal_offset = 0;
+		_thermal_offset.zero();
 	}
 }
 
-bool Barometer::set_offset(const float &offset)
+bool Gyroscope::set_offset(const Vector3f &offset)
 {
-	if (fabsf(_offset - offset) > 0.01f) {
-		if (PX4_ISFINITE(offset)) {
+	if (Vector3f(_offset - offset).longerThan(0.01f)) {
+		if (PX4_ISFINITE(offset(0)) && PX4_ISFINITE(offset(1)) && PX4_ISFINITE(offset(2))) {
 			_offset = offset;
 			_calibration_count++;
 			return true;
@@ -124,7 +121,15 @@ bool Barometer::set_offset(const float &offset)
 	return false;
 }
 
-bool Barometer::set_calibration_index(int calibration_index)
+void Gyroscope::set_rotation(Rotation rotation)
+{
+	_rotation_enum = rotation;
+
+	// always apply board level adjustments
+	_rotation = Dcmf(GetSensorLevelAdjustment()) * get_rot_matrix(rotation);
+}
+
+bool Gyroscope::set_calibration_index(int calibration_index)
 {
 	if ((calibration_index >= 0) && (calibration_index < MAX_SENSOR_COUNT)) {
 		_calibration_index = calibration_index;
@@ -134,7 +139,7 @@ bool Barometer::set_calibration_index(int calibration_index)
 	return false;
 }
 
-void Barometer::ParametersUpdate()
+void Gyroscope::ParametersUpdate()
 {
 	if (_device_id == 0) {
 		return;
@@ -151,10 +156,26 @@ void Barometer::ParametersUpdate()
 	}
 }
 
-bool Barometer::ParametersLoad()
+bool Gyroscope::ParametersLoad()
 {
 	if (_calibration_index >= 0 && _calibration_index < MAX_SENSOR_COUNT) {
-		// CAL_BAROx_PRIO
+		// CAL_GYROx_ROT
+		int32_t rotation_value = GetCalibrationParamInt32(SensorString(), "ROT", _calibration_index);
+
+		if (_external) {
+			if ((rotation_value >= ROTATION_MAX) || (rotation_value < 0)) {
+				// invalid rotation, resetting
+				rotation_value = ROTATION_NONE;
+			}
+
+			set_rotation(static_cast<Rotation>(rotation_value));
+
+		} else {
+			// internal sensors follow board rotation
+			set_rotation(GetBoardRotation());
+		}
+
+		// CAL_GYROx_PRIO
 		_priority = GetCalibrationParamInt32(SensorString(), "PRIO", _calibration_index);
 
 		if ((_priority < 0) || (_priority > 100)) {
@@ -171,8 +192,8 @@ bool Barometer::ParametersLoad()
 			_priority = _external ? DEFAULT_EXTERNAL_PRIORITY : DEFAULT_PRIORITY;
 		}
 
-		// CAL_BAROx_OFF
-		set_offset(GetCalibrationParamFloat(SensorString(), "OFF", _calibration_index));
+		// CAL_GYROx_OFF{X,Y,Z}
+		set_offset(GetCalibrationParamsVector3f(SensorString(), "OFF", _calibration_index));
 
 		return true;
 	}
@@ -180,11 +201,19 @@ bool Barometer::ParametersLoad()
 	return false;
 }
 
-void Barometer::Reset()
+void Gyroscope::Reset()
 {
-	_offset = 0;
+	if (_external) {
+		set_rotation(ROTATION_NONE);
 
-	_thermal_offset = 0;
+	} else {
+		// internal sensors follow board rotation
+		set_rotation(GetBoardRotation());
+	}
+
+	_offset.zero();
+
+	_thermal_offset.zero();
 
 	_priority = _external ? DEFAULT_EXTERNAL_PRIORITY : DEFAULT_PRIORITY;
 
@@ -193,7 +222,7 @@ void Barometer::Reset()
 	_calibration_count = 0;
 }
 
-bool Barometer::ParametersSave(int desired_calibration_index, bool force)
+bool Gyroscope::ParametersSave(int desired_calibration_index, bool force)
 {
 	if (force && desired_calibration_index >= 0 && desired_calibration_index < MAX_SENSOR_COUNT) {
 		_calibration_index = desired_calibration_index;
@@ -216,7 +245,14 @@ bool Barometer::ParametersSave(int desired_calibration_index, bool force)
 		bool success = true;
 		success &= SetCalibrationParam(SensorString(), "ID", _calibration_index, _device_id);
 		success &= SetCalibrationParam(SensorString(), "PRIO", _calibration_index, _priority);
-		success &= SetCalibrationParam(SensorString(), "OFF", _calibration_index, _offset);
+		success &= SetCalibrationParamsVector3f(SensorString(), "OFF", _calibration_index, _offset);
+
+		if (_external) {
+			success &= SetCalibrationParam(SensorString(), "ROT", _calibration_index, (int32_t)_rotation_enum);
+
+		} else {
+			success &= SetCalibrationParam(SensorString(), "ROT", _calibration_index, -1); // internal
+		}
 
 		return success;
 	}
@@ -224,23 +260,25 @@ bool Barometer::ParametersSave(int desired_calibration_index, bool force)
 	return false;
 }
 
-void Barometer::PrintStatus()
+void Gyroscope::PrintStatus()
 {
 	if (external()) {
 		PX4_INFO_RAW("%s %" PRIu32
-			     " EN: %d, offset: %05.3f, Ext\n",
+			     " EN: %d, offset: [%05.3f %05.3f %05.3f], Ext ROT: %d\n",
 			     SensorString(), device_id(), enabled(),
-			     (double)_offset);
+			     (double)_offset(0), (double)_offset(1), (double)_offset(2),
+			     rotation_enum());
 
 	} else {
-		PX4_INFO_RAW("%s %" PRIu32 " EN: %d, offset: %05.3f, Internal\n",
+		PX4_INFO_RAW("%s %" PRIu32 " EN: %d, offset: [%05.3f %05.3f %05.3f], Internal\n",
 			     SensorString(), device_id(), enabled(),
-			     (double)_offset);
+			     (double)_offset(0), (double)_offset(1), (double)_offset(2));
 	}
 
-	if (fabsf(_thermal_offset) > 0.f) {
-		PX4_INFO_RAW("%s %" PRIu32 " temperature offset: %.4f\n", SensorString(), _device_id, (double)_thermal_offset);
+	if (_thermal_offset.norm() > 0.f) {
+		PX4_INFO_RAW("%s %" PRIu32 " temperature offset: [%.4f %.4f %.4f]\n", SensorString(), _device_id,
+			     (double)_thermal_offset(0), (double)_thermal_offset(1), (double)_thermal_offset(2));
 	}
 }
 
-} // namespace calibration
+} // namespace sensor_configuration

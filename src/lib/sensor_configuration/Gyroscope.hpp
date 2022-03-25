@@ -40,7 +40,7 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/sensor_correction.h>
 
-namespace calibration
+namespace sensor_configuration
 {
 class Gyroscope
 {
@@ -119,4 +119,4 @@ private:
 
 	uint8_t _calibration_count{0};
 };
-} // namespace calibration
+} // namespace sensor_configuration

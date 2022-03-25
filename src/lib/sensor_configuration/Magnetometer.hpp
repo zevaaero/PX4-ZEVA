@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,14 +33,17 @@
 
 #pragma once
 
+#include <lib/conversion/rotation.h>
+#include <lib/matrix/matrix/math.hpp>
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/log.h>
 #include <uORB/Subscription.hpp>
-#include <uORB/topics/sensor_correction.h>
+#include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/battery_status.h>
 
-namespace calibration
+namespace sensor_configuration
 {
-class Barometer
+class Magnetometer
 {
 public:
 	static constexpr int MAX_SENSOR_COUNT = 4;
@@ -48,18 +51,21 @@ public:
 	static constexpr uint8_t DEFAULT_PRIORITY = 50;
 	static constexpr uint8_t DEFAULT_EXTERNAL_PRIORITY = 75;
 
-	static constexpr const char *SensorString() { return "BARO"; }
+	static constexpr const char *SensorString() { return "MAG"; }
 
-	Barometer();
-	explicit Barometer(uint32_t device_id);
+	Magnetometer();
+	explicit Magnetometer(uint32_t device_id);
 
-	~Barometer() = default;
+	~Magnetometer() = default;
 
 	void PrintStatus();
 
 	bool set_calibration_index(int calibration_index);
 	void set_device_id(uint32_t device_id);
-	bool set_offset(const float &offset);
+	bool set_offset(const matrix::Vector3f &offset);
+	bool set_scale(const matrix::Vector3f &scale);
+	bool set_offdiagonal(const matrix::Vector3f &offdiagonal);
+	void set_rotation(Rotation rotation);
 
 	bool calibrated() const { return (_device_id != 0) && (_calibration_index >= 0); }
 	uint8_t calibration_count() const { return _calibration_count; }
@@ -67,25 +73,23 @@ public:
 	uint32_t device_id() const { return _device_id; }
 	bool enabled() const { return (_priority > 0); }
 	bool external() const { return _external; }
-	const float &offset() const { return _offset; }
+	const matrix::Vector3f &offset() const { return _offset; }
 	const int32_t &priority() const { return _priority; }
-	const float &thermal_offset() const { return _thermal_offset; }
+	const matrix::Dcmf &rotation() const { return _rotation; }
+	const Rotation &rotation_enum() const { return _rotation_enum; }
+	const matrix::Matrix3f &scale() const { return _scale; }
 
-	// apply offsets
-	inline float Correct(const float &data) const
+	// apply offsets and scale
+	// rotate corrected measurements from sensor to body frame
+	inline matrix::Vector3f Correct(const matrix::Vector3f &data) const
 	{
-		return data - _thermal_offset - _offset;
-	}
-
-	inline float Uncorrect(const float &corrected_data) const
-	{
-		return corrected_data + _thermal_offset + _offset;
+		return _rotation * (_scale * ((data + _power * _power_compensation) - _offset));
 	}
 
 	// Compute sensor offset from bias (board frame)
-	float BiasCorrectedSensorOffset(const float &bias) const
+	matrix::Vector3f BiasCorrectedSensorOffset(const matrix::Vector3f &bias) const
 	{
-		return bias + _thermal_offset + _offset;
+		return _scale.I() * _rotation.I() * bias + _offset;
 	}
 
 	bool ParametersLoad();
@@ -94,13 +98,16 @@ public:
 
 	void Reset();
 
-	void SensorCorrectionsUpdate(bool force = false);
+	void UpdatePower(float power) { _power = power; }
 
 private:
-	uORB::Subscription _sensor_correction_sub{ORB_ID(sensor_correction)};
+	Rotation _rotation_enum{ROTATION_NONE};
 
-	float _offset{0};
-	float _thermal_offset{0};
+	matrix::Dcmf _rotation;
+	matrix::Vector3f _offset;
+	matrix::Matrix3f _scale;
+	matrix::Vector3f _power_compensation;
+	float _power{0.f};
 
 	int8_t _calibration_index{-1};
 	uint32_t _device_id{0};
@@ -110,4 +117,4 @@ private:
 
 	uint8_t _calibration_count{0};
 };
-} // namespace calibration
+} // namespace sensor_configuration

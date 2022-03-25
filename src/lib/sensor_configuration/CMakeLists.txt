@@ -31,7 +31,7 @@
 #
 ############################################################################
 
-px4_add_library(sensor_calibration
+px4_add_library(sensor_configuration
 	Accelerometer.cpp
 	Accelerometer.hpp
 	Barometer.cpp
@@ -44,4 +44,4 @@ px4_add_library(sensor_calibration
 	Utilities.hpp
 )
 
-target_link_libraries(sensor_calibration PRIVATE conversion)
+target_link_libraries(sensor_configuration PRIVATE conversion)

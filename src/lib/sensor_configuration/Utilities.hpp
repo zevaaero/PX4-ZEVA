@@ -40,7 +40,7 @@
 #include <lib/parameters/param.h>
 #include <matrix/math.hpp>
 
-namespace calibration
+namespace sensor_configuration
 {
 
 /**
@@ -149,4 +149,4 @@ matrix::Dcmf GetBoardRotationMatrix();
  */
 bool DeviceExternal(uint32_t device_id);
 
-} // namespace calibration
+} // namespace sensor_configuration

@@ -54,4 +54,4 @@ px4_add_library(PreFlightCheck
 	checks/parachuteCheck.cpp
 )
 target_include_directories(PreFlightCheck PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(PreFlightCheck PUBLIC ArmAuthorization HealthFlags sensor_calibration)
+target_link_libraries(PreFlightCheck PUBLIC ArmAuthorization HealthFlags sensor_configuration)

@@ -55,7 +55,7 @@ px4_add_module(
 		conversion
 		data_validator
 		mathlib
-		sensor_calibration
+		sensor_configuration
 		vehicle_acceleration
 		vehicle_angular_velocity
 		vehicle_air_data

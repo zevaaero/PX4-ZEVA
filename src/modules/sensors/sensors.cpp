@@ -48,7 +48,7 @@
 #include <lib/mathlib/mathlib.h>
 #include <lib/parameters/param.h>
 #include <lib/perf/perf_counter.h>
-#include <lib/sensor_calibration/Utilities.hpp>
+#include <lib/sensor_configuration/Utilities.hpp>
 #include <px4_platform_common/getopt.h>
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/module_params.h>
@@ -331,20 +331,20 @@ int Sensors::parameters_update()
 	// mark all existing sensor calibrations active even if sensor is missing
 	// this preserves the calibration in the event of a parameter export while the sensor is missing
 	for (int i = 0; i < MAX_SENSOR_COUNT; i++) {
-		uint32_t device_id_accel = calibration::GetCalibrationParamInt32("ACC",  "ID", i);
-		uint32_t device_id_gyro  = calibration::GetCalibrationParamInt32("GYRO", "ID", i);
-		uint32_t device_id_mag   = calibration::GetCalibrationParamInt32("MAG",  "ID", i);
+		uint32_t device_id_accel = sensor_configuration::GetCalibrationParamInt32("ACC",  "ID", i);
+		uint32_t device_id_gyro  = sensor_configuration::GetCalibrationParamInt32("GYRO", "ID", i);
+		uint32_t device_id_mag   = sensor_configuration::GetCalibrationParamInt32("MAG",  "ID", i);
 
 		if (device_id_accel != 0) {
-			calibration::Accelerometer accel_cal(device_id_accel);
+			sensor_configuration::Accelerometer accel_cal(device_id_accel);
 		}
 
 		if (device_id_gyro != 0) {
-			calibration::Gyroscope gyro_cal(device_id_gyro);
+			sensor_configuration::Gyroscope gyro_cal(device_id_gyro);
 		}
 
 		if (device_id_mag != 0) {
-			calibration::Magnetometer mag_cal(device_id_mag);
+			sensor_configuration::Magnetometer mag_cal(device_id_mag);
 		}
 	}
 
@@ -356,7 +356,7 @@ int Sensors::parameters_update()
 		uORB::SubscriptionData<sensor_accel_s> sensor_accel_sub{ORB_ID(sensor_accel), i};
 
 		if (sensor_accel_sub.advertised() && (sensor_accel_sub.get().device_id != 0)) {
-			calibration::Accelerometer cal;
+			sensor_configuration::Accelerometer cal;
 			cal.set_calibration_index(i);
 			cal.ParametersLoad();
 		}
@@ -365,7 +365,7 @@ int Sensors::parameters_update()
 		uORB::SubscriptionData<sensor_gyro_s> sensor_gyro_sub{ORB_ID(sensor_gyro), i};
 
 		if (sensor_gyro_sub.advertised() && (sensor_gyro_sub.get().device_id != 0)) {
-			calibration::Gyroscope cal;
+			sensor_configuration::Gyroscope cal;
 			cal.set_calibration_index(i);
 			cal.ParametersLoad();
 		}
@@ -374,7 +374,7 @@ int Sensors::parameters_update()
 		uORB::SubscriptionData<sensor_mag_s> sensor_mag_sub{ORB_ID(sensor_mag), i};
 
 		if (sensor_mag_sub.advertised() && (sensor_mag_sub.get().device_id != 0)) {
-			calibration::Magnetometer cal;
+			sensor_configuration::Magnetometer cal;
 			cal.set_calibration_index(i);
 			cal.ParametersLoad();
 		}

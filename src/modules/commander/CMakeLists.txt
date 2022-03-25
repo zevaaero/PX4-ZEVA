@@ -64,7 +64,7 @@ px4_add_module(
 		ArmAuthorization
 		ArmStateMachine
 		HealthFlags
-		sensor_calibration
+		sensor_configuration
 		world_magnetic_model
 	)
 

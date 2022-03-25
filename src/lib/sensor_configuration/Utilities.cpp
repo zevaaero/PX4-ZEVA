@@ -51,7 +51,7 @@ using matrix::Eulerf;
 using matrix::Dcmf;
 using matrix::Vector3f;
 
-namespace calibration
+namespace sensor_configuration
 {
 
 static constexpr int MAX_SENSOR_COUNT = 4; // TODO: per sensor?
@@ -284,4 +284,4 @@ bool DeviceExternal(uint32_t device_id)
 	return external;
 }
 
-} // namespace calibration
+} // namespace sensor_configuration

@@ -40,7 +40,7 @@
 using namespace matrix;
 using namespace time_literals;
 
-namespace calibration
+namespace sensor_configuration
 {
 
 Accelerometer::Accelerometer()
@@ -304,4 +304,4 @@ void Accelerometer::PrintStatus()
 	}
 }
 
-} // namespace calibration
+} // namespace sensor_configuration

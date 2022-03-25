@@ -42,5 +42,5 @@ target_link_libraries(vehicle_angular_velocity
 	PRIVATE
 		mathlib
 		px4_work_queue
-		sensor_calibration
+		sensor_configuration
 )
