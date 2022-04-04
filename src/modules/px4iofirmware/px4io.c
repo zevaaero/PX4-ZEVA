@@ -68,8 +68,6 @@ __EXPORT int user_start(int argc, char *argv[]);
 
 struct sys_state_s 	system_state;
 
-static struct hrt_call serial_dma_call;
-
 /*
  * a set of debug buffers to allow us to send debug information from ISRs
  */
@@ -292,9 +290,6 @@ user_start(int argc, char *argv[])
 	 * Poll at 1ms intervals for received bytes that have not triggered
 	 * a DMA event.
 	 */
-#ifdef CONFIG_ARCH_DMA
-	hrt_call_every(&serial_dma_call, 1000, 1000, (hrt_callout)stm32_serial_dma_poll, NULL);
-#endif
 
 	/* print some startup info */
 	syslog(LOG_INFO, "\nPX4IO: starting\n");
