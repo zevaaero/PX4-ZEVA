@@ -76,6 +76,7 @@
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/px4io_status.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/safety.h>
 
 #include <debug.h>
 
@@ -197,6 +198,7 @@ private:
 
 	uORB::Subscription	_t_actuator_armed{ORB_ID(actuator_armed)};		///< system armed control topic
 	uORB::Subscription	_t_vehicle_command{ORB_ID(vehicle_command)};		///< vehicle command topic
+	uORB::Subscription	_safety_sub{ORB_ID(safety)};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
@@ -999,18 +1001,35 @@ int PX4IO::io_handle_status(uint16_t status)
 	}
 
 	/**
-	 * Get and handle the safety status
+	 * Get and handle the safety status from PX4IO board
 	 */
 	const bool safety_off = status & PX4IO_P_STATUS_FLAGS_SAFETY_OFF;
 
-	/* px4io board will change safety_off from false to true and stay like that until the vehicle is rebooted
-	 * where safety will change back to false. Here we are triggering the safety button event once.
-	 * TODO: change px4io firmware to act on the event. This will enable the "force safety on disarming" feature. */
 	if (_previous_safety_off != safety_off) {
 		_button_publisher.safetyButtonTriggerEvent();
 	}
 
 	_previous_safety_off = safety_off;
+
+	/**
+	 * Check and handle external events such as external safety button or force safety after disarm
+	 */
+	safety_s safety;
+
+	if (_safety_sub.update(&safety)) {
+		if (safety.safety_off != _previous_safety_off) {
+			if (safety.safety_off) {
+				// Disable safety at PX4IO board
+				io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FORCE_SAFETY_OFF, PX4IO_FORCE_SAFETY_MAGIC);
+
+			} else {
+				// Enable safety at PX4IO board
+				io_reg_set(PX4IO_PAGE_SETUP, PX4IO_P_SETUP_FORCE_SAFETY_ON, PX4IO_FORCE_SAFETY_MAGIC);
+			}
+
+			_previous_safety_off = safety.safety_off;
+		}
+	}
 
 	return ret;
 }
