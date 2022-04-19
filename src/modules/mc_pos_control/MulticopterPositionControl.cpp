@@ -42,13 +42,9 @@
 using namespace matrix;
 
 MulticopterPositionControl::MulticopterPositionControl(bool vtol) :
-	SuperBlock(nullptr, "MPC"),
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers),
-	_vehicle_attitude_setpoint_pub(vtol ? ORB_ID(mc_virtual_attitude_setpoint) : ORB_ID(vehicle_attitude_setpoint)),
-	_vel_x_deriv(this, "VELD"),
-	_vel_y_deriv(this, "VELD"),
-	_vel_z_deriv(this, "VELD")
+	_vehicle_attitude_setpoint_pub(vtol ? ORB_ID(mc_virtual_attitude_setpoint) : ORB_ID(vehicle_attitude_setpoint))
 {
 	parameters_update(true);
 	_failsafe_land_hysteresis.set_hysteresis_time_from(false, LOITER_TIME_BEFORE_DESCEND);
@@ -85,7 +81,6 @@ void MulticopterPositionControl::parameters_update(bool force)
 
 		// update parameters from storage
 		ModuleParams::updateParams();
-		SuperBlock::updateParams();
 
 		int num_changed = 0;
 
@@ -241,8 +236,12 @@ void MulticopterPositionControl::parameters_update(bool force)
 	}
 }
 
-PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehicle_local_position_s &local_pos)
+PositionControlStates MulticopterPositionControl::set_vehicle_states(const float dt,
+		const vehicle_local_position_s &local_pos)
 {
+	const float vel_filter_tc = 1.f / (2.f * M_PI_F * _param_mpc_vel_lp.get());
+	const float vel_derivative_filter_tc = 1.f / (2.f * M_PI_F * _param_mpc_veld_lp.get());
+
 	PositionControlStates states;
 
 	// only set position states if valid and finite
@@ -263,10 +262,18 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 	}
 
 	if (PX4_ISFINITE(local_pos.vx) && PX4_ISFINITE(local_pos.vy) && local_pos.v_xy_valid) {
-		states.velocity(0) = local_pos.vx;
-		states.velocity(1) = local_pos.vy;
-		states.acceleration(0) = _vel_x_deriv.update(local_pos.vx);
-		states.acceleration(1) = _vel_y_deriv.update(local_pos.vy);
+		const Vector2f vel_xy_prev = _vel_xy_filter.getState();
+
+		_vel_xy_filter.setParameters(dt, vel_filter_tc);
+		const Vector2f vel_xy = _vel_xy_filter.update(Vector2f{local_pos.vx, local_pos.vy});
+
+		_vel_xy_derivative_filter.setParameters(dt, vel_derivative_filter_tc);
+		const Vector2f acc_xy = _vel_xy_derivative_filter.update((vel_xy - vel_xy_prev) / dt);
+
+		states.velocity(0) = vel_xy(0);
+		states.velocity(1) = vel_xy(1);
+		states.acceleration(0) = acc_xy(0);
+		states.acceleration(1) = acc_xy(1);
 
 	} else {
 		states.velocity(0) = NAN;
@@ -275,20 +282,29 @@ PositionControlStates MulticopterPositionControl::set_vehicle_states(const vehic
 		states.acceleration(1) = NAN;
 
 		// reset derivatives to prevent acceleration spikes when regaining velocity
-		_vel_x_deriv.reset();
-		_vel_y_deriv.reset();
+		_vel_xy_filter.reset(Vector2f{local_pos.vx, local_pos.vy});
+		_vel_xy_derivative_filter.reset({0.f, 0.f});
 	}
 
 	if (PX4_ISFINITE(local_pos.vz) && local_pos.v_z_valid) {
-		states.velocity(2) = local_pos.vz;
-		states.acceleration(2) = _vel_z_deriv.update(states.velocity(2));
+		const float vel_z_prev = _vel_z_filter.getState();
+
+		_vel_z_filter.setParameters(dt, vel_filter_tc);
+		const float vel_z = _vel_z_filter.update(local_pos.vz);
+
+		_vel_z_derivative_filter.setParameters(dt, vel_derivative_filter_tc);
+		const float acc_z = _vel_z_derivative_filter.update((vel_z - vel_z_prev) / dt);
+
+		states.velocity(2) = vel_z;
+		states.acceleration(2) = acc_z;
 
 	} else {
 		states.velocity(2) = NAN;
 		states.acceleration(2) = NAN;
 
 		// reset derivative to prevent acceleration spikes when regaining velocity
-		_vel_z_deriv.reset();
+		_vel_z_filter.reset(local_pos.vz);
+		_vel_z_derivative_filter.reset(0.f);
 	}
 
 	states.yaw = local_pos.heading;
@@ -317,8 +333,6 @@ void MulticopterPositionControl::Run()
 		const float dt = math::constrain(((time_stamp_now - _time_stamp_last_loop) * 1e-6f), 0.002f, 0.04f);
 		_time_stamp_last_loop = time_stamp_now;
 
-		// set _dt in controllib Block for BlockDerivative
-		setDt(dt);
 		_in_failsafe = false;
 
 		_vehicle_control_mode_sub.update(&_vehicle_control_mode);
@@ -334,7 +348,7 @@ void MulticopterPositionControl::Run()
 			}
 		}
 
-		PositionControlStates states{set_vehicle_states(local_pos)};
+		PositionControlStates states{set_vehicle_states(dt, local_pos)};
 
 		if (_vehicle_control_mode.flag_multicopter_position_control_enabled) {
 
