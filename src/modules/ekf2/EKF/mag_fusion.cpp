@@ -48,14 +48,14 @@
 void Ekf::fuseMag(const Vector3f &mag)
 {
 	// assign intermediate variables
-	const float &q0 = _state.quat_nominal(0);
-	const float &q1 = _state.quat_nominal(1);
-	const float &q2 = _state.quat_nominal(2);
-	const float &q3 = _state.quat_nominal(3);
+	const float q0 = _state.quat_nominal(0);
+	const float q1 = _state.quat_nominal(1);
+	const float q2 = _state.quat_nominal(2);
+	const float q3 = _state.quat_nominal(3);
 
-	const float &magN = _state.mag_I(0);
-	const float &magE = _state.mag_I(1);
-	const float &magD = _state.mag_I(2);
+	const float magN = _state.mag_I(0);
+	const float magE = _state.mag_I(1);
+	const float magD = _state.mag_I(2);
 
 	// XYZ Measurement uncertainty. Need to consider timing errors for fast rotations
 	const float R_MAG = sq(fmaxf(_params.mag_noise, 0.0f));
@@ -673,8 +673,8 @@ bool Ekf::fuseYaw(const float innovation, const float variance)
 void Ekf::fuseDeclination(float decl_sigma)
 {
 	// assign intermediate state variables
-	const float &magN = _state.mag_I(0);
-	const float &magE = _state.mag_I(1);
+	const float magN = _state.mag_I(0);
+	const float magE = _state.mag_I(1);
 
 	// minimum North field strength before calculation becomes badly conditioned (T)
 	constexpr float N_field_min = 0.001f;
