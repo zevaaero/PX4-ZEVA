@@ -40,10 +40,17 @@
 
 void Ekf::controlZeroInnovationHeadingUpdate()
 {
-	// When at rest or no source of yaw aiding is active yaw fusion is run selectively to enable yaw gyro
-	// bias learning when stationary on ground and to prevent uncontrolled yaw variance growth
-	if (_control_status.flags.vehicle_at_rest && _control_status.flags.tilt_align) {
+	if (!_control_status.flags.tilt_align) {
+		// fuse zero heading innovation during the leveling fine alignment step to keep the yaw variance low
+		float innovation = 0.f;
+		float obs_var = _control_status.flags.vehicle_at_rest ? 0.001f : 0.1f;
+		fuseYaw(innovation, obs_var);
 
+		_last_static_yaw = NAN;
+
+	} else if (_control_status.flags.vehicle_at_rest) {
+		// When at rest or no source of yaw aiding is active yaw fusion is run selectively to enable yaw gyro
+		// bias learning when stationary on ground and to prevent uncontrolled yaw variance growth
 		const float euler_yaw = getEulerYaw(_R_to_earth);
 
 		// record static yaw when transitioning to at rest
@@ -59,23 +66,24 @@ void Ekf::controlZeroInnovationHeadingUpdate()
 		}
 
 	} else {
-		// vehicle moving or tilt alignment not yet completed
+		// vehicle moving and tilt alignment completed
 
-		const float sumQuatVar = P(0, 0) + P(1, 1) + P(2, 2) + P(3, 3);
+		// fuse zero innovation at a limited rate (every 1000 milliseconds)
+		if (isTimedOut(_time_last_heading_fuse, (uint64_t)1'000'000)) {
 
-		if (sumQuatVar > _params.quat_max_variance) {
-			// if necessary fuse zero innovation to prevent unconstrained quaternion variance growth
-			float innovation = 0.f;
-			float obs_var = 0.25f;
-			fuseYaw(innovation, obs_var);
-
-		} else if (!_control_status.flags.tilt_align) {
-			// fuse zero heading innovation during the leveling fine alignment step to keep the yaw variance low
 			float innovation = 0.f;
 			float obs_var = 0.01f;
+
+			const float sumQuatVar = P(0, 0) + P(1, 1) + P(2, 2) + P(3, 3);
+
+			if (sumQuatVar > _params.quat_max_variance) {
+				// if necessary fuse zero innovation to prevent unconstrained quaternion variance growth
+				obs_var = 0.25f;
+			}
+
 			fuseYaw(innovation, obs_var);
 		}
 
-		_last_static_yaw = getEulerYaw(_R_to_earth);
+		_last_static_yaw = NAN;
 	}
 }
