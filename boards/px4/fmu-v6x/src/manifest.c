@@ -97,11 +97,11 @@ static const px4_hw_mft_item_t hw_mft_list_v0610[] = {
 
 static px4_hw_mft_list_entry_t mft_lists[] = {
 //  ver_rev
-	{V6X00000000, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)},
-	{V6X00010000, hw_mft_list_v0610, arraySize(hw_mft_list_v0610)}, // No PX4IO
-	{V6X00000001, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)}, // BMP388 moved to I2C2
-	{V6X00000003, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)}, // BMP388 moved to I2C2, Sensor Set 3
-	{V6X00010003, hw_mft_list_v0610, arraySize(hw_mft_list_v0610)}, // No PX4IO BMP388 moved to I2C2, Sensor Set 3
+	{V6X00, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)},
+	{V6X10, hw_mft_list_v0610, arraySize(hw_mft_list_v0610)}, // No PX4IO
+	{V6X01, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)}, // BMP388 moved to I2C2
+	{V6X03, hw_mft_list_v0600, arraySize(hw_mft_list_v0600)}, // BMP388 moved to I2C2, Sensor Set 3
+	{V6X13, hw_mft_list_v0610, arraySize(hw_mft_list_v0610)}, // No PX4IO BMP388 moved to I2C2, Sensor Set 3
 };
 
 /************************************************************************************
