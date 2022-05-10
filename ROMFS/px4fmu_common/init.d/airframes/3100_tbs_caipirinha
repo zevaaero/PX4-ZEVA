@@ -24,7 +24,7 @@
 param set-default FW_AIRSPD_MAX 25
 param set-default FW_AIRSPD_MIN 12.5
 param set-default FW_AIRSPD_TRIM 16.5
-param set-default FW_L1_PERIOD 15
+
 param set-default FW_LND_ANG 15
 param set-default FW_LND_FLALT 8
 param set-default FW_LND_HVIRT 13

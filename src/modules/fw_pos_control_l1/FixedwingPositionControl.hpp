@@ -33,16 +33,10 @@
 
 
 /**
- * @file fw_pos_control_l1_main.hpp
- * Implementation of a generic position controller based on the L1 norm. Outputs a bank / roll
- * angle, equivalent to a lateral motion (for copters and rovers).
+ * @file FixedwingPositionControl.hpp
+ * Implementation of a generic position controller based.
+ * Outputs a bank / roll angle, equivalent to a lateral motion (for copters and rovers).
  *
- * The implementation for the controllers is in the ECL library. This class only
- * interfaces to the library.
- *
- * @author Lorenz Meier <lorenz@px4.io>
- * @author Thomas Gubler <thomasgubler@gmail.com>
- * @author Andreas Antener <andreas@uaventure.com>
  */
 
 #ifndef FIXEDWINGPOSITIONCONTROL_HPP_
@@ -55,7 +49,6 @@
 
 #include <drivers/drv_hrt.h>
 #include <lib/geo/geo.h>
-#include <lib/l1/ECL_L1_Pos_Controller.hpp>
 #include <lib/npfg/npfg.hpp>
 #include <lib/tecs/TECS.hpp>
 #include <lib/landing_slope/Landingslope.hpp>
@@ -277,7 +270,6 @@ private:
 
 	hrt_abstime _time_in_fixed_bank_loiter{0};
 
-	ECL_L1_Pos_Controller	_l1_control;
 	NPFG _npfg;
 	TECS			_tecs;
 
@@ -420,7 +412,7 @@ private:
 
 	void		reset_takeoff_state(bool force = false);
 	void		reset_landing_state();
-	bool		using_npfg_with_wind_estimate() const;
+
 	Vector2f 	get_nav_speed_2d(const Vector2f &ground_speed);
 	void		set_control_mode_current(const hrt_abstime &now, bool pos_sp_curr_valid);
 
@@ -448,12 +440,9 @@ private:
 
 		(ParamFloat<px4::params::FW_GND_SPD_MIN>) _param_fw_gnd_spd_min,
 
-		(ParamFloat<px4::params::FW_L1_DAMPING>) _param_fw_l1_damping,
-		(ParamFloat<px4::params::FW_L1_PERIOD>) _param_fw_l1_period,
-		(ParamFloat<px4::params::FW_L1_R_SLEW_MAX>) _param_fw_l1_r_slew_max,
+		(ParamFloat<px4::params::FW_R_SLEW_MAX>) _param_fw_r_slew_max,
 		(ParamFloat<px4::params::FW_R_LIM>) _param_fw_r_lim,
 
-		(ParamBool<px4::params::FW_USE_NPFG>) _param_fw_use_npfg,
 		(ParamFloat<px4::params::NPFG_PERIOD>) _param_npfg_period,
 		(ParamFloat<px4::params::NPFG_DAMPING>) _param_npfg_damping,
 		(ParamBool<px4::params::NPFG_LB_PERIOD>) _param_npfg_en_period_lb,

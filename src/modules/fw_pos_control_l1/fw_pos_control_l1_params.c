@@ -39,61 +39,17 @@
  * @author Lorenz Meier <lorenz@px4.io>
  */
 
-/*
- * Controller parameters, accessible via MAVLink
- */
-
 /**
- * L1 period
- *
- * Used to determine the L1 gain and controller time constant. This parameter is
- * proportional to the L1 distance (which points ahead of the aircraft on the path
- * it is following). A value of 18-25 seconds works for most aircraft. Shorten
- * slowly during tuning until response is sharp without oscillation.
- *
- * @unit s
- * @min 7.0
- * @max 50.0
- * @decimal 1
- * @increment 0.5
- * @group FW L1 Control
- */
-PARAM_DEFINE_FLOAT(FW_L1_PERIOD, 20.0f);
-
-/**
- * L1 damping
- *
- * Damping factor for L1 control.
- *
- * @min 0.6
- * @max 0.9
- * @decimal 2
- * @increment 0.05
- * @group FW L1 Control
- */
-PARAM_DEFINE_FLOAT(FW_L1_DAMPING, 0.75f);
-
-/**
- * L1 controller roll slew rate limit.
+ * Roll slew rate limit.
  *
  * The maxium change in roll angle setpoint per second.
  *
  * @unit deg/s
  * @min 0
  * @increment 1
- * @group FW L1 Control
+ * @group FW Position Control
  */
-PARAM_DEFINE_FLOAT(FW_L1_R_SLEW_MAX, 90.0f);
-
-/**
- * Use NPFG as lateral-directional guidance law for fixed-wing vehicles
- *
- * Replaces L1.
- *
- * @boolean
- * @group FW NPFG Control
- */
-PARAM_DEFINE_INT32(FW_USE_NPFG, 0);
+PARAM_DEFINE_FLOAT(FW_R_SLEW_MAX, 90.0f);
 
 /**
  * NPFG period
@@ -239,7 +195,7 @@ PARAM_DEFINE_FLOAT(NPFG_PERIOD_SF, 1.5f);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_CRUISE, 0.6f);
 
@@ -257,7 +213,7 @@ PARAM_DEFINE_FLOAT(FW_THR_CRUISE, 0.6f);
  * @max 10.0
  * @decimal 1
  * @increment 0.1
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_ALT_SCL, 0.0f);
 
@@ -268,7 +224,7 @@ PARAM_DEFINE_FLOAT(FW_THR_ALT_SCL, 0.0f);
  *
  * @min 0.0
  * @max 1.0
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_SLEW_MAX, 0.0f);
 
@@ -282,7 +238,7 @@ PARAM_DEFINE_FLOAT(FW_THR_SLEW_MAX, 0.0f);
  * @max 0.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_P_LIM_MIN, -45.0f);
 
@@ -296,7 +252,7 @@ PARAM_DEFINE_FLOAT(FW_P_LIM_MIN, -45.0f);
  * @max 60.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_P_LIM_MAX, 45.0f);
 
@@ -310,7 +266,7 @@ PARAM_DEFINE_FLOAT(FW_P_LIM_MAX, 45.0f);
  * @max 65.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_R_LIM, 50.0f);
 
@@ -326,7 +282,7 @@ PARAM_DEFINE_FLOAT(FW_R_LIM, 50.0f);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_MAX, 1.0f);
 
@@ -347,7 +303,7 @@ PARAM_DEFINE_FLOAT(FW_THR_MAX, 1.0f);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_MIN, 0.0f);
 
@@ -364,7 +320,7 @@ PARAM_DEFINE_FLOAT(FW_THR_MIN, 0.0f);
  * @max 0.4
  * @decimal 2
  * @increment 0.01
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_IDLE, 0.15f);
 
@@ -379,7 +335,7 @@ PARAM_DEFINE_FLOAT(FW_THR_IDLE, 0.15f);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_THR_LND_MAX, 1.0f);
 
@@ -396,7 +352,7 @@ PARAM_DEFINE_FLOAT(FW_THR_LND_MAX, 1.0f);
  * @max 150.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_CLMBOUT_DIFF, 10.0f);
 
@@ -408,7 +364,7 @@ PARAM_DEFINE_FLOAT(FW_CLMBOUT_DIFF, 10.0f);
  * @max 15.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_ANG, 5.0f);
 
@@ -420,7 +376,7 @@ PARAM_DEFINE_FLOAT(FW_LND_ANG, 5.0f);
  * @max 30.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_TKO_PITCH_MIN, 10.0f);
 
@@ -432,7 +388,7 @@ PARAM_DEFINE_FLOAT(FW_TKO_PITCH_MIN, 10.0f);
  * @max 15.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_HVIRT, 10.0f);
 
@@ -444,7 +400,7 @@ PARAM_DEFINE_FLOAT(FW_LND_HVIRT, 10.0f);
  * @max 25.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_FLALT, 3.0f);
 
@@ -459,7 +415,7 @@ PARAM_DEFINE_FLOAT(FW_LND_FLALT, 3.0f);
  * @max 30.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_TLALT, -1.0f);
 
@@ -473,7 +429,7 @@ PARAM_DEFINE_FLOAT(FW_LND_TLALT, -1.0f);
  * @max 30.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_HHDIST, 15.0f);
 
@@ -484,7 +440,7 @@ PARAM_DEFINE_FLOAT(FW_LND_HHDIST, 15.0f);
  * (or sea level for an arbitrary land position).
  *
  * @boolean
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_INT32(FW_LND_USETER, 0);
 
@@ -500,7 +456,7 @@ PARAM_DEFINE_INT32(FW_LND_USETER, 0);
  *
  * @boolean
  *
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_INT32(FW_LND_EARLYCFG, 0);
 
@@ -515,7 +471,7 @@ PARAM_DEFINE_INT32(FW_LND_EARLYCFG, 0);
  * @max 15.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_FL_PMIN, 2.5f);
 
@@ -530,7 +486,7 @@ PARAM_DEFINE_FLOAT(FW_LND_FL_PMIN, 2.5f);
  * @max 45.0
  * @decimal 1
  * @increment 0.5
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_FL_PMAX, 15.0f);
 
@@ -546,7 +502,7 @@ PARAM_DEFINE_FLOAT(FW_LND_FL_PMAX, 15.0f);
  * @max 1.5
  * @decimal 2
  * @increment 0.01
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_AIRSPD_SC, 1.3f);
 
@@ -562,7 +518,7 @@ PARAM_DEFINE_FLOAT(FW_LND_AIRSPD_SC, 1.3f);
  * @min 0.2
  * @max 1.0
  * @increment 0.1
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_FLOAT(FW_LND_THRTC_SC, 1.0f);
 
@@ -893,7 +849,7 @@ PARAM_DEFINE_FLOAT(FW_GND_SPD_MIN, 5.0f);
  * @max 3
  * @bit 0 Alternative stick configuration (height rate on throttle stick, airspeed on pitch stick)
  * @bit 1 Enable airspeed setpoint via sticks in altitude and position flight mode
- * @group FW L1 Control
+ * @group FW Position Control
  */
 PARAM_DEFINE_INT32(FW_POS_STK_CONF, 2);
 
