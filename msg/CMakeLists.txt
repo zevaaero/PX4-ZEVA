@@ -137,7 +137,6 @@ set(msg_files
 	rc_parameter_map.msg
 	rpm.msg
 	rtl_time_estimate.msg
-	safety.msg
 	satellite_info.msg
 	sensor_accel.msg
 	sensor_accel_fifo.msg
@@ -164,6 +163,7 @@ set(msg_files
 	timesync.msg
 	timesync_status.msg
 	trajectory_bezier.msg
+	trajectory_setpoint.msg
 	trajectory_waypoint.msg
 	transponder_report.msg
 	tune_control.msg

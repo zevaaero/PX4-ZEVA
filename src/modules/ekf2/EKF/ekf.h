@@ -160,7 +160,7 @@ public:
 	matrix::SquareMatrix<float, 3> position_covariances() const { return P.slice<3, 3>(7, 7); }
 
 	// ask estimator for sensor data collection decision and do any preprocessing if required, returns true if not defined
-	bool collect_gps(const gps_message &gps) override;
+	bool collect_gps(const gpsMessage &gps) override;
 
 	// get the ekf WGS-84 origin position and height and the system time it was last set
 	// return true if the origin is valid
@@ -726,24 +726,20 @@ private:
 	template <size_t ...Idxs>
 	SquareMatrix24f computeKHP(const Vector24f &K, const SparseVector24f<Idxs...> &H) const
 	{
-		SquareMatrix24f KHP;
-		constexpr size_t non_zeros = sizeof...(Idxs);
-		float KH[non_zeros];
-
-		for (unsigned row = 0; row < _k_num_states; row++) {
-			for (unsigned i = 0; i < H.non_zeros(); i++) {
-				KH[i] = K(row) * H.atCompressedIndex(i);
+		// K(HP) and (KH)P are equivalent (matrix multiplication is associative)
+		// but K(HP) is computationally much less expensive
+		Vector24f HP;
+		for (unsigned i = 0; i < H.non_zeros(); i++) {
+			const size_t row = H.index(i);
+			for (unsigned col = 0; col < _k_num_states; col++) {
+				HP(col) = HP(col) + H.atCompressedIndex(i) * P(row, col);
 			}
+		}
 
-			for (unsigned column = 0; column < _k_num_states; column++) {
-				float tmp = 0.f;
-
-				for (unsigned i = 0; i < H.non_zeros(); i++) {
-					const size_t index = H.index(i);
-					tmp += KH[i] * P(index, column);
-				}
-
-				KHP(row, column) = tmp;
+		SquareMatrix24f KHP;
+		for (unsigned row = 0; row < _k_num_states; row++) {
+			for (unsigned col = 0; col < _k_num_states; col++) {
+				KHP(row, col) = K(row) * HP(col);
 			}
 		}
 
@@ -802,7 +798,7 @@ private:
 	Vector3f calcEarthRateNED(float lat_rad) const;
 
 	// return true id the GPS quality is good enough to set an origin and start aiding
-	bool gps_is_good(const gps_message &gps);
+	bool gps_is_good(const gpsMessage &gps);
 
 	// Control the filter fusion modes
 	void controlFusionModes();
