@@ -951,7 +951,7 @@ FixedwingPositionControl::control_auto_fixed_bank_alt_hold(const float control_i
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   _param_fw_thr_max.get(),
-				   _param_fw_thr_cruise.get(),
+				   _param_fw_thr_trim.get(),
 				   false,
 				   _param_fw_p_lim_min.get());
 
@@ -985,7 +985,7 @@ FixedwingPositionControl::control_auto_descend(const float control_interval)
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   _param_fw_thr_max.get(),
-				   _param_fw_thr_cruise.get(),
+				   _param_fw_thr_trim.get(),
 				   false,
 				   _param_fw_p_lim_min.get(),
 				   false,
@@ -1086,7 +1086,7 @@ FixedwingPositionControl::control_auto_position(const float control_interval, co
 	float tecs_fw_thr_max;
 	float tecs_fw_mission_throttle;
 
-	float mission_throttle = _param_fw_thr_cruise.get();
+	float mission_throttle = _param_fw_thr_trim.get();
 
 	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
 	    pos_sp_curr.cruising_throttle >= 0.0f) {
@@ -1196,7 +1196,7 @@ FixedwingPositionControl::control_auto_velocity(const float control_interval, co
 	float tecs_fw_thr_max;
 	float tecs_fw_mission_throttle;
 
-	float mission_throttle = _param_fw_thr_cruise.get();
+	float mission_throttle = _param_fw_thr_trim.get();
 
 	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
 	    pos_sp_curr.cruising_throttle >= 0.0f) {
@@ -1293,7 +1293,7 @@ FixedwingPositionControl::control_auto_loiter(const float control_interval, cons
 	float tecs_fw_thr_max;
 	float tecs_fw_mission_throttle;
 
-	float mission_throttle = _param_fw_thr_cruise.get();
+	float mission_throttle = _param_fw_thr_trim.get();
 
 	if (PX4_ISFINITE(pos_sp_curr.cruising_throttle) &&
 	    pos_sp_curr.cruising_throttle >= 0.0f) {
@@ -1478,7 +1478,7 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 					   radians(takeoff_pitch_max_deg),
 					   _param_fw_thr_min.get(),
 					   _param_fw_thr_max.get(), // XXX should we also set runway_takeoff_throttle here?
-					   _param_fw_thr_cruise.get(),
+					   _param_fw_thr_trim.get(),
 					   _runway_takeoff.climbout(),
 					   radians(_runway_takeoff.getMinPitch(_takeoff_pitch_min.get(), _param_fw_p_lim_min.get())));
 
@@ -1566,7 +1566,7 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 							   radians(takeoff_pitch_max_deg),
 							   _param_fw_thr_min.get(),
 							   takeoff_throttle,
-							   _param_fw_thr_cruise.get(),
+							   _param_fw_thr_trim.get(),
 							   true,
 							   radians(_takeoff_pitch_min.get()));
 
@@ -1581,7 +1581,7 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 							   radians(_param_fw_p_lim_max.get()),
 							   _param_fw_thr_min.get(),
 							   takeoff_throttle,
-							   _param_fw_thr_cruise.get(),
+							   _param_fw_thr_trim.get(),
 							   false,
 							   radians(_param_fw_p_lim_min.get()));
 			}
@@ -1958,7 +1958,7 @@ FixedwingPositionControl::control_auto_landing(const hrt_abstime &now, const flo
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
 					   _param_fw_thr_max.get(),
-					   _param_fw_thr_cruise.get(),
+					   _param_fw_thr_trim.get(),
 					   false,
 					   radians(_param_fw_p_lim_min.get()));
 		_att_sp.pitch_body = get_tecs_pitch();
@@ -2018,7 +2018,7 @@ FixedwingPositionControl::control_manual_altitude(const float control_interval, 
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   throttle_max,
-				   _param_fw_thr_cruise.get(),
+				   _param_fw_thr_trim.get(),
 				   false,
 				   pitch_limit_min,
 				   false,
@@ -2148,7 +2148,7 @@ FixedwingPositionControl::control_manual_position(const float control_interval, 
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   throttle_max,
-				   _param_fw_thr_cruise.get(),
+				   _param_fw_thr_trim.get(),
 				   false,
 				   pitch_limit_min,
 				   false,
