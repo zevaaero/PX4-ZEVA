@@ -614,6 +614,8 @@ void EKF2::Run()
 			UpdateMagCalibration(now);
 			PublishSensorBias(now);
 
+			PublishAidSourceStatus(now);
+
 		} else {
 			// ekf no update
 			perf_set_elapsed(_ecl_ekf_update_perf, hrt_elapsed_time(&ekf_update_start));
@@ -630,6 +632,23 @@ void EKF2::Run()
 
 	// re-schedule as backup timeout
 	ScheduleDelayed(100_ms);
+}
+
+void EKF2::PublishAidSourceStatus(const hrt_abstime &timestamp)
+{
+	// baro height
+	PublishAidSourceStatus(_ekf.aid_src_baro_hgt(), _status_baro_hgt_pub_last, _estimator_aid_src_baro_hgt_pub);
+
+	// RNG height
+	PublishAidSourceStatus(_ekf.aid_src_rng_hgt(), _status_rng_hgt_pub_last, _estimator_aid_src_rng_hgt_pub);
+
+	// fake position
+	PublishAidSourceStatus(_ekf.aid_src_fake_pos(), _status_fake_pos_pub_last, _estimator_aid_src_fake_pos_pub);
+
+	// GNSS velocity & position
+	PublishAidSourceStatus(_ekf.aid_src_gnss_vel(), _status_gnss_vel_pub_last, _estimator_aid_src_gnss_vel_pub);
+	PublishAidSourceStatus(_ekf.aid_src_gnss_pos(), _status_gnss_pos_pub_last, _estimator_aid_src_gnss_pos_pub);
+
 }
 
 void EKF2::PublishAttitude(const hrt_abstime &timestamp)
@@ -713,6 +732,10 @@ void EKF2::PublishEventFlags(const hrt_abstime &timestamp)
 		event_flags.starting_vision_vel_fusion          = _ekf.information_event_flags().starting_vision_vel_fusion;
 		event_flags.starting_vision_yaw_fusion          = _ekf.information_event_flags().starting_vision_yaw_fusion;
 		event_flags.yaw_aligned_to_imu_gps              = _ekf.information_event_flags().yaw_aligned_to_imu_gps;
+		event_flags.reset_hgt_to_baro                   = _ekf.information_event_flags().reset_hgt_to_baro;
+		event_flags.reset_hgt_to_gps                    = _ekf.information_event_flags().reset_hgt_to_gps;
+		event_flags.reset_hgt_to_rng                    = _ekf.information_event_flags().reset_hgt_to_rng;
+		event_flags.reset_hgt_to_ev                     = _ekf.information_event_flags().reset_hgt_to_ev;
 
 		event_flags.warning_event_changes               = _filter_warning_event_changes;
 		event_flags.gps_quality_poor                    = _ekf.warning_event_flags().gps_quality_poor;

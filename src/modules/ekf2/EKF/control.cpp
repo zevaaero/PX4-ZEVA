@@ -125,8 +125,8 @@ void Ekf::controlFusionModes()
 
 	if (_range_buffer) {
 		// Get range data from buffer and check validity
-		bool is_rng_data_ready = _range_buffer->pop_first_older_than(_imu_sample_delayed.time_us, _range_sensor.getSampleAddress());
-		_range_sensor.setDataReadiness(is_rng_data_ready);
+		_rng_data_ready = _range_buffer->pop_first_older_than(_imu_sample_delayed.time_us, _range_sensor.getSampleAddress());
+		_range_sensor.setDataReadiness(_rng_data_ready);
 
 		// update range sensor angle parameters in case they have changed
 		_range_sensor.setPitchOffset(_params.rng_sens_pitch);
@@ -777,6 +777,34 @@ void Ekf::checkVerticalAccelerationHealth()
 	bool is_inertial_nav_falling = false;
 	bool are_vertical_pos_and_vel_independant = false;
 
+	if (_control_status.flags.gps) {
+		// GNSS velocity
+		const auto &gps_vel = _aid_src_gnss_vel;
+
+		if (gps_vel.time_last_fuse[2] > _vert_vel_fuse_time_us) {
+			_vert_vel_fuse_time_us = gps_vel.time_last_fuse[2];
+			_vert_vel_innov_ratio = gps_vel.innovation[2] / sqrtf(gps_vel.innovation_variance[2]);
+		}
+
+		// GNSS position
+		const auto &gps_pos = _aid_src_gnss_pos;
+
+		if (gps_pos.time_last_fuse[2] > _vert_pos_fuse_attempt_time_us) {
+			_vert_pos_fuse_attempt_time_us = gps_pos.time_last_fuse[2];
+			_vert_pos_innov_ratio = gps_pos.innovation[2] / sqrtf(gps_pos.innovation_variance[2]);
+		}
+	}
+
+	if (_control_status.flags.baro_hgt) {
+		// baro height
+		const auto &baro_hgt = _aid_src_baro_hgt;
+
+		if (baro_hgt.time_last_fuse > _vert_pos_fuse_attempt_time_us) {
+			_vert_pos_fuse_attempt_time_us = baro_hgt.time_last_fuse;
+			_vert_pos_innov_ratio = baro_hgt.innovation / sqrtf(baro_hgt.innovation_variance);
+		}
+	}
+
 	if (isRecent(_vert_pos_fuse_attempt_time_us, 1000000)) {
 		if (isRecent(_vert_vel_fuse_time_us, 1000000)) {
 			// If vertical position and velocity come from independent sensors then we can
@@ -922,25 +950,23 @@ void Ekf::controlHeightFusion()
 	updateBaroHgtOffset();
 	updateGroundEffect();
 
-	if (_control_status.flags.baro_hgt) {
+	if (_baro_data_ready) {
+		updateBaroHgt(_baro_sample_delayed, _aid_src_baro_hgt);
 
-		if (_baro_data_ready && !_baro_hgt_faulty) {
-			fuseBaroHgt();
+		if (_control_status.flags.baro_hgt && !_baro_hgt_faulty) {
+			fuseBaroHgt(_aid_src_baro_hgt);
 		}
+	}
 
-	} else if (_control_status.flags.gps_hgt) {
+	if (_rng_data_ready) {
+		updateRngHgt(_aid_src_rng_hgt);
 
-		if (_gps_data_ready) {
-			fuseGpsHgt();
+		if (_control_status.flags.rng_hgt && _range_sensor.isDataHealthy()) {
+			fuseRngHgt(_aid_src_rng_hgt);
 		}
+	}
 
-	} else if (_control_status.flags.rng_hgt) {
-
-		if (_range_sensor.isDataHealthy()) {
-			fuseRngHgt();
-		}
-
-	} else if (_control_status.flags.ev_hgt) {
+	if (_control_status.flags.ev_hgt) {
 
 		if (_control_status.flags.ev_hgt && _ev_data_ready) {
 			fuseEvHgt();
