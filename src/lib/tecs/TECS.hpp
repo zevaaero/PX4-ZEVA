@@ -81,22 +81,38 @@ public:
 	 * Must be called at 50Hz or greater
 	 */
 	void update_vehicle_state_estimates(float equivalent_airspeed, const float speed_deriv_forward, bool altitude_lock,
-					    bool in_air,
 					    float altitude, float vz);
 
 	/**
 	 * Update the control loop calculations
 	 */
-	void update_pitch_throttle(float pitch, float baro_altitude, float hgt_setpoint,
-				   float EAS_setpoint, float equivalent_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout,
-				   float throttle_min, float throttle_setpoint_max, float throttle_cruise,
-				   float pitch_limit_min, float pitch_limit_max, float target_climbrate, float target_sinkrate, float hgt_rate_sp = NAN);
+	void update_pitch_throttle(float pitch, float baro_altitude, float hgt_setpoint, float EAS_setpoint,
+				   float equivalent_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout, float throttle_min,
+				   float throttle_setpoint_max, float throttle_cruise, float pitch_limit_min, float pitch_limit_max,
+				   float target_climbrate, float target_sinkrate, float hgt_rate_sp = NAN);
 
 	float get_throttle_setpoint() { return _last_throttle_setpoint; }
 	float get_pitch_setpoint() { return _last_pitch_setpoint; }
 	float get_speed_weight() { return _pitch_speed_weight; }
 
 	void reset_state() { _states_initialized = false; }
+
+	void resetIntegrals()
+	{
+		_throttle_integ_state =  0.0f;
+		_pitch_integ_state = 0.0f;
+	}
+
+	/**
+	 * @brief Resets the altitude and height rate control trajectory generators to the input altitude
+	 *
+	 * @param altitude Vehicle altitude (AMSL) [m]
+	 */
+	void resetTrajectoryGenerators(const float altitude)
+	{
+		_alt_control_traj_generator.reset(0, 0, altitude);
+		_velocity_control_traj_generator.reset(0.0f, 0.0f, altitude);
+	}
 
 	enum ECL_TECS_MODE {
 		ECL_TECS_MODE_NORMAL = 0,
@@ -306,7 +322,6 @@ private:
 	bool _climbout_mode_active{false};				///< true when in climbout mode
 	bool _airspeed_enabled{false};					///< true when airspeed use has been enabled
 	bool _states_initialized{false};					///< true when TECS states have been iniitalized
-	bool _in_air{false};						///< true when the vehicle is flying
 
 	/**
 	 * Update the airspeed internal state using a second order complementary filter
