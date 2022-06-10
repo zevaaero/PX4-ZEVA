@@ -97,8 +97,6 @@ public:
 	float get_speed_weight() { return _pitch_speed_weight; }
 	float get_throttle_trim() { return _throttle_trim; }
 
-	float get_load_factor() { return _load_factor;}
-
 	void reset_state() { _states_initialized = false; }
 
 	enum ECL_TECS_MODE {
