@@ -143,7 +143,6 @@ FixedwingPositionControl::parameters_update()
 	_tecs.set_ste_rate_time_const(_param_ste_rate_time_const.get());
 	_tecs.set_speed_derivative_time_constant(_param_tas_rate_time_const.get());
 	_tecs.set_seb_rate_ff_gain(_param_seb_rate_ff.get());
-	_tecs.setAirDensityThrottleCompensationScale(_param_fw_thr_alt_scl.get());
 
 	// Landing slope
 	/* check if negative value for 2/3 of flare altitude is set for throttle cut */
@@ -539,7 +538,7 @@ FixedwingPositionControl::tecs_status_publish()
 
 	t.throttle_sp = _tecs.get_throttle_setpoint();
 	t.pitch_sp_rad = _tecs.get_pitch_setpoint();
-	t.throttle_trim = _tecs.get_throttle_trim_mapped();
+	t.throttle_trim = _tecs.get_throttle_trim();
 
 	t.timestamp = hrt_absolute_time();
 
@@ -2366,7 +2365,7 @@ FixedwingPositionControl::Run()
 		vehicle_air_data_s air_data;
 
 		if (_vehicle_air_data_sub.update(&air_data)) {
-			_tecs.setAirDensity(air_data.rho);
+			_air_density = PX4_ISFINITE(air_data.rho) ? air_data.rho : _air_density;
 		}
 
 		if (_vehicle_land_detected_sub.updated()) {
@@ -2575,6 +2574,62 @@ FixedwingPositionControl::get_nav_speed_2d(const Vector2f &ground_speed)
 	return nav_speed_2d;
 }
 
+float FixedwingPositionControl::mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_trim,
+		float throttle_min, float throttle_max)
+{
+	float throttle_trim_min = _param_fw_thr_trim_min.get();
+	float throttle_trim_max = _param_fw_thr_trim_max.get();
+
+	float throttle_mapped = throttle_trim;
+
+	if (throttle_trim_min > 0.f && throttle_trim_min <= throttle_trim && airspeed_sp < _param_fw_airspd_trim.get()) {
+		const float airspeed_delta =  _param_fw_airspd_trim.get() - airspeed_sp;
+		const float throttle_delta = throttle_trim - throttle_trim_min;
+		throttle_mapped = throttle_trim_min + throttle_delta * (airspeed_sp -
+				  _param_fw_airspd_min.get()) / math::max(
+					  airspeed_delta, FLT_EPSILON);
+
+	} else if (throttle_trim_max > 0.f && throttle_trim_max > throttle_trim && airspeed_sp > _param_fw_airspd_trim.get()) {
+		const float airspeed_delta =  _param_fw_airspd_max.get() - airspeed_sp;
+		const float throttle_delta = throttle_trim_max - throttle_trim;
+		throttle_mapped = throttle_trim + throttle_delta * (airspeed_sp -
+				  _param_fw_airspd_trim.get()) / math::max(
+					  airspeed_delta, FLT_EPSILON);
+	}
+
+	return math::constrain(throttle_mapped, throttle_min, throttle_max);
+}
+
+float FixedwingPositionControl::compensateTrimThrottleForDensityAndWeight(float throttle_trim, float throttle_min,
+		float throttle_max)
+{
+	float weight_ratio = 1.0f;
+
+	if (_param_weight_base.get() > FLT_EPSILON && _param_weight_gross.get() > FLT_EPSILON) {
+		weight_ratio = math::constrain(_param_weight_gross.get() / _param_weight_base.get(), 0.5f, 2.0f);
+	}
+
+	float air_density_throttle_scale = 1.0f;
+
+	if (PX4_ISFINITE(_air_density) && _param_fw_thr_alt_scl.get() > FLT_EPSILON) {
+		// scale throttle as a function of sqrt(rho0/rho)
+		const float eas2tas = sqrtf(CONSTANTS_AIR_DENSITY_SEA_LEVEL_15C / _air_density);
+		air_density_throttle_scale = constrain(eas2tas * _param_fw_thr_alt_scl.get(), 1.f, 2.f);
+	}
+
+	// compensate trim throttle for both weight and air density
+	return math::constrain(throttle_trim * sqrtf(weight_ratio) * air_density_throttle_scale, throttle_min, throttle_max);
+}
+
+float FixedwingPositionControl::calculateThrottleTrimCompensated(float airspeed_sp, float throttle_trim,
+		float throttle_min, float throttle_max)
+{
+	float throttle_trim_for_desired_airspeed = mapAirspeedSetpointToTrimThrottle(airspeed_sp, throttle_trim,
+			throttle_min, throttle_max);
+
+	return compensateTrimThrottleForDensityAndWeight(throttle_trim_for_desired_airspeed, throttle_min, throttle_max);
+}
+
 void
 FixedwingPositionControl::tecs_update_pitch_throttle(const float control_interval, float alt_sp, float airspeed_sp,
 		float pitch_min_rad, float pitch_max_rad,
@@ -2649,8 +2704,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const float control_interva
 	_tecs.update_vehicle_state_estimates(_airspeed, _body_acceleration(0), (_local_pos.timestamp > 0), in_air_alt_control,
 					     _current_altitude, _local_pos.vz);
 
-	float throttle_trim_min = _param_fw_thr_trim_min.get() >= 0.0f ? _param_fw_thr_trim_min.get() : NAN;
-	float throttle_trim_max = _param_fw_thr_trim_max.get() >= 0.0f ? _param_fw_thr_trim_max.get() : NAN;
+	float throttle_trim_comp = calculateThrottleTrimCompensated(throttle_trim, airspeed_sp, throttle_min, throttle_max);
 
 	_tecs.update_pitch_throttle(_pitch - radians(_param_fw_psp_off.get()),
 				    _current_altitude,
@@ -2662,7 +2716,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const float control_interva
 				    climbout_pitch_min_rad - radians(_param_fw_psp_off.get()),
 				    throttle_min,
 				    throttle_max,
-				    throttle_cruise,
+				    throttle_trim_comp,
 				    pitch_min_rad - radians(_param_fw_psp_off.get()),
 				    pitch_max_rad - radians(_param_fw_psp_off.get()),
 				    _param_climbrate_target.get(),

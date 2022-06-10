@@ -275,6 +275,7 @@ private:
 
 	float _airspeed{0.0f};
 	float _eas2tas{1.0f};
+	float _air_density{CONSTANTS_AIR_DENSITY_SEA_LEVEL_15C};
 
 	/* wind estimates */
 
@@ -593,6 +594,42 @@ private:
 	 * @param pos_sp_curr_valid True if the current position setpoint is valid
 	 */
 	void set_control_mode_current(const hrt_abstime &now, bool pos_sp_curr_valid);
+
+	/**
+	 * @brief Maps an equivalent airspeed setpoint to a trim throttle value.
+	 *
+	 *
+	 * @param airspeed_sp Equivalent airspeed setpoint [m/s]
+	 * @param throttle_trim Trim throttle required to fly at equivalent trim airspeed.
+	 * @param throttle_min Trim Minimum allowed trim throttle.
+	 * @param throttle_max Maximum allowed trim throttle.
+	 * @return Trim throttle required to fly level at airspeed_sp
+	 */
+	float 		mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_trim, float throttle_min,
+			float throttle_max);
+
+	/**
+	 * @brief Compensate trim throttle for air density and vehicle weight.
+	 *
+	 * @param trim throttle required at sea level during standard conditions.
+	 * @param throttle_min Minimum allowed trim throttle.
+	 * @param throttle_max Maximum allowed trim throttle.
+	 * @return Trim throttle compensated for air density and vehicle weight.
+	 */
+	float 		compensateTrimThrottleForDensityAndWeight(float throttle_trim, float throttle_min, float throttle_max);
+
+	/**
+	 * @brief Returns a trim throttle value for flying at a desired equivalent airspeed setpoint compensated for air density and vehicle weight.
+	 *
+	 *
+	 * @param airspeed_sp Equivalent airspeed setpoint [m/s]
+	 * @param throttle_trim Trim throttle required to fly at equivalent trim airspeed.
+	 * @param throttle_min Minimum allowed trim throttle.
+	 * @param throttle_max Maximum allowed trim throttle.
+	 * @return trim throttle value for flying at a desired equivalent airspeed setpoint compensated for air density and vehicle weight.
+	 */
+	float 		calculateThrottleTrimCompensated(float airspeed_sp, float throttle_trim, float throttle_min,
+			float throttle_max);
 
 	void publishOrbitStatus(const position_setpoint_s pos_sp);
 

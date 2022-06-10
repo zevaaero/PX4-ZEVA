@@ -89,13 +89,13 @@ public:
 	 */
 	void update_pitch_throttle(float pitch, float baro_altitude, float hgt_setpoint,
 				   float EAS_setpoint, float equivalent_airspeed, float eas_to_tas, bool climb_out_setpoint, float pitch_min_climbout,
-				   float throttle_min, float throttle_setpoint_max, float throttle_trim_min, float throttle_trim, float throttle_trim_max,
+				   float throttle_min, float throttle_setpoint_max, float throttle_trim,
 				   float pitch_limit_min, float pitch_limit_max, float target_climbrate, float target_sinkrate, float hgt_rate_sp = NAN);
 
 	float get_throttle_setpoint() { return _last_throttle_setpoint; }
 	float get_pitch_setpoint() { return _last_pitch_setpoint; }
 	float get_speed_weight() { return _pitch_speed_weight; }
-	float get_throttle_trim_mapped() { return _throttle_trim_mapped; }
+	float get_throttle_trim() { return _throttle_trim; }
 
 	float get_load_factor() { return _load_factor;}
 
@@ -142,10 +142,6 @@ public:
 	void set_speed_derivative_time_constant(float time_const) { _speed_derivative_time_const = time_const; }
 
 	void set_seb_rate_ff_gain(float ff_gain) { _SEB_rate_ff = ff_gain; }
-
-	void setAirDensity(float air_density) { _air_density = air_density; }
-	void setAirDensityThrottleCompensationScale(float scale) { _air_density_throttle_compensation_scale = scale; }
-
 
 	// TECS status
 	uint64_t timestamp() { return _pitch_update_timestamp; }
@@ -278,10 +274,7 @@ private:
 	float _STE_rate_min{0.0f};					///< specific total energy rate lower limit acheived when throttle is at _throttle_setpoint_min (m**2/sec**3)
 	float _throttle_setpoint_max{0.0f};				///< normalised throttle upper limit
 	float _throttle_setpoint_min{0.0f};				///< normalised throttle lower limit
-	float _throttle_trim_min{0.0f};
-	float _throttle_trim{0.0f};					///< feedforward throttle applied when controller error is zero, is provided externally and can change in flight
-	float _throttle_trim_max{0.0f};
-	float _throttle_trim_mapped{0.0f};
+	float _throttle_trim{0.0f};					///< throttle required to fly level at _EAS_setpoint, compensated for air density and vehicle weight
 	float _pitch_setpoint_max{0.5f};				///< pitch demand upper limit (rad)
 	float _pitch_setpoint_min{-0.5f};				///< pitch demand lower limit (rad)
 
@@ -318,9 +311,6 @@ private:
 	bool _airspeed_enabled{false};					///< true when airspeed use has been enabled
 	bool _states_initialized{false};					///< true when TECS states have been iniitalized
 	bool _in_air{false};						///< true when the vehicle is flying
-
-	float _air_density{NAN};
-	float _air_density_throttle_compensation_scale{0.0f};
 
 	/**
 	 * Update the airspeed internal state using a second order complementary filter
@@ -363,7 +353,7 @@ private:
 	 */
 	void _update_pitch_setpoint();
 
-	void _mapAirspeedSetpointToTrimThrottle(float EAS_setpoint);
+	void _mapAirspeedSetpointToTrimThrottleAndCompensateForAirDensity(float EAS_setpoint);
 
 	void _compensateThrottleParamsForAirDensity();
 
