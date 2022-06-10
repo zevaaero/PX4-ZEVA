@@ -605,12 +605,11 @@ private:
 	 * @brief Maps an equivalent airspeed setpoint to a trim throttle value.
 	 *
 	 * @param airspeed_sp Equivalent airspeed setpoint [m/s]
-	 * @param throttle_trim Trim throttle required to fly at FW_AIRSPD_TRIM.
 	 * @param throttle_min Minimum allowed trim throttle.
 	 * @param throttle_max Maximum allowed trim throttle.
 	 * @return Trim throttle required to fly level at airspeed_sp
 	 */
-	float mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_trim, float throttle_min,
+	float mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_min,
 						float throttle_max);
 
 	/**
@@ -628,12 +627,11 @@ private:
 	 *
 	 *
 	 * @param airspeed_sp Equivalent airspeed setpoint [m/s]
-	 * @param throttle_trim Trim throttle required to fly at equivalent trim airspeed.
 	 * @param throttle_min Minimum allowed trim throttle.
 	 * @param throttle_max Maximum allowed trim throttle.
 	 * @return trim throttle value for flying at a desired equivalent airspeed setpoint compensated for air density and vehicle weight.
 	 */
-	float calculateThrottleTrimCompensated(float airspeed_sp, float throttle_trim, float throttle_min,
+	float calculateThrottleTrimCompensated(float airspeed_sp, float throttle_min,
 					       float throttle_max);
 
 	void publishOrbitStatus(const position_setpoint_s pos_sp);
@@ -650,7 +648,6 @@ private:
 	 * @param pitch_max_rad Nominal pitch angle command maximum [rad]
 	 * @param throttle_min Minimum throttle command [0,1]
 	 * @param throttle_max Maximum throttle command [0,1]
-	 * @param throttle_cruise Throttle required for level flight at cruising airspeed [0,1]
 	 * @param climbout_mode True if TECS should engage climbout mode
 	 * @param climbout_pitch_min_rad Minimum pitch angle command in climbout mode [rad]
 	 * @param disable_underspeed_detection True if underspeed detection should be disabled
@@ -658,7 +655,7 @@ private:
 	 */
 	void tecs_update_pitch_throttle(const float control_interval, float alt_sp, float airspeed_sp,
 					float pitch_min_rad, float pitch_max_rad,
-					float throttle_min, float throttle_max, float throttle_trim,
+					float throttle_min, float throttle_max,
 					bool climbout_mode, float climbout_pitch_min_rad,
 					bool disable_underspeed_detection = false, float hgt_rate_sp = NAN);
 

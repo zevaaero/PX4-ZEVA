@@ -958,7 +958,6 @@ FixedwingPositionControl::control_auto_fixed_bank_alt_hold(const float control_i
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   _param_fw_thr_max.get(),
-				   _param_fw_thr_trim.get(),
 				   false,
 				   _param_fw_p_lim_min.get());
 
@@ -992,7 +991,6 @@ FixedwingPositionControl::control_auto_descend(const float control_interval)
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   _param_fw_thr_max.get(),
-				   _param_fw_thr_trim.get(),
 				   false,
 				   _param_fw_p_lim_min.get(),
 				   false,
@@ -1091,7 +1089,6 @@ FixedwingPositionControl::control_auto_position(const float control_interval, co
 
 	float tecs_fw_thr_min;
 	float tecs_fw_thr_max;
-	float tecs_fw_mission_throttle;
 
 	float mission_throttle = _param_fw_thr_trim.get();
 
@@ -1105,12 +1102,10 @@ FixedwingPositionControl::control_auto_position(const float control_interval, co
 		_tecs.set_speed_weight(2.0f);
 		tecs_fw_thr_min = 0.0;
 		tecs_fw_thr_max = 0.0;
-		tecs_fw_mission_throttle = 0.0;
 
 	} else {
 		tecs_fw_thr_min = _param_fw_thr_min.get();
 		tecs_fw_thr_max = _param_fw_thr_max.get();
-		tecs_fw_mission_throttle = mission_throttle;
 	}
 
 	// waypoint is a plain navigation waypoint
@@ -1190,7 +1185,6 @@ FixedwingPositionControl::control_auto_position(const float control_interval, co
 				   radians(_param_fw_p_lim_max.get()),
 				   tecs_fw_thr_min,
 				   tecs_fw_thr_max,
-				   tecs_fw_mission_throttle,
 				   false,
 				   radians(_param_fw_p_lim_min.get()));
 }
@@ -1201,7 +1195,6 @@ FixedwingPositionControl::control_auto_velocity(const float control_interval, co
 {
 	float tecs_fw_thr_min;
 	float tecs_fw_thr_max;
-	float tecs_fw_mission_throttle;
 
 	float mission_throttle = _param_fw_thr_trim.get();
 
@@ -1215,12 +1208,10 @@ FixedwingPositionControl::control_auto_velocity(const float control_interval, co
 		_tecs.set_speed_weight(2.0f);
 		tecs_fw_thr_min = 0.0;
 		tecs_fw_thr_max = 0.0;
-		tecs_fw_mission_throttle = 0.0;
 
 	} else {
 		tecs_fw_thr_min = _param_fw_thr_min.get();
 		tecs_fw_thr_max = _param_fw_thr_max.get();
-		tecs_fw_mission_throttle = mission_throttle;
 	}
 
 	// waypoint is a plain navigation waypoint
@@ -1257,7 +1248,6 @@ FixedwingPositionControl::control_auto_velocity(const float control_interval, co
 				   radians(_param_fw_p_lim_max.get()),
 				   tecs_fw_thr_min,
 				   tecs_fw_thr_max,
-				   tecs_fw_mission_throttle,
 				   false,
 				   radians(_param_fw_p_lim_min.get()),
 				   tecs_status_s::TECS_MODE_NORMAL,
@@ -1298,7 +1288,6 @@ FixedwingPositionControl::control_auto_loiter(const float control_interval, cons
 
 	float tecs_fw_thr_min;
 	float tecs_fw_thr_max;
-	float tecs_fw_mission_throttle;
 
 	float mission_throttle = _param_fw_thr_trim.get();
 
@@ -1312,12 +1301,10 @@ FixedwingPositionControl::control_auto_loiter(const float control_interval, cons
 		_tecs.set_speed_weight(2.0f);
 		tecs_fw_thr_min = 0.0;
 		tecs_fw_thr_max = 0.0;
-		tecs_fw_mission_throttle = 0.0;
 
 	} else {
 		tecs_fw_thr_min = _param_fw_thr_min.get();
 		tecs_fw_thr_max = _param_fw_thr_max.get();
-		tecs_fw_mission_throttle = mission_throttle;
 	}
 
 	/* waypoint is a loiter waypoint */
@@ -1394,7 +1381,6 @@ FixedwingPositionControl::control_auto_loiter(const float control_interval, cons
 				   radians(_param_fw_p_lim_max.get()),
 				   tecs_fw_thr_min,
 				   tecs_fw_thr_max,
-				   tecs_fw_mission_throttle,
 				   false,
 				   radians(_param_fw_p_lim_min.get()));
 }
@@ -1485,7 +1471,6 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 					   radians(takeoff_pitch_max_deg),
 					   _param_fw_thr_min.get(),
 					   _param_fw_thr_max.get(), // XXX should we also set runway_takeoff_throttle here?
-					   _param_fw_thr_trim.get(),
 					   _runway_takeoff.climbout(),
 					   radians(_runway_takeoff.getMinPitch(_takeoff_pitch_min.get(), _param_fw_p_lim_min.get())));
 
@@ -1573,7 +1558,6 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 							   radians(takeoff_pitch_max_deg),
 							   _param_fw_thr_min.get(),
 							   takeoff_throttle,
-							   _param_fw_thr_trim.get(),
 							   true,
 							   radians(_takeoff_pitch_min.get()));
 
@@ -1588,7 +1572,6 @@ FixedwingPositionControl::control_auto_takeoff(const hrt_abstime &now, const flo
 							   radians(_param_fw_p_lim_max.get()),
 							   _param_fw_thr_min.get(),
 							   takeoff_throttle,
-							   _param_fw_thr_trim.get(),
 							   false,
 							   radians(_param_fw_p_lim_min.get()));
 			}
@@ -1808,8 +1791,6 @@ FixedwingPositionControl::control_auto_landing(const hrt_abstime &now, const flo
 		const float airspeed_land = _param_fw_lnd_airspd_sc.get() * _param_fw_airspd_min.get();
 		float target_airspeed = get_auto_airspeed_setpoint(control_interval, airspeed_land, ground_speed);
 
-		const float throttle_land = _param_fw_thr_min.get() + (_param_fw_thr_max.get() - _param_fw_thr_min.get()) * 0.1f;
-
 		/* lateral guidance */
 		if (_param_fw_use_npfg.get()) {
 			_npfg.setAirspeedNom(target_airspeed * _eas2tas);
@@ -1861,7 +1842,6 @@ FixedwingPositionControl::control_auto_landing(const hrt_abstime &now, const flo
 					   radians(_param_fw_lnd_fl_pmax.get()),
 					   0.0f,
 					   throttle_max,
-					   throttle_land,
 					   false,
 					   _land_motor_lim ? radians(_param_fw_lnd_fl_pmin.get()) : radians(_param_fw_p_lim_min.get()),
 					   true);
@@ -1965,7 +1945,6 @@ FixedwingPositionControl::control_auto_landing(const hrt_abstime &now, const flo
 					   radians(_param_fw_p_lim_max.get()),
 					   _param_fw_thr_min.get(),
 					   _param_fw_thr_max.get(),
-					   _param_fw_thr_trim.get(),
 					   false,
 					   radians(_param_fw_p_lim_min.get()));
 		_att_sp.pitch_body = get_tecs_pitch();
@@ -2025,7 +2004,6 @@ FixedwingPositionControl::control_manual_altitude(const float control_interval, 
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   throttle_max,
-				   _param_fw_thr_trim.get(),
 				   false,
 				   pitch_limit_min,
 				   false,
@@ -2155,7 +2133,6 @@ FixedwingPositionControl::control_manual_position(const float control_interval, 
 				   radians(_param_fw_p_lim_max.get()),
 				   _param_fw_thr_min.get(),
 				   throttle_max,
-				   _param_fw_thr_trim.get(),
 				   false,
 				   pitch_limit_min,
 				   false,
@@ -2575,25 +2552,27 @@ FixedwingPositionControl::get_nav_speed_2d(const Vector2f &ground_speed)
 	return nav_speed_2d;
 }
 
-float FixedwingPositionControl::mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_trim,
+float FixedwingPositionControl::mapAirspeedSetpointToTrimThrottle(float airspeed_sp,
 		float throttle_min, float throttle_max)
 {
 	float throttle_trim_min = _param_fw_thr_trim_min.get();
 	float throttle_trim_max = _param_fw_thr_trim_max.get();
 
-	float throttle_mapped = throttle_trim;
+	float throttle_mapped = _param_fw_thr_trim.get();
 
-	if (throttle_trim_min > 0.f && throttle_trim_min <= throttle_trim && airspeed_sp < _param_fw_airspd_trim.get()) {
+	if (throttle_trim_min > 0.f && throttle_trim_min <= _param_fw_thr_trim.get()
+	    && airspeed_sp < _param_fw_airspd_trim.get()) {
 		const float airspeed_delta =  _param_fw_airspd_trim.get() - airspeed_sp;
-		const float throttle_delta = throttle_trim - throttle_trim_min;
+		const float throttle_delta = _param_fw_thr_trim.get() - throttle_trim_min;
 		throttle_mapped = throttle_trim_min + throttle_delta * (airspeed_sp -
 				  _param_fw_airspd_min.get()) / math::max(
 					  airspeed_delta, FLT_EPSILON);
 
-	} else if (throttle_trim_max > 0.f && throttle_trim_max > throttle_trim && airspeed_sp > _param_fw_airspd_trim.get()) {
+	} else if (throttle_trim_max > 0.f && throttle_trim_max > _param_fw_thr_trim.get()
+		   && airspeed_sp > _param_fw_airspd_trim.get()) {
 		const float airspeed_delta =  _param_fw_airspd_max.get() - airspeed_sp;
-		const float throttle_delta = throttle_trim_max - throttle_trim;
-		throttle_mapped = throttle_trim + throttle_delta * (airspeed_sp -
+		const float throttle_delta = throttle_trim_max - _param_fw_thr_trim.get();
+		throttle_mapped = _param_fw_thr_trim.get() + throttle_delta * (airspeed_sp -
 				  _param_fw_airspd_trim.get()) / math::max(
 					  airspeed_delta, FLT_EPSILON);
 	}
@@ -2623,10 +2602,10 @@ float FixedwingPositionControl::compensateTrimThrottleForDensityAndWeight(float 
 	return math::constrain(throttle_trim * sqrtf(weight_ratio) * air_density_throttle_scale, throttle_min, throttle_max);
 }
 
-float FixedwingPositionControl::calculateThrottleTrimCompensated(float airspeed_sp, float throttle_trim,
+float FixedwingPositionControl::calculateThrottleTrimCompensated(float airspeed_sp,
 		float throttle_min, float throttle_max)
 {
-	float throttle_trim_for_desired_airspeed = mapAirspeedSetpointToTrimThrottle(airspeed_sp, throttle_trim,
+	float throttle_trim_for_desired_airspeed = mapAirspeedSetpointToTrimThrottle(airspeed_sp,
 			throttle_min, throttle_max);
 
 	return compensateTrimThrottleForDensityAndWeight(throttle_trim_for_desired_airspeed, throttle_min, throttle_max);
@@ -2635,7 +2614,7 @@ float FixedwingPositionControl::calculateThrottleTrimCompensated(float airspeed_
 void
 FixedwingPositionControl::tecs_update_pitch_throttle(const float control_interval, float alt_sp, float airspeed_sp,
 		float pitch_min_rad, float pitch_max_rad,
-		float throttle_min, float throttle_max, float throttle_trim,
+		float throttle_min, float throttle_max,
 		bool climbout_mode, float climbout_pitch_min_rad,
 		bool disable_underspeed_detection, float hgt_rate_sp)
 {
@@ -2706,7 +2685,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const float control_interva
 	_tecs.update_vehicle_state_estimates(_airspeed, _body_acceleration(0), (_local_pos.timestamp > 0), in_air_alt_control,
 					     _current_altitude, _local_pos.vz);
 
-	float throttle_trim_comp = calculateThrottleTrimCompensated(throttle_trim, airspeed_sp, throttle_min, throttle_max);
+	float throttle_trim_comp = calculateThrottleTrimCompensated(airspeed_sp, throttle_min, throttle_max);
 
 	_tecs.update_pitch_throttle(_pitch - radians(_param_fw_psp_off.get()),
 				    _current_altitude,
