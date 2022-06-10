@@ -219,8 +219,14 @@ public:
 
 private:
 
+	// [m/s] bound on expected (safe) true airspeed tracking errors, including TAS = TAS_min - TAS_ERROR_BOUND
+	static constexpr float TAS_ERROR_BOUND = 1.0f;
+
+	// [m/s] true airspeed ramp-in region below the accepted TAS error region (= TAS_min - TAS_ERROR_BOUND)
+	static constexpr float TAS_UNDERSPEED_RAMP_IN_LEN = 1.0f;
+
 	static constexpr float _jerk_max =
-		1000.0f;	// maximum jerk for creating height rate trajectories, we want infinite jerk so set a high value
+		1000.0f;
 
 	enum ECL_TECS_MODE _tecs_mode {ECL_TECS_MODE_NORMAL};
 
@@ -316,7 +322,7 @@ private:
 	static constexpr float DT_DEFAULT = 0.02f;			///< default value for _dt (sec)
 
 	// controller mode logic
-	bool _underspeed_detected{false};				///< true when an underspeed condition has been detected
+	float _percent_undersped{0.0f};					///< a continuous representation of how "undersped" the TAS is [0,1]
 	bool _detect_underspeed_enabled{true};				///< true when underspeed detection is enabled
 	bool _uncommanded_descent_recovery{false};			///< true when a continuous descent caused by an unachievable airspeed demand has been detected
 	bool _climbout_mode_active{false};				///< true when in climbout mode
@@ -340,7 +346,7 @@ private:
 			float alt_amsl);
 
 	/**
-	 * Detect if the system is not capable of maintaining airspeed
+	 * Detect how undersped the aircraft is
 	 */
 	void _detect_underspeed();
 
