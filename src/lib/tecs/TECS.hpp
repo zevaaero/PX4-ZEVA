@@ -351,10 +351,6 @@ private:
 	 */
 	void _update_pitch_setpoint();
 
-	void _mapAirspeedSetpointToTrimThrottleAndCompensateForAirDensity(float EAS_setpoint);
-
-	void _compensateThrottleParamsForAirDensity();
-
 	void _updateTrajectoryGenerationConstraints();
 
 	void _calculateHeightRateSetpoint(float altitude_sp_amsl, float height_rate_sp, float target_climbrate,

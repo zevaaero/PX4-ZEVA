@@ -259,7 +259,7 @@ FixedwingPositionControl::vehicle_command_poll()
 
 					} else if (_control_mode_current == FW_POSCTRL_MODE_MANUAL_ALTITUDE
 						   || _control_mode_current == FW_POSCTRL_MODE_MANUAL_POSITION) {
-						_commanded_airspeed_setpoint = vehicle_command.param2;
+						_commanded_manual_airspeed_setpoint = vehicle_command.param2;
 					}
 
 				}
@@ -408,8 +408,8 @@ FixedwingPositionControl::get_manual_airspeed_setpoint()
 					   (_manual_control_setpoint_for_airspeed * 2 - 1);
 		}
 
-	} else if (PX4_ISFINITE(_commanded_airspeed_setpoint)) {
-		altctrl_airspeed = _commanded_airspeed_setpoint;
+	} else if (PX4_ISFINITE(_commanded_manual_airspeed_setpoint)) {
+		altctrl_airspeed = _commanded_manual_airspeed_setpoint;
 	}
 
 	return altctrl_airspeed;
@@ -2606,7 +2606,8 @@ float FixedwingPositionControl::compensateTrimThrottleForDensityAndWeight(float 
 	float weight_ratio = 1.0f;
 
 	if (_param_weight_base.get() > FLT_EPSILON && _param_weight_gross.get() > FLT_EPSILON) {
-		weight_ratio = math::constrain(_param_weight_gross.get() / _param_weight_base.get(), 0.5f, 2.0f);
+		weight_ratio = math::constrain(_param_weight_gross.get() / _param_weight_base.get(), MIN_WEIGHT_RATIO,
+					       MAX_WEIGHT_RATIO);
 	}
 
 	float air_density_throttle_scale = 1.0f;

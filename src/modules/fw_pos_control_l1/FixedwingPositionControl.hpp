@@ -136,6 +136,12 @@ static constexpr float MIN_AUTO_TIMESTEP = 0.01f;
 // [s] maximum time step between auto control updates
 static constexpr float MAX_AUTO_TIMESTEP = 0.05f;
 
+// [.] minimum ratio between the actual vehicle weight and the vehicle nominal weight (weight at which the performance limits are derived)
+static constexpr float MIN_WEIGHT_RATIO = 0.5f;
+
+// [.] maximum ratio between the actual vehicle weight and the vehicle nominal weight (weight at which the performance limits are derived)
+static constexpr float MAX_WEIGHT_RATIO = 2.0f;
+
 class FixedwingPositionControl final : public ModuleBase<FixedwingPositionControl>, public ModuleParams,
 	public px4::WorkItem
 {
@@ -320,7 +326,7 @@ private:
 	float _manual_control_setpoint_for_airspeed{0.0f};
 
 	// [m/s] airspeed setpoint for manual modes commanded via MAV_CMD_DO_CHANGE_SPEED
-	float _commanded_airspeed_setpoint{NAN};
+	float _commanded_manual_airspeed_setpoint{NAN};
 
 	hrt_abstime _time_in_fixed_bank_loiter{0}; // [us]
 
@@ -598,15 +604,14 @@ private:
 	/**
 	 * @brief Maps an equivalent airspeed setpoint to a trim throttle value.
 	 *
-	 *
 	 * @param airspeed_sp Equivalent airspeed setpoint [m/s]
-	 * @param throttle_trim Trim throttle required to fly at equivalent trim airspeed.
-	 * @param throttle_min Trim Minimum allowed trim throttle.
+	 * @param throttle_trim Trim throttle required to fly at FW_AIRSPD_TRIM.
+	 * @param throttle_min Minimum allowed trim throttle.
 	 * @param throttle_max Maximum allowed trim throttle.
 	 * @return Trim throttle required to fly level at airspeed_sp
 	 */
-	float 		mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_trim, float throttle_min,
-			float throttle_max);
+	float mapAirspeedSetpointToTrimThrottle(float airspeed_sp, float throttle_trim, float throttle_min,
+						float throttle_max);
 
 	/**
 	 * @brief Compensate trim throttle for air density and vehicle weight.
@@ -616,7 +621,7 @@ private:
 	 * @param throttle_max Maximum allowed trim throttle.
 	 * @return Trim throttle compensated for air density and vehicle weight.
 	 */
-	float 		compensateTrimThrottleForDensityAndWeight(float throttle_trim, float throttle_min, float throttle_max);
+	float compensateTrimThrottleForDensityAndWeight(float throttle_trim, float throttle_min, float throttle_max);
 
 	/**
 	 * @brief Returns a trim throttle value for flying at a desired equivalent airspeed setpoint compensated for air density and vehicle weight.
@@ -628,8 +633,8 @@ private:
 	 * @param throttle_max Maximum allowed trim throttle.
 	 * @return trim throttle value for flying at a desired equivalent airspeed setpoint compensated for air density and vehicle weight.
 	 */
-	float 		calculateThrottleTrimCompensated(float airspeed_sp, float throttle_trim, float throttle_min,
-			float throttle_max);
+	float calculateThrottleTrimCompensated(float airspeed_sp, float throttle_trim, float throttle_min,
+					       float throttle_max);
 
 	void publishOrbitStatus(const position_setpoint_s pos_sp);
 
