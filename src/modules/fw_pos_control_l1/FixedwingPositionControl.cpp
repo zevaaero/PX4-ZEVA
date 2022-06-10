@@ -453,7 +453,8 @@ FixedwingPositionControl::get_auto_airspeed_setpoint(const float control_interva
 	float weight_ratio = 1.0f;
 
 	if (_param_weight_base.get() > FLT_EPSILON && _param_weight_gross.get() > FLT_EPSILON) {
-		weight_ratio = math::constrain(_param_weight_gross.get() / _param_weight_base.get(), 0.5f, 2.0f);
+		weight_ratio = math::constrain(_param_weight_gross.get() / _param_weight_base.get(), MIN_WEIGHT_RATIO,
+					       MAX_WEIGHT_RATIO);
 	}
 
 	// Stall speed increases with the square root of the load factor times the weight ratio
