@@ -207,6 +207,12 @@ private:
 	// [m] ground altitude where the plane was launched
 	float _takeoff_ground_alt{0.0f};
 
+	// true if a launch, specifically using the launch detector, has been detected
+	bool _launch_detected{false};
+
+	// [deg] global position of the vehicle at the time launch is detected (using launch detector)
+	Vector2d _launch_global_position{0, 0};
+
 	// [rad] yaw setpoint for manual position mode heading hold
 	float _hdg_hold_yaw{0.0f};
 
@@ -515,12 +521,12 @@ private:
 	 *
 	 * @param now Current system time [us]
 	 * @param control_interval Time since last position control call [s]
-	 * @param curr_pos Current 2D local position vector of vehicle [m]
+	 * @param global_position Vechile global position [deg]
 	 * @param ground_speed Local 2D ground speed of vehicle [m/s]
 	 * @param pos_sp_prev previous position setpoint
 	 * @param pos_sp_curr current position setpoint
 	 */
-	void control_auto_takeoff(const hrt_abstime &now, const float control_interval, const Vector2d &curr_pos,
+	void control_auto_takeoff(const hrt_abstime &now, const float control_interval, const Vector2d &global_position,
 				  const Vector2f &ground_speed, const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr);
 
 	/**
@@ -728,7 +734,9 @@ private:
 		(ParamFloat<px4::params::NAV_FW_ALT_RAD>) _param_nav_fw_alt_rad,
 
 		(ParamFloat<px4::params::FW_WING_SPAN>) _param_fw_wing_span,
-		(ParamFloat<px4::params::FW_WING_HEIGHT>) _param_fw_wing_height
+		(ParamFloat<px4::params::FW_WING_HEIGHT>) _param_fw_wing_height,
+
+		(ParamFloat<px4::params::GND_L1_PERIOD>) _param_gnd_l1_period
 	)
 
 };
