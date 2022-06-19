@@ -2562,7 +2562,7 @@ float FixedwingPositionControl::mapAirspeedSetpointToTrimThrottle(float airspeed
 
 	if (throttle_trim_min > 0.f && throttle_trim_min <= _param_fw_thr_trim.get()
 	    && airspeed_sp < _param_fw_airspd_trim.get()) {
-		const float airspeed_delta =  _param_fw_airspd_trim.get() - airspeed_sp;
+		const float airspeed_delta =  _param_fw_airspd_trim.get() - _param_fw_airspd_min.get();
 		const float throttle_delta = _param_fw_thr_trim.get() - throttle_trim_min;
 		throttle_mapped = throttle_trim_min + throttle_delta * (airspeed_sp -
 				  _param_fw_airspd_min.get()) / math::max(
@@ -2570,7 +2570,7 @@ float FixedwingPositionControl::mapAirspeedSetpointToTrimThrottle(float airspeed
 
 	} else if (throttle_trim_max > 0.f && throttle_trim_max > _param_fw_thr_trim.get()
 		   && airspeed_sp > _param_fw_airspd_trim.get()) {
-		const float airspeed_delta =  _param_fw_airspd_max.get() - airspeed_sp;
+		const float airspeed_delta =  _param_fw_airspd_max.get() - _param_fw_airspd_trim.get();
 		const float throttle_delta = throttle_trim_max - _param_fw_thr_trim.get();
 		throttle_mapped = _param_fw_thr_trim.get() + throttle_delta * (airspeed_sp -
 				  _param_fw_airspd_trim.get()) / math::max(
